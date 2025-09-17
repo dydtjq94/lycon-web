@@ -1,0 +1,88 @@
+/* 전역 리셋 + 시스템 폰트 스택 */
+:root {
+  /* 컬러 토큰: 다크 on 라이트 기반, 버튼/포커스 대비 충분히 */
+  --bg: #ffffff;
+  --text: #0f172a; /* slate-900 */
+  --muted: #475569; /* slate-600 */
+  --brand: #3ba3ff; /* primary */
+  --brand-strong: #0e8bff;
+  --card: #f8fafc; /* slate-50 */
+  --border: #e2e8f0; /* slate-200 */
+
+  /* 유틸 */
+  --radius-lg: 16px;
+  --shadow-soft: 0 6px 24px rgba(15, 23, 42, 0.08);
+
+  /* 유동 타이포 (모바일 → 데스크톱 자동 스케일) */
+  --fs-h1: clamp(26px, 5.5vw, 44px);
+  --fs-h2: clamp(20px, 4.2vw, 32px);
+  --fs-p: clamp(14px, 3.6vw, 18px);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    Noto Sans, Apple SD Gothic Neo, "맑은 고딕", "Malgun Gothic", Arial,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 기본 컨테이너 */
+.container {
+  width: 100%;
+  max-width: 720px; /* 모바일 우선 + 데스크톱에서 적절한 폭 */
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+/* 공용 버튼 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  padding: 0 20px;
+  border-radius: 14px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.2px;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-soft);
+  transition: 0.18s ease;
+  text-decoration: none;
+}
+.btn:hover {
+  background: var(--brand-strong);
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+
+/* 카드 */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 20px;
+}
+
+/* 포커스 가시성(접근성) */
+:focus-visible {
+  outline: 3px solid #9ad1ff;
+  outline-offset: 2px;
+}
