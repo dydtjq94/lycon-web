@@ -1,9 +1,15 @@
 import React from "react";
 import styles from "./Loading.module.css";
-import { track } from "../libs/analytics";
+import { useNavigate } from "react-router-dom";
 
 export default function Loading() {
-  React.useEffect(() => track("결과 로딩 페이지_진입"), []);
+  const nav = useNavigate();
+  React.useEffect(() => {
+    console.log("Mixpanel: Loading_Viewed");
+    const t = setTimeout(() => nav("/result"), 1200); // 1.2초 후 결과로 이동
+    return () => clearTimeout(t);
+  }, [nav]);
+
   return (
     <div className={styles.wrap}>
       <div className={styles.spinner} />

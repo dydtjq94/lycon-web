@@ -1,0 +1,122 @@
+/* 그룹 네비게이션 컴포넌트 스타일 - 간략한 진행 바 형태 */
+
+.container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-soft);
+}
+
+.progressBar {
+  display: flex;
+  gap: 0;
+  width: 100%;
+}
+
+.progressItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 8px 4px;
+  position: relative;
+}
+
+.progressItem:hover:not(.disabled) {
+  transform: translateY(-1px);
+}
+
+.progressItem.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.progressLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  text-align: center;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.progressItem.current .progressLabel {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.progressItem.completed .progressLabel {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.progressBarSegment {
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progressFill {
+  width: 100%;
+  height: 100%;
+  background: var(--border);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.progressFill.active {
+  background: var(--brand);
+  animation: blink 2s infinite;
+}
+
+.progressItem.completed .progressFill {
+  background: #10b981;
+}
+
+/* 깜빡거리는 애니메이션 - 프로그레스 바용 */
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  51%,
+  100% {
+    opacity: 0.7;
+    transform: scaleY(0.8);
+  }
+}
+
+/* 반응형 */
+@media (min-width: 768px) {
+  .container {
+    padding: 20px;
+  }
+
+  .progressLabel {
+    font-size: 13px;
+  }
+
+  .progressBarSegment {
+    height: 8px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .progressLabel {
+    font-size: 14px;
+  }
+}

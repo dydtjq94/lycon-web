@@ -1,7 +1,5 @@
-/* Start 페이지 전용 스타일 (CSS Modules) */
-
 .wrap {
-  min-height: 100dvh; /* 모바일 주소창 고려 높이 */
+  min-height: 100dvh;
   display: grid;
   grid-template-rows: auto 1fr auto;
   background: radial-gradient(
@@ -12,7 +10,6 @@
       no-repeat,
     var(--bg);
 }
-
 .header {
   position: sticky;
   top: 0;
@@ -22,7 +19,6 @@
   border-bottom: 1px solid var(--border);
   padding: 12px 16px;
 }
-
 .heroCard {
   margin-top: 28px;
   padding: 28px 22px;
@@ -31,13 +27,11 @@
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
 }
-
 .caption {
   font-size: 12px;
   color: var(--muted);
   margin-bottom: 10px;
 }
-
 .title {
   font-size: var(--fs-h1);
   line-height: 1.22;
@@ -48,13 +42,11 @@
   color: #0e8bff;
   font-weight: 900;
 }
-
 .desc {
   font-size: var(--fs-p);
   color: var(--muted);
   margin: 10px 0 16px;
 }
-
 .badges {
   display: flex;
   gap: 8px;
@@ -71,8 +63,6 @@
   border-radius: 999px;
   padding: 8px 12px;
 }
-
-/* 하단 CTA 고정 바 */
 .ctaBar {
   position: sticky;
   bottom: 0;
@@ -96,8 +86,6 @@
   color: var(--muted);
   line-height: 1.35;
 }
-
-/* 데스크톱 향상 */
 @media (min-width: 960px) {
   .heroCard {
     margin-top: 48px;
