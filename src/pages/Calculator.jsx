@@ -264,25 +264,6 @@ export default function Calculator() {
                 : "—"}
             </div>
           </div>
-
-          {/* 은퇴 후 월 수입 */}
-          <div className={styles.outputGroup}>
-            <h3 className={styles.outputLabel}>은퇴 후 월 수입</h3>
-            <div className={styles.formula}>
-              은퇴 후 자산과 실질 수익률로 벌어들이는 월 수입
-            </div>
-            <div className={styles.outputValue}>
-              {results.monthlyIncome !== null
-                ? formatKRWMonthly(results.monthlyIncome)
-                : "—"}
-              {results.realReturnRate !== null && (
-                <span className={styles.rateInfo}>
-                  / {results.realReturnRate.toFixed(1)}% (명목:{" "}
-                  {inputs.nominalReturnRate}%)
-                </span>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>
