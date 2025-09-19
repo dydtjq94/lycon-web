@@ -14,7 +14,7 @@ export default function Calculator() {
 
   // 입력값 상태
   const [inputs, setInputs] = React.useState({
-    currentAssets: null, // 보유 자산 (만원)
+    currentAssets: 0, // 보유 자산 (만원)
     annualSavings: null, // 저축금액(연) (만원)
     yearsToRetirement: null, // 은퇴시기 (년)
     nominalReturnRate: null, // 명목 수익률 (%)
