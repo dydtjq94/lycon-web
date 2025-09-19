@@ -1,0 +1,247 @@
+/* 은퇴 자금 계산기 페이지 스타일 */
+
+.page {
+  min-height: 100dvh;
+  background: var(--bg);
+  padding: 0;
+  width: 100%;
+}
+
+/* 헤더 */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--card);
+  border-radius: 12px;
+  font-size: 18px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background: var(--border);
+  transform: translateX(-2px);
+}
+
+.title {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+/* 컨텐츠 */
+.content {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* 섹션 제목 */
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+/* 입력 섹션 */
+.inputSection {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow-soft);
+  width: 100%;
+}
+
+.inputGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputLabel {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.inputDescription {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.numberInput {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.input {
+  flex: 1;
+  border: none;
+  border-bottom: 2px solid var(--border);
+  padding: 12px 4px;
+  font-size: 18px;
+  font-weight: 600;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  transition: border-color 0.2s ease;
+}
+
+.input:focus {
+  border-bottom-color: var(--brand);
+}
+
+.unit {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+/* 출력 섹션 */
+.outputSection {
+  background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+  border: 1px solid #81d4fa;
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow-soft);
+  width: 100%;
+}
+
+.outputGroup {
+  margin-bottom: 32px;
+}
+
+.outputGroup:last-child {
+  margin-bottom: 0;
+}
+
+.outputLabel {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 12px 0;
+}
+
+.formula {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.4;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(59, 163, 255, 0.2);
+}
+
+.outputValue {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--brand);
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  border: 2px solid var(--brand);
+  box-shadow: 0 4px 16px rgba(59, 163, 255, 0.2);
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rateInfo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* 반응형 */
+@media (min-width: 768px) {
+  .content {
+    padding: 0 40px 100px;
+  }
+
+  .header {
+    padding: 16px 40px;
+  }
+
+  .inputGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .outputValue {
+    font-size: 36px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .content {
+    padding: 0 60px 100px;
+  }
+
+  .header {
+    padding: 16px 60px;
+  }
+
+  .inputGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .outputValue {
+    font-size: 40px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .content {
+    padding: 0 80px 100px;
+  }
+
+  .header {
+    padding: 16px 80px;
+  }
+
+  .inputGrid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}

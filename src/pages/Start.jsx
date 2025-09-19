@@ -64,14 +64,23 @@ export default function Start() {
           </div>
 
           {/* ✅ 변경: Link → button, onClick으로 초기화 후 이동 */}
-          <button
-            type="button"
-            className="btn"
-            aria-label="설문 시작하기"
-            onClick={handleStart}
-          >
-            시작하기
-          </button>
+          <div className={styles.buttonGroup}>
+            <button
+              type="button"
+              className="btn"
+              aria-label="설문 시작하기"
+              onClick={handleStart}
+            >
+              설문 시작하기
+            </button>
+            <button
+              type="button"
+              className={styles.calculatorButton}
+              onClick={() => navigate("/calculator")}
+            >
+              자금 계산기
+            </button>
+          </div>
         </div>
       </div>
     </main>

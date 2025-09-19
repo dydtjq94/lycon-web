@@ -4,6 +4,7 @@ import Start from "./pages/Start.jsx";
 import Survey from "./pages/Survey.jsx";
 import Loading from "./pages/Loading.jsx";
 import Result from "./pages/Result.jsx";
+import Calculator from "./pages/Calculator.jsx";
 // 그룹별 설문 페이지들
 import BasicInfo from "./pages/survey/BasicInfo.jsx";
 import IncomePension from "./pages/survey/IncomePension.jsx";
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/survey/debt" element={<Debt />} />
         <Route path="/loading" element={<Loading />} />
         <Route path="/result" element={<Result />} />
+        <Route path="/calculator" element={<Calculator />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </SurveyProvider>
