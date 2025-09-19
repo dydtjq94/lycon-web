@@ -71,6 +71,46 @@
   padding-bottom: 100px; /* 푸터 공간 확보 */
 }
 
+/* 메인 컨텐츠 영역 */
+.mainContent {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.surveyArea {
+  flex: 1;
+  min-width: 0;
+}
+
+.tipsArea {
+  flex: 0 0 350px;
+  display: none;
+}
+
+/* 데스크톱에서만 사이드바 표시 */
+@media (min-width: 1024px) {
+  .tipsArea {
+    display: block;
+  }
+
+  .mainContent {
+    max-width: 1400px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .mainContent {
+    max-width: 1600px;
+  }
+
+  .tipsArea {
+    flex: 0 0 380px;
+  }
+}
+
 .groupDescription {
   margin-bottom: 32px;
   padding: 20px;

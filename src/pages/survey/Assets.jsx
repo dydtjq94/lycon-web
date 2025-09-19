@@ -5,6 +5,7 @@ import { useSurvey } from "../../context/SurveyContext.jsx";
 import { QUESTIONS } from "../../config/questions.js";
 import MoneyInput from "../../components/MoneyInput.jsx";
 import GroupNavigation from "../../components/GroupNavigation.jsx";
+import TipsSidebar from "../../components/TipsSidebar.jsx";
 import { formatKRW, formatPercent } from "../../libs/format.js";
 
 /**
@@ -148,7 +149,7 @@ export default function Assets() {
   }
 
   return (
-    <div className={`container ${styles.page}`}>
+    <div className={`container surveyContainer ${styles.page}`}>
       <div className={styles.header}>
         <button
           className={styles.backButton}
@@ -167,12 +168,16 @@ export default function Assets() {
       <div className={styles.content}>
         <GroupNavigation />
 
-        <div className={styles.groupDescription}>
-          <p>현재 보유하고 있는 자산과 예상 수익률을 입력해주세요.</p>
-        </div>
+        <div className={styles.mainContent}>
+          <div className={styles.surveyArea}>
+            <div className={styles.questionsContainer}>
+              {assetQuestions.map(renderQuestion)}
+            </div>
+          </div>
 
-        <div className={styles.questionsContainer}>
-          {assetQuestions.map(renderQuestion)}
+          <div className={styles.tipsArea}>
+            <TipsSidebar groupName="자산" />
+          </div>
         </div>
       </div>
 

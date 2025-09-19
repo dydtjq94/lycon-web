@@ -5,6 +5,7 @@ import { useSurvey } from "../../context/SurveyContext.jsx";
 import { QUESTIONS } from "../../config/questions.js";
 import MoneyInput from "../../components/MoneyInput.jsx";
 import GroupNavigation from "../../components/GroupNavigation.jsx";
+import TipsSidebar from "../../components/TipsSidebar.jsx";
 import { formatKRW } from "../../libs/format.js";
 
 /**
@@ -133,7 +134,7 @@ export default function BasicInfo() {
   }
 
   return (
-    <div className={`container ${styles.page}`}>
+    <div className={`container surveyContainer ${styles.page}`}>
       <div className={styles.header}>
         <button
           className={styles.backButton}
@@ -152,12 +153,16 @@ export default function BasicInfo() {
       <div className={styles.content}>
         <GroupNavigation />
 
-        <div className={styles.groupDescription}>
-          <p>은퇴 계획을 세우기 위한 기본 정보를 입력해주세요.</p>
-        </div>
+        <div className={styles.mainContent}>
+          <div className={styles.surveyArea}>
+            <div className={styles.questionsContainer}>
+              {basicQuestions.map(renderQuestion)}
+            </div>
+          </div>
 
-        <div className={styles.questionsContainer}>
-          {basicQuestions.map(renderQuestion)}
+          <div className={styles.tipsArea}>
+            <TipsSidebar groupName="은퇴 연령" />
+          </div>
         </div>
       </div>
 

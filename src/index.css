@@ -46,6 +46,24 @@ body {
   padding: 24px 20px;
 }
 
+/* 설문 페이지용 컨테이너 (더 넓은 너비) */
+.container.surveyContainer {
+  max-width: none;
+  padding: 24px 20px;
+}
+
+@media (min-width: 1024px) {
+  .container.surveyContainer {
+    padding: 24px 40px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .container.surveyContainer {
+    padding: 24px 60px;
+  }
+}
+
 /* 공용 버튼 */
 .btn {
   display: inline-flex;

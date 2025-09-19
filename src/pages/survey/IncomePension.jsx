@@ -5,6 +5,7 @@ import { useSurvey } from "../../context/SurveyContext.jsx";
 import { QUESTIONS } from "../../config/questions.js";
 import MoneyInput from "../../components/MoneyInput.jsx";
 import GroupNavigation from "../../components/GroupNavigation.jsx";
+import TipsSidebar from "../../components/TipsSidebar.jsx";
 import { formatKRW, formatKRWMonthly } from "../../libs/format.js";
 
 /**
@@ -169,7 +170,7 @@ export default function IncomePension() {
   }
 
   return (
-    <div className={`container ${styles.page}`}>
+    <div className={`container surveyContainer ${styles.page}`}>
       <div className={styles.header}>
         <button
           className={styles.backButton}
@@ -188,12 +189,16 @@ export default function IncomePension() {
       <div className={styles.content}>
         <GroupNavigation />
 
-        <div className={styles.groupDescription}>
-          <p>은퇴 후 받을 수 있는 연금 및 기타 소득을 입력해주세요.</p>
-        </div>
+        <div className={styles.mainContent}>
+          <div className={styles.surveyArea}>
+            <div className={styles.questionsContainer}>
+              {incomeQuestions.map(renderQuestion)}
+            </div>
+          </div>
 
-        <div className={styles.questionsContainer}>
-          {incomeQuestions.map(renderQuestion)}
+          <div className={styles.tipsArea}>
+            <TipsSidebar groupName="연금&소득" />
+          </div>
         </div>
       </div>
 
