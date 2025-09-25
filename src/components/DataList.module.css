@@ -1,0 +1,219 @@
+/* 데이터 목록 스타일 */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+}
+
+.emptyState p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.itemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.itemTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  flex: 1;
+}
+
+.itemActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.editButton,
+.deleteButton {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  background: #f0f9ff;
+}
+
+.deleteButton:hover {
+  background: #fef2f2;
+}
+
+.itemDetails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.detailItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.detailItem:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.detailValue {
+  font-size: 0.9rem;
+  color: #1f2937;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* 편집 폼 스타일 */
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 2px solid #3b82f6;
+}
+
+.editField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.editField label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.editInput {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.editInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.editActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.saveButton {
+  padding: 0.5rem 1rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveButton:hover {
+  background: #059669;
+}
+
+.cancelButton {
+  padding: 0.5rem 1rem;
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: #4b5563;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .itemHeader {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .itemActions {
+    align-self: flex-end;
+  }
+
+  .itemDetails {
+    grid-template-columns: 1fr;
+  }
+
+  .detailItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .detailValue {
+    text-align: left;
+  }
+
+  .editActions {
+    flex-direction: column;
+  }
+
+  .saveButton,
+  .cancelButton {
+    width: 100%;
+  }
+}
