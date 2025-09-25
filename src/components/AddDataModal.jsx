@@ -12,6 +12,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
     frequency: "monthly",
     note: "",
     rate: "",
+    growthRate: "", // 상승률 추가
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,30 +24,40 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
       icon: "💰",
       rateLabel: "수익률 (%/년)",
       showRate: false,
+      growthRateLabel: "연간 상승률 (%/년)",
+      showGrowthRate: true,
     },
     assets: {
       title: "자산 추가",
       icon: "🏦",
       rateLabel: "수익률 (%/년)",
       showRate: true,
+      growthRateLabel: "상승률 (%/년)",
+      showGrowthRate: false,
     },
     debts: {
       title: "부채 추가",
       icon: "💳",
       rateLabel: "이자율 (%/년)",
       showRate: true,
+      growthRateLabel: "상승률 (%/년)",
+      showGrowthRate: false,
     },
     expenses: {
       title: "지출 추가",
       icon: "💸",
       rateLabel: "수익률 (%/년)",
       showRate: false,
+      growthRateLabel: "물가 상승률 (%/년)",
+      showGrowthRate: true,
     },
     pensions: {
       title: "연금 추가",
       icon: "🏛️",
       rateLabel: "수익률 (%/년)",
       showRate: false,
+      growthRateLabel: "상승률 (%/년)",
+      showGrowthRate: false,
     },
   };
 
@@ -199,6 +210,15 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
       newErrors.rate = "수익률/이자율은 -100%에서 100% 사이여야 합니다.";
     }
 
+    // 상승률 검증 (해당 카테고리인 경우)
+    if (
+      config.showGrowthRate &&
+      formData.growthRate &&
+      (formData.growthRate < -100 || formData.growthRate > 100)
+    ) {
+      newErrors.growthRate = "상승률은 -100%에서 100% 사이여야 합니다.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -222,6 +242,10 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
         frequency: formData.frequency,
         note: formData.note.trim() || null,
         rate: config.showRate && formData.rate ? Number(formData.rate) : null,
+        growthRate:
+          config.showGrowthRate && formData.growthRate
+            ? Number(formData.growthRate)
+            : null,
       };
 
       await onAdd(submitData);
@@ -235,6 +259,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
         frequency: "monthly",
         note: "",
         rate: "",
+        growthRate: "",
       });
       setErrors({});
       onClose();
@@ -256,18 +281,23 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
       frequency: "monthly",
       note: "",
       rate: "",
+      growthRate: "",
     });
     setErrors({});
     onClose();
   };
 
-  // 년도 옵션 생성 (현재 년도부터 50년 후까지)
+  // 년도 옵션 생성 (현재 년도부터 2100년까지)
   const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 51 }, (_, i) => currentYear + i);
+  const endYear = 2100;
+  const yearOptions = Array.from(
+    { length: endYear - currentYear + 1 },
+    (_, i) => currentYear + i
+  );
 
   // 분기 옵션 생성
   const quarterOptions = [];
-  for (let year = currentYear; year <= currentYear + 10; year++) {
+  for (let year = currentYear; year <= endYear; year++) {
     for (let quarter = 1; quarter <= 4; quarter++) {
       quarterOptions.push({
         value: JSON.stringify({ year, quarter }),
@@ -278,7 +308,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
 
   // 월 옵션 생성
   const monthOptions = [];
-  for (let year = currentYear; year <= currentYear + 10; year++) {
+  for (let year = currentYear; year <= endYear; year++) {
     for (let month = 1; month <= 12; month++) {
       monthOptions.push({
         value: JSON.stringify({ year, month }),
@@ -639,6 +669,35 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
               {errors.rate && (
                 <span className={styles.errorText}>{errors.rate}</span>
               )}
+            </div>
+          )}
+
+          {config.showGrowthRate && (
+            <div className={styles.field}>
+              <label htmlFor="growthRate" className={styles.label}>
+                {config.growthRateLabel}
+              </label>
+              <input
+                type="number"
+                id="growthRate"
+                name="growthRate"
+                value={formData.growthRate}
+                onChange={handleChange}
+                min="-100"
+                max="100"
+                step="0.1"
+                className={styles.input}
+                placeholder="예: 3.0 (기본값: 0)"
+                disabled={isSubmitting}
+              />
+              {errors.growthRate && (
+                <span className={styles.errorText}>{errors.growthRate}</span>
+              )}
+              <span className={styles.helpText}>
+                {category === "incomes"
+                  ? "수입이 매년 상승하는 비율입니다. (예: 급여 3% 상승, 사업 수익 증가 등)"
+                  : "물가 상승에 따른 지출 증가 비율입니다. (예: 2% 상승)"}
+              </span>
             </div>
           )}
 

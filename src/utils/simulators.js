@@ -18,34 +18,56 @@ export function calculateCashflow(data, timeline) {
     let totalExpense = 0;
     let totalDebtPayment = 0;
 
-    // 수입 계산
+    // 수입 계산 (상승률 적용)
     incomes.forEach((income) => {
       if (isActiveInMonth(income, month)) {
         const monthlyAmount = getMonthlyAmount(income);
-        totalIncome += monthlyAmount;
+        const adjustedAmount = applyGrowthRate(
+          monthlyAmount,
+          income,
+          month,
+          index
+        );
+        totalIncome += adjustedAmount;
 
         // 2027년 9월 디버깅
         if (month.includes("2027-09")) {
           console.log(
-            `수입 활성화: ${income.title}, amount: ${income.amount}, monthlyAmount: ${monthlyAmount}, frequency: ${income.frequency}`
+            `수입 활성화: ${income.title}, amount: ${
+              income.amount
+            }, monthlyAmount: ${monthlyAmount}, adjustedAmount: ${adjustedAmount}, growthRate: ${
+              income.growthRate || 0
+            }`
           );
         }
       }
     });
 
-    // 연금 계산 (은퇴 후부터)
+    // 연금 계산 (은퇴 후부터, 상승률 적용)
     pensions.forEach((pension) => {
       if (isActiveInMonth(pension, month)) {
         const monthlyAmount = getMonthlyAmount(pension);
-        totalPension += monthlyAmount;
+        const adjustedAmount = applyGrowthRate(
+          monthlyAmount,
+          pension,
+          month,
+          index
+        );
+        totalPension += adjustedAmount;
       }
     });
 
-    // 지출 계산
+    // 지출 계산 (물가 상승률 적용)
     expenses.forEach((expense) => {
       if (isActiveInMonth(expense, month)) {
         const monthlyAmount = getMonthlyAmount(expense);
-        totalExpense += monthlyAmount;
+        const adjustedAmount = applyGrowthRate(
+          monthlyAmount,
+          expense,
+          month,
+          index
+        );
+        totalExpense += adjustedAmount;
       }
     });
 
@@ -141,6 +163,34 @@ export function calculateAssets(data, timeline, cashflow) {
   });
 
   return assetData;
+}
+
+/**
+ * 상승률 적용 계산
+ * @param {number} baseAmount - 기본 금액
+ * @param {Object} item - 재무 항목
+ * @param {string} month - 현재 월
+ * @param {number} monthIndex - 월 인덱스
+ * @returns {number} 상승률이 적용된 금액
+ */
+function applyGrowthRate(baseAmount, item, month, monthIndex) {
+  if (!item.growthRate || item.growthRate === 0) {
+    return baseAmount;
+  }
+
+  // 시작일부터 경과된 년수 계산
+  const startDate = new Date(item.startDate);
+  const currentDate = new Date(month);
+  const yearsElapsed =
+    currentDate.getFullYear() -
+    startDate.getFullYear() +
+    (currentDate.getMonth() - startDate.getMonth()) / 12;
+
+  // 상승률 적용 (복리)
+  const growthRate = item.growthRate / 100;
+  const adjustedAmount = baseAmount * Math.pow(1 + growthRate, yearsElapsed);
+
+  return adjustedAmount;
 }
 
 /**
