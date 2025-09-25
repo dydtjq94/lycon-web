@@ -14,7 +14,6 @@ import {
 import {
   calculateCashflow,
   calculateAssets,
-  formatChartData,
   formatYearlyChartData,
   calculateAssetBreakdown,
 } from "../utils/simulators.js";
@@ -122,7 +121,7 @@ export default function DashboardPage() {
       setError(null);
       await dataItemService.updateItem(
         profileId,
-        selectedCategory,
+        selectedCategory, // Use selectedCategory here
         itemId,
         updateData
       );
@@ -137,7 +136,7 @@ export default function DashboardPage() {
     if (window.confirm(`"${itemTitle}" 항목을 삭제하시겠습니까?`)) {
       try {
         setError(null);
-        await dataItemService.deleteItem(profileId, selectedCategory, itemId);
+        await dataItemService.deleteItem(profileId, selectedCategory, itemId); // Use selectedCategory here
       } catch (error) {
         console.error("데이터 삭제 오류:", error);
         setError("데이터 삭제에 실패했습니다. 다시 시도해주세요.");
@@ -156,7 +155,7 @@ export default function DashboardPage() {
     );
     const retirementDateStr = retirementDate.toISOString().split("T")[0];
 
-    // 은퇴 후 30년까지 시뮬레이션
+    // Simulate up to 30 years after retirement
     const endDate = new Date(retirementDate);
     endDate.setFullYear(endDate.getFullYear() + 30);
     const endDateStr = endDate.toISOString().split("T")[0];

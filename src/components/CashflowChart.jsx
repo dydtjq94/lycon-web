@@ -9,10 +9,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ComposedChart,
-  Line,
-  Cell,
-  ReferenceLine,
+  Cell, // Cell import
+  ReferenceLine, // ReferenceLine import
 } from "recharts";
 import styles from "./CashflowChart.module.css";
 
@@ -26,12 +24,12 @@ export default function CashflowChart({ data }) {
     );
   }
 
-  // 툴팁 커스터마이징
+  // Custom Tooltip for combined chart
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className={styles.tooltip}>
-          <p className={styles.tooltipLabel}>{label}</p>
+          <p className={styles.tooltipLabel}>{label}년</p>
           {payload.map((entry, index) => (
             <p
               key={index}
@@ -47,7 +45,7 @@ export default function CashflowChart({ data }) {
     return null;
   };
 
-  // 통화 포맷팅
+  // Currency formatting
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return "0원";
     return new Intl.NumberFormat("ko-KR", {
@@ -58,7 +56,7 @@ export default function CashflowChart({ data }) {
     }).format(value);
   };
 
-  // Y축 포맷팅
+  // Y-axis formatting
   const formatYAxis = (value) => {
     if (value >= 100000000) {
       return `${(value / 100000000).toFixed(1)}억`;
@@ -81,6 +79,11 @@ export default function CashflowChart({ data }) {
     fill: item.netCashflow >= 0 ? "#10b981" : "#ef4444",
   }));
 
+  // Y축 도메인 계산 (0원 기준으로 고정)
+  const allValues = chartData.map((item) => item.netCashflow);
+  const minValue = Math.min(...allValues, 0);
+  const maxValue = Math.max(...allValues, 0);
+
   return (
     <div className={styles.chartContainer}>
       <ResponsiveContainer width="100%" height={250}>
@@ -100,7 +103,7 @@ export default function CashflowChart({ data }) {
             fontSize={12}
             tick={{ fill: "#6b7280" }}
             tickFormatter={formatYAxis}
-            domain={["dataMin", "dataMax"]}
+            domain={[minValue, maxValue]}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />

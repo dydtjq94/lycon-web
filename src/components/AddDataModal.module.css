@@ -48,58 +48,58 @@
   font-weight: 700;
   color: #1f2937;
   margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .closeButton {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 2rem;
   color: #6b7280;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
 }
 
-.closeButton:hover:not(:disabled) {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.closeButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.closeButton:hover {
+  color: #1f2937;
 }
 
 .form {
   padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.errorBanner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .field {
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .label {
-  display: block;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #374151;
   margin-bottom: 0.5rem;
-  font-size: 0.9rem;
 }
 
-.input {
-  width: 100%;
+.input,
+.select,
+.textarea {
   padding: 0.75rem 1rem;
   border: 2px solid #e5e7eb;
   border-radius: 8px;
   font-size: 1rem;
+  color: #1f2937;
   transition: all 0.2s ease;
   box-sizing: border-box;
 }
@@ -133,6 +133,14 @@
   font-weight: 500;
 }
 
+.helpText {
+  display: block;
+  color: #6b7280;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
 .actions {
   display: flex;
   gap: 1rem;
@@ -153,9 +161,9 @@
   transition: all 0.2s ease;
 }
 
-.cancelButton:hover:not(:disabled) {
-  border-color: #d1d5db;
+.cancelButton:hover {
   background: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .cancelButton:disabled {
@@ -174,33 +182,22 @@
   transition: all 0.2s ease;
 }
 
-.submitButton:hover:not(:disabled) {
+.submitButton:hover {
   background: #2563eb;
   transform: translateY(-1px);
 }
 
 .submitButton:disabled {
-  opacity: 0.5;
+  background: #93c5fd;
   cursor: not-allowed;
   transform: none;
 }
 
 /* 반응형 디자인 */
-@media (max-width: 640px) {
-  .overlay {
-    padding: 0.5rem;
-  }
-
+@media (max-width: 768px) {
   .modal {
-    max-height: 95vh;
-  }
-
-  .header {
-    padding: 1rem 1.5rem;
-  }
-
-  .title {
-    font-size: 1.25rem;
+    margin: 1rem;
+    max-width: calc(100% - 2rem);
   }
 
   .form {
