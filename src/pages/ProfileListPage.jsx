@@ -10,6 +10,7 @@ export default function ProfileListPage() {
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -35,6 +36,23 @@ export default function ProfileListPage() {
       console.error("프로필 추가 오류:", error);
       setError("프로필 추가에 실패했습니다. 다시 시도해주세요.");
     }
+  };
+
+  // 프로필 수정 핸들러
+  const handleEditProfile = async (profileData) => {
+    try {
+      setError(null);
+      await profileService.updateProfile(editingProfile.id, profileData);
+      setEditingProfile(null);
+    } catch (error) {
+      console.error("프로필 수정 오류:", error);
+      setError("프로필 수정에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  // 프로필 수정 시작
+  const handleStartEdit = (profile) => {
+    setEditingProfile(profile);
   };
 
   // 프로필 삭제 핸들러
@@ -106,16 +124,30 @@ export default function ProfileListPage() {
                 >
                   <div className={styles.profileHeader}>
                     <h3 className={styles.profileName}>{profile.name}</h3>
-                    <button
-                      className={styles.deleteButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProfile(profile.id, profile.name);
-                      }}
-                      aria-label={`${profile.name} 프로필 삭제`}
-                    >
-                      ×
-                    </button>
+                    <div className={styles.profileActions}>
+                      <button
+                        className={styles.editButton}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEdit(profile);
+                        }}
+                        aria-label={`${profile.name} 프로필 수정`}
+                        title="수정"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className={styles.deleteButton}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProfile(profile.id, profile.name);
+                        }}
+                        aria-label={`${profile.name} 프로필 삭제`}
+                        title="삭제"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                   <div className={styles.profileInfo}>
                     <div className={styles.infoItem}>
@@ -134,6 +166,45 @@ export default function ProfileListPage() {
                         {profile.retirementAge - currentAge}년
                       </span>
                     </div>
+                    {profile.retirementGoal > 0 && (
+                      <div className={styles.infoItem}>
+                        <span className={styles.label}>은퇴 목표:</span>
+                        <span className={styles.value}>
+                          {new Intl.NumberFormat("ko-KR").format(
+                            profile.retirementGoal
+                          )}
+                          원
+                        </span>
+                      </div>
+                    )}
+                    <div className={styles.infoItem}>
+                      <span className={styles.label}>가계 구성원:</span>
+                      <span className={styles.value}>
+                        {profile.householdSize || 1}명
+                        {profile.hasSpouse && (
+                          <span className={styles.spouseIndicator}>
+                            {" "}
+                            (배우자 포함)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    {profile.householdMembers &&
+                      profile.householdMembers.length > 0 && (
+                        <div className={styles.householdMembers}>
+                          <span className={styles.label}>구성원:</span>
+                          <div className={styles.memberList}>
+                            {profile.householdMembers.map((member, index) => (
+                              <span
+                                key={member.id || index}
+                                className={styles.memberTag}
+                              >
+                                {member.name} ({member.relationship})
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                   </div>
                   <div className={styles.profileFooter}>
                     <span className={styles.clickHint}>
@@ -152,6 +223,16 @@ export default function ProfileListPage() {
         onClose={() => setIsModalOpen(false)}
         onAdd={handleAddProfile}
       />
+
+      {editingProfile && (
+        <AddProfileModal
+          isOpen={!!editingProfile}
+          onClose={() => setEditingProfile(null)}
+          onAdd={handleEditProfile}
+          editingProfile={editingProfile}
+          isEdit={true}
+        />
+      )}
     </div>
   );
 }

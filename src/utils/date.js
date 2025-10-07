@@ -18,17 +18,17 @@ export function formatDate(date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-/** 생년월일로 현재 나이 계산 */
+/** 생년월일로 현재 나이 계산 (한국 나이 기준) */
 export function calculateAge(birthDateString) {
   const today = new Date();
   const birth = parseDate(birthDateString);
 
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  return age;
+  // 한국 나이: 현재 년도 - 출생 년도 + 1
+  // 생일과 관계없이 년도만 따져서 계산
+  const currentYear = today.getFullYear();
+  const birthYear = birth.getFullYear();
+
+  return currentYear - birthYear + 1;
 }
 
 /** 두 날짜(YYYY-MM-DD) 사이 개월 수 */
@@ -73,13 +73,24 @@ export function isValidDate(dateString) {
  * @returns {string[]} ex) ["2025-01","2025-02", ...] 또는 ["2025-01-01", ...]
  */
 export function generateMonthlyTimeline(startDate, endDate, mode = "ym") {
-  if (!isValidDate(startDate) || !isValidDate(endDate)) return [];
+  console.log("generateMonthlyTimeline 호출:", { startDate, endDate, mode });
+
+  if (!isValidDate(startDate) || !isValidDate(endDate)) {
+    console.log("유효하지 않은 날짜:", { startDate, endDate });
+    return [];
+  }
+
   const start = parseDate(startDate);
   const end = parseDate(endDate);
 
   // 시작을 해당 월 1일로 정렬
   const cur = new Date(start.getFullYear(), start.getMonth(), 1);
   const last = new Date(end.getFullYear(), end.getMonth(), 1);
+
+  console.log("타임라인 생성 범위:", {
+    start: cur.toISOString().split("T")[0],
+    end: last.toISOString().split("T")[0],
+  });
 
   const out = [];
   while (cur <= last) {
@@ -92,6 +103,10 @@ export function generateMonthlyTimeline(startDate, endDate, mode = "ym") {
     }
     cur.setMonth(cur.getMonth() + 1);
   }
+
+  console.log("생성된 타임라인 길이:", out.length);
+  console.log("타임라인 샘플:", out.slice(0, 5));
+
   return out;
 }
 

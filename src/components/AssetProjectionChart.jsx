@@ -113,23 +113,56 @@ export default function AssetProjectionChart({ data, assetBreakdown }) {
 
   return (
     <div className={styles.chartContainer}>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          margin={{ top: 10, right: 10, left: 40, bottom: 30 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
             dataKey="year"
             stroke="#6b7280"
-            fontSize={12}
+            fontSize={11}
             tick={{ fill: "#6b7280" }}
+            tickLine={{ stroke: "#6b7280" }}
+            axisLine={{ stroke: "#6b7280" }}
+            interval="preserveStartEnd"
+            tickCount={8}
+            domain={["dataMin", 2100]}
+            label={{
+              value: "년도",
+              position: "insideBottom",
+              offset: -5,
+              style: {
+                textAnchor: "middle",
+                fill: "#374151",
+                fontSize: "12px",
+                fontWeight: "500",
+              },
+            }}
           />
           <YAxis
             stroke="#6b7280"
-            fontSize={12}
+            fontSize={10}
             tick={{ fill: "#6b7280" }}
+            tickLine={{ stroke: "#6b7280" }}
+            axisLine={{ stroke: "#6b7280" }}
             tickFormatter={formatYAxis}
+            width={50}
+            tickCount={8}
+            allowDecimals={false}
+            label={{
+              value: "자산 규모 (원)",
+              angle: -90,
+              position: "insideLeft",
+              offset: 10,
+              style: {
+                textAnchor: "middle",
+                fill: "#374151",
+                fontSize: "12px",
+                fontWeight: "500",
+              },
+            }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
@@ -137,24 +170,17 @@ export default function AssetProjectionChart({ data, assetBreakdown }) {
           {/* 자산 세부 내역 바들 */}
           {Array.from(assetTypes).map((assetName, index) => (
             <Bar
-              key={assetName}
+              key={`asset-${assetName}-${index}`}
               dataKey={assetName}
               stackId="assets"
               fill={getAssetColor(assetName, index)}
               name={assetName}
+              maxBarSize={50}
+              radius={[2, 2, 2, 2]}
             />
           ))}
         </BarChart>
       </ResponsiveContainer>
-
-      <div className={styles.chartInfo}>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>현재 총 자산:</span>
-          <span className={styles.infoValue}>
-            {formatCurrency(data[data.length - 1]?.assets || 0)}
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

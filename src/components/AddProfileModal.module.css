@@ -113,6 +113,13 @@
   cursor: not-allowed;
 }
 
+.readOnly {
+  background: #f8fafc;
+  color: #374151;
+  cursor: default;
+  border-color: #e2e8f0;
+}
+
 .inputError {
   border-color: #ef4444;
 }
@@ -221,5 +228,152 @@
   .cancelButton,
   .submitButton {
     width: 100%;
+  }
+}
+
+/* 가계 구성원 관련 스타일 */
+.checkbox {
+  margin-right: 0.5rem;
+  transform: scale(1.2);
+}
+
+.householdSection {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.memberCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.memberHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.memberTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.removeMemberButton {
+  padding: 0.25rem 0.75rem;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.removeMemberButton:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.removeMemberButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.memberFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.memberField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.memberLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.memberInput {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.memberInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.memberInput:disabled {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.addMemberButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  color: #3b82f6;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+
+.addMemberButton:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #2563eb;
+}
+
+.addMemberButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 반응형 디자인 - 가계 구성원 */
+@media (max-width: 768px) {
+  .memberFields {
+    grid-template-columns: 1fr;
+  }
+
+  .memberCard {
+    padding: 1rem;
+  }
+
+  .householdSection {
+    padding: 1rem;
   }
 }

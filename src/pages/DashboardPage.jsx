@@ -146,28 +146,83 @@ export default function DashboardPage() {
 
   // 시뮬레이션 데이터 계산
   const simulationData = React.useMemo(() => {
-    if (!profile) return null;
+    console.log("=== 시뮬레이션 데이터 계산 시작 ===");
+    console.log("profile:", profile);
+    console.log("data:", data);
+
+    if (!profile) {
+      console.log("프로필이 없어서 시뮬레이션 중단");
+      return null;
+    }
+
+    // 데이터가 비어있는지 확인
+    const hasData =
+      data &&
+      ((data.incomes && data.incomes.length > 0) ||
+        (data.assets && data.assets.length > 0) ||
+        (data.debts && data.debts.length > 0) ||
+        (data.expenses && data.expenses.length > 0) ||
+        (data.pensions && data.pensions.length > 0));
+
+    console.log("데이터 존재 여부:", hasData);
+    console.log("incomes 길이:", data.incomes?.length || 0);
+    console.log("assets 길이:", data.assets?.length || 0);
+    console.log("debts 길이:", data.debts?.length || 0);
+    console.log("expenses 길이:", data.expenses?.length || 0);
+    console.log("pensions 길이:", data.pensions?.length || 0);
+
+    if (!hasData) {
+      console.log("재무 데이터가 없어서 시뮬레이션 중단");
+      return null;
+    }
 
     const today = new Date().toISOString().split("T")[0];
-    const retirementDate = new Date(profile.birthDate);
-    retirementDate.setFullYear(
-      retirementDate.getFullYear() + profile.retirementAge
+
+    // 은퇴일 계산 (안전하게)
+    const birthDate = new Date(profile.birthDate);
+    const retirementYear = birthDate.getFullYear() + profile.retirementAge;
+    const retirementDate = new Date(
+      retirementYear,
+      birthDate.getMonth(),
+      birthDate.getDate()
     );
     const retirementDateStr = retirementDate.toISOString().split("T")[0];
 
-    // Simulate up to 30 years after retirement
-    const endDate = new Date(retirementDate);
-    endDate.setFullYear(endDate.getFullYear() + 30);
+    // 시뮬레이션 종료일: 2100년까지 또는 은퇴 후 30년 중 더 짧은 것
+    const maxEndYear = Math.min(retirementYear + 30, 2100);
+    const endDate = new Date(maxEndYear, 11, 31); // 12월 31일
     const endDateStr = endDate.toISOString().split("T")[0];
 
+    console.log("생년월일:", profile.birthDate);
+    console.log("은퇴나이:", profile.retirementAge);
+    console.log("은퇴년도:", retirementYear);
+    console.log("은퇴일:", retirementDateStr);
+    console.log("시뮬레이션 종료년도:", maxEndYear);
+    console.log("시뮬레이션 종료일:", endDateStr);
+
+    console.log("타임라인 기간:", today, "~", endDateStr);
+    console.log("today 유효성:", /^\d{4}-\d{2}-\d{2}$/.test(today));
+    console.log("endDateStr 유효성:", /^\d{4}-\d{2}-\d{2}$/.test(endDateStr));
+    console.log("endDateStr 길이:", endDateStr.length);
+    console.log("endDateStr 문자:", endDateStr);
+
     const timeline = generateMonthlyTimeline(today, endDateStr);
+    console.log("생성된 타임라인 길이:", timeline.length);
+    console.log("타임라인 샘플:", timeline.slice(0, 3));
+
     const cashflow = calculateCashflow(data, timeline);
+    console.log("현금흐름 계산 결과 길이:", cashflow.length);
+    console.log("현금흐름 샘플:", cashflow.slice(0, 3));
+
     const assets = calculateAssets(data, timeline, cashflow);
     const assetBreakdown = calculateAssetBreakdown(data, timeline);
 
+    const yearlyCashflow = formatYearlyChartData(cashflow, "cashflow");
+    console.log("년별 현금흐름 데이터:", yearlyCashflow);
+
     return {
       timeline,
-      cashflow: formatYearlyChartData(cashflow, "cashflow"),
+      cashflow: yearlyCashflow,
       assets: formatYearlyChartData(assets, "assets"),
       assetBreakdown,
     };
@@ -213,18 +268,67 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.container}>
+      <div className={styles.topNavigation}>
+        <button
+          className={styles.backToProfilesButton}
+          onClick={() => navigate("/")}
+        >
+          ← 프로필 목록
+        </button>
+      </div>
       <header className={styles.header}>
         <div className={styles.profileInfo}>
           <h1 className={styles.profileName}>{profile.name}</h1>
+          {profile.retirementGoal > 0 && (
+            <div className={styles.retirementGoalSection}>
+              <div className={styles.retirementGoal}>
+                <span className={styles.goalLabel}>은퇴 목표</span>
+                <span className={styles.goalAmount}>
+                  {new Intl.NumberFormat("ko-KR").format(
+                    profile.retirementGoal
+                  )}
+                  원
+                </span>
+              </div>
+              {profile.goalDescription && (
+                <div className={styles.goalDescription}>
+                  {profile.goalDescription}
+                </div>
+              )}
+            </div>
+          )}
           <div className={styles.profileDetails}>
             <span>현재 나이: {currentAge}세</span>
             <span>희망 은퇴 나이: {profile.retirementAge}세</span>
             <span>은퇴까지: {yearsToRetirement}년</span>
+            <span>
+              가계 구성원: {profile.householdSize || 1}명
+              {profile.hasSpouse && (
+                <span className={styles.spouseIndicator}> (배우자 포함)</span>
+              )}
+            </span>
           </div>
+          {profile.householdMembers && profile.householdMembers.length > 0 && (
+            <div className={styles.householdInfo}>
+              <h3>가계 구성원</h3>
+              <div className={styles.memberList}>
+                {profile.householdMembers.map((member, index) => (
+                  <div key={member.id || index} className={styles.memberItem}>
+                    <span className={styles.memberName}>{member.name}</span>
+                    <span className={styles.memberRelationship}>
+                      ({member.relationship})
+                    </span>
+                    <span className={styles.memberAge}>
+                      {member.birthDate
+                        ? calculateAge(member.birthDate) + "세"
+                        : "나이 미상"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        <button className={styles.backButton} onClick={() => navigate("/")}>
-          ← 프로필 목록
-        </button>
       </header>
 
       {error && (

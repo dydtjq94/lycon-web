@@ -15,6 +15,8 @@ import {
 import styles from "./CashflowChart.module.css";
 
 export default function CashflowChart({ data }) {
+  console.log("CashflowChart - 받은 데이터:", data);
+
   if (!data || data.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -24,21 +26,36 @@ export default function CashflowChart({ data }) {
     );
   }
 
-  // Custom Tooltip for combined chart
+  // 데이터 유효성 검사
+  const validData = data.filter(
+    (item) => item && typeof item.year === "number" && !isNaN(item.year)
+  );
+
+  if (validData.length === 0) {
+    return (
+      <div className={styles.emptyState}>
+        <p>유효한 현금 흐름 데이터가 없습니다.</p>
+        <p>데이터를 확인해주세요.</p>
+      </div>
+    );
+  }
+
+  // Custom Tooltip for net cashflow only
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const entry = payload[0];
       return (
         <div className={styles.tooltip}>
           <p className={styles.tooltipLabel}>{label}년</p>
-          {payload.map((entry, index) => (
-            <p
-              key={index}
-              className={styles.tooltipItem}
-              style={{ color: entry.color }}
-            >
-              {entry.name}: {formatCurrency(entry.value)}
-            </p>
-          ))}
+          <p
+            className={styles.tooltipItem}
+            style={{
+              color: entry.color,
+              "--tooltip-color": entry.color,
+            }}
+          >
+            순현금흐름: {formatCurrency(entry.value)}
+          </p>
         </div>
       );
     }
@@ -56,57 +73,118 @@ export default function CashflowChart({ data }) {
     }).format(value);
   };
 
-  // Y-axis formatting
+  // Y-axis formatting - 더 깔끔한 표시
   const formatYAxis = (value) => {
     if (value >= 100000000) {
-      return `${(value / 100000000).toFixed(1)}억`;
+      return `${(value / 100000000).toFixed(0)}억`;
     } else if (value >= 10000) {
-      return `${(value / 10000).toFixed(1)}만`;
+      return `${(value / 10000).toFixed(0)}만`;
+    } else if (value <= -100000000) {
+      return `-${Math.abs(value / 100000000).toFixed(0)}억`;
+    } else if (value <= -10000) {
+      return `-${Math.abs(value / 10000).toFixed(0)}만`;
     }
     return value.toLocaleString();
   };
 
-  // 차트 데이터 포맷팅 (년 단위)
-  const chartData = data.map((item) => ({
+  // 차트 데이터 포맷팅 (순현금흐름만)
+  const chartData = validData.map((item) => ({
     year: item.year,
-    income: item.income,
-    pension: item.pension,
-    expense: item.expense,
-    debtPayment: item.debtPayment,
-    netCashflow: item.netCashflow,
-    cumulative: item.cumulative,
-    // 색상을 미리 계산
-    fill: item.netCashflow >= 0 ? "#10b981" : "#ef4444",
+    netCashflow: Number(item.netCashflow) || 0,
   }));
 
-  // Y축 도메인 계산 (0원 기준으로 고정)
-  const allValues = chartData.map((item) => item.netCashflow);
-  const minValue = Math.min(...allValues, 0);
-  const maxValue = Math.max(...allValues, 0);
+  console.log("CashflowChart - 포맷팅된 차트 데이터:", chartData);
+
+  // Y축 도메인 계산 (순현금흐름만) - 더 균형잡힌 범위
+  const netCashflowValues = chartData
+    .map((item) => item.netCashflow)
+    .filter((val) => !isNaN(val));
+
+  if (netCashflowValues.length === 0) {
+    return (
+      <div className={styles.emptyState}>
+        <p>유효한 현금 흐름 데이터가 없습니다.</p>
+        <p>데이터를 확인해주세요.</p>
+      </div>
+    );
+  }
+
+  // 양수와 음수 값을 분리하여 계산
+  const positiveValues = netCashflowValues.filter((val) => val > 0);
+  const negativeValues = netCashflowValues.filter((val) => val < 0);
+
+  let minValue = 0;
+  let maxValue = 1000000;
+
+  if (positiveValues.length > 0) {
+    const maxPositive = Math.max(...positiveValues);
+    maxValue = maxPositive * 1.1; // 최대값의 110%로 여유 공간 확보
+  }
+
+  if (negativeValues.length > 0) {
+    const minNegative = Math.min(...negativeValues);
+    minValue = minNegative * 1.1; // 최소값의 110%로 여유 공간 확보
+  }
+
+  // 0을 포함하도록 조정
+  if (minValue > 0) minValue = 0;
+  if (maxValue < 0) maxValue = 0;
 
   return (
     <div className={styles.chartContainer}>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          margin={{ top: 10, right: 10, left: 40, bottom: 30 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
             dataKey="year"
             stroke="#6b7280"
-            fontSize={12}
+            fontSize={11}
             tick={{ fill: "#6b7280" }}
+            tickLine={{ stroke: "#6b7280" }}
+            axisLine={{ stroke: "#6b7280" }}
+            interval="preserveStartEnd"
+            tickCount={8}
+            domain={["dataMin", 2100]}
+            label={{
+              value: "년도",
+              position: "insideBottom",
+              offset: -5,
+              style: {
+                textAnchor: "middle",
+                fill: "#374151",
+                fontSize: "12px",
+                fontWeight: "500",
+              },
+            }}
           />
           <YAxis
             stroke="#6b7280"
-            fontSize={12}
+            fontSize={10}
             tick={{ fill: "#6b7280" }}
+            tickLine={{ stroke: "#6b7280" }}
+            axisLine={{ stroke: "#6b7280" }}
             tickFormatter={formatYAxis}
             domain={[minValue, maxValue]}
+            width={50}
+            tickCount={8}
+            allowDecimals={false}
+            label={{
+              value: "순현금흐름 (원)",
+              angle: -90,
+              position: "insideLeft",
+              offset: -10,
+              style: {
+                textAnchor: "middle",
+                fill: "#374151",
+                fontSize: "12px",
+                fontWeight: "500",
+              },
+            }}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
 
           {/* 0원 기준선 */}
           <ReferenceLine
@@ -117,25 +195,21 @@ export default function CashflowChart({ data }) {
           />
 
           {/* 순현금흐름 바 (양수는 녹색, 음수는 빨간색) */}
-          <Bar dataKey="netCashflow" name="순현금흐름">
+          <Bar
+            dataKey="netCashflow"
+            name="순현금흐름"
+            maxBarSize={50}
+            radius={[2, 2, 2, 2]}
+          >
             {chartData.map((entry, index) => (
               <Cell
-                key={`cell-${index}`}
+                key={`netcashflow-cell-${entry.year}-${index}`}
                 fill={entry.netCashflow >= 0 ? "#10b981" : "#ef4444"}
               />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-
-      <div className={styles.chartInfo}>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>최근 순현금흐름:</span>
-          <span className={styles.infoValue}>
-            {formatCurrency(data[data.length - 1]?.netCashflow || 0)}
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

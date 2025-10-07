@@ -134,12 +134,38 @@
   margin-bottom: 1rem;
 }
 
+.profileActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .profileName {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1f2937;
   margin: 0;
   flex: 1;
+}
+
+.editButton {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #2563eb;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.editButton:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
 }
 
 .deleteButton {
@@ -231,5 +257,54 @@
 
   .profileName {
     font-size: 1.25rem;
+  }
+}
+
+/* 가계 구성원 관련 스타일 */
+.spouseIndicator {
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.householdMembers {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.householdMembers .label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.memberList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.memberTag {
+  background: #f0f9ff;
+  color: #0369a1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #bae6fd;
+}
+
+/* 반응형 디자인 - 가계 구성원 */
+@media (max-width: 768px) {
+  .memberList {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .memberTag {
+    text-align: center;
+    padding: 0.5rem;
   }
 }
