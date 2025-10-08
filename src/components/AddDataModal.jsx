@@ -995,8 +995,8 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
             </div>
           )}
 
-          {/* 연금 관련 필드 */}
-          {config.showPensionFields && (
+          {/* 연금 관련 필드 - 연금 카테고리에서만 표시 */}
+          {category === "pensions" && (
             <>
               <div className={styles.field}>
                 <label htmlFor="pensionType" className={styles.label}>

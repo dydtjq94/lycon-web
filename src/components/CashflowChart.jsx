@@ -203,7 +203,7 @@ export default function CashflowChart({ data }) {
           >
             {chartData.map((entry, index) => (
               <Cell
-                key={`netcashflow-cell-${entry.year}-${index}`}
+                key={`netcashflow-cell-${entry.year}-${index}-${entry.netCashflow}`}
                 fill={entry.netCashflow >= 0 ? "#10b981" : "#ef4444"}
               />
             ))}

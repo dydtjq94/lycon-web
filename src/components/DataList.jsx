@@ -871,8 +871,8 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                 </div>
               )}
 
-              {/* 연금 관련 필드 */}
-              {config.showPensionFields && (
+              {/* 연금 관련 필드 - 연금 카테고리에서만 표시 */}
+              {category === "pensions" && (
                 <div className={styles.editField}>
                   <label>연금 종류 *</label>
                   <select
@@ -1113,7 +1113,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                     </span>
                   </div>
                 )}
-                {item.pensionType && (
+                {category === "pensions" && item.pensionType && (
                   <div className={styles.detailItem}>
                     <span className={styles.detailLabel}>연금 종류:</span>
                     <span className={styles.detailValue}>

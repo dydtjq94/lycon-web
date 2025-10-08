@@ -65,7 +65,7 @@ export default function DashboardPage() {
   // 재무 데이터 실시간 구독
   useEffect(() => {
     if (!profileId) return;
-    const categories = ["incomes", "assets", "debts", "expenses", "pensions"];
+    const categories = ["incomes", "expenses", "pensions", "assets", "debts"];
     const unsubscribes = [];
     categories.forEach((category) => {
       const unsubscribe = dataItemService.subscribeToItems(
@@ -353,22 +353,6 @@ export default function DashboardPage() {
               </button>
               <button
                 className={`${styles.categoryButton} ${
-                  selectedCategory === "assets" ? styles.active : ""
-                }`}
-                onClick={() => handleCategorySelect("assets")}
-              >
-                🏦 자산
-              </button>
-              <button
-                className={`${styles.categoryButton} ${
-                  selectedCategory === "debts" ? styles.active : ""
-                }`}
-                onClick={() => handleCategorySelect("debts")}
-              >
-                💳 부채
-              </button>
-              <button
-                className={`${styles.categoryButton} ${
                   selectedCategory === "expenses" ? styles.active : ""
                 }`}
                 onClick={() => handleCategorySelect("expenses")}
@@ -382,6 +366,22 @@ export default function DashboardPage() {
                 onClick={() => handleCategorySelect("pensions")}
               >
                 🏛️ 연금
+              </button>
+              <button
+                className={`${styles.categoryButton} ${
+                  selectedCategory === "assets" ? styles.active : ""
+                }`}
+                onClick={() => handleCategorySelect("assets")}
+              >
+                🏦 자산
+              </button>
+              <button
+                className={`${styles.categoryButton} ${
+                  selectedCategory === "debts" ? styles.active : ""
+                }`}
+                onClick={() => handleCategorySelect("debts")}
+              >
+                💳 부채
               </button>
             </div>
           </div>

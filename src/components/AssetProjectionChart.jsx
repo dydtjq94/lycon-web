@@ -111,6 +111,16 @@ export default function AssetProjectionChart({ data, assetBreakdown }) {
   console.log("AssetProjectionChart - assetTypes:", Array.from(assetTypes));
   console.log("AssetProjectionChart - chartData:", chartData);
 
+  // 자산 데이터가 없을 때 빈 상태 표시
+  if (assetTypes.size === 0) {
+    return (
+      <div className={styles.emptyState}>
+        <p>자산 데이터가 없습니다.</p>
+        <p>자산 데이터를 추가해보세요.</p>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.chartContainer}>
       <ResponsiveContainer width="100%" height="100%">
@@ -170,7 +180,7 @@ export default function AssetProjectionChart({ data, assetBreakdown }) {
           {/* 자산 세부 내역 바들 */}
           {Array.from(assetTypes).map((assetName, index) => (
             <Bar
-              key={`asset-${assetName}-${index}`}
+              key={`asset-${assetName}-${index}-${Date.now()}`}
               dataKey={assetName}
               stackId="assets"
               fill={getAssetColor(assetName, index)}
