@@ -79,6 +79,12 @@
   background-color: var(--tooltip-color, #6b7280);
 }
 
+.retirementLabel {
+  color: #ef4444;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .chartContainer > div:first-child {

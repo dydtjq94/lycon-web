@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import styles from "./AssetProjectionChart.module.css";
 
-export default function AssetProjectionChart({ data, assetBreakdown }) {
+export default function AssetProjectionChart({ data, assetBreakdown, profile = null }) {
   if (!data || data.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -24,12 +24,24 @@ export default function AssetProjectionChart({ data, assetBreakdown }) {
     );
   }
 
+  // 은퇴 시점 찾기
+  const retirementYear = profile && profile.retirementAge 
+    ? data.find(item => item.age && item.age >= profile.retirementAge)?.year
+    : null;
+
   // 툴팁 커스터마이징
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const dataItem = data.find(item => item.year === label);
+      const ageText = dataItem && dataItem.age ? ` (${dataItem.age}세)` : '';
+      const isRetirementYear = label === retirementYear;
+      
       return (
         <div className={styles.tooltip}>
-          <p className={styles.tooltipLabel}>{label}</p>
+          <p className={styles.tooltipLabel}>
+            {label}년{ageText}
+            {isRetirementYear && <span className={styles.retirementLabel}> - 은퇴</span>}
+          </p>
           {payload.map((entry, index) => (
             <p
               key={index}
@@ -71,6 +83,7 @@ export default function AssetProjectionChart({ data, assetBreakdown }) {
     const yearBreakdown = assetBreakdown[item.year] || {};
     return {
       year: item.year,
+      age: item.age, // 나이 정보 추가
       assets: item.assets,
       debt: item.debt,
       netAssets: item.netAssets,
@@ -78,6 +91,15 @@ export default function AssetProjectionChart({ data, assetBreakdown }) {
       ...yearBreakdown, // 자산 세부 내역 추가
     };
   });
+
+  // X축 라벨 포맷팅 함수 (나이 기반)
+  const formatXAxisLabel = (value) => {
+    const dataItem = chartData.find(item => item.year === value);
+    if (dataItem && dataItem.age) {
+      return `${value}\n(${dataItem.age}세)`;
+    }
+    return value;
+  };
 
   // 자산 종류별 색상 정의
   const assetColors = {
@@ -139,8 +161,9 @@ export default function AssetProjectionChart({ data, assetBreakdown }) {
             interval="preserveStartEnd"
             tickCount={8}
             domain={["dataMin", 2100]}
+            tickFormatter={formatXAxisLabel}
             label={{
-              value: "년도",
+              value: "년도 (나이)",
               position: "insideBottom",
               offset: -5,
               style: {
@@ -176,6 +199,25 @@ export default function AssetProjectionChart({ data, assetBreakdown }) {
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
+
+          {/* 은퇴 시점 강조선 */}
+          {retirementYear && (
+            <ReferenceLine
+              x={retirementYear}
+              stroke="#ef4444"
+              strokeWidth={3}
+              strokeDasharray="8 4"
+              label={{
+                value: "은퇴",
+                position: "top",
+                style: {
+                  fill: "#ef4444",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                },
+              }}
+            />
+          )}
 
           {/* 자산 세부 내역 바들 */}
           {Array.from(assetTypes).map((assetName, index) => (

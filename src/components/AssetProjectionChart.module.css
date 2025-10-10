@@ -53,3 +53,9 @@
   margin: 0.25rem 0;
   font-weight: 500;
 }
+
+.retirementLabel {
+  color: #ef4444;
+  font-weight: bold;
+  margin-left: 4px;
+}

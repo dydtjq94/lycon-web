@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import styles from "./CashflowChart.module.css";
 
-export default function CashflowChart({ data }) {
+export default function CashflowChart({ data, profile = null }) {
   console.log("CashflowChart - 받은 데이터:", data);
 
   if (!data || data.length === 0) {
@@ -40,13 +40,25 @@ export default function CashflowChart({ data }) {
     );
   }
 
+  // 은퇴 시점 찾기
+  const retirementYear = profile && profile.retirementAge 
+    ? data.find(item => item.age && item.age >= profile.retirementAge)?.year
+    : null;
+
   // Custom Tooltip for net cashflow only
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const entry = payload[0];
+      const dataItem = data.find(item => item.year === label);
+      const ageText = dataItem && dataItem.age ? ` (${dataItem.age}세)` : '';
+      const isRetirementYear = label === retirementYear;
+      
       return (
         <div className={styles.tooltip}>
-          <p className={styles.tooltipLabel}>{label}년</p>
+          <p className={styles.tooltipLabel}>
+            {label}년{ageText}
+            {isRetirementYear && <span className={styles.retirementLabel}> - 은퇴</span>}
+          </p>
           <p
             className={styles.tooltipItem}
             style={{
@@ -87,11 +99,21 @@ export default function CashflowChart({ data }) {
     return value.toLocaleString();
   };
 
-  // 차트 데이터 포맷팅 (순현금흐름만)
+  // 차트 데이터 포맷팅 (순현금흐름만, 나이 정보 포함)
   const chartData = validData.map((item) => ({
     year: item.year,
+    age: item.age, // 나이 정보 추가
     netCashflow: Number(item.netCashflow) || 0,
   }));
+
+  // X축 라벨 포맷팅 함수 (나이 기반)
+  const formatXAxisLabel = (value) => {
+    const dataItem = chartData.find(item => item.year === value);
+    if (dataItem && dataItem.age) {
+      return `${value}\n(${dataItem.age}세)`;
+    }
+    return value;
+  };
 
   console.log("CashflowChart - 포맷팅된 차트 데이터:", chartData);
 
@@ -148,8 +170,9 @@ export default function CashflowChart({ data }) {
             interval="preserveStartEnd"
             tickCount={8}
             domain={["dataMin", 2100]}
+            tickFormatter={formatXAxisLabel}
             label={{
-              value: "년도",
+              value: "년도 (나이)",
               position: "insideBottom",
               offset: -5,
               style: {
@@ -193,6 +216,25 @@ export default function CashflowChart({ data }) {
             strokeWidth={2}
             strokeDasharray="5 5"
           />
+
+          {/* 은퇴 시점 강조선 */}
+          {retirementYear && (
+            <ReferenceLine
+              x={retirementYear}
+              stroke="#ef4444"
+              strokeWidth={3}
+              strokeDasharray="8 4"
+              label={{
+                value: "은퇴",
+                position: "top",
+                style: {
+                  fill: "#ef4444",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                },
+              }}
+            />
+          )}
 
           {/* 순현금흐름 바 (양수는 녹색, 음수는 빨간색) */}
           <Bar

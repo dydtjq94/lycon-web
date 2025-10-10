@@ -217,13 +217,13 @@ export default function DashboardPage() {
     const assets = calculateAssets(data, timeline, cashflow);
     const assetBreakdown = calculateAssetBreakdown(data, timeline);
 
-    const yearlyCashflow = formatYearlyChartData(cashflow, "cashflow");
+    const yearlyCashflow = formatYearlyChartData(cashflow, "cashflow", profile.birthDate);
     console.log("년별 현금흐름 데이터:", yearlyCashflow);
 
     return {
       timeline,
       cashflow: yearlyCashflow,
-      assets: formatYearlyChartData(assets, "assets"),
+      assets: formatYearlyChartData(assets, "assets", profile.birthDate),
       assetBreakdown,
     };
   }, [profile, data]);
@@ -421,7 +421,10 @@ export default function DashboardPage() {
           <div className={styles.chartsPanel}>
             <div className={styles.chartContainer}>
               <h2 className={styles.chartTitle}>현금 흐름 시뮬레이션</h2>
-              <CashflowChart data={simulationData?.cashflow || []} />
+              <CashflowChart 
+                data={simulationData?.cashflow || []} 
+                profile={profile}
+              />
             </div>
 
             <div className={styles.chartContainer}>
@@ -429,6 +432,7 @@ export default function DashboardPage() {
               <AssetProjectionChart
                 data={simulationData?.assets || []}
                 assetBreakdown={simulationData?.assetBreakdown || {}}
+                profile={profile}
               />
             </div>
           </div>

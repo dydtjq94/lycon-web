@@ -218,13 +218,6 @@ export function calculateCashflow(data, timeline) {
           index
         );
         totalPension += adjustedAmount;
-
-        // 연금 디버깅 로그
-        console.log(
-          `연금 활성화: ${
-            pension.title
-          }, ${month}, ${adjustedAmount.toLocaleString()}원`
-        );
       }
     });
 
@@ -260,16 +253,6 @@ export function calculateCashflow(data, timeline) {
     const netCashflow =
       totalIncome + totalPension - totalExpense - totalDebtPayment;
 
-    // 연금 디버깅 (매월 첫 번째에만)
-    if (index < 3) {
-      console.log(`=== ${month} ===`);
-      console.log("totalIncome:", totalIncome);
-      console.log("totalPension:", totalPension);
-      console.log("totalExpense:", totalExpense);
-      console.log("totalDebtPayment:", totalDebtPayment);
-      console.log("netCashflow:", netCashflow);
-    }
-
     cashflow.push({
       month,
       income: totalIncome,
@@ -302,16 +285,91 @@ export function calculateAssets(data, timeline, cashflow) {
     let totalAssets = 0;
     let totalDebt = 0;
 
-    // 자산 계산
+    // 자산 계산 (빈도별 처리)
     data.assets.forEach((asset) => {
       if (isActiveInMonth(asset, month)) {
-        const monthlyAmount = getMonthlyAmount(asset);
-        const monthsElapsed = index;
         const annualRate = (asset.rate || 0) / 100;
         const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
-        const currentValue =
-          monthlyAmount * Math.pow(1 + monthlyRate, monthsElapsed);
-        totalAssets += currentValue;
+
+        if (asset.frequency === "once") {
+          // 일회성 자산: 시작년도에 원금 추가, 이후 모든 년도에 수익률로 계속 증가
+          const startYear = new Date(asset.startDate).getFullYear();
+          const currentYear = new Date(month).getFullYear();
+
+          // 시작년도 이후부터는 계속 수익률 적용
+          if (currentYear >= startYear) {
+            const startYearIndex = timeline.findIndex(
+              (m) => new Date(m).getFullYear() === startYear
+            );
+            if (startYearIndex !== -1) {
+              const monthsElapsed = index - startYearIndex;
+              if (monthsElapsed >= 0) {
+                const currentValue =
+                  asset.amount * Math.pow(1 + monthlyRate, monthsElapsed);
+                totalAssets += currentValue;
+              }
+            }
+          }
+        } else {
+          // 정기적 자산: 매년 추가되는 금액을 모두 누적 계산
+          const startDate = new Date(asset.startDate);
+          const endDate = asset.endDate
+            ? new Date(asset.endDate)
+            : new Date(month);
+          const currentDate = new Date(month);
+
+          let totalValue = 0;
+
+          // 시작일부터 현재까지의 모든 추가 시점을 계산
+          let addDate = new Date(startDate);
+          let addCount = 0;
+          const maxAdditions = 100; // 안전장치: 최대 100회 추가로 제한
+
+          // 시작일이 현재 월보다 이전이거나 같은 경우에만 계산
+          if (addDate <= currentDate) {
+            while (
+              addDate <= currentDate &&
+              addDate <= endDate &&
+              addCount < maxAdditions
+            ) {
+              const addMonthIndex = timeline.findIndex((m) => {
+                const timelineDate = new Date(m);
+                return (
+                  timelineDate.getFullYear() === addDate.getFullYear() &&
+                  timelineDate.getMonth() === addDate.getMonth()
+                );
+              });
+
+              if (addMonthIndex !== -1) {
+                const monthsElapsed = index - addMonthIndex;
+                if (monthsElapsed >= 0) {
+                  const currentValue =
+                    asset.amount * Math.pow(1 + monthlyRate, monthsElapsed);
+                  totalValue += currentValue;
+                }
+              }
+
+              // 다음 추가일 계산
+              switch (asset.frequency) {
+                case "monthly":
+                  addDate.setMonth(addDate.getMonth() + 1);
+                  break;
+                case "quarterly":
+                  addDate.setMonth(addDate.getMonth() + 3);
+                  break;
+                case "yearly":
+                  addDate.setFullYear(addDate.getFullYear() + 1);
+                  break;
+                default:
+                  addDate.setFullYear(addDate.getFullYear() + 100); // 무한 루프 방지
+                  break;
+              }
+              addCount++;
+            }
+          }
+
+          totalAssets += totalValue;
+        }
       }
     });
 
@@ -423,19 +481,6 @@ function isActiveInMonth(item, month) {
     currentDate >= itemStartDate &&
     (!itemEndDate || currentDate <= itemEndDate);
 
-  // 디버깅 로그 (처음 몇 개만)
-  if (Math.random() < 0.01) {
-    // 1% 확률로만 로그 출력
-    console.log("isActiveInMonth 체크:", {
-      itemTitle: item.title,
-      month,
-      itemStart: itemStartDate.toISOString().split("T")[0],
-      itemEnd: itemEndDate?.toISOString().split("T")[0],
-      currentDate: currentDate.toISOString().split("T")[0],
-      isActive,
-    });
-  }
-
   return isActive;
 }
 
@@ -489,21 +534,52 @@ function getMonthlyAmount(item) {
 }
 
 /**
- * 년 단위 데이터로 변환
+ * 나이 기반 연도 변환 함수
+ * @param {string} month - 월 문자열 (YYYY-MM)
+ * @param {string} birthDate - 생년월일 (YYYY-MM-DD)
+ * @returns {number} 해당 월의 나이
+ */
+export function getAgeFromMonth(month, birthDate) {
+  if (!birthDate) return null;
+  
+  const birth = new Date(birthDate);
+  const currentMonth = new Date(month + "-01");
+  
+  // 한국 나이 계산 (년도만 고려)
+  const currentYear = currentMonth.getFullYear();
+  const birthYear = birth.getFullYear();
+  
+  return currentYear - birthYear + 1;
+}
+
+/**
+ * 은퇴 시점 월 찾기
+ * @param {Array} timeline - 월별 타임라인
+ * @param {string} birthDate - 생년월일
+ * @param {number} retirementAge - 은퇴 나이
+ * @returns {string|null} 은퇴 시점 월 (YYYY-MM)
+ */
+export function findRetirementMonth(timeline, birthDate, retirementAge) {
+  if (!birthDate || !retirementAge) return null;
+  
+  for (const month of timeline) {
+    const age = getAgeFromMonth(month, birthDate);
+    if (age && age >= retirementAge) {
+      return month;
+    }
+  }
+  return null;
+}
+
+/**
+ * 년 단위 데이터로 변환 (나이 기반)
  * @param {Array} monthlyData - 월별 시뮬레이션 데이터
  * @param {string} type - 차트 타입 ("cashflow" | "assets")
- * @returns {Array} 년별 차트 데이터
+ * @param {string} birthDate - 생년월일 (선택사항)
+ * @returns {Array} 년별 차트 데이터 (나이 정보 포함)
  */
-export function formatYearlyChartData(monthlyData, type) {
+export function formatYearlyChartData(monthlyData, type, birthDate = null) {
   const yearlyData = {};
-
-  console.log("=== formatYearlyChartData 디버깅 ===");
-  console.log("monthlyData length:", monthlyData.length);
-  console.log("monthlyData sample:", monthlyData.slice(0, 3));
-  console.log(
-    "2027년 데이터:",
-    monthlyData.filter((item) => item.month.includes("2027"))
-  );
 
   monthlyData.forEach((item) => {
     // YYYY-MM 형식을 YYYY-MM-01로 변환하여 유효한 날짜로 만들기
@@ -514,9 +590,13 @@ export function formatYearlyChartData(monthlyData, type) {
     const date = new Date(monthStr);
     const year = date.getFullYear();
 
+    // 나이 계산 (생년월일이 제공된 경우)
+    const age = birthDate ? getAgeFromMonth(item.month, birthDate) : null;
+
     if (!yearlyData[year]) {
       yearlyData[year] = {
         year: year,
+        age: age, // 나이 정보 추가
         income: 0,
         pension: 0,
         expense: 0,
@@ -555,17 +635,6 @@ export function formatYearlyChartData(monthlyData, type) {
         yearData.pension -
         yearData.expense -
         yearData.debtPayment;
-
-      // 연금이 있는 년도 디버깅
-      if (yearData.pension > 0) {
-        console.log(`${yearData.year}년 연금 집계:`, {
-          income: yearData.income,
-          pension: yearData.pension,
-          expense: yearData.expense,
-          debtPayment: yearData.debtPayment,
-          netCashflow: yearData.netCashflow,
-        });
-      }
     } else {
       yearData.netAssets = yearData.assets - yearData.debt;
     }
@@ -592,20 +661,98 @@ export function calculateAssetBreakdown(data, timeline) {
       yearlyBreakdown[year] = {};
     }
 
-    // 각 자산의 년말 가치 계산
+    // 각 자산의 년말 가치 계산 (빈도별 처리)
     assets.forEach((asset) => {
       if (isActiveInMonth(asset, month)) {
-        const monthlyAmount = getMonthlyAmount(asset);
-        const monthsElapsed = index;
         const annualRate = (asset.rate || 0) / 100;
         const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
-        const currentValue =
-          monthlyAmount * Math.pow(1 + monthlyRate, monthsElapsed);
 
-        if (!yearlyBreakdown[year][asset.title]) {
-          yearlyBreakdown[year][asset.title] = 0;
+        if (asset.frequency === "once") {
+          // 일회성 자산: 시작년도에 원금 추가, 이후 모든 년도에 수익률로 계속 증가
+          const startYear = new Date(asset.startDate).getFullYear();
+          const currentYear = new Date(month).getFullYear();
+
+          // 시작년도 이후부터는 계속 수익률 적용
+          if (currentYear >= startYear) {
+            const startYearIndex = timeline.findIndex(
+              (m) => new Date(m).getFullYear() === startYear
+            );
+            if (startYearIndex !== -1) {
+              const monthsElapsed = index - startYearIndex;
+              if (monthsElapsed >= 0) {
+                const currentValue =
+                  asset.amount * Math.pow(1 + monthlyRate, monthsElapsed);
+
+                if (!yearlyBreakdown[year][asset.title]) {
+                  yearlyBreakdown[year][asset.title] = 0;
+                }
+                yearlyBreakdown[year][asset.title] = currentValue;
+              }
+            }
+          }
+        } else {
+          // 정기적 자산: 매년 추가되는 금액을 모두 누적 계산
+          const startDate = new Date(asset.startDate);
+          const endDate = asset.endDate
+            ? new Date(asset.endDate)
+            : new Date(month);
+          const currentDate = new Date(month);
+
+          let totalValue = 0;
+
+          // 시작일부터 현재까지의 모든 추가 시점을 계산
+          let addDate = new Date(startDate);
+          let addCount = 0;
+          const maxAdditions = 100; // 안전장치: 최대 100회 추가로 제한
+
+          // 시작일이 현재 월보다 이전이거나 같은 경우에만 계산
+          if (addDate <= currentDate) {
+            while (
+              addDate <= currentDate &&
+              addDate <= endDate &&
+              addCount < maxAdditions
+            ) {
+              const addMonthIndex = timeline.findIndex((m) => {
+                const timelineDate = new Date(m);
+                return (
+                  timelineDate.getFullYear() === addDate.getFullYear() &&
+                  timelineDate.getMonth() === addDate.getMonth()
+                );
+              });
+
+              if (addMonthIndex !== -1) {
+                const monthsElapsed = index - addMonthIndex;
+                if (monthsElapsed >= 0) {
+                  const currentValue =
+                    asset.amount * Math.pow(1 + monthlyRate, monthsElapsed);
+                  totalValue += currentValue;
+                }
+              }
+
+              // 다음 추가일 계산
+              switch (asset.frequency) {
+                case "monthly":
+                  addDate.setMonth(addDate.getMonth() + 1);
+                  break;
+                case "quarterly":
+                  addDate.setMonth(addDate.getMonth() + 3);
+                  break;
+                case "yearly":
+                  addDate.setFullYear(addDate.getFullYear() + 1);
+                  break;
+                default:
+                  addDate.setFullYear(addDate.getFullYear() + 100); // 무한 루프 방지
+                  break;
+              }
+              addCount++;
+            }
+          }
+
+          if (!yearlyBreakdown[year][asset.title]) {
+            yearlyBreakdown[year][asset.title] = 0;
+          }
+          yearlyBreakdown[year][asset.title] = totalValue;
         }
-        yearlyBreakdown[year][asset.title] = currentValue;
       }
     });
   });
