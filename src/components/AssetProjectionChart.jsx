@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   ComposedChart,
   Line,
+  ReferenceLine,
 } from "recharts";
 import styles from "./AssetProjectionChart.module.css";
 
