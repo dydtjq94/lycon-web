@@ -172,13 +172,13 @@ function calculateDebtPayment(debt, month, timeline) {
 export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
   const { incomes = [], pensions = [], expenses = [], debts = [] } = data;
   const cashflow = [];
-  
+
   console.log("=== calculateYearlyCashflow 시작 ===");
   console.log("시작년도:", startYear, "종료년도:", endYear);
 
   for (let year = startYear; year <= endYear; year++) {
     const currentAge = birthDate ? getAgeFromYear(year, birthDate) : null;
-    
+
     let totalIncome = 0;
     let totalPension = 0;
     let totalExpense = 0;
@@ -188,7 +188,11 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
     incomes.forEach((income) => {
       if (isActiveInYear(income, year)) {
         const yearlyAmount = getYearlyAmount(income);
-        const adjustedAmount = applyYearlyGrowthRate(yearlyAmount, income, year);
+        const adjustedAmount = applyYearlyGrowthRate(
+          yearlyAmount,
+          income,
+          year
+        );
         totalIncome += adjustedAmount;
       }
     });
@@ -197,7 +201,11 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
     pensions.forEach((pension) => {
       if (isPensionActiveInYear(pension, year, currentAge)) {
         const yearlyAmount = getYearlyAmount(pension);
-        const adjustedAmount = applyYearlyGrowthRate(yearlyAmount, pension, year);
+        const adjustedAmount = applyYearlyGrowthRate(
+          yearlyAmount,
+          pension,
+          year
+        );
         totalPension += adjustedAmount;
       }
     });
@@ -206,7 +214,11 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
     expenses.forEach((expense) => {
       if (isActiveInYear(expense, year)) {
         const yearlyAmount = getYearlyAmount(expense);
-        const adjustedAmount = applyYearlyGrowthRate(yearlyAmount, expense, year);
+        const adjustedAmount = applyYearlyGrowthRate(
+          yearlyAmount,
+          expense,
+          year
+        );
         totalExpense += adjustedAmount;
       }
     });
@@ -217,10 +229,12 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
       totalDebtPayment += debtPayment;
     });
 
-    const netCashflow = totalIncome + totalPension - totalExpense - totalDebtPayment;
-    const cumulativeCashflow = cashflow.length === 0 
-      ? netCashflow 
-      : cashflow[cashflow.length - 1].cumulativeCashflow + netCashflow;
+    const netCashflow =
+      totalIncome + totalPension - totalExpense - totalDebtPayment;
+    const cumulativeCashflow =
+      cashflow.length === 0
+        ? netCashflow
+        : cashflow[cashflow.length - 1].cumulativeCashflow + netCashflow;
 
     cashflow.push({
       year,
@@ -246,33 +260,39 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
  * @param {string} birthDate - 생년월일
  * @returns {Array} 년별 자산 데이터
  */
-export function calculateYearlyAssets(data, startYear, endYear, cashflow, birthDate) {
+export function calculateYearlyAssets(
+  data,
+  startYear,
+  endYear,
+  cashflow,
+  birthDate
+) {
   const { assets = [], debts = [] } = data;
   const assetData = [];
-  
+
   // 자산별 누적 값 추적
   const assetValues = {};
   const debtValues = {};
 
   for (let year = startYear; year <= endYear; year++) {
     const currentAge = birthDate ? getAgeFromYear(year, birthDate) : null;
-    
+
     // 자산 계산 (점진적)
     assets.forEach((asset) => {
       if (isActiveInYear(asset, year)) {
         const assetKey = asset.title;
-        
+
         if (!assetValues[assetKey]) {
           assetValues[assetKey] = {
             principal: 0,
             accumulated: 0,
-            lastContributionYear: null
+            lastContributionYear: null,
           };
         }
 
         const yearlyAmount = getYearlyAmount(asset);
         const annualRate = (asset.rate || 0) / 100;
-        
+
         if (asset.frequency === "once") {
           // 일회성 자산: 시작년도에만 추가
           const startYear = new Date(asset.startDate).getFullYear();
@@ -281,12 +301,13 @@ export function calculateYearlyAssets(data, startYear, endYear, cashflow, birthD
             assetValues[assetKey].accumulated = yearlyAmount;
           } else if (year > startYear) {
             // 이전 년도 값에 수익률 적용
-            assetValues[assetKey].accumulated *= (1 + annualRate);
+            assetValues[assetKey].accumulated *= 1 + annualRate;
           }
         } else {
           // 정기적 자산: 매년 추가 + 이전 값에 수익률 적용
-          assetValues[assetKey].accumulated = 
-            (assetValues[assetKey].accumulated + yearlyAmount) * (1 + annualRate);
+          assetValues[assetKey].accumulated =
+            (assetValues[assetKey].accumulated + yearlyAmount) *
+            (1 + annualRate);
           assetValues[assetKey].principal += yearlyAmount;
         }
       }
@@ -296,19 +317,19 @@ export function calculateYearlyAssets(data, startYear, endYear, cashflow, birthD
     debts.forEach((debt) => {
       if (isActiveInYear(debt, year)) {
         const debtKey = debt.title;
-        
+
         if (!debtValues[debtKey]) {
           debtValues[debtKey] = {
             principal: 0,
-            accumulated: 0
+            accumulated: 0,
           };
         }
 
         const yearlyAmount = getYearlyAmount(debt);
         const annualRate = (debt.rate || 0) / 100;
-        
+
         // 부채는 원금에 이자 적용
-        debtValues[debtKey].accumulated = 
+        debtValues[debtKey].accumulated =
           (debtValues[debtKey].accumulated + yearlyAmount) * (1 + annualRate);
         debtValues[debtKey].principal += yearlyAmount;
       }
@@ -317,17 +338,17 @@ export function calculateYearlyAssets(data, startYear, endYear, cashflow, birthD
     // 총 자산 및 부채 계산
     let totalAssets = 0;
     let totalDebt = 0;
-    
-    Object.values(assetValues).forEach(asset => {
+
+    Object.values(assetValues).forEach((asset) => {
       totalAssets += asset.accumulated;
     });
-    
-    Object.values(debtValues).forEach(debt => {
+
+    Object.values(debtValues).forEach((debt) => {
       totalDebt += debt.accumulated;
     });
 
     const netAssets = totalAssets - totalDebt;
-    const currentCashflow = cashflow.find(cf => cf.year === year);
+    const currentCashflow = cashflow.find((cf) => cf.year === year);
     const cumulativeCashflow = currentCashflow?.cumulativeCashflow || 0;
 
     assetData.push({
@@ -723,14 +744,14 @@ function getMonthlyAmount(item) {
  */
 export function getAgeFromMonth(month, birthDate) {
   if (!birthDate) return null;
-  
+
   const birth = new Date(birthDate);
   const currentMonth = new Date(month + "-01");
-  
+
   // 한국 나이 계산 (년도만 고려)
   const currentYear = currentMonth.getFullYear();
   const birthYear = birth.getFullYear();
-  
+
   return currentYear - birthYear + 1;
 }
 
@@ -742,10 +763,10 @@ export function getAgeFromMonth(month, birthDate) {
  */
 export function getAgeFromYear(year, birthDate) {
   if (!birthDate) return null;
-  
+
   const birth = new Date(birthDate);
   const birthYear = birth.getFullYear();
-  
+
   // 한국 나이 계산 (년도만 고려)
   return year - birthYear + 1;
 }
@@ -759,10 +780,10 @@ export function getAgeFromYear(year, birthDate) {
 function isActiveInYear(item, year) {
   const itemStart = new Date(item.startDate);
   const itemEnd = item.endDate ? new Date(item.endDate) : null;
-  
+
   const startYear = itemStart.getFullYear();
   const endYear = itemEnd ? itemEnd.getFullYear() : null;
-  
+
   return year >= startYear && (!endYear || year <= endYear);
 }
 
@@ -778,13 +799,13 @@ function isPensionActiveInYear(pension, year, currentAge) {
   if (!pension.startAge) {
     return isActiveInYear(pension, year);
   }
-  
+
   if (!currentAge) return false;
-  
+
   // 수령 시작/종료 나이 확인
   const startAge = pension.startAge || 65;
   const endAge = pension.endAge || 100;
-  
+
   return currentAge >= startAge && currentAge <= endAge;
 }
 
@@ -795,7 +816,7 @@ function isPensionActiveInYear(pension, year, currentAge) {
  */
 function getYearlyAmount(item) {
   const frequency = item.frequency || "yearly";
-  
+
   switch (frequency) {
     case "daily":
       return item.amount * 365;
@@ -848,7 +869,8 @@ function calculateYearlyDebtPayment(debt, year) {
   }
 
   const principalAmount = parseFloat(debt.principalAmount) || 0;
-  const interestRate = parseFloat(debt.interestRate) || parseFloat(debt.rate) || 0;
+  const interestRate =
+    parseFloat(debt.interestRate) || parseFloat(debt.rate) || 0;
   const repaymentType = debt.repaymentType || "equal_payment";
 
   if (repaymentType === "lump_sum") {
@@ -861,9 +883,9 @@ function calculateYearlyDebtPayment(debt, year) {
     // 원리금균등상환
     const startYear = new Date(debt.startDate).getFullYear();
     const endYear = debt.endDate ? new Date(debt.endDate).getFullYear() : null;
-    
+
     if (!endYear || year < startYear || year > endYear) return 0;
-    
+
     const totalYears = endYear - startYear + 1;
     return calculatePMT(principalAmount, interestRate, totalYears);
   }
@@ -906,7 +928,7 @@ export function findRetirementMonth(timeline, birthDate, retirementAge) {
  */
 export function formatYearlyChartData(yearlyData, type) {
   // 이미 년별 데이터이므로 그대로 반환
-  return yearlyData.map(item => ({
+  return yearlyData.map((item) => ({
     year: item.year,
     age: item.age,
     income: item.income || 0,

@@ -42,6 +42,105 @@ export default function DashboardPage() {
   const [selectedCategory, setSelectedCategory] = useState("incomes"); // 기본값: 수입
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [simulationCache, setSimulationCache] = useState(null);
+  const [lastDataHash, setLastDataHash] = useState(null);
+
+  // 데이터 해시 계산 함수 (데이터 변경 감지용)
+  const calculateDataHash = (profile, data) => {
+    if (!profile || !data) return null;
+    
+    const dataString = JSON.stringify({
+      profile: {
+        birthDate: profile.birthDate,
+        retirementAge: profile.retirementAge,
+      },
+      data: {
+        incomes: data.incomes || [],
+        assets: data.assets || [],
+        debts: data.debts || [],
+        expenses: data.expenses || [],
+        pensions: data.pensions || [],
+      }
+    });
+    
+    // 간단한 해시 함수
+    let hash = 0;
+    for (let i = 0; i < dataString.length; i++) {
+      const char = dataString.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // 32bit 정수로 변환
+    }
+    return hash.toString();
+  };
+
+  // 시뮬레이션 계산 함수
+  const calculateSimulation = (profile, data) => {
+    if (!profile || !data) return null;
+
+    // 데이터가 비어있는지 확인
+    const hasData =
+      data &&
+      ((data.incomes && data.incomes.length > 0) ||
+        (data.assets && data.assets.length > 0) ||
+        (data.debts && data.debts.length > 0) ||
+        (data.expenses && data.expenses.length > 0) ||
+        (data.pensions && data.pensions.length > 0));
+
+    if (!hasData) {
+      console.log("재무 데이터가 없어서 시뮬레이션 중단");
+      return null;
+    }
+
+    // 새로운 효율적인 년별 계산 방식
+    const currentYear = new Date().getFullYear();
+    const birthDate = new Date(profile.birthDate);
+    const retirementYear = birthDate.getFullYear() + profile.retirementAge;
+    
+    // 시뮬레이션 종료년도: 2100년까지 또는 은퇴 후 30년 중 더 짧은 것
+    const maxEndYear = Math.min(retirementYear + 30, 2100);
+
+    console.log("=== 시뮬레이션 시작 (년별 방식) ===");
+    console.log("현재 년도:", currentYear);
+    console.log("생년월일:", profile.birthDate);
+    console.log("은퇴나이:", profile.retirementAge);
+    console.log("은퇴년도:", retirementYear);
+    console.log("시뮬레이션 종료년도:", maxEndYear);
+
+    // 새로운 년별 계산 방식 사용
+    const yearlyCashflow = calculateYearlyCashflow(data, currentYear, maxEndYear, profile.birthDate);
+    console.log("년별 현금흐름 데이터:", yearlyCashflow);
+
+    const yearlyAssets = calculateYearlyAssets(data, currentYear, maxEndYear, yearlyCashflow, profile.birthDate);
+    console.log("년별 자산 데이터:", yearlyAssets);
+
+    // 자산 세부 내역은 기존 방식 유지 (호환성)
+    const today = new Date().toISOString().split("T")[0];
+    const endDate = new Date(maxEndYear, 11, 31);
+    const endDateStr = endDate.toISOString().split("T")[0];
+    const timeline = generateMonthlyTimeline(today, endDateStr);
+    const assetBreakdown = calculateAssetBreakdown(data, timeline);
+
+    return {
+      cashflow: formatYearlyChartData(yearlyCashflow, "cashflow"),
+      assets: formatYearlyChartData(yearlyAssets, "assets"),
+      assetBreakdown,
+    };
+  };
+
+  // 데이터 변경 감지 및 시뮬레이션 업데이트
+  useEffect(() => {
+    if (!profile || !data) return;
+
+    const currentDataHash = calculateDataHash(profile, data);
+    
+    // 데이터가 변경되었거나 캐시가 없는 경우에만 시뮬레이션 재계산
+    if (currentDataHash !== lastDataHash) {
+      console.log("데이터 변경 감지, 시뮬레이션 재계산");
+      const simulationResult = calculateSimulation(profile, data);
+      setSimulationCache(simulationResult);
+      setLastDataHash(currentDataHash);
+    }
+  }, [profile, data, lastDataHash]);
 
   // 프로필 데이터 로드
   useEffect(() => {
@@ -110,6 +209,8 @@ export default function DashboardPage() {
     try {
       setError(null);
       await dataItemService.createItem(profileId, modalCategory, itemData);
+      // 캐시 무효화 (다음 렌더링에서 시뮬레이션 재계산)
+      setLastDataHash(null);
       handleCloseModal();
     } catch (error) {
       console.error("데이터 추가 오류:", error);
@@ -127,6 +228,8 @@ export default function DashboardPage() {
         itemId,
         updateData
       );
+      // 캐시 무효화 (다음 렌더링에서 시뮬레이션 재계산)
+      setLastDataHash(null);
     } catch (error) {
       console.error("데이터 수정 오류:", error);
       setError("데이터 수정에 실패했습니다. 다시 시도해주세요.");
@@ -139,6 +242,8 @@ export default function DashboardPage() {
       try {
         setError(null);
         await dataItemService.deleteItem(profileId, selectedCategory, itemId); // Use selectedCategory here
+        // 캐시 무효화 (다음 렌더링에서 시뮬레이션 재계산)
+        setLastDataHash(null);
       } catch (error) {
         console.error("데이터 삭제 오류:", error);
         setError("데이터 삭제에 실패했습니다. 다시 시도해주세요.");
@@ -146,73 +251,8 @@ export default function DashboardPage() {
     }
   };
 
-  // 시뮬레이션 데이터 계산
-  const simulationData = React.useMemo(() => {
-    console.log("=== 시뮬레이션 데이터 계산 시작 ===");
-    console.log("profile:", profile);
-    console.log("data:", data);
-
-    if (!profile) {
-      console.log("프로필이 없어서 시뮬레이션 중단");
-      return null;
-    }
-
-    // 데이터가 비어있는지 확인
-    const hasData =
-      data &&
-      ((data.incomes && data.incomes.length > 0) ||
-        (data.assets && data.assets.length > 0) ||
-        (data.debts && data.debts.length > 0) ||
-        (data.expenses && data.expenses.length > 0) ||
-        (data.pensions && data.pensions.length > 0));
-
-    console.log("데이터 존재 여부:", hasData);
-    console.log("incomes 길이:", data.incomes?.length || 0);
-    console.log("assets 길이:", data.assets?.length || 0);
-    console.log("debts 길이:", data.debts?.length || 0);
-    console.log("expenses 길이:", data.expenses?.length || 0);
-    console.log("pensions 길이:", data.pensions?.length || 0);
-
-    if (!hasData) {
-      console.log("재무 데이터가 없어서 시뮬레이션 중단");
-      return null;
-    }
-
-    // 새로운 효율적인 년별 계산 방식
-    const currentYear = new Date().getFullYear();
-    const birthDate = new Date(profile.birthDate);
-    const retirementYear = birthDate.getFullYear() + profile.retirementAge;
-    
-    // 시뮬레이션 종료년도: 2100년까지 또는 은퇴 후 30년 중 더 짧은 것
-    const maxEndYear = Math.min(retirementYear + 30, 2100);
-
-    console.log("=== 시뮬레이션 시작 (년별 방식) ===");
-    console.log("현재 년도:", currentYear);
-    console.log("생년월일:", profile.birthDate);
-    console.log("은퇴나이:", profile.retirementAge);
-    console.log("은퇴년도:", retirementYear);
-    console.log("시뮬레이션 종료년도:", maxEndYear);
-
-    // 새로운 년별 계산 방식 사용
-    const yearlyCashflow = calculateYearlyCashflow(data, currentYear, maxEndYear, profile.birthDate);
-    console.log("년별 현금흐름 데이터:", yearlyCashflow);
-
-    const yearlyAssets = calculateYearlyAssets(data, currentYear, maxEndYear, yearlyCashflow, profile.birthDate);
-    console.log("년별 자산 데이터:", yearlyAssets);
-
-    // 자산 세부 내역은 기존 방식 유지 (호환성)
-    const today = new Date().toISOString().split("T")[0];
-    const endDate = new Date(maxEndYear, 11, 31);
-    const endDateStr = endDate.toISOString().split("T")[0];
-    const timeline = generateMonthlyTimeline(today, endDateStr);
-    const assetBreakdown = calculateAssetBreakdown(data, timeline);
-
-    return {
-      cashflow: formatYearlyChartData(yearlyCashflow, "cashflow"),
-      assets: formatYearlyChartData(yearlyAssets, "assets"),
-      assetBreakdown,
-    };
-  }, [profile, data]);
+  // 시뮬레이션 데이터 (캐시된 결과 사용)
+  const simulationData = simulationCache;
 
   if (loading) {
     return (
