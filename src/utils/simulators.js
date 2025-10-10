@@ -1016,7 +1016,68 @@ export function formatMonthlyToYearlyData(monthlyData, type, birthDate = null) {
 }
 
 /**
- * 자산 세부 내역 계산
+ * 년별 자산 세부 내역 계산 (효율적인 방식)
+ * @param {Object} data - 모든 재무 데이터
+ * @param {number} startYear - 시작 년도
+ * @param {number} endYear - 종료 년도
+ * @param {string} birthDate - 생년월일
+ * @returns {Object} 년별 자산 세부 내역
+ */
+export function calculateYearlyAssetBreakdown(data, startYear, endYear, birthDate) {
+  const { assets = [] } = data;
+  const yearlyBreakdown = {};
+  
+  // 자산별 누적 값 추적 (세부 내역용)
+  const assetDetails = {};
+
+  for (let year = startYear; year <= endYear; year++) {
+    const currentAge = birthDate ? getAgeFromYear(year, birthDate) : null;
+    
+    if (!yearlyBreakdown[year]) {
+      yearlyBreakdown[year] = {};
+    }
+
+    // 각 자산의 년말 가치 계산 (점진적)
+    assets.forEach((asset) => {
+      if (isActiveInYear(asset, year)) {
+        const assetKey = asset.title;
+        
+        if (!assetDetails[assetKey]) {
+          assetDetails[assetKey] = {
+            accumulated: 0,
+            lastContributionYear: null
+          };
+        }
+
+        const yearlyAmount = getYearlyAmount(asset);
+        const annualRate = (asset.rate || 0) / 100;
+        
+        if (asset.frequency === "once") {
+          // 일회성 자산: 시작년도에만 추가
+          const startYear = new Date(asset.startDate).getFullYear();
+          if (year === startYear) {
+            assetDetails[assetKey].accumulated = yearlyAmount;
+          } else if (year > startYear) {
+            // 이전 년도 값에 수익률 적용
+            assetDetails[assetKey].accumulated *= 1 + annualRate;
+          }
+        } else {
+          // 정기적 자산: 매년 추가 + 이전 값에 수익률 적용
+          assetDetails[assetKey].accumulated = 
+            (assetDetails[assetKey].accumulated + yearlyAmount) * (1 + annualRate);
+        }
+
+        // 해당 년도의 자산 가치 저장
+        yearlyBreakdown[year][assetKey] = assetDetails[assetKey].accumulated;
+      }
+    });
+  }
+
+  return yearlyBreakdown;
+}
+
+/**
+ * 자산 세부 내역 계산 (기존 방식 - 호환성 유지)
  * @param {Object} data - 모든 재무 데이터
  * @param {Array} timeline - 월별 타임라인
  * @returns {Object} 년별 자산 세부 내역

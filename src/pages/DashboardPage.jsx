@@ -18,6 +18,7 @@ import {
   calculateAssetBreakdown,
   calculateYearlyCashflow,
   calculateYearlyAssets,
+  calculateYearlyAssetBreakdown,
 } from "../utils/simulators.js";
 import CashflowChart from "../components/CashflowChart.jsx";
 import AssetProjectionChart from "../components/AssetProjectionChart.jsx";
@@ -113,12 +114,9 @@ export default function DashboardPage() {
     const yearlyAssets = calculateYearlyAssets(data, currentYear, maxEndYear, yearlyCashflow, profile.birthDate);
     console.log("년별 자산 데이터:", yearlyAssets);
 
-    // 자산 세부 내역은 기존 방식 유지 (호환성)
-    const today = new Date().toISOString().split("T")[0];
-    const endDate = new Date(maxEndYear, 11, 31);
-    const endDateStr = endDate.toISOString().split("T")[0];
-    const timeline = generateMonthlyTimeline(today, endDateStr);
-    const assetBreakdown = calculateAssetBreakdown(data, timeline);
+    // 자산 세부 내역도 년별로 효율적으로 계산
+    const assetBreakdown = calculateYearlyAssetBreakdown(data, currentYear, maxEndYear, profile.birthDate);
+    console.log("년별 자산 세부 내역:", assetBreakdown);
 
     return {
       cashflow: formatYearlyChartData(yearlyCashflow, "cashflow"),
