@@ -15,7 +15,11 @@ import {
 } from "recharts";
 import styles from "./AssetProjectionChart.module.css";
 
-export default function AssetProjectionChart({ data, assetBreakdown, profile = null }) {
+export default function AssetProjectionChart({
+  data,
+  assetBreakdown,
+  profile = null,
+}) {
   if (!data || data.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -26,22 +30,25 @@ export default function AssetProjectionChart({ data, assetBreakdown, profile = n
   }
 
   // 은퇴 시점 찾기
-  const retirementYear = profile && profile.retirementAge 
-    ? data.find(item => item.age && item.age >= profile.retirementAge)?.year
-    : null;
+  const retirementYear =
+    profile && profile.retirementAge
+      ? data.find((item) => item.age && item.age >= profile.retirementAge)?.year
+      : null;
 
   // 툴팁 커스터마이징
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-      const dataItem = data.find(item => item.year === label);
-      const ageText = dataItem && dataItem.age ? ` (${dataItem.age}세)` : '';
+      const dataItem = data.find((item) => item.year === label);
+      const ageText = dataItem && dataItem.age ? ` (${dataItem.age}세)` : "";
       const isRetirementYear = label === retirementYear;
-      
+
       return (
         <div className={styles.tooltip}>
           <p className={styles.tooltipLabel}>
             {label}년{ageText}
-            {isRetirementYear && <span className={styles.retirementLabel}> - 은퇴</span>}
+            {isRetirementYear && (
+              <span className={styles.retirementLabel}> - 은퇴</span>
+            )}
           </p>
           {payload.map((entry, index) => (
             <p
@@ -95,7 +102,7 @@ export default function AssetProjectionChart({ data, assetBreakdown, profile = n
 
   // X축 라벨 포맷팅 함수 (나이 기반)
   const formatXAxisLabel = (value) => {
-    const dataItem = chartData.find(item => item.year === value);
+    const dataItem = chartData.find((item) => item.year === value);
     if (dataItem && dataItem.age) {
       return `${value}\n(${dataItem.age}세)`;
     }
@@ -149,7 +156,7 @@ export default function AssetProjectionChart({ data, assetBreakdown, profile = n
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
-          margin={{ top: 10, right: 10, left: 40, bottom: 30 }}
+          margin={{ top: 50, right: 10, left: 40, bottom: 30 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
@@ -205,16 +212,18 @@ export default function AssetProjectionChart({ data, assetBreakdown, profile = n
           {retirementYear && (
             <ReferenceLine
               x={retirementYear}
-              stroke="#ef4444"
-              strokeWidth={3}
-              strokeDasharray="8 4"
+              stroke="#9ca3af"
+              strokeWidth={2}
+              strokeDasharray="6 4"
               label={{
                 value: "은퇴",
                 position: "top",
+                offset: 5,
                 style: {
-                  fill: "#ef4444",
-                  fontSize: "12px",
-                  fontWeight: "bold",
+                  fill: "#6b7280",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  textAnchor: "middle",
                 },
               }}
             />

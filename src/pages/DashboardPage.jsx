@@ -16,6 +16,8 @@ import {
   calculateAssets,
   formatYearlyChartData,
   calculateAssetBreakdown,
+  calculateYearlyCashflow,
+  calculateYearlyAssets,
 } from "../utils/simulators.js";
 import CashflowChart from "../components/CashflowChart.jsx";
 import AssetProjectionChart from "../components/AssetProjectionChart.jsx";
@@ -176,54 +178,38 @@ export default function DashboardPage() {
       return null;
     }
 
-    const today = new Date().toISOString().split("T")[0];
-
-    // 은퇴일 계산 (안전하게)
+    // 새로운 효율적인 년별 계산 방식
+    const currentYear = new Date().getFullYear();
     const birthDate = new Date(profile.birthDate);
     const retirementYear = birthDate.getFullYear() + profile.retirementAge;
-    const retirementDate = new Date(
-      retirementYear,
-      birthDate.getMonth(),
-      birthDate.getDate()
-    );
-    const retirementDateStr = retirementDate.toISOString().split("T")[0];
-
-    // 시뮬레이션 종료일: 2100년까지 또는 은퇴 후 30년 중 더 짧은 것
+    
+    // 시뮬레이션 종료년도: 2100년까지 또는 은퇴 후 30년 중 더 짧은 것
     const maxEndYear = Math.min(retirementYear + 30, 2100);
-    const endDate = new Date(maxEndYear, 11, 31); // 12월 31일
-    const endDateStr = endDate.toISOString().split("T")[0];
 
+    console.log("=== 시뮬레이션 시작 (년별 방식) ===");
+    console.log("현재 년도:", currentYear);
     console.log("생년월일:", profile.birthDate);
     console.log("은퇴나이:", profile.retirementAge);
     console.log("은퇴년도:", retirementYear);
-    console.log("은퇴일:", retirementDateStr);
     console.log("시뮬레이션 종료년도:", maxEndYear);
-    console.log("시뮬레이션 종료일:", endDateStr);
 
-    console.log("타임라인 기간:", today, "~", endDateStr);
-    console.log("today 유효성:", /^\d{4}-\d{2}-\d{2}$/.test(today));
-    console.log("endDateStr 유효성:", /^\d{4}-\d{2}-\d{2}$/.test(endDateStr));
-    console.log("endDateStr 길이:", endDateStr.length);
-    console.log("endDateStr 문자:", endDateStr);
-
-    const timeline = generateMonthlyTimeline(today, endDateStr);
-    console.log("생성된 타임라인 길이:", timeline.length);
-    console.log("타임라인 샘플:", timeline.slice(0, 3));
-
-    const cashflow = calculateCashflow(data, timeline);
-    console.log("현금흐름 계산 결과 길이:", cashflow.length);
-    console.log("현금흐름 샘플:", cashflow.slice(0, 3));
-
-    const assets = calculateAssets(data, timeline, cashflow);
-    const assetBreakdown = calculateAssetBreakdown(data, timeline);
-
-    const yearlyCashflow = formatYearlyChartData(cashflow, "cashflow", profile.birthDate);
+    // 새로운 년별 계산 방식 사용
+    const yearlyCashflow = calculateYearlyCashflow(data, currentYear, maxEndYear, profile.birthDate);
     console.log("년별 현금흐름 데이터:", yearlyCashflow);
 
+    const yearlyAssets = calculateYearlyAssets(data, currentYear, maxEndYear, yearlyCashflow, profile.birthDate);
+    console.log("년별 자산 데이터:", yearlyAssets);
+
+    // 자산 세부 내역은 기존 방식 유지 (호환성)
+    const today = new Date().toISOString().split("T")[0];
+    const endDate = new Date(maxEndYear, 11, 31);
+    const endDateStr = endDate.toISOString().split("T")[0];
+    const timeline = generateMonthlyTimeline(today, endDateStr);
+    const assetBreakdown = calculateAssetBreakdown(data, timeline);
+
     return {
-      timeline,
-      cashflow: yearlyCashflow,
-      assets: formatYearlyChartData(assets, "assets", profile.birthDate),
+      cashflow: formatYearlyChartData(yearlyCashflow, "cashflow"),
+      assets: formatYearlyChartData(yearlyAssets, "assets"),
       assetBreakdown,
     };
   }, [profile, data]);
