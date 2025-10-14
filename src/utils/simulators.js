@@ -1138,7 +1138,9 @@ export function calculateYearlyAssetBreakdown(
         }
 
         // 해당 년도의 자산 가치 저장 (만원 미만 버림)
-        yearlyBreakdown[year][assetKey] = Math.floor(assetDetails[assetKey].accumulated);
+        yearlyBreakdown[year][assetKey] = Math.floor(
+          assetDetails[assetKey].accumulated
+        );
       }
     });
   }
@@ -1264,26 +1266,44 @@ export function calculateAssetBreakdown(data, timeline) {
 }
 
 /**
- * 근로소득 기본값 생성 함수
+ * 기본 수입 항목들 생성 함수
  * @param {Object} profile - 프로필 정보
- * @returns {Object} 근로소득 기본 데이터
+ * @returns {Array} 기본 수입 항목들
  */
-export function createDefaultWageIncome(profile) {
+export function createDefaultIncomes(profile) {
   const currentYear = new Date().getFullYear();
-  const currentAge = calculateAge(profile.birthDate);
   const retirementYear =
     new Date(profile.birthDate).getFullYear() + profile.retirementAge;
 
-  return {
-    title: "근로소득",
-    amount: 5000, // 5,000만원 (만원 단위)
-    startDate: `${currentYear}-01-01`,
-    endDate: `${retirementYear}-12-31`,
-    frequency: "monthly", // 월급
-    growthRate: WAGE_GROWTH_RATE, // 임금상승률 적용
-    note: "기본 근로소득 (임금상승률 자동 적용)",
-    category: "incomes",
-  };
+  return [
+    {
+      title: "근로소득",
+      amount: 0, // 기본값 0원
+      startDate: `${currentYear}-01-01`,
+      endDate: `${retirementYear}-12-31`,
+      frequency: "monthly", // 월급
+      note: "근로소득 (임금상승률 자동 적용)",
+      category: "incomes",
+    },
+    {
+      title: "사업소득",
+      amount: 0, // 기본값 0원
+      startDate: `${currentYear}-01-01`,
+      endDate: `${retirementYear}-12-31`,
+      frequency: "monthly", // 월급
+      note: "사업소득 (임금상승률 자동 적용)",
+      category: "incomes",
+    },
+    {
+      title: "임대소득",
+      amount: 0, // 기본값 0원
+      startDate: `${currentYear}-01-01`,
+      endDate: `${retirementYear}-12-31`,
+      frequency: "monthly", // 월급
+      note: "임대소득 (임금상승률 자동 적용)",
+      category: "incomes",
+    },
+  ];
 }
 
 /**

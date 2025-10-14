@@ -8,8 +8,8 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
   const [formData, setFormData] = useState({
     title: "",
     amount: "",
-    startDate: today,
-    endDate: today, // 모든 카테고리에서 끝일을 시작일과 같게 설정
+    startYear: new Date().getFullYear(), // 년도만 관리
+    endYear: new Date().getFullYear(), // 년도만 관리
     frequency: "monthly",
     note: "",
     rate: "",
@@ -326,13 +326,13 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
 
     setIsSubmitting(true);
     try {
-      // 폼 데이터 정리
+      // 폼 데이터 정리 (년도를 날짜로 변환)
       const submitData = {
         title: formData.title.trim(),
         // 부채가 아닌 경우에만 amount 저장
         ...(category !== "debts" && { amount: Number(formData.amount) }),
-        startDate: formData.startDate,
-        endDate: formData.endDate || null,
+        startDate: `${formData.startYear}-01-01`,
+        endDate: formData.endYear ? `${formData.endYear}-12-31` : null,
         // 부채가 아닌 경우에만 frequency 저장
         ...(category !== "debts" && { frequency: formData.frequency }),
         note: formData.note.trim() || null,
@@ -788,44 +788,48 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
               {formData.frequency === "daily" && (
                 <>
                   <div className={styles.field}>
-                    <label htmlFor="startDate" className={styles.label}>
-                      시작일 *
+                    <label htmlFor="startYear" className={styles.label}>
+                      시작년도 *
                     </label>
                     <input
-                      type="date"
-                      id="startDate"
-                      name="startDate"
-                      value={formData.startDate}
+                      type="number"
+                      id="startYear"
+                      name="startYear"
+                      value={formData.startYear}
                       onChange={handleChange}
+                      min="1900"
+                      max="2100"
                       className={`${styles.input} ${
-                        errors.startDate ? styles.inputError : ""
+                        errors.startYear ? styles.inputError : ""
                       }`}
                       disabled={isSubmitting}
                     />
-                    {errors.startDate && (
+                    {errors.startYear && (
                       <span className={styles.errorText}>
-                        {errors.startDate}
+                        {errors.startYear}
                       </span>
                     )}
                   </div>
 
                   <div className={styles.field}>
-                    <label htmlFor="endDate" className={styles.label}>
-                      종료일
+                    <label htmlFor="endYear" className={styles.label}>
+                      종료년도
                     </label>
                     <input
-                      type="date"
-                      id="endDate"
-                      name="endDate"
-                      value={formData.endDate}
+                      type="number"
+                      id="endYear"
+                      name="endYear"
+                      value={formData.endYear}
                       onChange={handleChange}
+                      min="1900"
+                      max="2100"
                       className={`${styles.input} ${
-                        errors.endDate ? styles.inputError : ""
+                        errors.endYear ? styles.inputError : ""
                       }`}
                       disabled={isSubmitting}
                     />
-                    {errors.endDate && (
-                      <span className={styles.errorText}>{errors.endDate}</span>
+                    {errors.endYear && (
+                      <span className={styles.errorText}>{errors.endYear}</span>
                     )}
                   </div>
                 </>
@@ -842,68 +846,74 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                 formData.repaymentType === "fixed_payment") && (
                 <>
                   <div className={styles.field}>
-                    <label htmlFor="startDate" className={styles.label}>
-                      대출 시작일 *
+                    <label htmlFor="startYear" className={styles.label}>
+                      대출 시작년도 *
                     </label>
                     <input
-                      type="date"
-                      id="startDate"
-                      name="startDate"
-                      value={formData.startDate}
+                      type="number"
+                      id="startYear"
+                      name="startYear"
+                      value={formData.startYear}
                       onChange={handleChange}
+                      min="1900"
+                      max="2100"
                       className={`${styles.input} ${
-                        errors.startDate ? styles.inputError : ""
+                        errors.startYear ? styles.inputError : ""
                       }`}
                       disabled={isSubmitting}
                     />
-                    {errors.startDate && (
+                    {errors.startYear && (
                       <span className={styles.errorText}>
-                        {errors.startDate}
+                        {errors.startYear}
                       </span>
                     )}
                   </div>
 
                   <div className={styles.field}>
-                    <label htmlFor="endDate" className={styles.label}>
-                      대출 만료일 *
+                    <label htmlFor="endYear" className={styles.label}>
+                      대출 만료년도 *
                     </label>
                     <input
-                      type="date"
-                      id="endDate"
-                      name="endDate"
-                      value={formData.endDate}
+                      type="number"
+                      id="endYear"
+                      name="endYear"
+                      value={formData.endYear}
                       onChange={handleChange}
+                      min="1900"
+                      max="2100"
                       className={`${styles.input} ${
-                        errors.endDate ? styles.inputError : ""
+                        errors.endYear ? styles.inputError : ""
                       }`}
                       disabled={isSubmitting}
                     />
-                    {errors.endDate && (
-                      <span className={styles.errorText}>{errors.endDate}</span>
+                    {errors.endYear && (
+                      <span className={styles.errorText}>{errors.endYear}</span>
                     )}
                   </div>
                 </>
               )}
 
-              {/* 최소상환: 시작일만 */}
+              {/* 최소상환: 시작년도만 */}
               {formData.repaymentType === "minimum_payment" && (
                 <div className={styles.field}>
-                  <label htmlFor="startDate" className={styles.label}>
-                    대출 시작일 *
+                  <label htmlFor="startYear" className={styles.label}>
+                    대출 시작년도 *
                   </label>
                   <input
-                    type="date"
-                    id="startDate"
-                    name="startDate"
-                    value={formData.startDate}
+                    type="number"
+                    id="startYear"
+                    name="startYear"
+                    value={formData.startYear}
                     onChange={handleChange}
+                    min="1900"
+                    max="2100"
                     className={`${styles.input} ${
-                      errors.startDate ? styles.inputError : ""
+                      errors.startYear ? styles.inputError : ""
                     }`}
                     disabled={isSubmitting}
                   />
-                  {errors.startDate && (
-                    <span className={styles.errorText}>{errors.startDate}</span>
+                  {errors.startYear && (
+                    <span className={styles.errorText}>{errors.startYear}</span>
                   )}
                   <span className={styles.helpText}>
                     최소상환은 종료일이 없으며, 원금이 모두 상환될 때까지
@@ -912,25 +922,27 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                 </div>
               )}
 
-              {/* 일시상환: 종료일만 */}
+              {/* 일시상환: 종료년도만 */}
               {formData.repaymentType === "lump_sum" && (
                 <div className={styles.field}>
-                  <label htmlFor="endDate" className={styles.label}>
-                    상환일 *
+                  <label htmlFor="endYear" className={styles.label}>
+                    상환년도 *
                   </label>
                   <input
-                    type="date"
-                    id="endDate"
-                    name="endDate"
-                    value={formData.endDate}
+                    type="number"
+                    id="endYear"
+                    name="endYear"
+                    value={formData.endYear}
                     onChange={handleChange}
+                    min="1900"
+                    max="2100"
                     className={`${styles.input} ${
-                      errors.endDate ? styles.inputError : ""
+                      errors.endYear ? styles.inputError : ""
                     }`}
                     disabled={isSubmitting}
                   />
-                  {errors.endDate && (
-                    <span className={styles.errorText}>{errors.endDate}</span>
+                  {errors.endYear && (
+                    <span className={styles.errorText}>{errors.endYear}</span>
                   )}
                   <span className={styles.helpText}>
                     일시상환은 지정된 날짜에 원금+이자를 일괄 상환합니다.

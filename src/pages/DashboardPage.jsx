@@ -19,7 +19,7 @@ import {
   calculateYearlyCashflow,
   calculateYearlyAssets,
   calculateYearlyAssetBreakdown,
-  createDefaultWageIncome,
+  createDefaultIncomes,
   updateWageGrowthRate,
   updateInflationRate,
   updateDefaultReturnRate,
@@ -185,14 +185,16 @@ export default function DashboardPage() {
         profileId,
         category,
         async (items) => {
-          // 수입 데이터가 비어있고 프로필이 있으면 근로소득 기본값 추가
+          // 수입 데이터가 비어있고 프로필이 있으면 기본 수입 항목들 추가
           if (category === "incomes" && items.length === 0 && profile) {
             try {
-              const defaultWageIncome = createDefaultWageIncome(profile);
-              await dataItemService.addItem(profileId, "incomes", defaultWageIncome);
-              console.log("근로소득 기본값 추가됨:", defaultWageIncome);
+              const defaultIncomes = createDefaultIncomes(profile);
+              for (const income of defaultIncomes) {
+                await dataItemService.addItem(profileId, "incomes", income);
+              }
+              console.log("기본 수입 항목들 추가됨:", defaultIncomes);
             } catch (error) {
-              console.error("근로소득 기본값 추가 오류:", error);
+              console.error("기본 수입 항목 추가 오류:", error);
             }
           }
           
