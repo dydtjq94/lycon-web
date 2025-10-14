@@ -65,18 +65,20 @@ export default function AssetProjectionChart({
     return null;
   };
 
-  // 통화 포맷팅 (만원 단위)
+  // 통화 포맷팅 (만원 단위, 만원 미만 버림)
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return "0만원";
-    return new Intl.NumberFormat("ko-KR").format(value) + "만원";
+    const flooredValue = Math.floor(value);
+    return new Intl.NumberFormat("ko-KR").format(flooredValue) + "만원";
   };
 
-  // Y축 포맷팅
+  // Y축 포맷팅 (만원 미만 버림)
   const formatYAxis = (value) => {
-    if (value >= 10000) {
-      return `${(value / 10000).toFixed(1)}억`;
-    } else if (value >= 1) {
-      return `${value.toFixed(1)}만`;
+    const flooredValue = Math.floor(value);
+    if (flooredValue >= 10000) {
+      return `${(flooredValue / 10000).toFixed(1)}억`;
+    } else if (flooredValue >= 1) {
+      return `${flooredValue.toFixed(1)}만`;
     }
     return "0";
   };

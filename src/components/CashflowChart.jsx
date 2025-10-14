@@ -77,22 +77,24 @@ export default function CashflowChart({ data, profile = null }) {
     return null;
   };
 
-  // Currency formatting (만원 단위)
+  // Currency formatting (만원 단위, 만원 미만 버림)
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return "0만원";
-    return new Intl.NumberFormat("ko-KR").format(value) + "만원";
+    const flooredValue = Math.floor(value);
+    return new Intl.NumberFormat("ko-KR").format(flooredValue) + "만원";
   };
 
-  // Y-axis formatting (만원 단위)
+  // Y-axis formatting (만원 단위, 만원 미만 버림)
   const formatYAxis = (value) => {
-    if (value >= 10000) {
-      return `${(value / 10000).toFixed(0)}억`;
-    } else if (value >= 1) {
-      return `${value.toFixed(0)}만`;
-    } else if (value <= -10000) {
-      return `-${Math.abs(value / 10000).toFixed(0)}억`;
-    } else if (value <= -1) {
-      return `-${Math.abs(value).toFixed(0)}만`;
+    const flooredValue = Math.floor(value);
+    if (flooredValue >= 10000) {
+      return `${(flooredValue / 10000).toFixed(0)}억`;
+    } else if (flooredValue >= 1) {
+      return `${flooredValue.toFixed(0)}만`;
+    } else if (flooredValue <= -10000) {
+      return `-${Math.abs(flooredValue / 10000).toFixed(0)}억`;
+    } else if (flooredValue <= -1) {
+      return `-${Math.abs(flooredValue).toFixed(0)}만`;
     } else {
       return "0";
     }

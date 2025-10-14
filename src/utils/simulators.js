@@ -227,7 +227,7 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
           yearlyAmount,
           income,
           year,
-          'incomes'
+          "incomes"
         );
         totalIncome += adjustedAmount;
       }
@@ -241,7 +241,7 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
           yearlyAmount,
           pension,
           year,
-          'pensions'
+          "pensions"
         );
         totalPension += adjustedAmount;
       }
@@ -255,7 +255,7 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
           yearlyAmount,
           expense,
           year,
-          'expenses'
+          "expenses"
         );
         totalExpense += adjustedAmount;
       }
@@ -274,15 +274,16 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
         ? netCashflow
         : cashflow[cashflow.length - 1].cumulativeCashflow + netCashflow;
 
+    // 만원 미만 버림 처리
     cashflow.push({
       year,
       age: currentAge,
-      income: totalIncome,
-      pension: totalPension,
-      expense: totalExpense,
-      debtPayment: totalDebtPayment,
-      netCashflow,
-      cumulativeCashflow,
+      income: Math.floor(totalIncome),
+      pension: Math.floor(totalPension),
+      expense: Math.floor(totalExpense),
+      debtPayment: Math.floor(totalDebtPayment),
+      netCashflow: Math.floor(netCashflow),
+      cumulativeCashflow: Math.floor(cumulativeCashflow),
     });
   }
 
@@ -389,13 +390,14 @@ export function calculateYearlyAssets(
     const currentCashflow = cashflow.find((cf) => cf.year === year);
     const cumulativeCashflow = currentCashflow?.cumulativeCashflow || 0;
 
+    // 만원 미만 버림 처리
     assetData.push({
       year,
       age: currentAge,
-      assets: totalAssets,
-      debt: totalDebt,
-      netAssets,
-      cumulativeCashflow,
+      assets: Math.floor(totalAssets),
+      debt: Math.floor(totalDebt),
+      netAssets: Math.floor(netAssets),
+      cumulativeCashflow: Math.floor(cumulativeCashflow),
     });
   }
 
@@ -879,24 +881,24 @@ function getYearlyAmount(item) {
  * @param {string} category - 카테고리 (incomes, expenses, assets, debts, pensions)
  * @returns {number} 상승률이 적용된 금액
  */
-function applyYearlyGrowthRate(baseAmount, item, year, category = 'incomes') {
+function applyYearlyGrowthRate(baseAmount, item, year, category = "incomes") {
   let growthRate = 0;
-  
+
   // 카테고리별 전역 상승률 적용
   switch (category) {
-    case 'incomes':
+    case "incomes":
       growthRate = WAGE_GROWTH_RATE;
       break;
-    case 'expenses':
+    case "expenses":
       growthRate = INFLATION_RATE;
       break;
-    case 'assets':
+    case "assets":
       growthRate = item.rate || DEFAULT_RETURN_RATE; // 자산은 개별 수익률 사용
       break;
-    case 'debts':
+    case "debts":
       growthRate = item.rate || 0; // 부채는 개별 이자율 사용
       break;
-    case 'pensions':
+    case "pensions":
       growthRate = WAGE_GROWTH_RATE; // 연금은 임금상승률 적용
       break;
     default:
@@ -1135,8 +1137,8 @@ export function calculateYearlyAssetBreakdown(
             (1 + annualRate);
         }
 
-        // 해당 년도의 자산 가치 저장
-        yearlyBreakdown[year][assetKey] = assetDetails[assetKey].accumulated;
+        // 해당 년도의 자산 가치 저장 (만원 미만 버림)
+        yearlyBreakdown[year][assetKey] = Math.floor(assetDetails[assetKey].accumulated);
       }
     });
   }
