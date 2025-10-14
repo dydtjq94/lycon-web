@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../libs/firebase.js"; // ✅ 중앙 초기화만 사용
 
@@ -110,6 +111,42 @@ export const dataItemService = {
       },
       (err) => {
         console.error(`[subscribeToItems:${category}] onSnapshot error:`, err);
+        onError && onError(err.message || String(err));
+      }
+    );
+  },
+};
+
+// 비율 설정 관련 서비스
+export const rateSettingsService = {
+  async saveRateSettings(profileId, rateSettings) {
+    const ref = doc(db, "profiles", profileId, "settings", "rates");
+    await setDoc(
+      ref,
+      {
+        ...rateSettings,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  },
+
+  async getRateSettings(profileId) {
+    const ref = doc(db, "profiles", profileId, "settings", "rates");
+    const snap = await getDoc(ref);
+    return snap.exists() ? snap.data() : null;
+  },
+
+  subscribeToRateSettings(profileId, onData, onError) {
+    const ref = doc(db, "profiles", profileId, "settings", "rates");
+    return onSnapshot(
+      ref,
+      (snapshot) => {
+        const data = snapshot.exists() ? snapshot.data() : null;
+        onData(data);
+      },
+      (err) => {
+        console.error("[subscribeToRateSettings] onSnapshot error:", err);
         onError && onError(err.message || String(err));
       }
     );

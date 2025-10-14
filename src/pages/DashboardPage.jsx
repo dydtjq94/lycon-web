@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   profileService,
   dataItemService,
+  rateSettingsService,
 } from "../services/firestoreService.js";
 import {
   calculateAge,
@@ -21,6 +22,7 @@ import {
   calculateYearlyAssetBreakdown,
   createDefaultIncomes,
   createDefaultExpenses,
+  createDefaultAssets,
   updateWageGrowthRate,
   updateBusinessGrowthRate,
   updateRentalGrowthRate,
@@ -75,7 +77,7 @@ export default function DashboardPage() {
   const [dynamicRates, setDynamicRates] = useState({});
 
   // 데이터 해시 계산 함수 (데이터 변경 감지용)
-  const calculateDataHash = (profile, data) => {
+  const calculateDataHash = (profile, data, settings, dynamicRates) => {
     if (!profile || !data) return null;
 
     const dataString = JSON.stringify({
@@ -88,8 +90,11 @@ export default function DashboardPage() {
         assets: data.assets || [],
         debts: data.debts || [],
         expenses: data.expenses || [],
+        savings: data.savings || [],
         pensions: data.pensions || [],
       },
+      settings: settings || {},
+      dynamicRates: dynamicRates || {},
     });
 
     // 간단한 해시 함수
@@ -128,39 +133,42 @@ export default function DashboardPage() {
     // 시뮬레이션 종료년도: 90세가 되는 년도
     const maxEndYear = birthDate.getFullYear() + 89; // 90세까지 (89 + 1 = 90)
 
-    console.log("=== 시뮬레이션 시작 (년별 방식) ===");
-    console.log("현재 년도:", currentYear);
-    console.log("생년월일:", profile.birthDate);
-    console.log("은퇴나이:", profile.retirementAge);
-    console.log("은퇴년도:", retirementYear);
-    console.log("시뮬레이션 종료년도 (90세):", maxEndYear);
+    // console.log("=== 시뮬레이션 시작 (년별 방식) ===");
+    // console.log("현재 년도:", currentYear);
+    // console.log("생년월일:", profile.birthDate);
+    // console.log("은퇴나이:", profile.retirementAge);
+    // console.log("은퇴년도:", retirementYear);
+    // console.log("시뮬레이션 종료년도 (90세):", maxEndYear);
 
     // 새로운 년별 계산 방식 사용
     const yearlyCashflow = calculateYearlyCashflow(
       data,
       currentYear,
       maxEndYear,
-      profile.birthDate
+      profile.birthDate,
+      settings
     );
-    console.log("년별 현금흐름 데이터:", yearlyCashflow);
+    // console.log("년별 현금흐름 데이터:", yearlyCashflow);
 
     const yearlyAssets = calculateYearlyAssets(
       data,
       currentYear,
       maxEndYear,
       yearlyCashflow,
-      profile.birthDate
+      profile.birthDate,
+      settings
     );
-    console.log("년별 자산 데이터:", yearlyAssets);
+    // console.log("년별 자산 데이터:", yearlyAssets);
 
     // 자산 세부 내역도 년별로 효율적으로 계산
     const assetBreakdown = calculateYearlyAssetBreakdown(
       data,
       currentYear,
       maxEndYear,
-      profile.birthDate
+      profile.birthDate,
+      settings
     );
-    console.log("년별 자산 세부 내역:", assetBreakdown);
+    // console.log("년별 자산 세부 내역:", assetBreakdown);
 
     return {
       cashflow: formatYearlyChartData(yearlyCashflow, "cashflow"),
@@ -173,7 +181,12 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!profile || !data) return;
 
-    const currentDataHash = calculateDataHash(profile, data);
+    const currentDataHash = calculateDataHash(
+      profile,
+      data,
+      settings,
+      dynamicRates
+    );
 
     // 데이터가 변경되었거나 캐시가 없는 경우에만 시뮬레이션 재계산
     if (currentDataHash !== lastDataHash) {
@@ -182,7 +195,7 @@ export default function DashboardPage() {
       setSimulationCache(simulationResult);
       setLastDataHash(currentDataHash);
     }
-  }, [profile, data, lastDataHash]);
+  }, [profile, data, settings, dynamicRates, lastDataHash]);
 
   // 프로필 데이터 로드
   useEffect(() => {
@@ -205,10 +218,78 @@ export default function DashboardPage() {
     loadProfile();
   }, [profileId]);
 
+  // 비율 설정 로드
+  useEffect(() => {
+    if (!profileId) return;
+
+    const loadRateSettings = async () => {
+      try {
+        console.log("비율 설정 로드 시도...");
+        const savedSettings = await rateSettingsService.getRateSettings(
+          profileId
+        );
+        console.log("저장된 비율 설정:", savedSettings);
+
+        if (savedSettings) {
+          const newSettings = {
+            wageGrowthRate:
+              savedSettings.wageGrowthRate !== undefined
+                ? savedSettings.wageGrowthRate
+                : getWageGrowthRate(),
+            businessGrowthRate:
+              savedSettings.businessGrowthRate !== undefined
+                ? savedSettings.businessGrowthRate
+                : getBusinessGrowthRate(),
+            rentalGrowthRate:
+              savedSettings.rentalGrowthRate !== undefined
+                ? savedSettings.rentalGrowthRate
+                : getRentalGrowthRate(),
+            inflationRate:
+              savedSettings.inflationRate !== undefined
+                ? savedSettings.inflationRate
+                : getInflationRate(),
+            defaultReturnRate:
+              savedSettings.defaultReturnRate !== undefined
+                ? savedSettings.defaultReturnRate
+                : getDefaultReturnRate(),
+          };
+
+          console.log("복원할 설정:", newSettings);
+          setSettings(newSettings);
+
+          // 동적 상승률도 복원
+          if (savedSettings.dynamicRates) {
+            console.log("동적 상승률 복원:", savedSettings.dynamicRates);
+            setDynamicRates(savedSettings.dynamicRates);
+            // simulators.js의 동적 상승률도 업데이트
+            Object.entries(savedSettings.dynamicRates).forEach(
+              ([title, rate]) => {
+                setDynamicGrowthRate(title, rate);
+              }
+            );
+          }
+        } else {
+          console.log("저장된 비율 설정이 없습니다. 기본값 사용.");
+        }
+      } catch (error) {
+        console.error("비율 설정 로드 오류:", error);
+      }
+    };
+
+    loadRateSettings();
+  }, [profileId]);
+
   // 재무 데이터 실시간 구독
   useEffect(() => {
     if (!profileId) return;
-    const categories = ["incomes", "expenses", "pensions", "assets", "debts"];
+    const categories = [
+      "incomes",
+      "expenses",
+      "savings",
+      "pensions",
+      "assets",
+      "debts",
+    ];
     const unsubscribes = [];
     categories.forEach((category) => {
       const unsubscribe = dataItemService.subscribeToItems(
@@ -242,6 +323,22 @@ export default function DashboardPage() {
               console.log("기본 지출 항목들 추가됨:", defaultExpenses);
             } catch (error) {
               console.error("기본 지출 항목 추가 오류:", error);
+            }
+          }
+
+          // 자산 데이터가 비어있고 프로필이 있으면 기본 현금 자산 추가
+          if (category === "assets" && items.length === 0 && profile) {
+            try {
+              const defaultAssets = createDefaultAssets(
+                profile.birthDate,
+                profile.retirementAge
+              );
+              for (const asset of defaultAssets) {
+                await dataItemService.createItem(profileId, "assets", asset);
+              }
+              console.log("기본 현금 자산 추가됨:", defaultAssets);
+            } catch (error) {
+              console.error("기본 현금 자산 추가 오류:", error);
             }
           }
 
@@ -314,9 +411,11 @@ export default function DashboardPage() {
       setError(null);
       await dataItemService.createItem(profileId, modalCategory, itemData);
 
-      // 동적 상승률 자동 추가 (수입/지출 항목인 경우)
+      // 동적 상승률 자동 추가 (수입/지출/저축 항목인 경우)
       if (
-        (modalCategory === "incomes" || modalCategory === "expenses") &&
+        (modalCategory === "incomes" ||
+          modalCategory === "expenses" ||
+          modalCategory === "savings") &&
         itemData.title
       ) {
         setDynamicGrowthRate(itemData.title, 2.5); // 기본값 2.5%
@@ -499,15 +598,44 @@ export default function DashboardPage() {
               <h4>비율 설정</h4>
               <button
                 className={styles.applyButton}
-                onClick={() => {
-                  updateWageGrowthRate(settings.wageGrowthRate);
-                  updateBusinessGrowthRate(settings.businessGrowthRate);
-                  updateRentalGrowthRate(settings.rentalGrowthRate);
-                  updateInflationRate(settings.inflationRate);
-                  updateDefaultReturnRate(settings.defaultReturnRate);
-                  setLastDataHash(null);
+                onClick={async () => {
+                  try {
+                    console.log("체크 버튼 클릭 - 저장할 설정:", {
+                      wageGrowthRate: settings.wageGrowthRate,
+                      businessGrowthRate: settings.businessGrowthRate,
+                      rentalGrowthRate: settings.rentalGrowthRate,
+                      inflationRate: settings.inflationRate,
+                      defaultReturnRate: settings.defaultReturnRate,
+                      dynamicRates: dynamicRates,
+                    });
+
+                    // simulators.js의 전역 변수 업데이트
+                    updateWageGrowthRate(settings.wageGrowthRate);
+                    updateBusinessGrowthRate(settings.businessGrowthRate);
+                    updateRentalGrowthRate(settings.rentalGrowthRate);
+                    updateInflationRate(settings.inflationRate);
+                    updateDefaultReturnRate(settings.defaultReturnRate);
+
+                    // Firebase에 비율 설정 저장
+                    await rateSettingsService.saveRateSettings(profileId, {
+                      wageGrowthRate: settings.wageGrowthRate,
+                      businessGrowthRate: settings.businessGrowthRate,
+                      rentalGrowthRate: settings.rentalGrowthRate,
+                      inflationRate: settings.inflationRate,
+                      defaultReturnRate: settings.defaultReturnRate,
+                      dynamicRates: dynamicRates,
+                    });
+
+                    setLastDataHash(null);
+                    console.log("✅ 비율 설정이 Firebase에 저장되었습니다.");
+                  } catch (error) {
+                    console.error("❌ 비율 설정 저장 오류:", error);
+                    alert(
+                      "비율 설정 저장 중 오류가 발생했습니다: " + error.message
+                    );
+                  }
                 }}
-                title="설정 적용"
+                title="설정 적용 및 저장"
               >
                 ✓
               </button>
@@ -664,6 +792,14 @@ export default function DashboardPage() {
               </button>
               <button
                 className={`${styles.categoryButton} ${
+                  selectedCategory === "savings" ? styles.active : ""
+                }`}
+                onClick={() => handleCategorySelect("savings")}
+              >
+                🏦 저축
+              </button>
+              <button
+                className={`${styles.categoryButton} ${
                   selectedCategory === "pensions" ? styles.active : ""
                 }`}
                 onClick={() => handleCategorySelect("pensions")}
@@ -694,10 +830,11 @@ export default function DashboardPage() {
             <div className={styles.dataPanelHeader}>
               <h2 className={styles.dataPanelTitle}>
                 {selectedCategory === "incomes" && "수입"}
+                {selectedCategory === "expenses" && "지출"}
+                {selectedCategory === "savings" && "저축"}
+                {selectedCategory === "pensions" && "연금"}
                 {selectedCategory === "assets" && "자산"}
                 {selectedCategory === "debts" && "부채"}
-                {selectedCategory === "expenses" && "지출"}
-                {selectedCategory === "pensions" && "연금"}
               </h2>
               <button
                 className={styles.addButton}

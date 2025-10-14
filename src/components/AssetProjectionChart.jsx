@@ -99,21 +99,18 @@ export default function AssetProjectionChart({
 
   // X축 라벨 포맷팅 함수 (나이 기반)
   const formatXAxisLabel = (value) => {
-    const dataItem = chartData.find((item) => item.year === value);
-    if (dataItem && dataItem.age) {
-      return `${value}\n(${dataItem.age}세)`;
-    }
     return value;
   };
 
   // 자산 종류별 색상 정의
   const assetColors = {
-    예금: "#10b981",
-    주식: "#3b82f6",
-    부동산: "#f59e0b",
-    펀드: "#8b5cf6",
-    채권: "#06b6d4",
-    기타: "#6b7280",
+    예금: "#10b981", // 초록색
+    주식: "#3b82f6", // 파란색
+    부동산: "#f59e0b", // 주황색
+    펀드: "#8b5cf6", // 보라색
+    채권: "#06b6d4", // 청록색
+    현금: "#ec4899", // 핑크색
+    기타: "#6b7280", // 회색
   };
 
   // 동적 색상 생성 (자산 종류가 많을 경우)
@@ -168,7 +165,7 @@ export default function AssetProjectionChart({
             domain={["dataMin", 2100]}
             tickFormatter={formatXAxisLabel}
             label={{
-              value: "년도 (나이)",
+              value: "년도",
               position: "insideBottom",
               offset: -5,
               style: {
@@ -193,7 +190,7 @@ export default function AssetProjectionChart({
               value: "자산 규모 (원)",
               angle: -90,
               position: "insideLeft",
-              offset: 10,
+              offset: -15,
               style: {
                 textAnchor: "middle",
                 fill: "#374151",

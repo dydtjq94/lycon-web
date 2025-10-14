@@ -251,12 +251,24 @@ function calculateDebtPayment(debt, month, timeline) {
  * @param {string} birthDate - 생년월일
  * @returns {Array} 년별 현금 흐름 데이터
  */
-export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
-  const { incomes = [], pensions = [], expenses = [], debts = [] } = data;
+export function calculateYearlyCashflow(
+  data,
+  startYear,
+  endYear,
+  birthDate,
+  rateSettings = null
+) {
+  const {
+    incomes = [],
+    pensions = [],
+    expenses = [],
+    savings = [],
+    debts = [],
+  } = data;
   const cashflow = [];
 
-  console.log("=== calculateYearlyCashflow 시작 ===");
-  console.log("시작년도:", startYear, "종료년도:", endYear);
+  // console.log("=== calculateYearlyCashflow 시작 ===");
+  // console.log("시작년도:", startYear, "종료년도:", endYear);
 
   for (let year = startYear; year <= endYear; year++) {
     const currentAge = birthDate ? getAgeFromYear(year, birthDate) : null;
@@ -274,7 +286,8 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
           yearlyAmount,
           income,
           year,
-          "incomes"
+          "incomes",
+          rateSettings
         );
         totalIncome += adjustedAmount;
       }
@@ -288,7 +301,8 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
           yearlyAmount,
           pension,
           year,
-          "pensions"
+          "pensions",
+          rateSettings
         );
         totalPension += adjustedAmount;
       }
@@ -302,9 +316,26 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
           yearlyAmount,
           expense,
           year,
-          "expenses"
+          "expenses",
+          rateSettings
         );
         totalExpense += adjustedAmount;
+      }
+    });
+
+    // 저축 계산 (연 단위) - 현금흐름에서는 지출로 처리
+    let totalSavings = 0;
+    savings.forEach((saving) => {
+      if (isActiveInYear(saving, year)) {
+        const yearlyAmount = getYearlyAmount(saving);
+        const adjustedAmount = applyYearlyGrowthRate(
+          yearlyAmount,
+          saving,
+          year,
+          "savings",
+          rateSettings
+        );
+        totalSavings += adjustedAmount;
       }
     });
 
@@ -315,7 +346,11 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
     });
 
     const netCashflow =
-      totalIncome + totalPension - totalExpense - totalDebtPayment;
+      totalIncome +
+      totalPension -
+      totalExpense -
+      totalSavings -
+      totalDebtPayment;
     const cumulativeCashflow =
       cashflow.length === 0
         ? netCashflow
@@ -351,9 +386,10 @@ export function calculateYearlyAssets(
   startYear,
   endYear,
   cashflow,
-  birthDate
+  birthDate,
+  rateSettings = null
 ) {
-  const { assets = [], debts = [] } = data;
+  const { assets = [], savings = [], debts = [] } = data;
   const assetData = [];
 
   // 자산별 누적 값 추적
@@ -363,11 +399,19 @@ export function calculateYearlyAssets(
   for (let year = startYear; year <= endYear; year++) {
     const currentAge = birthDate ? getAgeFromYear(year, birthDate) : null;
 
-    // 자산 계산 (점진적)
+    // 자산 계산 (효율적 점진적) - 죽을 때까지 유지
     assets.forEach((asset) => {
-      if (isActiveInYear(asset, year)) {
-        const assetKey = asset.title;
+      const assetKey = asset.title;
+      const yearlyAmount = getYearlyAmount(asset);
+      const annualRate = (asset.rate || 0) / 100;
+      const startYear = new Date(asset.startDate).getFullYear();
+      const endYear = asset.endDate
+        ? new Date(asset.endDate).getFullYear()
+        : null;
+      const isActiveThisYear = isActiveInYear(asset, year);
 
+      // 자산이 한 번이라도 활성화되었거나, 이전에 생성된 자산이 있으면 처리
+      if (isActiveThisYear || assetValues[assetKey]) {
         if (!assetValues[assetKey]) {
           assetValues[assetKey] = {
             principal: 0,
@@ -376,25 +420,28 @@ export function calculateYearlyAssets(
           };
         }
 
-        const yearlyAmount = getYearlyAmount(asset);
-        const annualRate = (asset.rate || 0) / 100;
-
         if (asset.frequency === "once") {
-          // 일회성 자산: 시작년도에만 추가
-          const startYear = new Date(asset.startDate).getFullYear();
+          // 일회성 자산: 시작년도에만 추가, 이후 수익률만 적용
           if (year === startYear) {
             assetValues[assetKey].principal = yearlyAmount;
             assetValues[assetKey].accumulated = yearlyAmount;
           } else if (year > startYear) {
-            // 이전 년도 값에 수익률 적용
+            // 이전 년도 값에 수익률만 적용 (죽을 때까지 유지)
             assetValues[assetKey].accumulated *= 1 + annualRate;
           }
         } else {
-          // 정기적 자산: 매년 추가 + 이전 값에 수익률 적용
-          assetValues[assetKey].accumulated =
-            (assetValues[assetKey].accumulated + yearlyAmount) *
-            (1 + annualRate);
-          assetValues[assetKey].principal += yearlyAmount;
+          // 정기적 자산: 활성화된 년도에는 추가, 비활성화된 년도에는 수익률만 적용
+          if (year > startYear) {
+            // 이전 년도 값에 수익률 적용
+            assetValues[assetKey].accumulated *= 1 + annualRate;
+          }
+
+          if (isActiveThisYear) {
+            // 올해 활성화된 경우에만 새로 추가할 금액
+            assetValues[assetKey].accumulated += yearlyAmount;
+            assetValues[assetKey].principal += yearlyAmount;
+            assetValues[assetKey].lastContributionYear = year;
+          }
         }
       }
     });
@@ -414,12 +461,58 @@ export function calculateYearlyAssets(
         const yearlyAmount = getYearlyAmount(debt);
         const annualRate = (debt.rate || 0) / 100;
 
-        // 부채는 원금에 이자 적용
-        debtValues[debtKey].accumulated =
-          (debtValues[debtKey].accumulated + yearlyAmount) * (1 + annualRate);
+        // 부채는 이전 년도 값에 이자 적용 후 새 금액 추가 (효율적)
+        if (year > startYear) {
+          // 이전 년도 값에 이자 적용
+          debtValues[debtKey].accumulated *= 1 + annualRate;
+        }
+        // 올해 새로 추가할 금액
+        debtValues[debtKey].accumulated += yearlyAmount;
         debtValues[debtKey].principal += yearlyAmount;
       }
     });
+
+    // 현금 자산 처리 (기본 자산 + 저축)
+    const cashKey = "현금";
+
+    // 기본 현금 자산이 있는지 확인
+    const defaultCashAsset = assets.find((asset) => asset.title === "현금");
+
+    // 저축이 있거나 기본 현금 자산이 있으면 현금 처리
+    if (savings.length > 0 || defaultCashAsset) {
+      if (!assetValues[cashKey]) {
+        assetValues[cashKey] = {
+          principal: 0,
+          accumulated: 0,
+          lastContributionYear: null,
+        };
+      }
+
+      const annualRate = 0; // 현금은 수익률 0%
+
+      // 이전 년도 값에 수익률 적용 (현금은 0%이지만 일관성 유지)
+      if (year > startYear) {
+        assetValues[cashKey].accumulated *= 1 + annualRate;
+      }
+
+      // 저축이 활성화된 경우 추가
+      savings.forEach((saving) => {
+        if (isActiveInYear(saving, year)) {
+          const yearlyAmount = getYearlyAmount(saving);
+          const adjustedAmount = applyYearlyGrowthRate(
+            yearlyAmount,
+            saving,
+            year,
+            "savings",
+            rateSettings
+          );
+
+          assetValues[cashKey].accumulated += adjustedAmount;
+          assetValues[cashKey].principal += adjustedAmount;
+          assetValues[cashKey].lastContributionYear = year;
+        }
+      });
+    }
 
     // 총 자산 및 부채 계산
     let totalAssets = 0;
@@ -928,7 +1021,13 @@ function getYearlyAmount(item) {
  * @param {string} category - 카테고리 (incomes, expenses, assets, debts, pensions)
  * @returns {number} 상승률이 적용된 금액
  */
-function applyYearlyGrowthRate(baseAmount, item, year, category = "incomes") {
+function applyYearlyGrowthRate(
+  baseAmount,
+  item,
+  year,
+  category = "incomes",
+  rateSettings = null
+) {
   let growthRate = 0;
 
   // 1. 먼저 동적 상승률 확인 (사용자 정의 항목)
@@ -936,33 +1035,74 @@ function applyYearlyGrowthRate(baseAmount, item, year, category = "incomes") {
     growthRate = DYNAMIC_GROWTH_RATES[item.title];
   } else {
     // 2. 기본 상승률 적용
-    switch (category) {
-      case "incomes":
-        // 소득 유형별 상승률 적용
-        if (item.title === "근로소득") {
+    if (rateSettings) {
+      // rateSettings가 제공된 경우 사용
+      switch (category) {
+        case "incomes":
+          if (item.title === "근로소득") {
+            growthRate = rateSettings.wageGrowthRate || WAGE_GROWTH_RATE;
+          } else if (item.title === "사업소득") {
+            growthRate =
+              rateSettings.businessGrowthRate || BUSINESS_GROWTH_RATE;
+          } else if (item.title === "임대소득") {
+            growthRate = rateSettings.rentalGrowthRate || RENTAL_GROWTH_RATE;
+          } else {
+            growthRate =
+              rateSettings.defaultIncomeGrowthRate ||
+              DEFAULT_INCOME_GROWTH_RATE;
+          }
+          break;
+        case "expenses":
+          growthRate = rateSettings.inflationRate || INFLATION_RATE;
+          break;
+        case "savings":
+          growthRate = rateSettings.inflationRate || INFLATION_RATE; // 저축도 물가상승률 적용
+          break;
+        case "assets":
+          growthRate =
+            item.rate || rateSettings.defaultReturnRate || DEFAULT_RETURN_RATE;
+          break;
+        case "debts":
+          growthRate = item.rate || 0;
+          break;
+        case "pensions":
+          growthRate = rateSettings.wageGrowthRate || WAGE_GROWTH_RATE;
+          break;
+        default:
+          growthRate = 0;
+      }
+    } else {
+      // 기존 전역 변수 사용
+      switch (category) {
+        case "incomes":
+          if (item.title === "근로소득") {
+            growthRate = WAGE_GROWTH_RATE;
+          } else if (item.title === "사업소득") {
+            growthRate = BUSINESS_GROWTH_RATE;
+          } else if (item.title === "임대소득") {
+            growthRate = RENTAL_GROWTH_RATE;
+          } else {
+            growthRate = DEFAULT_INCOME_GROWTH_RATE;
+          }
+          break;
+        case "expenses":
+          growthRate = INFLATION_RATE;
+          break;
+        case "savings":
+          growthRate = INFLATION_RATE; // 저축도 물가상승률 적용
+          break;
+        case "assets":
+          growthRate = item.rate || DEFAULT_RETURN_RATE;
+          break;
+        case "debts":
+          growthRate = item.rate || 0;
+          break;
+        case "pensions":
           growthRate = WAGE_GROWTH_RATE;
-        } else if (item.title === "사업소득") {
-          growthRate = BUSINESS_GROWTH_RATE;
-        } else if (item.title === "임대소득") {
-          growthRate = RENTAL_GROWTH_RATE;
-        } else {
-          growthRate = DEFAULT_INCOME_GROWTH_RATE; // 기본 수입상승률
-        }
-        break;
-      case "expenses":
-        growthRate = INFLATION_RATE;
-        break;
-      case "assets":
-        growthRate = item.rate || DEFAULT_RETURN_RATE; // 자산은 개별 수익률 사용
-        break;
-      case "debts":
-        growthRate = item.rate || 0; // 부채는 개별 이자율 사용
-        break;
-      case "pensions":
-        growthRate = WAGE_GROWTH_RATE; // 연금은 임금상승률 적용
-        break;
-      default:
-        growthRate = 0;
+          break;
+        default:
+          growthRate = 0;
+      }
     }
   }
 
@@ -1152,9 +1292,10 @@ export function calculateYearlyAssetBreakdown(
   data,
   startYear,
   endYear,
-  birthDate
+  birthDate,
+  rateSettings = null
 ) {
-  const { assets = [] } = data;
+  const { assets = [], savings = [] } = data;
   const yearlyBreakdown = {};
 
   // 자산별 누적 값 추적 (세부 내역용)
@@ -1167,11 +1308,16 @@ export function calculateYearlyAssetBreakdown(
       yearlyBreakdown[year] = {};
     }
 
-    // 각 자산의 년말 가치 계산 (점진적)
+    // 각 자산의 년말 가치 계산 (점진적) - 죽을 때까지 유지
     assets.forEach((asset) => {
-      if (isActiveInYear(asset, year)) {
-        const assetKey = asset.title;
+      const assetKey = asset.title;
+      const yearlyAmount = getYearlyAmount(asset);
+      const annualRate = (asset.rate || 0) / 100;
+      const startYear = new Date(asset.startDate).getFullYear();
+      const isActiveThisYear = isActiveInYear(asset, year);
 
+      // 자산이 한 번이라도 활성화되었거나, 이전에 생성된 자산이 있으면 처리
+      if (isActiveThisYear || assetDetails[assetKey]) {
         if (!assetDetails[assetKey]) {
           assetDetails[assetKey] = {
             accumulated: 0,
@@ -1179,23 +1325,25 @@ export function calculateYearlyAssetBreakdown(
           };
         }
 
-        const yearlyAmount = getYearlyAmount(asset);
-        const annualRate = (asset.rate || 0) / 100;
-
         if (asset.frequency === "once") {
-          // 일회성 자산: 시작년도에만 추가
-          const startYear = new Date(asset.startDate).getFullYear();
+          // 일회성 자산: 시작년도에만 추가, 이후 수익률만 적용
           if (year === startYear) {
             assetDetails[assetKey].accumulated = yearlyAmount;
           } else if (year > startYear) {
-            // 이전 년도 값에 수익률 적용
+            // 이전 년도 값에 수익률만 적용 (죽을 때까지 유지)
             assetDetails[assetKey].accumulated *= 1 + annualRate;
           }
         } else {
-          // 정기적 자산: 매년 추가 + 이전 값에 수익률 적용
-          assetDetails[assetKey].accumulated =
-            (assetDetails[assetKey].accumulated + yearlyAmount) *
-            (1 + annualRate);
+          // 정기적 자산: 활성화된 년도에는 추가, 비활성화된 년도에는 수익률만 적용
+          if (year > startYear) {
+            // 이전 년도 값에 수익률 적용
+            assetDetails[assetKey].accumulated *= 1 + annualRate;
+          }
+
+          if (isActiveThisYear) {
+            // 올해 활성화된 경우에만 새로 추가할 금액
+            assetDetails[assetKey].accumulated += yearlyAmount;
+          }
         }
 
         // 해당 년도의 자산 가치 저장 (만원 미만 버림)
@@ -1204,6 +1352,49 @@ export function calculateYearlyAssetBreakdown(
         );
       }
     });
+
+    // 현금 자산 처리 (기본 자산 + 저축)
+    const cashKey = "현금";
+
+    // 기본 현금 자산이 있는지 확인
+    const defaultCashAsset = assets.find((asset) => asset.title === "현금");
+
+    // 저축이 있거나 기본 현금 자산이 있으면 현금 처리
+    if (savings.length > 0 || defaultCashAsset) {
+      if (!assetDetails[cashKey]) {
+        assetDetails[cashKey] = {
+          accumulated: 0,
+        };
+      }
+
+      const annualRate = 0; // 현금은 수익률 0%
+
+      // 이전 년도 값에 수익률 적용 (현금은 0%이지만 일관성 유지)
+      if (year > startYear) {
+        assetDetails[cashKey].accumulated *= 1 + annualRate;
+      }
+
+      // 저축이 활성화된 경우 추가
+      savings.forEach((saving) => {
+        if (isActiveInYear(saving, year)) {
+          const yearlyAmount = getYearlyAmount(saving);
+          const adjustedAmount = applyYearlyGrowthRate(
+            yearlyAmount,
+            saving,
+            year,
+            "savings",
+            rateSettings
+          );
+
+          assetDetails[cashKey].accumulated += adjustedAmount;
+        }
+      });
+
+      // 해당 년도의 자산 가치 저장 (만원 미만 버림)
+      yearlyBreakdown[year][cashKey] = Math.floor(
+        assetDetails[cashKey].accumulated
+      );
+    }
   }
 
   return yearlyBreakdown;
@@ -1427,4 +1618,32 @@ function calculateAge(birthDate) {
   }
 
   return age;
+}
+
+/**
+ * 기본 현금 자산 생성
+ * @param {string} birthDate - 생년월일
+ * @param {number} retirementAge - 은퇴 나이
+ * @returns {Array} 기본 현금 자산 배열
+ */
+export function createDefaultAssets(birthDate, retirementAge) {
+  const currentYear = new Date().getFullYear();
+  const birthYear = new Date(birthDate).getFullYear();
+  const deathYear = birthYear + 89; // 90세까지
+
+  const baseTime = new Date();
+
+  return [
+    {
+      title: "현금",
+      amount: 0, // 기본값 0원
+      startDate: `${currentYear}-01-01`,
+      endDate: `${deathYear}-12-31`, // 90세까지
+      frequency: "yearly", // 년 단위
+      note: "기본 수익률 적용",
+      rate: 0, // 현금은 수익률 0%
+      category: "assets",
+      createdAt: new Date(baseTime.getTime() - 3000), // 가장 먼저
+    },
+  ];
 }

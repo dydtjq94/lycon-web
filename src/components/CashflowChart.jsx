@@ -107,10 +107,6 @@ export default function CashflowChart({ data, profile = null }) {
 
   // X축 라벨 포맷팅 함수 (나이 기반)
   const formatXAxisLabel = (value) => {
-    const dataItem = chartData.find((item) => item.year === value);
-    if (dataItem && dataItem.age) {
-      return `${value}\n(${dataItem.age}세)`;
-    }
     return value;
   };
 
@@ -168,7 +164,7 @@ export default function CashflowChart({ data, profile = null }) {
             domain={["dataMin", 2100]}
             tickFormatter={formatXAxisLabel}
             label={{
-              value: "년도 (나이)",
+              value: "년도",
               position: "insideBottom",
               offset: -5,
               style: {

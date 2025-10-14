@@ -297,6 +297,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
       debts: "부채",
       expenses: "지출",
       pensions: "연금",
+      savings: "저축",
     };
     return categoryMap[category] || category;
   };
@@ -331,12 +332,14 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                       ? "예: 주택담보대출, 신용대출, 카드론"
                       : category === "incomes"
                       ? "예: 급여, 사업 소득"
-                      : category === "assets"
-                      ? "예: 예금, 주식, 부동산"
                       : category === "expenses"
                       ? "예: 생활비, 교육비, 의료비"
+                      : category === "savings"
+                      ? "예: 정기저축, 적금, 목돈마련"
                       : category === "pensions"
                       ? "예: 국민연금, 퇴직연금"
+                      : category === "assets"
+                      ? "예: 예금, 주식, 부동산"
                       : "제목을 입력하세요"
                   }
                 />
