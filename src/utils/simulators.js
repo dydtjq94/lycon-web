@@ -1301,13 +1301,14 @@ export function createDefaultIncomes(profile) {
   const currentYear = new Date().getFullYear();
   const retirementYear =
     new Date(profile.birthDate).getFullYear() + profile.retirementAge;
+  const deathYear = new Date(profile.birthDate).getFullYear() + 90; // 90세까지
 
   return [
     {
       title: "근로소득",
       amount: 0, // 기본값 0원
       startDate: `${currentYear}-01-01`,
-      endDate: `${retirementYear}-12-31`,
+      endDate: `${retirementYear}-12-31`, // 은퇴까지
       frequency: "monthly", // 월급
       note: "임금상승률 적용",
       category: "incomes",
@@ -1316,7 +1317,7 @@ export function createDefaultIncomes(profile) {
       title: "사업소득",
       amount: 0, // 기본값 0원
       startDate: `${currentYear}-01-01`,
-      endDate: `${retirementYear}-12-31`,
+      endDate: `${deathYear}-12-31`, // 죽을 때까지
       frequency: "monthly", // 월급
       note: "사업소득상승률 적용",
       category: "incomes",
@@ -1325,7 +1326,7 @@ export function createDefaultIncomes(profile) {
       title: "임대소득",
       amount: 0, // 기본값 0원
       startDate: `${currentYear}-01-01`,
-      endDate: `${retirementYear}-12-31`,
+      endDate: `${deathYear}-12-31`, // 죽을 때까지
       frequency: "monthly", // 월급
       note: "임대소득상승률 적용",
       category: "incomes",
