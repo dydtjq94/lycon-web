@@ -59,7 +59,6 @@ export default function DashboardPage() {
     inflationRate: getInflationRate(),
     defaultReturnRate: getDefaultReturnRate(),
   });
-  const [showSettings, setShowSettings] = useState(false);
 
   // 데이터 해시 계산 함수 (데이터 변경 감지용)
   const calculateDataHash = (profile, data) => {
@@ -222,32 +221,6 @@ export default function DashboardPage() {
     setSelectedCategory(category);
   };
 
-  // 설정값 변경 핸들러
-  const handleSettingChange = (key, value) => {
-    const newSettings = { ...settings, [key]: parseFloat(value) };
-    setSettings(newSettings);
-    
-    // simulators.js의 전역 변수 업데이트
-    switch (key) {
-      case 'wageGrowthRate':
-        updateWageGrowthRate(parseFloat(value));
-        break;
-      case 'inflationRate':
-        updateInflationRate(parseFloat(value));
-        break;
-      case 'defaultReturnRate':
-        updateDefaultReturnRate(parseFloat(value));
-        break;
-    }
-    
-    // 시뮬레이션 재계산을 위해 캐시 무효화
-    setLastDataHash(null);
-  };
-
-  // 설정 패널 토글
-  const toggleSettings = () => {
-    setShowSettings(!showSettings);
-  };
 
   // 모달 닫기 핸들러
   const handleCloseModal = () => {
@@ -352,12 +325,6 @@ export default function DashboardPage() {
         >
           ← 프로필 목록
         </button>
-        <button
-          className={styles.settingsButton}
-          onClick={toggleSettings}
-        >
-          ⚙️ 설정
-        </button>
       </div>
       <header className={styles.header}>
         <div className={styles.profileInfo}>
@@ -411,75 +378,66 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+          
+          {/* 인라인 설정 패널 */}
+          <div className={styles.inlineSettings}>
+            <h4>시뮬레이션 설정</h4>
+            <div className={styles.settingsRow}>
+              <div className={styles.settingField}>
+                <label>임금상승률</label>
+                <input
+                  type="number"
+                  value={settings.wageGrowthRate}
+                  onChange={(e) => setSettings(prev => ({...prev, wageGrowthRate: parseFloat(e.target.value)}))}
+                  step="0.1"
+                  min="0"
+                  max="20"
+                />
+                <span>%</span>
+              </div>
+              
+              <div className={styles.settingField}>
+                <label>물가상승률</label>
+                <input
+                  type="number"
+                  value={settings.inflationRate}
+                  onChange={(e) => setSettings(prev => ({...prev, inflationRate: parseFloat(e.target.value)}))}
+                  step="0.1"
+                  min="0"
+                  max="20"
+                />
+                <span>%</span>
+              </div>
+              
+              <div className={styles.settingField}>
+                <label>기본 수익률</label>
+                <input
+                  type="number"
+                  value={settings.defaultReturnRate}
+                  onChange={(e) => setSettings(prev => ({...prev, defaultReturnRate: parseFloat(e.target.value)}))}
+                  step="0.1"
+                  min="0"
+                  max="20"
+                />
+                <span>%</span>
+              </div>
+              
+              <button 
+                className={styles.applyButton}
+                onClick={() => {
+                  updateWageGrowthRate(settings.wageGrowthRate);
+                  updateInflationRate(settings.inflationRate);
+                  updateDefaultReturnRate(settings.defaultReturnRate);
+                  setLastDataHash(null);
+                }}
+              >
+                적용하기
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* 설정 패널 */}
-      {showSettings && (
-        <div className={styles.settingsPanel}>
-          <div className={styles.settingsHeader}>
-            <h3>시뮬레이션 설정</h3>
-            <button 
-              className={styles.closeSettingsButton}
-              onClick={toggleSettings}
-            >
-              ✕
-            </button>
-          </div>
-          <div className={styles.settingsContent}>
-            <div className={styles.settingItem}>
-              <label htmlFor="wageGrowthRate" className={styles.settingLabel}>
-                임금상승률 (%/년)
-              </label>
-              <input
-                type="number"
-                id="wageGrowthRate"
-                value={settings.wageGrowthRate}
-                onChange={(e) => handleSettingChange('wageGrowthRate', e.target.value)}
-                step="0.1"
-                min="0"
-                max="20"
-                className={styles.settingInput}
-              />
-              <span className={styles.settingUnit}>%</span>
-            </div>
-            
-            <div className={styles.settingItem}>
-              <label htmlFor="inflationRate" className={styles.settingLabel}>
-                물가상승률 (%/년)
-              </label>
-              <input
-                type="number"
-                id="inflationRate"
-                value={settings.inflationRate}
-                onChange={(e) => handleSettingChange('inflationRate', e.target.value)}
-                step="0.1"
-                min="0"
-                max="20"
-                className={styles.settingInput}
-              />
-              <span className={styles.settingUnit}>%</span>
-            </div>
-            
-            <div className={styles.settingItem}>
-              <label htmlFor="defaultReturnRate" className={styles.settingLabel}>
-                기본 수익률 (%/년)
-              </label>
-              <input
-                type="number"
-                id="defaultReturnRate"
-                value={settings.defaultReturnRate}
-                onChange={(e) => handleSettingChange('defaultReturnRate', e.target.value)}
-                step="0.1"
-                min="0"
-                max="20"
-                className={styles.settingInput}
-              />
-              <span className={styles.settingUnit}>%</span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className={styles.errorBanner} role="alert">
