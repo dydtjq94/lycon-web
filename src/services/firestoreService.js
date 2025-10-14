@@ -91,7 +91,7 @@ export const dataItemService = {
   async getItems(profileId, category) {
     const q = query(
       collection(db, "profiles", profileId, category),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "asc")
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -100,7 +100,7 @@ export const dataItemService = {
   subscribeToItems(profileId, category, onData, onError) {
     const q = query(
       collection(db, "profiles", profileId, category),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "asc")
     );
     return onSnapshot(
       q,

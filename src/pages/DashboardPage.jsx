@@ -118,7 +118,7 @@ export default function DashboardPage() {
     const retirementYear = birthDate.getFullYear() + profile.retirementAge;
     
     // 시뮬레이션 종료년도: 90세가 되는 년도
-    const maxEndYear = birthDate.getFullYear() + 90;
+    const maxEndYear = birthDate.getFullYear() + 89; // 90세까지 (89 + 1 = 90)
 
     console.log("=== 시뮬레이션 시작 (년별 방식) ===");
     console.log("현재 년도:", currentYear);

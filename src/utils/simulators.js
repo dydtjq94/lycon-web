@@ -1302,8 +1302,8 @@ export function createDefaultIncomes(profile) {
   const birthYear = new Date(profile.birthDate).getFullYear();
   const retirementAge = parseInt(profile.retirementAge); // 숫자로 변환
   const retirementYear = birthYear + retirementAge;
-  const deathYear = birthYear + 90; // 90세까지
-  
+  const deathYear = birthYear + 89; // 90세까지 (89 + 1 = 90)
+
   // 디버깅용 로그
   console.log("createDefaultIncomes 디버깅:", {
     birthDate: profile.birthDate,
@@ -1312,36 +1312,41 @@ export function createDefaultIncomes(profile) {
     retirementAgeParsed: retirementAge,
     retirementYear,
     deathYear,
-    currentYear
+    currentYear,
   });
 
+  const baseTime = new Date();
+  
   return [
     {
       title: "근로소득",
       amount: 0, // 기본값 0원
       startDate: `${currentYear}-01-01`,
-      endDate: `${retirementYear}-12-31`, // 은퇴까지
+      endDate: `${retirementYear - 1}-12-31`, // 은퇴 전년도까지
       frequency: "monthly", // 월급
       note: "임금상승률 적용",
       category: "incomes",
+      createdAt: new Date(baseTime.getTime() - 2000), // 가장 먼저 (오래된 시간)
     },
     {
       title: "사업소득",
       amount: 0, // 기본값 0원
       startDate: `${currentYear}-01-01`,
-      endDate: `${deathYear}-12-31`, // 죽을 때까지
+      endDate: `${deathYear}-12-31`, // 90세까지
       frequency: "monthly", // 월급
       note: "사업소득상승률 적용",
       category: "incomes",
+      createdAt: new Date(baseTime.getTime() - 1000), // 두 번째
     },
     {
       title: "임대소득",
       amount: 0, // 기본값 0원
       startDate: `${currentYear}-01-01`,
-      endDate: `${deathYear}-12-31`, // 죽을 때까지
+      endDate: `${deathYear}-12-31`, // 90세까지
       frequency: "monthly", // 월급
       note: "임대소득상승률 적용",
       category: "incomes",
+      createdAt: new Date(baseTime.getTime() - 500), // 세 번째 (가장 최근)
     },
   ];
 }
