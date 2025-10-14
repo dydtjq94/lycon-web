@@ -1,5 +1,5 @@
 // 데이터 추가 모달 컴포넌트 (공통)
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getTodayString, isValidDate } from "../utils/date.js";
 import styles from "./AddDataModal.module.css";
 
@@ -27,6 +27,34 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 모달이 열릴 때마다 폼 초기화
+  useEffect(() => {
+    if (isOpen) {
+      const currentYear = new Date().getFullYear();
+      setFormData({
+        title: "",
+        amount: "",
+        startYear: currentYear,
+        endYear: currentYear + 5, // 기본값을 5년 후로 설정
+        frequency: "monthly",
+        note: "",
+        rate: "",
+        growthRate: "",
+        // 부채 관련 필드
+        principalAmount: "",
+        interestRate: "",
+        repaymentType: "equal_payment",
+        monthlyPayment: "",
+        minimumPaymentRate: "",
+        // 연금 관련 필드
+        pensionType: "national",
+        startAge: 65,
+        endAge: 100,
+      });
+      setErrors({});
+    }
+  }, [isOpen]);
 
   // 카테고리별 설정
   const categoryConfig = {
@@ -335,7 +363,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
         endDate: formData.endYear ? `${formData.endYear}-12-31` : null,
         // 부채가 아닌 경우에만 frequency 저장
         ...(category !== "debts" && { frequency: formData.frequency }),
-        note: formData.note.trim() || null,
+        note: formData.note.trim() || (category === "incomes" ? "기본 상승률 적용" : null),
         rate: config.showRate && formData.rate ? Number(formData.rate) : null,
         growthRate:
           config.showGrowthRate && formData.growthRate
@@ -363,14 +391,23 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
         pensionType: config.showPensionFields ? formData.pensionType : null,
       };
 
+      console.log("AddDataModal 제출 데이터:", {
+        title: submitData.title,
+        startYear: formData.startYear,
+        endYear: formData.endYear,
+        startDate: submitData.startDate,
+        endDate: submitData.endDate,
+        note: submitData.note
+      });
       await onAdd(submitData);
 
       // 성공 시 폼 초기화
+      const currentYear = new Date().getFullYear();
       setFormData({
         title: "",
         amount: "",
-        startDate: getTodayString(),
-        endDate: "",
+        startYear: currentYear,
+        endYear: currentYear + 5, // 기본값을 5년 후로 설정
         frequency: "monthly",
         note: "",
         rate: "",

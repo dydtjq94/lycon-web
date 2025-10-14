@@ -23,11 +23,13 @@ import {
   updateWageGrowthRate,
   updateBusinessGrowthRate,
   updateRentalGrowthRate,
+  updateDefaultIncomeGrowthRate,
   updateInflationRate,
   updateDefaultReturnRate,
   getWageGrowthRate,
   getBusinessGrowthRate,
   getRentalGrowthRate,
+  getDefaultIncomeGrowthRate,
   getInflationRate,
   getDefaultReturnRate,
 } from "../utils/simulators.js";
@@ -62,6 +64,7 @@ export default function DashboardPage() {
     wageGrowthRate: getWageGrowthRate(),
     businessGrowthRate: getBusinessGrowthRate(),
     rentalGrowthRate: getRentalGrowthRate(),
+    defaultIncomeGrowthRate: getDefaultIncomeGrowthRate(),
     inflationRate: getInflationRate(),
     defaultReturnRate: getDefaultReturnRate(),
   });
@@ -431,6 +434,19 @@ export default function DashboardPage() {
               </div>
               
               <div className={styles.settingField}>
+                <label>기본 수입상승률</label>
+                <input
+                  type="number"
+                  value={settings.defaultIncomeGrowthRate}
+                  onChange={(e) => setSettings(prev => ({...prev, defaultIncomeGrowthRate: parseFloat(e.target.value)}))}
+                  step="0.1"
+                  min="0"
+                  max="20"
+                />
+                <span>%</span>
+              </div>
+              
+              <div className={styles.settingField}>
                 <label>물가상승률</label>
                 <input
                   type="number"
@@ -462,6 +478,7 @@ export default function DashboardPage() {
                   updateWageGrowthRate(settings.wageGrowthRate);
                   updateBusinessGrowthRate(settings.businessGrowthRate);
                   updateRentalGrowthRate(settings.rentalGrowthRate);
+                  updateDefaultIncomeGrowthRate(settings.defaultIncomeGrowthRate);
                   updateInflationRate(settings.inflationRate);
                   updateDefaultReturnRate(settings.defaultReturnRate);
                   setLastDataHash(null);
