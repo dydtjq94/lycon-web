@@ -1361,6 +1361,32 @@ export function createDefaultIncomes(profile) {
 }
 
 /**
+ * 기본 지출 항목들 생성 함수
+ * @param {Object} profile - 프로필 정보
+ * @returns {Array} 기본 지출 항목들
+ */
+export function createDefaultExpenses(profile) {
+  const currentYear = new Date().getFullYear();
+  const birthYear = new Date(profile.birthDate).getFullYear();
+  const deathYear = birthYear + 89; // 90세까지 (89 + 1 = 90)
+
+  const baseTime = new Date();
+
+  return [
+    {
+      title: "생활비",
+      amount: 0, // 기본값 0원
+      startDate: `${currentYear}-01-01`,
+      endDate: `${deathYear}-12-31`, // 90세까지
+      frequency: "monthly", // 월 단위
+      note: "물가상승률 적용",
+      category: "expenses",
+      createdAt: new Date(baseTime.getTime() - 1000), // 기본 지출
+    },
+  ];
+}
+
+/**
  * 나이 계산 함수 (simulators.js 내부용)
  * @param {string} birthDate - 생년월일 (YYYY-MM-DD)
  * @returns {number} 나이

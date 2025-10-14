@@ -1,6 +1,11 @@
 // 데이터 목록 컴포넌트 (공통)
 import React, { useState } from "react";
-import { formatDate, formatYear, getTodayString, isValidDate } from "../utils/date.js";
+import {
+  formatDate,
+  formatYear,
+  getTodayString,
+  isValidDate,
+} from "../utils/date.js";
 import styles from "./DataList.module.css";
 
 export default function DataList({ items, category, onEdit, onDelete }) {
@@ -434,7 +439,10 @@ export default function DataList({ items, category, onEdit, onDelete }) {
               {category !== "debts" && (
                 <div className={styles.editField}>
                   <label>
-                    {category === "pensions" ? "월 연금액 (만원)" : "금액 (만원)"} *
+                    {category === "pensions"
+                      ? "월 연금액 (만원)"
+                      : "금액 (만원)"}{" "}
+                    *
                   </label>
                   <input
                     type="number"
@@ -1042,6 +1050,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
           ) : (
             // 표시 모드
             <div className={styles.itemContent}>
+              {/* 첫 번째 줄: 타이틀 [수정, 삭제 아이콘] */}
               <div className={styles.itemHeader}>
                 <h3 className={styles.itemTitle}>{item.title}</h3>
                 <div className={styles.itemActions}>
@@ -1050,83 +1059,30 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                     className={styles.editButton}
                     title="수정"
                   >
-                    ✏️
+                    ✎
                   </button>
                   <button
                     onClick={() => onDelete(item.id, item.title)}
                     className={styles.deleteButton}
                     title="삭제"
                   >
-                    🗑️
+                    ×
                   </button>
                 </div>
               </div>
-              <div className={styles.itemDetails}>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>
-                    {category === "pensions" ? "월 연금액:" : "금액:"}
-                  </span>
-                  <span className={styles.detailValue}>
-                    {formatAmount(item.amount)}
-                  </span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>빈도:</span>
-                  <span className={styles.detailValue}>
-                    {getFrequencyText(item.frequency)}
-                  </span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>시작년도:</span>
-                  <span className={styles.detailValue}>
-                    {formatYear(item.startDate)}
-                  </span>
-                </div>
-                {item.endDate && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>종료년도:</span>
-                    <span className={styles.detailValue}>
-                      {formatYear(item.endDate)}
-                    </span>
-                  </div>
-                )}
-                {item.rate && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>
-                      {config.rateLabel}:
-                    </span>
-                    <span className={styles.detailValue}>{item.rate}%</span>
-                  </div>
-                )}
-                {item.growthRate && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>
-                      {config.growthRateLabel}:
-                    </span>
-                    <span className={styles.detailValue}>
-                      {item.growthRate}%
-                    </span>
-                  </div>
-                )}
-                {category === "pensions" && item.pensionType && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>연금 종류:</span>
-                    <span className={styles.detailValue}>
-                      {item.pensionType === "national"
-                        ? "국민연금"
-                        : item.pensionType === "private"
-                        ? "개인연금"
-                        : "퇴직연금"}
-                    </span>
-                  </div>
-                )}
-                {item.note && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>메모:</span>
-                    <span className={styles.detailValue}>{item.note}</span>
-                  </div>
-                )}
+
+              {/* 두 번째 줄: 금액 빈도 기간 */}
+              <div className={styles.itemSummary}>
+                <span>{formatAmount(item.amount)}</span>
+                <span>{getFrequencyText(item.frequency)}</span>
+                <span>
+                  {formatYear(item.startDate)}-
+                  {item.endDate ? formatYear(item.endDate) : "∞"}
+                </span>
               </div>
+
+              {/* 세 번째 줄: 메모 */}
+              {item.note && <div className={styles.itemNote}>{item.note}</div>}
             </div>
           )}
         </div>

@@ -21,15 +21,17 @@
 
 .item {
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   padding: 0.75rem;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  cursor: pointer;
 }
 
 .item:hover {
   border-color: #3b82f6;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
 }
 
 .itemContent {
@@ -41,7 +43,8 @@
 .itemHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  width: 100%;
 }
 
 .itemTitle {
@@ -52,28 +55,50 @@
   flex: 1;
 }
 
+.itemSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.itemNote {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+}
+
 .itemActions {
   display: flex;
-  gap: 0.5rem;
 }
 
 .editButton,
 .deleteButton {
   background: none;
   border: none;
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 4px;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  color: #64748b;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .editButton:hover {
   background: #f0f9ff;
+  color: #3b82f6;
 }
 
 .deleteButton:hover {
   background: #fef2f2;
+  color: #ef4444;
 }
 
 .itemDetails {

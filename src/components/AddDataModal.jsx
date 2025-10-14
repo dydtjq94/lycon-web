@@ -28,31 +28,32 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 모달이 열릴 때마다 폼 초기화
+  // 모달이 열릴 때 폼 초기화
   useEffect(() => {
     if (isOpen) {
+      setErrors({});
+      // 모달이 열릴 때마다 폼 초기화
       const currentYear = new Date().getFullYear();
       setFormData({
         title: "",
         amount: "",
         startYear: currentYear,
-        endYear: currentYear + 5, // 기본값을 5년 후로 설정
+        endYear: currentYear,
         frequency: "monthly",
         note: "",
         rate: "",
         growthRate: "",
-        // 부채 관련 필드
+        // 부채 관련 필드 초기화
         principalAmount: "",
         interestRate: "",
         repaymentType: "equal_payment",
         monthlyPayment: "",
         minimumPaymentRate: "",
-        // 연금 관련 필드
+        // 연금 관련 필드 초기화
         pensionType: "national",
         startAge: 65,
         endAge: 100,
       });
-      setErrors({});
     }
   }, [isOpen]);
 
@@ -107,6 +108,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
   // 폼 데이터 변경 핸들러
   const handleChange = (e) => {
     const { name, value } = e.target;
+
 
     // 연금 종류 변경 시 기본값 설정
     if (name === "pensionType") {
@@ -363,7 +365,9 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
         endDate: formData.endYear ? `${formData.endYear}-12-31` : null,
         // 부채가 아닌 경우에만 frequency 저장
         ...(category !== "debts" && { frequency: formData.frequency }),
-        note: formData.note.trim() || (category === "incomes" ? "기본 상승률 적용" : null),
+        note:
+          formData.note.trim() ||
+          (category === "incomes" ? "기본 상승률 적용" : null),
         rate: config.showRate && formData.rate ? Number(formData.rate) : null,
         growthRate:
           config.showGrowthRate && formData.growthRate
@@ -391,38 +395,9 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
         pensionType: config.showPensionFields ? formData.pensionType : null,
       };
 
-      console.log("AddDataModal 제출 데이터:", {
-        title: submitData.title,
-        startYear: formData.startYear,
-        endYear: formData.endYear,
-        startDate: submitData.startDate,
-        endDate: submitData.endDate,
-        note: submitData.note
-      });
       await onAdd(submitData);
 
-      // 성공 시 폼 초기화
-      const currentYear = new Date().getFullYear();
-      setFormData({
-        title: "",
-        amount: "",
-        startYear: currentYear,
-        endYear: currentYear + 5, // 기본값을 5년 후로 설정
-        frequency: "monthly",
-        note: "",
-        rate: "",
-        growthRate: "",
-        // 부채 관련 필드 초기화
-        principalAmount: "",
-        interestRate: "",
-        repaymentType: "equal_payment",
-        monthlyPayment: "",
-        minimumPaymentRate: "",
-        // 연금 관련 필드 초기화
-        pensionType: "national",
-        startAge: 65,
-        endAge: 100,
-      });
+      // 성공 시 모달 닫기 (폼 초기화는 모달이 다시 열릴 때)
       setErrors({});
       onClose();
     } catch (error) {
@@ -433,29 +408,8 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
     }
   };
 
-  // 모달이 닫힐 때 폼 초기화
+  // 모달이 닫힐 때
   const handleClose = () => {
-    const today = getTodayString();
-    setFormData({
-      title: "",
-      amount: "",
-      startDate: today,
-      endDate: today, // 모든 카테고리에서 끝일을 시작일과 같게 설정
-      frequency: "monthly",
-      note: "",
-      rate: "",
-      growthRate: "",
-      // 부채 관련 필드 초기화
-      principalAmount: "",
-      interestRate: "",
-      repaymentType: "equal_payment",
-      monthlyPayment: "",
-      minimumPaymentRate: "",
-      // 연금 관련 필드 초기화
-      pensionType: "national",
-      startAge: 65,
-      endAge: 100,
-    });
     setErrors({});
     onClose();
   };
@@ -560,9 +514,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                   errors.amount ? styles.inputError : ""
                 }`}
                 placeholder={
-                  category === "pensions"
-                    ? "예: 200 (월 200만원)"
-                    : "예: 5000"
+                  category === "pensions" ? "예: 200 (월 200만원)" : "예: 5000"
                 }
                 disabled={isSubmitting}
               />
@@ -587,10 +539,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                 disabled={isSubmitting}
               >
                 <option value="yearly">년</option>
-                <option value="quarterly">분기</option>
                 <option value="monthly">월</option>
-                <option value="daily">일</option>
-                <option value="once">일회성</option>
               </select>
             </div>
           )}
@@ -598,36 +547,6 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
           {/* 부채가 아닌 경우의 날짜 입력 */}
           {category !== "debts" && (
             <>
-              {/* 일회성: 년도만 선택 */}
-              {formData.frequency === "once" && (
-                <div className={styles.field}>
-                  <label htmlFor="year" className={styles.label}>
-                    적용 년도 *
-                  </label>
-                  <select
-                    id="year"
-                    name="year"
-                    value={
-                      formData.startDate
-                        ? formData.startDate.split("-")[0]
-                        : currentYear
-                    }
-                    onChange={(e) => handleYearChange(e, "start")}
-                    className={styles.input}
-                    disabled={isSubmitting}
-                  >
-                    {yearOptions.map((year) => (
-                      <option key={year} value={year}>
-                        {year}년
-                      </option>
-                    ))}
-                  </select>
-                  <span className={styles.helpText}>
-                    일회성 항목은 선택한 년도 전체에 적용됩니다.
-                  </span>
-                </div>
-              )}
-
               {/* 년: 시작년도, 끝년도 */}
               {formData.frequency === "yearly" && (
                 <>
@@ -638,12 +557,8 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                     <select
                       id="startYear"
                       name="startYear"
-                      value={
-                        formData.startDate
-                          ? formData.startDate.split("-")[0]
-                          : currentYear
-                      }
-                      onChange={(e) => handleYearChange(e, "start")}
+                      value={formData.startYear}
+                      onChange={handleChange}
                       className={styles.input}
                       disabled={isSubmitting}
                     >
@@ -662,12 +577,8 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                     <select
                       id="endYear"
                       name="endYear"
-                      value={
-                        formData.endDate
-                          ? formData.endDate.split("-")[0]
-                          : currentYear
-                      }
-                      onChange={(e) => handleYearChange(e, "end")}
+                      value={formData.endYear}
+                      onChange={handleChange}
                       className={styles.input}
                       disabled={isSubmitting}
                     >
@@ -681,152 +592,12 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                 </>
               )}
 
-              {/* 분기: 시작년도&분기, 끝년도&분기 */}
-              {formData.frequency === "quarterly" && (
-                <>
-                  <div className={styles.field}>
-                    <label htmlFor="startQuarter" className={styles.label}>
-                      시작 분기 *
-                    </label>
-                    <select
-                      id="startQuarter"
-                      name="startQuarter"
-                      value={JSON.stringify({
-                        year: formData.startDate
-                          ? parseInt(formData.startDate.split("-")[0])
-                          : currentYear,
-                        quarter: formData.startDate
-                          ? Math.ceil(
-                              parseInt(formData.startDate.split("-")[1]) / 3
-                            )
-                          : 1,
-                      })}
-                      onChange={(e) => handleQuarterChange(e, "start")}
-                      className={styles.input}
-                      disabled={isSubmitting}
-                    >
-                      {quarterOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className={styles.field}>
-                    <label htmlFor="endQuarter" className={styles.label}>
-                      끝 분기
-                    </label>
-                    <select
-                      id="endQuarter"
-                      name="endQuarter"
-                      value={JSON.stringify({
-                        year: formData.endDate
-                          ? parseInt(formData.endDate.split("-")[0])
-                          : currentYear,
-                        quarter: formData.endDate
-                          ? Math.ceil(
-                              parseInt(formData.endDate.split("-")[1]) / 3
-                            )
-                          : 1,
-                      })}
-                      onChange={(e) => handleQuarterChange(e, "end")}
-                      className={styles.input}
-                      disabled={isSubmitting}
-                    >
-                      {quarterOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {/* 월: 시작년도&월, 끝년도&월 */}
+              {/* 월: 시작년도, 끝년도 */}
               {formData.frequency === "monthly" && (
                 <>
                   <div className={styles.field}>
-                    <label htmlFor="startMonth" className={styles.label}>
-                      {category === "pensions"
-                        ? "수령 월 *"
-                        : category === "incomes"
-                        ? "수입 월 *"
-                        : category === "assets"
-                        ? "자산 월 *"
-                        : category === "expenses"
-                        ? "지출 월 *"
-                        : "시작 월 *"}
-                    </label>
-                    <select
-                      id="startMonth"
-                      name="startMonth"
-                      value={JSON.stringify({
-                        year: formData.startDate
-                          ? parseInt(formData.startDate.split("-")[0])
-                          : currentYear,
-                        month: formData.startDate
-                          ? parseInt(formData.startDate.split("-")[1])
-                          : 1,
-                      })}
-                      onChange={(e) => {
-                        // 시작일 변경 시 끝일도 같게 설정 (기본값)
-                        const { year, month } = JSON.parse(e.target.value);
-                        const newDate = `${year}-${String(month).padStart(
-                          2,
-                          "0"
-                        )}-01`;
-                        handleStartDateChange({
-                          target: { value: newDate },
-                        });
-                      }}
-                      className={styles.input}
-                      disabled={isSubmitting}
-                    >
-                      {monthOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className={styles.field}>
-                    <label htmlFor="endMonth" className={styles.label}>
-                      끝 월
-                    </label>
-                    <select
-                      id="endMonth"
-                      name="endMonth"
-                      value={JSON.stringify({
-                        year: formData.endDate
-                          ? parseInt(formData.endDate.split("-")[0])
-                          : currentYear,
-                        month: formData.endDate
-                          ? parseInt(formData.endDate.split("-")[1])
-                          : 1,
-                      })}
-                      onChange={(e) => handleMonthChange(e, "end")}
-                      className={styles.input}
-                      disabled={isSubmitting}
-                    >
-                      {monthOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {/* 일: 시작년도&월&일, 끝년도&월&일 */}
-              {formData.frequency === "daily" && (
-                <>
-                  <div className={styles.field}>
                     <label htmlFor="startYear" className={styles.label}>
-                      시작년도 *
+                      시작 년도 *
                     </label>
                     <input
                       type="number"
@@ -850,7 +621,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
 
                   <div className={styles.field}>
                     <label htmlFor="endYear" className={styles.label}>
-                      종료년도
+                      종료 년도
                     </label>
                     <input
                       type="number"

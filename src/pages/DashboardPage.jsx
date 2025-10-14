@@ -20,6 +20,7 @@ import {
   calculateYearlyAssets,
   calculateYearlyAssetBreakdown,
   createDefaultIncomes,
+  createDefaultExpenses,
   updateWageGrowthRate,
   updateBusinessGrowthRate,
   updateRentalGrowthRate,
@@ -204,6 +205,19 @@ export default function DashboardPage() {
               console.log("기본 수입 항목들 추가됨:", defaultIncomes);
             } catch (error) {
               console.error("기본 수입 항목 추가 오류:", error);
+            }
+          }
+          
+          // 지출 데이터가 비어있고 프로필이 있으면 기본 지출 항목들 추가
+          if (category === "expenses" && items.length === 0 && profile) {
+            try {
+              const defaultExpenses = createDefaultExpenses(profile);
+              for (const expense of defaultExpenses) {
+                await dataItemService.createItem(profileId, "expenses", expense);
+              }
+              console.log("기본 지출 항목들 추가됨:", defaultExpenses);
+            } catch (error) {
+              console.error("기본 지출 항목 추가 오류:", error);
             }
           }
           
