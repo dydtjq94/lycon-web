@@ -15,8 +15,6 @@ import {
 import styles from "./CashflowChart.module.css";
 
 export default function CashflowChart({ data, profile = null }) {
-  console.log("CashflowChart - 받은 데이터:", data);
-
   if (!data || data.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -116,8 +114,6 @@ export default function CashflowChart({ data, profile = null }) {
     return value;
   };
 
-  console.log("CashflowChart - 포맷팅된 차트 데이터:", chartData);
-
   // Y축 도메인 계산 (순현금흐름만) - 더 균형잡힌 범위
   const netCashflowValues = chartData
     .map((item) => item.netCashflow)
@@ -132,21 +128,20 @@ export default function CashflowChart({ data, profile = null }) {
     );
   }
 
-  // 양수와 음수 값을 분리하여 계산
-  const positiveValues = netCashflowValues.filter((val) => val > 0);
-  const negativeValues = netCashflowValues.filter((val) => val < 0);
+  // 0을 중심으로 균형잡힌 Y축 도메인 계산
+  const maxAbsValue = Math.max(...netCashflowValues.map(Math.abs));
 
-  let minValue = 0;
-  let maxValue = 1000000;
+  let minValue, maxValue;
 
-  if (positiveValues.length > 0) {
-    const maxPositive = Math.max(...positiveValues);
-    maxValue = maxPositive * 1.1; // 최대값의 110%로 여유 공간 확보
-  }
-
-  if (negativeValues.length > 0) {
-    const minNegative = Math.min(...negativeValues);
-    minValue = minNegative * 1.1; // 최소값의 110%로 여유 공간 확보
+  if (maxAbsValue === 0) {
+    // 모든 값이 0인 경우
+    minValue = -100000;
+    maxValue = 100000;
+  } else {
+    // 0을 중심으로 대칭적인 범위 설정
+    const padding = maxAbsValue * 0.2; // 20% 여유 공간
+    minValue = -(maxAbsValue + padding);
+    maxValue = maxAbsValue + padding;
   }
 
   // 0을 포함하도록 조정
@@ -192,14 +187,14 @@ export default function CashflowChart({ data, profile = null }) {
             axisLine={{ stroke: "#6b7280" }}
             tickFormatter={formatYAxis}
             domain={[minValue, maxValue]}
-            width={50}
-            tickCount={8}
+            width={60}
+            tickCount={9} // 홀수로 설정하여 0이 중앙에 오도록
             allowDecimals={false}
             label={{
-              value: "순현금흐름 (원)",
+              value: "순현금흐름 (만원)",
               angle: -90,
               position: "insideLeft",
-              offset: -10,
+              offset: -15,
               style: {
                 textAnchor: "middle",
                 fill: "#374151",
@@ -213,9 +208,19 @@ export default function CashflowChart({ data, profile = null }) {
           {/* 0원 기준선 */}
           <ReferenceLine
             y={0}
-            stroke="#374151"
+            stroke="#9ca3af"
             strokeWidth={2}
-            strokeDasharray="5 5"
+            strokeDasharray="8 4"
+            label={{
+              value: "0원",
+              position: "right",
+              offset: 10,
+              style: {
+                fill: "#9ca3af",
+                fontSize: "12px",
+                fontWeight: "600",
+              },
+            }}
           />
 
           {/* 은퇴 시점 강조선 */}

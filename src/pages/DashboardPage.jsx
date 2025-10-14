@@ -24,15 +24,17 @@ import {
   updateWageGrowthRate,
   updateBusinessGrowthRate,
   updateRentalGrowthRate,
-  updateDefaultIncomeGrowthRate,
   updateInflationRate,
   updateDefaultReturnRate,
   getWageGrowthRate,
   getBusinessGrowthRate,
   getRentalGrowthRate,
-  getDefaultIncomeGrowthRate,
   getInflationRate,
   getDefaultReturnRate,
+  setDynamicGrowthRate,
+  getDynamicGrowthRate,
+  getAllDynamicGrowthRates,
+  removeDynamicGrowthRate,
 } from "../utils/simulators.js";
 import CashflowChart from "../components/CashflowChart.jsx";
 import AssetProjectionChart from "../components/AssetProjectionChart.jsx";
@@ -59,21 +61,23 @@ export default function DashboardPage() {
   const [error, setError] = useState(null);
   const [simulationCache, setSimulationCache] = useState(null);
   const [lastDataHash, setLastDataHash] = useState(null);
-  
+
   // 설정값 상태
   const [settings, setSettings] = useState({
     wageGrowthRate: getWageGrowthRate(),
     businessGrowthRate: getBusinessGrowthRate(),
     rentalGrowthRate: getRentalGrowthRate(),
-    defaultIncomeGrowthRate: getDefaultIncomeGrowthRate(),
     inflationRate: getInflationRate(),
     defaultReturnRate: getDefaultReturnRate(),
   });
 
+  // 동적 상승률 상태
+  const [dynamicRates, setDynamicRates] = useState({});
+
   // 데이터 해시 계산 함수 (데이터 변경 감지용)
   const calculateDataHash = (profile, data) => {
     if (!profile || !data) return null;
-    
+
     const dataString = JSON.stringify({
       profile: {
         birthDate: profile.birthDate,
@@ -85,14 +89,14 @@ export default function DashboardPage() {
         debts: data.debts || [],
         expenses: data.expenses || [],
         pensions: data.pensions || [],
-      }
+      },
     });
-    
+
     // 간단한 해시 함수
     let hash = 0;
     for (let i = 0; i < dataString.length; i++) {
       const char = dataString.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // 32bit 정수로 변환
     }
     return hash.toString();
@@ -120,7 +124,7 @@ export default function DashboardPage() {
     const currentYear = new Date().getFullYear();
     const birthDate = new Date(profile.birthDate);
     const retirementYear = birthDate.getFullYear() + profile.retirementAge;
-    
+
     // 시뮬레이션 종료년도: 90세가 되는 년도
     const maxEndYear = birthDate.getFullYear() + 89; // 90세까지 (89 + 1 = 90)
 
@@ -132,14 +136,30 @@ export default function DashboardPage() {
     console.log("시뮬레이션 종료년도 (90세):", maxEndYear);
 
     // 새로운 년별 계산 방식 사용
-    const yearlyCashflow = calculateYearlyCashflow(data, currentYear, maxEndYear, profile.birthDate);
+    const yearlyCashflow = calculateYearlyCashflow(
+      data,
+      currentYear,
+      maxEndYear,
+      profile.birthDate
+    );
     console.log("년별 현금흐름 데이터:", yearlyCashflow);
 
-    const yearlyAssets = calculateYearlyAssets(data, currentYear, maxEndYear, yearlyCashflow, profile.birthDate);
+    const yearlyAssets = calculateYearlyAssets(
+      data,
+      currentYear,
+      maxEndYear,
+      yearlyCashflow,
+      profile.birthDate
+    );
     console.log("년별 자산 데이터:", yearlyAssets);
 
     // 자산 세부 내역도 년별로 효율적으로 계산
-    const assetBreakdown = calculateYearlyAssetBreakdown(data, currentYear, maxEndYear, profile.birthDate);
+    const assetBreakdown = calculateYearlyAssetBreakdown(
+      data,
+      currentYear,
+      maxEndYear,
+      profile.birthDate
+    );
     console.log("년별 자산 세부 내역:", assetBreakdown);
 
     return {
@@ -154,7 +174,7 @@ export default function DashboardPage() {
     if (!profile || !data) return;
 
     const currentDataHash = calculateDataHash(profile, data);
-    
+
     // 데이터가 변경되었거나 캐시가 없는 경우에만 시뮬레이션 재계산
     if (currentDataHash !== lastDataHash) {
       console.log("데이터 변경 감지, 시뮬레이션 재계산");
@@ -207,24 +227,60 @@ export default function DashboardPage() {
               console.error("기본 수입 항목 추가 오류:", error);
             }
           }
-          
+
           // 지출 데이터가 비어있고 프로필이 있으면 기본 지출 항목들 추가
           if (category === "expenses" && items.length === 0 && profile) {
             try {
               const defaultExpenses = createDefaultExpenses(profile);
               for (const expense of defaultExpenses) {
-                await dataItemService.createItem(profileId, "expenses", expense);
+                await dataItemService.createItem(
+                  profileId,
+                  "expenses",
+                  expense
+                );
               }
               console.log("기본 지출 항목들 추가됨:", defaultExpenses);
             } catch (error) {
               console.error("기본 지출 항목 추가 오류:", error);
             }
           }
-          
-          setData((prev) => ({
-            ...prev,
-            [category]: items,
-          }));
+
+          setData((prev) => {
+            const newData = {
+              ...prev,
+              [category]: items,
+            };
+
+            // 동적 상승률 복원 (새로고침 시)
+            if (category === "incomes" || category === "expenses") {
+              const newDynamicRates = {};
+              items.forEach((item) => {
+                if (
+                  item.title &&
+                  !["근로소득", "사업소득", "임대소득", "생활비"].includes(
+                    item.title
+                  )
+                ) {
+                  // 기본 항목이 아닌 경우 동적 상승률 복원
+                  const existingRate = getDynamicGrowthRate(item.title);
+                  if (existingRate !== 2.5) {
+                    // 기존 값이 있으면 복원
+                    newDynamicRates[item.title] = existingRate;
+                  } else {
+                    // 기본값이면 새로 설정
+                    setDynamicGrowthRate(item.title, 2.5);
+                    newDynamicRates[item.title] = 2.5;
+                  }
+                }
+              });
+
+              if (Object.keys(newDynamicRates).length > 0) {
+                setDynamicRates((prev) => ({ ...prev, ...newDynamicRates }));
+              }
+            }
+
+            return newData;
+          });
           setLoading(false);
         }
       );
@@ -246,7 +302,6 @@ export default function DashboardPage() {
     setSelectedCategory(category);
   };
 
-
   // 모달 닫기 핸들러
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -258,6 +313,19 @@ export default function DashboardPage() {
     try {
       setError(null);
       await dataItemService.createItem(profileId, modalCategory, itemData);
+
+      // 동적 상승률 자동 추가 (수입/지출 항목인 경우)
+      if (
+        (modalCategory === "incomes" || modalCategory === "expenses") &&
+        itemData.title
+      ) {
+        setDynamicGrowthRate(itemData.title, 2.5); // 기본값 2.5%
+        setDynamicRates((prev) => ({
+          ...prev,
+          [itemData.title]: 2.5,
+        }));
+      }
+
       // 캐시 무효화 (다음 렌더링에서 시뮬레이션 재계산)
       setLastDataHash(null);
       handleCloseModal();
@@ -291,6 +359,17 @@ export default function DashboardPage() {
       try {
         setError(null);
         await dataItemService.deleteItem(profileId, selectedCategory, itemId); // Use selectedCategory here
+
+        // 동적 상승률도 함께 삭제
+        if (dynamicRates[itemTitle]) {
+          removeDynamicGrowthRate(itemTitle);
+          setDynamicRates((prev) => {
+            const newRates = { ...prev };
+            delete newRates[itemTitle];
+            return newRates;
+          });
+        }
+
         // 캐시 무효화 (다음 렌더링에서 시뮬레이션 재계산)
         setLastDataHash(null);
       } catch (error) {
@@ -298,6 +377,16 @@ export default function DashboardPage() {
         setError("데이터 삭제에 실패했습니다. 다시 시도해주세요.");
       }
     }
+  };
+
+  // 동적 상승률 변경 핸들러
+  const handleDynamicRateChange = (title, rate) => {
+    setDynamicGrowthRate(title, rate);
+    setDynamicRates((prev) => ({
+      ...prev,
+      [title]: rate,
+    }));
+    setLastDataHash(null); // 캐시 무효화
   };
 
   // 시뮬레이션 데이터 (캐시된 결과 사용)
@@ -403,108 +492,147 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
-          
+
           {/* 인라인 설정 패널 */}
           <div className={styles.inlineSettings}>
-            <h4>비율 설정</h4>
+            <div className={styles.settingsHeader}>
+              <h4>비율 설정</h4>
+              <button
+                className={styles.applyButton}
+                onClick={() => {
+                  updateWageGrowthRate(settings.wageGrowthRate);
+                  updateBusinessGrowthRate(settings.businessGrowthRate);
+                  updateRentalGrowthRate(settings.rentalGrowthRate);
+                  updateInflationRate(settings.inflationRate);
+                  updateDefaultReturnRate(settings.defaultReturnRate);
+                  setLastDataHash(null);
+                }}
+                title="설정 적용"
+              >
+                ✓
+              </button>
+            </div>
             <div className={styles.settingsRow}>
               <div className={styles.settingField}>
                 <label>임금상승률</label>
                 <input
                   type="number"
                   value={settings.wageGrowthRate}
-                  onChange={(e) => setSettings(prev => ({...prev, wageGrowthRate: parseFloat(e.target.value)}))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      wageGrowthRate: parseFloat(e.target.value),
+                    }))
+                  }
                   step="0.1"
                   min="0"
                   max="20"
                 />
                 <span>%</span>
               </div>
-              
+
               <div className={styles.settingField}>
                 <label>사업소득상승률</label>
                 <input
                   type="number"
                   value={settings.businessGrowthRate}
-                  onChange={(e) => setSettings(prev => ({...prev, businessGrowthRate: parseFloat(e.target.value)}))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      businessGrowthRate: parseFloat(e.target.value),
+                    }))
+                  }
                   step="0.1"
                   min="0"
                   max="20"
                 />
                 <span>%</span>
               </div>
-              
+
               <div className={styles.settingField}>
                 <label>임대소득상승률</label>
                 <input
                   type="number"
                   value={settings.rentalGrowthRate}
-                  onChange={(e) => setSettings(prev => ({...prev, rentalGrowthRate: parseFloat(e.target.value)}))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      rentalGrowthRate: parseFloat(e.target.value),
+                    }))
+                  }
                   step="0.1"
                   min="0"
                   max="20"
                 />
                 <span>%</span>
               </div>
-              
-              <div className={styles.settingField}>
-                <label>기본 수입상승률</label>
-                <input
-                  type="number"
-                  value={settings.defaultIncomeGrowthRate}
-                  onChange={(e) => setSettings(prev => ({...prev, defaultIncomeGrowthRate: parseFloat(e.target.value)}))}
-                  step="0.1"
-                  min="0"
-                  max="20"
-                />
-                <span>%</span>
-              </div>
-              
+
               <div className={styles.settingField}>
                 <label>물가상승률</label>
                 <input
                   type="number"
                   value={settings.inflationRate}
-                  onChange={(e) => setSettings(prev => ({...prev, inflationRate: parseFloat(e.target.value)}))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      inflationRate: parseFloat(e.target.value),
+                    }))
+                  }
                   step="0.1"
                   min="0"
                   max="20"
                 />
                 <span>%</span>
               </div>
-              
+
               <div className={styles.settingField}>
-                <label>기본 수익률</label>
+                <label>투자 수익률</label>
                 <input
                   type="number"
                   value={settings.defaultReturnRate}
-                  onChange={(e) => setSettings(prev => ({...prev, defaultReturnRate: parseFloat(e.target.value)}))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      defaultReturnRate: parseFloat(e.target.value),
+                    }))
+                  }
                   step="0.1"
                   min="0"
                   max="20"
                 />
                 <span>%</span>
               </div>
-              
-              <button 
-                className={styles.applyButton}
-                onClick={() => {
-                  updateWageGrowthRate(settings.wageGrowthRate);
-                  updateBusinessGrowthRate(settings.businessGrowthRate);
-                  updateRentalGrowthRate(settings.rentalGrowthRate);
-                  updateDefaultIncomeGrowthRate(settings.defaultIncomeGrowthRate);
-                  updateInflationRate(settings.inflationRate);
-                  updateDefaultReturnRate(settings.defaultReturnRate);
-                  setLastDataHash(null);
-                }}
-              >
-                적용하기
-              </button>
             </div>
+
+            {/* 동적 상승률 설정 (사용자 추가 항목) */}
+            {Object.keys(dynamicRates).length > 0 && (
+              <div className={styles.dynamicRatesSection}>
+                <div className={styles.settingsRow}>
+                  {Object.entries(dynamicRates).map(([title, rate]) => (
+                    <div key={title} className={styles.settingField}>
+                      <label>{title} 상승률</label>
+                      <input
+                        type="number"
+                        value={rate}
+                        onChange={(e) =>
+                          handleDynamicRateChange(
+                            title,
+                            parseFloat(e.target.value)
+                          )
+                        }
+                        step="0.1"
+                        min="0"
+                        max="20"
+                      />
+                      <span>%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
-
 
       {error && (
         <div className={styles.errorBanner} role="alert">
@@ -596,8 +724,8 @@ export default function DashboardPage() {
           <div className={styles.chartsPanel}>
             <div className={styles.chartContainer}>
               <h2 className={styles.chartTitle}>현금 흐름 시뮬레이션</h2>
-              <CashflowChart 
-                data={simulationData?.cashflow || []} 
+              <CashflowChart
+                data={simulationData?.cashflow || []}
                 profile={profile}
               />
             </div>

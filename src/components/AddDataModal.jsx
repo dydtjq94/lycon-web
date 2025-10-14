@@ -151,7 +151,6 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
     }
   };
 
-
   // 시작일 변경 핸들러 (끝일을 시작일과 같게 설정)
   const handleStartDateChange = (e) => {
     const startDate = e.target.value;
@@ -214,22 +213,27 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
       newErrors.amount = "금액을 입력해주세요.";
     }
 
-    // 시작일 검증
-    if (!formData.startDate) {
-      newErrors.startDate = "시작일을 선택해주세요.";
-    } else if (!isValidDate(formData.startDate)) {
-      newErrors.startDate = "올바른 날짜 형식이 아닙니다.";
+    // 시작년도 검증
+    if (
+      !formData.startYear ||
+      formData.startYear < 1900 ||
+      formData.startYear > 2100
+    ) {
+      newErrors.startYear = "올바른 시작년도를 입력해주세요.";
     }
 
-    // 종료일 검증 (입력된 경우)
-    if (formData.endDate && !isValidDate(formData.endDate)) {
-      newErrors.endDate = "올바른 날짜 형식이 아닙니다.";
-    } else if (
-      formData.endDate &&
-      formData.startDate &&
-      formData.endDate <= formData.startDate
+    // 종료년도 검증 (입력된 경우)
+    if (
+      formData.endYear &&
+      (formData.endYear < 1900 || formData.endYear > 2100)
     ) {
-      newErrors.endDate = "종료일은 시작일보다 늦어야 합니다.";
+      newErrors.endYear = "올바른 종료년도를 입력해주세요.";
+    } else if (
+      formData.endYear &&
+      formData.startYear &&
+      formData.endYear < formData.startYear
+    ) {
+      newErrors.endYear = "종료년도는 시작년도보다 늦어야 합니다.";
     }
 
     // 수익률/이자율 검증 (해당 카테고리인 경우)
@@ -298,7 +302,6 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
   // 폼 제출 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) {
       return;
     }
@@ -316,7 +319,11 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
         ...(category !== "debts" && { frequency: formData.frequency }),
         note:
           formData.note.trim() ||
-          (category === "incomes" ? "기본 상승률 적용" : null),
+          (category === "incomes"
+            ? `${formData.title}상승률 적용`
+            : category === "expenses"
+            ? `${formData.title}상승률 적용`
+            : null),
         rate: config.showRate && formData.rate ? Number(formData.rate) : null,
         growthRate:
           config.showGrowthRate && formData.growthRate
@@ -452,13 +459,13 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                 {category === "pensions" ? "월 연금액 (만원)" : "금액 (만원)"} *
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 id="amount"
                 name="amount"
                 value={formData.amount}
                 onChange={handleChange}
-                min="0"
-                step="1"
                 className={`${styles.input} ${
                   errors.amount ? styles.inputError : ""
                 }`}
@@ -502,22 +509,20 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                   시작 년도 *
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   id="startYear"
                   name="startYear"
                   value={formData.startYear}
                   onChange={handleChange}
-                  min="1900"
-                  max="2100"
                   className={`${styles.input} ${
                     errors.startYear ? styles.inputError : ""
                   }`}
                   disabled={isSubmitting}
                 />
                 {errors.startYear && (
-                  <span className={styles.errorText}>
-                    {errors.startYear}
-                  </span>
+                  <span className={styles.errorText}>{errors.startYear}</span>
                 )}
               </div>
 
@@ -526,13 +531,13 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                   종료 년도
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   id="endYear"
                   name="endYear"
                   value={formData.endYear}
                   onChange={handleChange}
-                  min="1900"
-                  max="2100"
                   className={`${styles.input} ${
                     errors.endYear ? styles.inputError : ""
                   }`}
@@ -558,13 +563,13 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                       대출 시작년도 *
                     </label>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       id="startYear"
                       name="startYear"
                       value={formData.startYear}
                       onChange={handleChange}
-                      min="1900"
-                      max="2100"
                       className={`${styles.input} ${
                         errors.startYear ? styles.inputError : ""
                       }`}
@@ -582,13 +587,13 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                       대출 만료년도 *
                     </label>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       id="endYear"
                       name="endYear"
                       value={formData.endYear}
                       onChange={handleChange}
-                      min="1900"
-                      max="2100"
                       className={`${styles.input} ${
                         errors.endYear ? styles.inputError : ""
                       }`}
@@ -608,13 +613,13 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                     대출 시작년도 *
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     id="startYear"
                     name="startYear"
                     value={formData.startYear}
                     onChange={handleChange}
-                    min="1900"
-                    max="2100"
                     className={`${styles.input} ${
                       errors.startYear ? styles.inputError : ""
                     }`}
@@ -637,13 +642,13 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                     상환년도 *
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     id="endYear"
                     name="endYear"
                     value={formData.endYear}
                     onChange={handleChange}
-                    min="1900"
-                    max="2100"
                     className={`${styles.input} ${
                       errors.endYear ? styles.inputError : ""
                     }`}

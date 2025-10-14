@@ -10,6 +10,9 @@ let DEFAULT_INCOME_GROWTH_RATE = 2.0; // 기본 수입상승률 (연간, %)
 let INFLATION_RATE = 2.5; // 물가상승률 (연간, %)
 let DEFAULT_RETURN_RATE = 5.0; // 기본 수익률 (연간, %)
 
+// 동적 상승률 관리 (사용자 항목별)
+let DYNAMIC_GROWTH_RATES = {}; // { "교육비": 2.5, "의료비": 3.0, ... }
+
 // 설정값 업데이트 함수들
 export function updateWageGrowthRate(rate) {
   WAGE_GROWTH_RATE = rate;
@@ -58,6 +61,23 @@ export function getInflationRate() {
 
 export function getDefaultReturnRate() {
   return DEFAULT_RETURN_RATE;
+}
+
+// 동적 상승률 관리 함수들
+export function setDynamicGrowthRate(title, rate) {
+  DYNAMIC_GROWTH_RATES[title] = rate;
+}
+
+export function getDynamicGrowthRate(title) {
+  return DYNAMIC_GROWTH_RATES[title] || 2.5; // 기본값 2.5%
+}
+
+export function getAllDynamicGrowthRates() {
+  return DYNAMIC_GROWTH_RATES;
+}
+
+export function removeDynamicGrowthRate(title) {
+  delete DYNAMIC_GROWTH_RATES[title];
 }
 
 /**
@@ -911,34 +931,39 @@ function getYearlyAmount(item) {
 function applyYearlyGrowthRate(baseAmount, item, year, category = "incomes") {
   let growthRate = 0;
 
-  // 카테고리별 전역 상승률 적용
-  switch (category) {
-    case "incomes":
-      // 소득 유형별 상승률 적용
-      if (item.title === "근로소득") {
-        growthRate = WAGE_GROWTH_RATE;
-      } else if (item.title === "사업소득") {
-        growthRate = BUSINESS_GROWTH_RATE;
-      } else if (item.title === "임대소득") {
-        growthRate = RENTAL_GROWTH_RATE;
-      } else {
-        growthRate = DEFAULT_INCOME_GROWTH_RATE; // 기본 수입상승률
-      }
-      break;
-    case "expenses":
-      growthRate = INFLATION_RATE;
-      break;
-    case "assets":
-      growthRate = item.rate || DEFAULT_RETURN_RATE; // 자산은 개별 수익률 사용
-      break;
-    case "debts":
-      growthRate = item.rate || 0; // 부채는 개별 이자율 사용
-      break;
-    case "pensions":
-      growthRate = WAGE_GROWTH_RATE; // 연금은 임금상승률 적용
-      break;
-    default:
-      growthRate = 0;
+  // 1. 먼저 동적 상승률 확인 (사용자 정의 항목)
+  if (DYNAMIC_GROWTH_RATES[item.title]) {
+    growthRate = DYNAMIC_GROWTH_RATES[item.title];
+  } else {
+    // 2. 기본 상승률 적용
+    switch (category) {
+      case "incomes":
+        // 소득 유형별 상승률 적용
+        if (item.title === "근로소득") {
+          growthRate = WAGE_GROWTH_RATE;
+        } else if (item.title === "사업소득") {
+          growthRate = BUSINESS_GROWTH_RATE;
+        } else if (item.title === "임대소득") {
+          growthRate = RENTAL_GROWTH_RATE;
+        } else {
+          growthRate = DEFAULT_INCOME_GROWTH_RATE; // 기본 수입상승률
+        }
+        break;
+      case "expenses":
+        growthRate = INFLATION_RATE;
+        break;
+      case "assets":
+        growthRate = item.rate || DEFAULT_RETURN_RATE; // 자산은 개별 수익률 사용
+        break;
+      case "debts":
+        growthRate = item.rate || 0; // 부채는 개별 이자율 사용
+        break;
+      case "pensions":
+        growthRate = WAGE_GROWTH_RATE; // 연금은 임금상승률 적용
+        break;
+      default:
+        growthRate = 0;
+    }
   }
 
   if (growthRate === 0) {

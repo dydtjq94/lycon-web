@@ -67,8 +67,12 @@ export default function DataList({ items, category, onEdit, onDelete }) {
     setEditData({
       title: item.title,
       amount: item.amount,
-      startDate: item.startDate,
-      endDate: item.endDate || item.startDate, // 모든 카테고리에서 끝일이 없으면 시작일과 같게
+      startYear: item.startDate
+        ? parseInt(item.startDate.split("-")[0])
+        : new Date().getFullYear(),
+      endYear: item.endDate
+        ? parseInt(item.endDate.split("-")[0])
+        : new Date().getFullYear(),
       frequency: item.frequency,
       note: item.note || "",
       rate: item.rate || "",
@@ -95,110 +99,18 @@ export default function DataList({ items, category, onEdit, onDelete }) {
   // 빈도 변경 핸들러
   const handleFrequencyChange = (e) => {
     const frequency = e.target.value;
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1;
-
-    let newStartDate = editData.startDate;
-    let newEndDate = editData.endDate;
-
-    switch (frequency) {
-      case "yearly":
-        newStartDate = editData.startDate
-          ? editData.startDate.split("-")[0] + "-01-01"
-          : `${currentYear}-01-01`;
-        newEndDate = editData.startDate
-          ? editData.startDate.split("-")[0] + "-12-31"
-          : `${currentYear}-12-31`;
-        break;
-      case "quarterly":
-        newStartDate = editData.startDate
-          ? editData.startDate.split("-")[0] + "-01-01"
-          : `${currentYear}-01-01`;
-        newEndDate = editData.startDate
-          ? editData.startDate.split("-")[0] + "-03-31"
-          : `${currentYear}-03-31`;
-        break;
-      case "monthly":
-        newStartDate = editData.startDate
-          ? editData.startDate.split("-")[0] +
-            "-" +
-            editData.startDate.split("-")[1] +
-            "-01"
-          : `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`;
-        newEndDate = editData.startDate
-          ? editData.startDate.split("-")[0] +
-            "-" +
-            editData.startDate.split("-")[1] +
-            "-" +
-            new Date(
-              parseInt(editData.startDate.split("-")[0]),
-              parseInt(editData.startDate.split("-")[1]),
-              0
-            ).getDate()
-          : `${currentYear}-${String(currentMonth).padStart(2, "0")}-${new Date(
-              currentYear,
-              currentMonth,
-              0
-            ).getDate()}`;
-        break;
-      case "daily":
-        newStartDate = editData.startDate || getTodayString();
-        newEndDate = editData.endDate || getTodayString();
-        break;
-      case "once":
-        newStartDate = editData.startDate
-          ? editData.startDate.split("-")[0] + "-01-01"
-          : `${currentYear}-01-01`;
-        newEndDate = editData.startDate
-          ? editData.startDate.split("-")[0] + "-12-31"
-          : `${currentYear}-12-31`;
-        break;
-    }
-
     setEditData((prev) => ({
       ...prev,
       frequency,
-      startDate: newStartDate,
-      endDate: newEndDate,
     }));
   };
 
   // 년도 변경 핸들러
   const handleYearChange = (e, type) => {
-    const year = e.target.value;
-    const newDate = type === "start" ? `${year}-01-01` : `${year}-12-31`;
-
+    const year = parseInt(e.target.value);
     setEditData((prev) => ({
       ...prev,
-      [type === "start" ? "startDate" : "endDate"]: newDate,
-    }));
-  };
-
-  // 분기 변경 핸들러
-  const handleQuarterChange = (e, type) => {
-    const { year, quarter } = JSON.parse(e.target.value);
-    const startMonth = (quarter - 1) * 3 + 1;
-    const endMonth = quarter * 3;
-    const startDate = new Date(year, startMonth - 1, 1);
-    const endDate = new Date(year, endMonth, 0);
-
-    const newDate = `${year}-${String(startMonth).padStart(2, "0")}-01`;
-
-    setEditData((prev) => ({
-      ...prev,
-      [type === "start" ? "startDate" : "endDate"]: newDate,
-    }));
-  };
-
-  // 월 변경 핸들러
-  const handleMonthChange = (e, type) => {
-    const { year, month } = JSON.parse(e.target.value);
-    const newDate = `${year}-${String(month).padStart(2, "0")}-01`;
-
-    setEditData((prev) => ({
-      ...prev,
-      [type === "start" ? "startDate" : "endDate"]: newDate,
+      [type === "start" ? "startYear" : "endYear"]: year,
     }));
   };
 
@@ -217,15 +129,6 @@ export default function DataList({ items, category, onEdit, onDelete }) {
     }
   };
 
-  // 시작일 변경 핸들러 (끝일을 시작일과 같게 설정)
-  const handleStartDateChange = (field, value) => {
-    setEditData((prev) => ({
-      ...prev,
-      [field]: value,
-      endDate: value, // 끝일을 시작일과 같게 설정
-    }));
-  };
-
   // 폼 유효성 검증
   const validateForm = () => {
     const newErrors = {};
@@ -240,22 +143,26 @@ export default function DataList({ items, category, onEdit, onDelete }) {
       newErrors.amount = "금액을 입력해주세요.";
     }
 
-    // 시작일 검증
-    if (!editData.startDate) {
-      newErrors.startDate = "시작일을 선택해주세요.";
-    } else if (!isValidDate(editData.startDate)) {
-      newErrors.startDate = "올바른 날짜 형식이 아닙니다.";
-    }
-
-    // 종료일 검증 (입력된 경우)
-    if (editData.endDate && !isValidDate(editData.endDate)) {
-      newErrors.endDate = "올바른 날짜 형식이 아닙니다.";
-    } else if (
-      editData.endDate &&
-      editData.startDate &&
-      editData.endDate <= editData.startDate
+    // 시작년도 검증
+    if (
+      !editData.startYear ||
+      editData.startYear < 1900 ||
+      editData.startYear > 2100
     ) {
-      newErrors.endDate = "종료일은 시작일보다 늦어야 합니다.";
+      newErrors.startYear = "올바른 시작년도를 입력해주세요.";
+    }
+    // 종료년도 검증 (입력된 경우)
+    if (
+      editData.endYear &&
+      (editData.endYear < 1900 || editData.endYear > 2100)
+    ) {
+      newErrors.endYear = "올바른 종료년도를 입력해주세요.";
+    } else if (
+      editData.endYear &&
+      editData.startYear &&
+      editData.endYear < editData.startYear
+    ) {
+      newErrors.endYear = "종료년도는 시작년도보다 늦어야 합니다.";
     }
 
     // 수익률/이자율 검증 (해당 카테고리인 경우)
@@ -324,7 +231,40 @@ export default function DataList({ items, category, onEdit, onDelete }) {
   // 편집 저장
   const handleSaveEdit = () => {
     if (validateForm()) {
-      onEdit(editingId, editData);
+      // AddDataModal과 동일한 형식으로 데이터 변환
+      const submitData = {
+        title: editData.title.trim(),
+        ...(category !== "debts" && { amount: Number(editData.amount) }),
+        startDate: `${editData.startYear}-01-01`,
+        endDate: editData.endYear ? `${editData.endYear}-12-31` : null,
+        ...(category !== "debts" && { frequency: editData.frequency }),
+        note: editData.note?.trim() || null,
+        rate: config.showRate && editData.rate ? Number(editData.rate) : null,
+        growthRate:
+          config.showGrowthRate && editData.growthRate
+            ? Number(editData.growthRate)
+            : null,
+        principalAmount:
+          config.showDebtFields && editData.principalAmount
+            ? Number(editData.principalAmount)
+            : null,
+        interestRate:
+          config.showDebtFields && editData.interestRate
+            ? Number(editData.interestRate)
+            : null,
+        repaymentType: config.showDebtFields ? editData.repaymentType : null,
+        monthlyPayment:
+          config.showDebtFields && editData.monthlyPayment
+            ? Number(editData.monthlyPayment)
+            : null,
+        minimumPaymentRate:
+          config.showDebtFields && editData.minimumPaymentRate
+            ? Number(editData.minimumPaymentRate)
+            : null,
+        pensionType: config.showPensionFields ? editData.pensionType : null,
+      };
+
+      onEdit(editingId, submitData);
       setEditingId(null);
       setEditData({});
       setErrors({});
@@ -360,36 +300,6 @@ export default function DataList({ items, category, onEdit, onDelete }) {
     };
     return categoryMap[category] || category;
   };
-
-  // 년도 옵션 생성 (현재 년도부터 2100년까지)
-  const currentYear = new Date().getFullYear();
-  const endYear = 2100;
-  const yearOptions = Array.from(
-    { length: endYear - currentYear + 1 },
-    (_, i) => currentYear + i
-  );
-
-  // 분기 옵션 생성
-  const quarterOptions = [];
-  for (let year = currentYear; year <= endYear; year++) {
-    for (let quarter = 1; quarter <= 4; quarter++) {
-      quarterOptions.push({
-        value: JSON.stringify({ year, quarter }),
-        label: `${year}년 ${quarter}분기`,
-      });
-    }
-  }
-
-  // 월 옵션 생성
-  const monthOptions = [];
-  for (let year = currentYear; year <= endYear; year++) {
-    for (let month = 1; month <= 12; month++) {
-      monthOptions.push({
-        value: JSON.stringify({ year, month }),
-        label: `${year}년 ${month}월`,
-      });
-    }
-  }
 
   if (items.length === 0) {
     return (
@@ -445,7 +355,9 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                     *
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={editData.amount}
                     onChange={(e) =>
                       handleEditChange("amount", Number(e.target.value))
@@ -453,8 +365,6 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                     className={`${styles.editInput} ${
                       errors.amount ? styles.inputError : ""
                     }`}
-                    min="0"
-                    step="1"
                     placeholder={
                       category === "pensions"
                         ? "예: 200 (월 200만원)"
@@ -477,10 +387,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                     className={styles.editInput}
                   >
                     <option value="yearly">년</option>
-                    <option value="quarterly">분기</option>
                     <option value="monthly">월</option>
-                    <option value="daily">일</option>
-                    <option value="once">일회성</option>
                   </select>
                 </div>
               )}
@@ -488,334 +395,140 @@ export default function DataList({ items, category, onEdit, onDelete }) {
               {/* 부채가 아닌 경우의 날짜 입력 */}
               {category !== "debts" && (
                 <>
-                  {/* 일회성: 년도만 선택 */}
-                  {editData.frequency === "once" && (
-                    <div className={styles.editField}>
-                      <label>적용 년도 *</label>
-                      <select
-                        value={
-                          editData.startDate
-                            ? editData.startDate.split("-")[0]
-                            : currentYear
-                        }
-                        onChange={(e) => handleYearChange(e, "start")}
-                        className={styles.editInput}
-                      >
-                        {yearOptions.map((year) => (
-                          <option key={year} value={year}>
-                            {year}년
-                          </option>
-                        ))}
-                      </select>
-                      <span className={styles.helpText}>
-                        일회성 항목은 선택한 년도 전체에 적용됩니다.
+                  {/* 시작년도, 끝년도 (빈도와 관계없이 동일) */}
+                  <div className={styles.editField}>
+                    <label>시작 년도 *</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={editData.startYear}
+                      onChange={(e) => handleYearChange(e, "start")}
+                      className={`${styles.editInput} ${
+                        errors.startYear ? styles.inputError : ""
+                      }`}
+                    />
+                    {errors.startYear && (
+                      <span className={styles.errorText}>
+                        {errors.startYear}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {/* 년: 시작년도, 끝년도 */}
-                  {editData.frequency === "yearly" && (
-                    <>
-                      <div className={styles.editField}>
-                        <label>시작 년도 *</label>
-                        <select
-                          value={
-                            editData.startDate
-                              ? editData.startDate.split("-")[0]
-                              : currentYear
-                          }
-                          onChange={(e) => handleYearChange(e, "start")}
-                          className={styles.editInput}
-                        >
-                          {yearOptions.map((year) => (
-                            <option key={year} value={year}>
-                              {year}년
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className={styles.editField}>
-                        <label>끝 년도</label>
-                        <select
-                          value={
-                            editData.endDate
-                              ? editData.endDate.split("-")[0]
-                              : currentYear
-                          }
-                          onChange={(e) => handleYearChange(e, "end")}
-                          className={styles.editInput}
-                        >
-                          {yearOptions.map((year) => (
-                            <option key={year} value={year}>
-                              {year}년
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </>
-                  )}
-
-                  {/* 분기: 시작년도&분기, 끝년도&분기 */}
-                  {editData.frequency === "quarterly" && (
-                    <>
-                      <div className={styles.editField}>
-                        <label>시작 분기 *</label>
-                        <select
-                          value={JSON.stringify({
-                            year: editData.startDate
-                              ? parseInt(editData.startDate.split("-")[0])
-                              : currentYear,
-                            quarter: editData.startDate
-                              ? Math.ceil(
-                                  parseInt(editData.startDate.split("-")[1]) / 3
-                                )
-                              : 1,
-                          })}
-                          onChange={(e) => handleQuarterChange(e, "start")}
-                          className={styles.editInput}
-                        >
-                          {quarterOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className={styles.editField}>
-                        <label>끝 분기</label>
-                        <select
-                          value={JSON.stringify({
-                            year: editData.endDate
-                              ? parseInt(editData.endDate.split("-")[0])
-                              : currentYear,
-                            quarter: editData.endDate
-                              ? Math.ceil(
-                                  parseInt(editData.endDate.split("-")[1]) / 3
-                                )
-                              : 1,
-                          })}
-                          onChange={(e) => handleQuarterChange(e, "end")}
-                          className={styles.editInput}
-                        >
-                          {quarterOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </>
-                  )}
-
-                  {/* 월: 시작년도&월, 끝년도&월 */}
-                  {editData.frequency === "monthly" && (
-                    <>
-                      <div className={styles.editField}>
-                        <label>
-                          {category === "pensions"
-                            ? "수령 월 *"
-                            : category === "incomes"
-                            ? "수입 월 *"
-                            : category === "assets"
-                            ? "자산 월 *"
-                            : category === "expenses"
-                            ? "지출 월 *"
-                            : "시작 월 *"}
-                        </label>
-                        <select
-                          value={JSON.stringify({
-                            year: editData.startDate
-                              ? parseInt(editData.startDate.split("-")[0])
-                              : currentYear,
-                            month: editData.startDate
-                              ? parseInt(editData.startDate.split("-")[1])
-                              : 1,
-                          })}
-                          onChange={(e) => {
-                            // 시작일 변경 시 끝일도 같게 설정 (기본값)
-                            const { year, month } = JSON.parse(e.target.value);
-                            const newDate = `${year}-${String(month).padStart(
-                              2,
-                              "0"
-                            )}-01`;
-                            handleStartDateChange("startDate", newDate);
-                          }}
-                          className={styles.editInput}
-                        >
-                          {monthOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className={styles.editField}>
-                        <label>끝 월</label>
-                        <select
-                          value={JSON.stringify({
-                            year: editData.endDate
-                              ? parseInt(editData.endDate.split("-")[0])
-                              : currentYear,
-                            month: editData.endDate
-                              ? parseInt(editData.endDate.split("-")[1])
-                              : 1,
-                          })}
-                          onChange={(e) => handleMonthChange(e, "end")}
-                          className={styles.editInput}
-                        >
-                          {monthOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </>
-                  )}
-
-                  {/* 일: 시작년도&월&일, 끝년도&월&일 */}
-                  {editData.frequency === "daily" && (
-                    <>
-                      <div className={styles.editField}>
-                        <label>시작일 *</label>
-                        <input
-                          type="date"
-                          value={editData.startDate}
-                          onChange={(e) =>
-                            handleEditChange("startDate", e.target.value)
-                          }
-                          className={`${styles.editInput} ${
-                            errors.startDate ? styles.inputError : ""
-                          }`}
-                        />
-                        {errors.startDate && (
-                          <span className={styles.errorText}>
-                            {errors.startDate}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className={styles.editField}>
-                        <label>종료일</label>
-                        <input
-                          type="date"
-                          value={editData.endDate}
-                          onChange={(e) =>
-                            handleEditChange("endDate", e.target.value)
-                          }
-                          className={`${styles.editInput} ${
-                            errors.endDate ? styles.inputError : ""
-                          }`}
-                        />
-                        {errors.endDate && (
-                          <span className={styles.errorText}>
-                            {errors.endDate}
-                          </span>
-                        )}
-                      </div>
-                    </>
-                  )}
+                  <div className={styles.editField}>
+                    <label>종료 년도</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={editData.endYear}
+                      onChange={(e) => handleYearChange(e, "end")}
+                      className={`${styles.editInput} ${
+                        errors.endYear ? styles.inputError : ""
+                      }`}
+                    />
+                    {errors.endYear && (
+                      <span className={styles.errorText}>{errors.endYear}</span>
+                    )}
+                  </div>
                 </>
               )}
 
               {/* 부채용 날짜 입력 */}
               {category === "debts" && (
                 <>
-                  {/* 원리금균등, 원금균등, 고정월상환: 시작일 + 종료일 */}
+                  {/* 원리금균등, 원금균등, 고정월상환: 시작년도 + 종료년도 */}
                   {(editData.repaymentType === "equal_payment" ||
                     editData.repaymentType === "equal_principal" ||
                     editData.repaymentType === "fixed_payment") && (
                     <>
                       <div className={styles.editField}>
-                        <label>대출 시작일 *</label>
+                        <label>대출 시작년도 *</label>
                         <input
-                          type="date"
-                          value={editData.startDate}
-                          onChange={(e) =>
-                            handleEditChange("startDate", e.target.value)
-                          }
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={editData.startYear}
+                          onChange={(e) => handleYearChange(e, "start")}
                           className={`${styles.editInput} ${
-                            errors.startDate ? styles.inputError : ""
+                            errors.startYear ? styles.inputError : ""
                           }`}
                         />
-                        {errors.startDate && (
+                        {errors.startYear && (
                           <span className={styles.errorText}>
-                            {errors.startDate}
+                            {errors.startYear}
                           </span>
                         )}
                       </div>
 
                       <div className={styles.editField}>
-                        <label>대출 만료일 *</label>
+                        <label>대출 만료년도 *</label>
                         <input
-                          type="date"
-                          value={editData.endDate}
-                          onChange={(e) =>
-                            handleEditChange("endDate", e.target.value)
-                          }
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={editData.endYear}
+                          onChange={(e) => handleYearChange(e, "end")}
                           className={`${styles.editInput} ${
-                            errors.endDate ? styles.inputError : ""
+                            errors.endYear ? styles.inputError : ""
                           }`}
                         />
-                        {errors.endDate && (
+                        {errors.endYear && (
                           <span className={styles.errorText}>
-                            {errors.endDate}
+                            {errors.endYear}
                           </span>
                         )}
                       </div>
                     </>
                   )}
 
-                  {/* 최소상환: 시작일만 */}
+                  {/* 최소상환: 시작년도만 */}
                   {editData.repaymentType === "minimum_payment" && (
                     <div className={styles.editField}>
-                      <label>대출 시작일 *</label>
+                      <label>대출 시작년도 *</label>
                       <input
-                        type="date"
-                        value={editData.startDate}
-                        onChange={(e) =>
-                          handleEditChange("startDate", e.target.value)
-                        }
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={editData.startYear}
+                        onChange={(e) => handleYearChange(e, "start")}
                         className={`${styles.editInput} ${
-                          errors.startDate ? styles.inputError : ""
+                          errors.startYear ? styles.inputError : ""
                         }`}
                       />
-                      {errors.startDate && (
+                      {errors.startYear && (
                         <span className={styles.errorText}>
-                          {errors.startDate}
+                          {errors.startYear}
                         </span>
                       )}
                       <span className={styles.helpText}>
-                        최소상환은 종료일이 없으며, 원금이 모두 상환될 때까지
+                        최소상환은 종료년도가 없으며, 원금이 모두 상환될 때까지
                         계속됩니다.
                       </span>
                     </div>
                   )}
 
-                  {/* 일시상환: 종료일만 */}
+                  {/* 일시상환: 종료년도만 */}
                   {editData.repaymentType === "lump_sum" && (
                     <div className={styles.editField}>
-                      <label>상환일 *</label>
+                      <label>상환년도 *</label>
                       <input
-                        type="date"
-                        value={editData.endDate}
-                        onChange={(e) =>
-                          handleEditChange("endDate", e.target.value)
-                        }
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={editData.endYear}
+                        onChange={(e) => handleYearChange(e, "end")}
                         className={`${styles.editInput} ${
-                          errors.endDate ? styles.inputError : ""
+                          errors.endYear ? styles.inputError : ""
                         }`}
                       />
-                      {errors.endDate && (
+                      {errors.endYear && (
                         <span className={styles.errorText}>
-                          {errors.endDate}
+                          {errors.endYear}
                         </span>
                       )}
                       <span className={styles.helpText}>
-                        일시상환은 지정된 날짜에 원금+이자를 일괄 상환합니다.
+                        일시상환은 지정된 년도에 원금+이자를 일괄 상환합니다.
                       </span>
                     </div>
                   )}
