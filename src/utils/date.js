@@ -18,6 +18,13 @@ export function formatDate(date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/** Date -> YYYY (년도만) */
+export function formatYear(date) {
+  if (!(date instanceof Date)) date = new Date(date);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.getFullYear().toString();
+}
+
 /** 생년월일로 현재 나이 계산 (한국 나이 기준) */
 export function calculateAge(birthDateString) {
   const today = new Date();

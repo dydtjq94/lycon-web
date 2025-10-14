@@ -21,9 +21,13 @@ import {
   calculateYearlyAssetBreakdown,
   createDefaultIncomes,
   updateWageGrowthRate,
+  updateBusinessGrowthRate,
+  updateRentalGrowthRate,
   updateInflationRate,
   updateDefaultReturnRate,
   getWageGrowthRate,
+  getBusinessGrowthRate,
+  getRentalGrowthRate,
   getInflationRate,
   getDefaultReturnRate,
 } from "../utils/simulators.js";
@@ -56,6 +60,8 @@ export default function DashboardPage() {
   // 설정값 상태
   const [settings, setSettings] = useState({
     wageGrowthRate: getWageGrowthRate(),
+    businessGrowthRate: getBusinessGrowthRate(),
+    rentalGrowthRate: getRentalGrowthRate(),
     inflationRate: getInflationRate(),
     defaultReturnRate: getDefaultReturnRate(),
   });
@@ -383,7 +389,7 @@ export default function DashboardPage() {
           
           {/* 인라인 설정 패널 */}
           <div className={styles.inlineSettings}>
-            <h4>시뮬레이션 설정</h4>
+            <h4>비율 설정</h4>
             <div className={styles.settingsRow}>
               <div className={styles.settingField}>
                 <label>임금상승률</label>
@@ -391,6 +397,32 @@ export default function DashboardPage() {
                   type="number"
                   value={settings.wageGrowthRate}
                   onChange={(e) => setSettings(prev => ({...prev, wageGrowthRate: parseFloat(e.target.value)}))}
+                  step="0.1"
+                  min="0"
+                  max="20"
+                />
+                <span>%</span>
+              </div>
+              
+              <div className={styles.settingField}>
+                <label>사업소득상승률</label>
+                <input
+                  type="number"
+                  value={settings.businessGrowthRate}
+                  onChange={(e) => setSettings(prev => ({...prev, businessGrowthRate: parseFloat(e.target.value)}))}
+                  step="0.1"
+                  min="0"
+                  max="20"
+                />
+                <span>%</span>
+              </div>
+              
+              <div className={styles.settingField}>
+                <label>임대소득상승률</label>
+                <input
+                  type="number"
+                  value={settings.rentalGrowthRate}
+                  onChange={(e) => setSettings(prev => ({...prev, rentalGrowthRate: parseFloat(e.target.value)}))}
                   step="0.1"
                   min="0"
                   max="20"
@@ -428,6 +460,8 @@ export default function DashboardPage() {
                 className={styles.applyButton}
                 onClick={() => {
                   updateWageGrowthRate(settings.wageGrowthRate);
+                  updateBusinessGrowthRate(settings.businessGrowthRate);
+                  updateRentalGrowthRate(settings.rentalGrowthRate);
                   updateInflationRate(settings.inflationRate);
                   updateDefaultReturnRate(settings.defaultReturnRate);
                   setLastDataHash(null);

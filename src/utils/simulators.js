@@ -4,12 +4,22 @@
 
 // 기본 설정값들 (대시보드에서 변경 가능)
 let WAGE_GROWTH_RATE = 3.0; // 임금상승률 (연간, %)
+let BUSINESS_GROWTH_RATE = 2.5; // 사업소득상승률 (연간, %)
+let RENTAL_GROWTH_RATE = 2.0; // 임대소득상승률 (연간, %)
 let INFLATION_RATE = 2.5; // 물가상승률 (연간, %)
 let DEFAULT_RETURN_RATE = 5.0; // 기본 수익률 (연간, %)
 
 // 설정값 업데이트 함수들
 export function updateWageGrowthRate(rate) {
   WAGE_GROWTH_RATE = rate;
+}
+
+export function updateBusinessGrowthRate(rate) {
+  BUSINESS_GROWTH_RATE = rate;
+}
+
+export function updateRentalGrowthRate(rate) {
+  RENTAL_GROWTH_RATE = rate;
 }
 
 export function updateInflationRate(rate) {
@@ -23,6 +33,14 @@ export function updateDefaultReturnRate(rate) {
 // 현재 설정값 조회 함수들
 export function getWageGrowthRate() {
   return WAGE_GROWTH_RATE;
+}
+
+export function getBusinessGrowthRate() {
+  return BUSINESS_GROWTH_RATE;
+}
+
+export function getRentalGrowthRate() {
+  return RENTAL_GROWTH_RATE;
 }
 
 export function getInflationRate() {
@@ -887,7 +905,16 @@ function applyYearlyGrowthRate(baseAmount, item, year, category = "incomes") {
   // 카테고리별 전역 상승률 적용
   switch (category) {
     case "incomes":
-      growthRate = WAGE_GROWTH_RATE;
+      // 소득 유형별 상승률 적용
+      if (item.title === "근로소득") {
+        growthRate = WAGE_GROWTH_RATE;
+      } else if (item.title === "사업소득") {
+        growthRate = BUSINESS_GROWTH_RATE;
+      } else if (item.title === "임대소득") {
+        growthRate = RENTAL_GROWTH_RATE;
+      } else {
+        growthRate = WAGE_GROWTH_RATE; // 기본값
+      }
       break;
     case "expenses":
       growthRate = INFLATION_RATE;

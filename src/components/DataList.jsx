@@ -1,6 +1,6 @@
 // 데이터 목록 컴포넌트 (공통)
 import React, { useState } from "react";
-import { formatDate, getTodayString, isValidDate } from "../utils/date.js";
+import { formatDate, formatYear, getTodayString, isValidDate } from "../utils/date.js";
 import styles from "./DataList.module.css";
 
 export default function DataList({ items, category, onEdit, onDelete }) {
@@ -1077,16 +1077,16 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                   </span>
                 </div>
                 <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>시작일:</span>
+                  <span className={styles.detailLabel}>시작년도:</span>
                   <span className={styles.detailValue}>
-                    {formatDate(item.startDate)}
+                    {formatYear(item.startDate)}
                   </span>
                 </div>
                 {item.endDate && (
                   <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>종료일:</span>
+                    <span className={styles.detailLabel}>종료년도:</span>
                     <span className={styles.detailValue}>
-                      {formatDate(item.endDate)}
+                      {formatYear(item.endDate)}
                     </span>
                   </div>
                 )}
