@@ -2,8 +2,36 @@
  * 시뮬레이션 설정 변수들
  */
 
-// 임금상승률 (연간, %)
-const WAGE_GROWTH_RATE = 3.0; // 3% (쉽게 변경 가능)
+// 기본 설정값들 (대시보드에서 변경 가능)
+let WAGE_GROWTH_RATE = 3.0; // 임금상승률 (연간, %)
+let INFLATION_RATE = 2.5; // 물가상승률 (연간, %)
+let DEFAULT_RETURN_RATE = 5.0; // 기본 수익률 (연간, %)
+
+// 설정값 업데이트 함수들
+export function updateWageGrowthRate(rate) {
+  WAGE_GROWTH_RATE = rate;
+}
+
+export function updateInflationRate(rate) {
+  INFLATION_RATE = rate;
+}
+
+export function updateDefaultReturnRate(rate) {
+  DEFAULT_RETURN_RATE = rate;
+}
+
+// 현재 설정값 조회 함수들
+export function getWageGrowthRate() {
+  return WAGE_GROWTH_RATE;
+}
+
+export function getInflationRate() {
+  return INFLATION_RATE;
+}
+
+export function getDefaultReturnRate() {
+  return DEFAULT_RETURN_RATE;
+}
 
 /**
  * 부채 상환 계산 함수들
@@ -1214,8 +1242,9 @@ export function calculateAssetBreakdown(data, timeline) {
 export function createDefaultWageIncome(profile) {
   const currentYear = new Date().getFullYear();
   const currentAge = calculateAge(profile.birthDate);
-  const retirementYear = new Date(profile.birthDate).getFullYear() + profile.retirementAge;
-  
+  const retirementYear =
+    new Date(profile.birthDate).getFullYear() + profile.retirementAge;
+
   return {
     title: "근로소득",
     amount: 5000, // 5,000만원 (만원 단위)
@@ -1224,7 +1253,7 @@ export function createDefaultWageIncome(profile) {
     frequency: "monthly", // 월급
     growthRate: WAGE_GROWTH_RATE, // 임금상승률 적용
     note: "기본 근로소득 (임금상승률 자동 적용)",
-    category: "incomes"
+    category: "incomes",
   };
 }
 
@@ -1238,10 +1267,10 @@ function calculateAge(birthDate) {
   const birth = new Date(birthDate);
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
-  
+
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
     age--;
   }
-  
+
   return age;
 }
