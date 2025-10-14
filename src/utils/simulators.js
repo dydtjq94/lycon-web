@@ -226,7 +226,8 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
         const adjustedAmount = applyYearlyGrowthRate(
           yearlyAmount,
           income,
-          year
+          year,
+          'incomes'
         );
         totalIncome += adjustedAmount;
       }
@@ -239,7 +240,8 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
         const adjustedAmount = applyYearlyGrowthRate(
           yearlyAmount,
           pension,
-          year
+          year,
+          'pensions'
         );
         totalPension += adjustedAmount;
       }
@@ -252,7 +254,8 @@ export function calculateYearlyCashflow(data, startYear, endYear, birthDate) {
         const adjustedAmount = applyYearlyGrowthRate(
           yearlyAmount,
           expense,
-          year
+          year,
+          'expenses'
         );
         totalExpense += adjustedAmount;
       }
@@ -869,14 +872,38 @@ function getYearlyAmount(item) {
 }
 
 /**
- * 연 단위 상승률 적용 계산 (작년 기준 × 상승률)
+ * 연 단위 상승률 적용 계산 (전역 설정 사용)
  * @param {number} baseAmount - 기본 금액
  * @param {Object} item - 재무 항목
  * @param {number} year - 현재 년도
+ * @param {string} category - 카테고리 (incomes, expenses, assets, debts, pensions)
  * @returns {number} 상승률이 적용된 금액
  */
-function applyYearlyGrowthRate(baseAmount, item, year) {
-  if (!item.growthRate || item.growthRate === 0) {
+function applyYearlyGrowthRate(baseAmount, item, year, category = 'incomes') {
+  let growthRate = 0;
+  
+  // 카테고리별 전역 상승률 적용
+  switch (category) {
+    case 'incomes':
+      growthRate = WAGE_GROWTH_RATE;
+      break;
+    case 'expenses':
+      growthRate = INFLATION_RATE;
+      break;
+    case 'assets':
+      growthRate = item.rate || DEFAULT_RETURN_RATE; // 자산은 개별 수익률 사용
+      break;
+    case 'debts':
+      growthRate = item.rate || 0; // 부채는 개별 이자율 사용
+      break;
+    case 'pensions':
+      growthRate = WAGE_GROWTH_RATE; // 연금은 임금상승률 적용
+      break;
+    default:
+      growthRate = 0;
+  }
+
+  if (growthRate === 0) {
     return baseAmount;
   }
 
@@ -886,8 +913,8 @@ function applyYearlyGrowthRate(baseAmount, item, year) {
   const yearsElapsed = year - startYear;
 
   // 상승률 적용 (매년 작년 기준 × 상승률)
-  const growthRate = item.growthRate / 100;
-  const adjustedAmount = baseAmount * Math.pow(1 + growthRate, yearsElapsed);
+  const rate = growthRate / 100;
+  const adjustedAmount = baseAmount * Math.pow(1 + rate, yearsElapsed);
 
   return adjustedAmount;
 }

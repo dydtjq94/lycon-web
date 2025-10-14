@@ -36,7 +36,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
       rateLabel: "수익률 (%/년)",
       showRate: false,
       growthRateLabel: "연간 상승률 (%/년)",
-      showGrowthRate: true,
+      showGrowthRate: false, // 전역 설정으로 관리
     },
     assets: {
       title: "자산 추가",
@@ -61,7 +61,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
       rateLabel: "수익률 (%/년)",
       showRate: false,
       growthRateLabel: "물가 상승률 (%/년)",
-      showGrowthRate: true,
+      showGrowthRate: false, // 전역 설정으로 관리
     },
     pensions: {
       title: "연금 추가",
