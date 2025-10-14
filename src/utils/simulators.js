@@ -1299,9 +1299,21 @@ export function calculateAssetBreakdown(data, timeline) {
  */
 export function createDefaultIncomes(profile) {
   const currentYear = new Date().getFullYear();
-  const retirementYear =
-    new Date(profile.birthDate).getFullYear() + profile.retirementAge;
-  const deathYear = new Date(profile.birthDate).getFullYear() + 90; // 90세까지
+  const birthYear = new Date(profile.birthDate).getFullYear();
+  const retirementAge = parseInt(profile.retirementAge); // 숫자로 변환
+  const retirementYear = birthYear + retirementAge;
+  const deathYear = birthYear + 90; // 90세까지
+  
+  // 디버깅용 로그
+  console.log("createDefaultIncomes 디버깅:", {
+    birthDate: profile.birthDate,
+    birthYear,
+    retirementAge: profile.retirementAge,
+    retirementAgeParsed: retirementAge,
+    retirementYear,
+    deathYear,
+    currentYear
+  });
 
   return [
     {
