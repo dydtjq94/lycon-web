@@ -1309,7 +1309,7 @@ export function createDefaultIncomes(profile) {
       startDate: `${currentYear}-01-01`,
       endDate: `${retirementYear}-12-31`,
       frequency: "monthly", // 월급
-      note: "근로소득 (임금상승률 자동 적용)",
+      note: "임금상승률 적용",
       category: "incomes",
     },
     {
@@ -1318,7 +1318,7 @@ export function createDefaultIncomes(profile) {
       startDate: `${currentYear}-01-01`,
       endDate: `${retirementYear}-12-31`,
       frequency: "monthly", // 월급
-      note: "사업소득 (임금상승률 자동 적용)",
+      note: "사업소득상승률 적용",
       category: "incomes",
     },
     {
@@ -1327,7 +1327,7 @@ export function createDefaultIncomes(profile) {
       startDate: `${currentYear}-01-01`,
       endDate: `${retirementYear}-12-31`,
       frequency: "monthly", // 월급
-      note: "임대소득 (임금상승률 자동 적용)",
+      note: "임대소득상승률 적용",
       category: "incomes",
     },
   ];
