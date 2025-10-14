@@ -1023,16 +1023,21 @@ export function formatMonthlyToYearlyData(monthlyData, type, birthDate = null) {
  * @param {string} birthDate - 생년월일
  * @returns {Object} 년별 자산 세부 내역
  */
-export function calculateYearlyAssetBreakdown(data, startYear, endYear, birthDate) {
+export function calculateYearlyAssetBreakdown(
+  data,
+  startYear,
+  endYear,
+  birthDate
+) {
   const { assets = [] } = data;
   const yearlyBreakdown = {};
-  
+
   // 자산별 누적 값 추적 (세부 내역용)
   const assetDetails = {};
 
   for (let year = startYear; year <= endYear; year++) {
     const currentAge = birthDate ? getAgeFromYear(year, birthDate) : null;
-    
+
     if (!yearlyBreakdown[year]) {
       yearlyBreakdown[year] = {};
     }
@@ -1041,17 +1046,17 @@ export function calculateYearlyAssetBreakdown(data, startYear, endYear, birthDat
     assets.forEach((asset) => {
       if (isActiveInYear(asset, year)) {
         const assetKey = asset.title;
-        
+
         if (!assetDetails[assetKey]) {
           assetDetails[assetKey] = {
             accumulated: 0,
-            lastContributionYear: null
+            lastContributionYear: null,
           };
         }
 
         const yearlyAmount = getYearlyAmount(asset);
         const annualRate = (asset.rate || 0) / 100;
-        
+
         if (asset.frequency === "once") {
           // 일회성 자산: 시작년도에만 추가
           const startYear = new Date(asset.startDate).getFullYear();
@@ -1063,8 +1068,9 @@ export function calculateYearlyAssetBreakdown(data, startYear, endYear, birthDat
           }
         } else {
           // 정기적 자산: 매년 추가 + 이전 값에 수익률 적용
-          assetDetails[assetKey].accumulated = 
-            (assetDetails[assetKey].accumulated + yearlyAmount) * (1 + annualRate);
+          assetDetails[assetKey].accumulated =
+            (assetDetails[assetKey].accumulated + yearlyAmount) *
+            (1 + annualRate);
         }
 
         // 해당 년도의 자산 가치 저장

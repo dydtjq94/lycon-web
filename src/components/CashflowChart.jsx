@@ -77,29 +77,25 @@ export default function CashflowChart({ data, profile = null }) {
     return null;
   };
 
-  // Currency formatting
+  // Currency formatting (만원 단위)
   const formatCurrency = (value) => {
-    if (value === null || value === undefined) return "0원";
-    return new Intl.NumberFormat("ko-KR", {
-      style: "currency",
-      currency: "KRW",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    if (value === null || value === undefined) return "0만원";
+    return new Intl.NumberFormat("ko-KR").format(value) + "만원";
   };
 
-  // Y-axis formatting - 더 깔끔한 표시
+  // Y-axis formatting (만원 단위)
   const formatYAxis = (value) => {
-    if (value >= 100000000) {
-      return `${(value / 100000000).toFixed(0)}억`;
-    } else if (value >= 10000) {
-      return `${(value / 10000).toFixed(0)}만`;
-    } else if (value <= -100000000) {
-      return `-${Math.abs(value / 100000000).toFixed(0)}억`;
+    if (value >= 10000) {
+      return `${(value / 10000).toFixed(0)}억`;
+    } else if (value >= 1) {
+      return `${value.toFixed(0)}만`;
     } else if (value <= -10000) {
-      return `-${Math.abs(value / 10000).toFixed(0)}만`;
+      return `-${Math.abs(value / 10000).toFixed(0)}억`;
+    } else if (value <= -1) {
+      return `-${Math.abs(value).toFixed(0)}만`;
+    } else {
+      return "0";
     }
-    return value.toLocaleString();
   };
 
   // 차트 데이터 포맷팅 (순현금흐름만, 나이 정보 포함)

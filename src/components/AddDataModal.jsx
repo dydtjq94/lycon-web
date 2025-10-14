@@ -509,7 +509,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
           {category !== "debts" && (
             <div className={styles.field}>
               <label htmlFor="amount" className={styles.label}>
-                {category === "pensions" ? "월 연금액 (원)" : "금액 (원)"} *
+                {category === "pensions" ? "월 연금액 (만원)" : "금액 (만원)"} *
               </label>
               <input
                 type="number"
@@ -524,8 +524,8 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                 }`}
                 placeholder={
                   category === "pensions"
-                    ? "예: 2000000 (월 200만원)"
-                    : "예: 5000000"
+                    ? "예: 200 (월 200만원)"
+                    : "예: 5000"
                 }
                 disabled={isSubmitting}
               />
@@ -1024,7 +1024,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
             <>
               <div className={styles.field}>
                 <label htmlFor="principalAmount" className={styles.label}>
-                  대출 원금 (원) *
+                  대출 원금 (만원) *
                 </label>
                 <input
                   type="number"
@@ -1035,7 +1035,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                   min="0"
                   step="1000"
                   className={styles.input}
-                  placeholder="예: 300000000 (3억원)"
+                  placeholder="예: 30000 (3억원)"
                   disabled={isSubmitting}
                 />
                 {errors.principalAmount && (
@@ -1103,7 +1103,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
               {formData.repaymentType === "fixed_payment" && (
                 <div className={styles.field}>
                   <label htmlFor="monthlyPayment" className={styles.label}>
-                    월 상환액 (원) *
+                    월 상환액 (만원) *
                   </label>
                   <input
                     type="number"
@@ -1114,7 +1114,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                     min="0"
                     step="1000"
                     className={styles.input}
-                    placeholder="예: 500000 (50만원)"
+                    placeholder="예: 50 (50만원)"
                     disabled={isSubmitting}
                   />
                   {errors.monthlyPayment && (

@@ -15,6 +15,7 @@ export default function AddProfileModal({
     birthDate: "",
     retirementAge: 55,
     retirementGoal: 0,
+    retirementAssets: 0, // 은퇴 시점 자산 규모 (만원)
     goalDescription: "",
     hasSpouse: false,
     householdSize: 1,
@@ -36,6 +37,7 @@ export default function AddProfileModal({
         birthDate: editingProfile.birthDate || "",
         retirementAge: editingProfile.retirementAge || 55,
         retirementGoal: editingProfile.retirementGoal || 0,
+        retirementAssets: editingProfile.retirementAssets || 0,
         goalDescription: editingProfile.goalDescription || "",
         hasSpouse: hasSpouse,
         householdSize: editingProfile.householdSize || 1,
@@ -48,6 +50,7 @@ export default function AddProfileModal({
         birthDate: "",
         retirementAge: 55,
         retirementGoal: 0,
+        retirementAssets: 0,
         goalDescription: "",
         hasSpouse: false,
         householdSize: 1,
@@ -204,7 +207,12 @@ export default function AddProfileModal({
 
     // 은퇴 목표 금액 검증
     if (formData.retirementGoal && formData.retirementGoal < 0) {
-      newErrors.retirementGoal = "은퇴 목표 금액은 0원 이상이어야 합니다.";
+      newErrors.retirementGoal = "은퇴 목표 금액은 0만원 이상이어야 합니다.";
+    }
+
+    // 은퇴 시점 자산 규모 검증
+    if (formData.retirementAssets && formData.retirementAssets < 0) {
+      newErrors.retirementAssets = "은퇴 시점 자산 규모는 0만원 이상이어야 합니다.";
     }
 
     // 가계 구성원 검증
@@ -269,6 +277,7 @@ export default function AddProfileModal({
         birthDate: "",
         retirementAge: 55,
         retirementGoal: 0,
+        retirementAssets: 0,
         goalDescription: "",
         hasSpouse: false,
         householdSize: 1,
@@ -290,6 +299,7 @@ export default function AddProfileModal({
         birthDate: "",
         retirementAge: 55,
         retirementGoal: 0,
+        retirementAssets: 0,
         goalDescription: "",
         hasSpouse: false,
         householdSize: 1,
@@ -404,7 +414,7 @@ export default function AddProfileModal({
 
           <div className={styles.field}>
             <label htmlFor="retirementGoal" className={styles.label}>
-              은퇴 목표 금액 (원)
+              은퇴 목표 금액 (만원)
             </label>
             <input
               type="number"
@@ -413,11 +423,11 @@ export default function AddProfileModal({
               value={formData.retirementGoal}
               onChange={handleChange}
               min="0"
-              step="1000000"
+              step="100"
               className={`${styles.input} ${
                 errors.retirementGoal ? styles.inputError : ""
               }`}
-              placeholder="예: 500000000 (5억원)"
+              placeholder="예: 50000 (5억원)"
               disabled={isSubmitting}
             />
             {formData.retirementGoal > 0 && (
@@ -427,12 +437,46 @@ export default function AddProfileModal({
                   {new Intl.NumberFormat("ko-KR").format(
                     formData.retirementGoal
                   )}
-                  원
+                  만원
                 </strong>
               </div>
             )}
             {errors.retirementGoal && (
               <span className={styles.errorText}>{errors.retirementGoal}</span>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="retirementAssets" className={styles.label}>
+              은퇴 시점 자산 규모 (만원)
+            </label>
+            <input
+              type="number"
+              id="retirementAssets"
+              name="retirementAssets"
+              value={formData.retirementAssets}
+              onChange={handleChange}
+              min="0"
+              step="100"
+              className={`${styles.input} ${
+                errors.retirementAssets ? styles.inputError : ""
+              }`}
+              placeholder="예: 100000 (10억원)"
+              disabled={isSubmitting}
+            />
+            {formData.retirementAssets > 0 && (
+              <div className={styles.calculatedAge}>
+                자산 규모:{" "}
+                <strong>
+                  {new Intl.NumberFormat("ko-KR").format(
+                    formData.retirementAssets
+                  )}
+                  만원
+                </strong>
+              </div>
+            )}
+            {errors.retirementAssets && (
+              <span className={styles.errorText}>{errors.retirementAssets}</span>
             )}
           </div>
 

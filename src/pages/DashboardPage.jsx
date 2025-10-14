@@ -311,7 +311,7 @@ export default function DashboardPage() {
                   {new Intl.NumberFormat("ko-KR").format(
                     profile.retirementGoal
                   )}
-                  원
+                  만원
                 </span>
               </div>
               {profile.goalDescription && (
@@ -319,6 +319,19 @@ export default function DashboardPage() {
                   {profile.goalDescription}
                 </div>
               )}
+            </div>
+          )}
+          {profile.retirementAssets > 0 && (
+            <div className={styles.retirementGoalSection}>
+              <div className={styles.retirementGoal}>
+                <span className={styles.goalLabel}>은퇴 시점 자산 규모</span>
+                <span className={styles.goalAmount}>
+                  {new Intl.NumberFormat("ko-KR").format(
+                    profile.retirementAssets
+                  )}
+                  만원
+                </span>
+              </div>
             </div>
           )}
           <div className={styles.profileDetails}>

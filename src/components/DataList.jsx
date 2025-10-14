@@ -326,15 +326,10 @@ export default function DataList({ items, category, onEdit, onDelete }) {
     }
   };
 
-  // 통화 포맷팅
+  // 통화 포맷팅 (만원 단위)
   const formatAmount = (amount) => {
-    if (amount === null || amount === undefined) return "0원";
-    return new Intl.NumberFormat("ko-KR", {
-      style: "currency",
-      currency: "KRW",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    if (amount === null || amount === undefined) return "0만원";
+    return new Intl.NumberFormat("ko-KR").format(amount) + "만원";
   };
 
   // 빈도 한글 변환
@@ -439,7 +434,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
               {category !== "debts" && (
                 <div className={styles.editField}>
                   <label>
-                    {category === "pensions" ? "월 연금액 (원)" : "금액 (원)"} *
+                    {category === "pensions" ? "월 연금액 (만원)" : "금액 (만원)"} *
                   </label>
                   <input
                     type="number"
@@ -454,8 +449,8 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                     step="1"
                     placeholder={
                       category === "pensions"
-                        ? "예: 2000000 (월 200만원)"
-                        : "예: 5000000"
+                        ? "예: 200 (월 200만원)"
+                        : "예: 5000"
                     }
                   />
                   {errors.amount && (
@@ -896,7 +891,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
               {config.showDebtFields && (
                 <>
                   <div className={styles.editField}>
-                    <label>대출 원금 (원) *</label>
+                    <label>대출 원금 (만원) *</label>
                     <input
                       type="number"
                       step="1000"
@@ -908,7 +903,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                         errors.principalAmount ? styles.inputError : ""
                       }`}
                       min="0"
-                      placeholder="예: 300000000 (3억원)"
+                      placeholder="예: 30000 (3억원)"
                     />
                     {errors.principalAmount && (
                       <span className={styles.errorText}>
@@ -970,7 +965,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
 
                   {editData.repaymentType === "fixed_payment" && (
                     <div className={styles.editField}>
-                      <label>월 상환액 (원) *</label>
+                      <label>월 상환액 (만원) *</label>
                       <input
                         type="number"
                         step="1000"
@@ -982,7 +977,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                           errors.monthlyPayment ? styles.inputError : ""
                         }`}
                         min="0"
-                        placeholder="예: 500000 (50만원)"
+                        placeholder="예: 50 (50만원)"
                       />
                       {errors.monthlyPayment && (
                         <span className={styles.errorText}>

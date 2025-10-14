@@ -65,25 +65,20 @@ export default function AssetProjectionChart({
     return null;
   };
 
-  // 통화 포맷팅
+  // 통화 포맷팅 (만원 단위)
   const formatCurrency = (value) => {
-    if (value === null || value === undefined) return "0원";
-    return new Intl.NumberFormat("ko-KR", {
-      style: "currency",
-      currency: "KRW",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    if (value === null || value === undefined) return "0만원";
+    return new Intl.NumberFormat("ko-KR").format(value) + "만원";
   };
 
   // Y축 포맷팅
   const formatYAxis = (value) => {
-    if (value >= 100000000) {
-      return `${(value / 100000000).toFixed(1)}억`;
-    } else if (value >= 10000) {
-      return `${(value / 10000).toFixed(1)}만`;
+    if (value >= 10000) {
+      return `${(value / 10000).toFixed(1)}억`;
+    } else if (value >= 1) {
+      return `${value.toFixed(1)}만`;
     }
-    return value.toLocaleString();
+    return "0";
   };
 
   // 자산 세부 내역을 포함한 차트 데이터 생성
