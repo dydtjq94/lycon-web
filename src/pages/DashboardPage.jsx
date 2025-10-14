@@ -19,6 +19,7 @@ import {
   calculateYearlyCashflow,
   calculateYearlyAssets,
   calculateYearlyAssetBreakdown,
+  createDefaultWageIncome,
 } from "../utils/simulators.js";
 import CashflowChart from "../components/CashflowChart.jsx";
 import AssetProjectionChart from "../components/AssetProjectionChart.jsx";
@@ -170,7 +171,18 @@ export default function DashboardPage() {
       const unsubscribe = dataItemService.subscribeToItems(
         profileId,
         category,
-        (items) => {
+        async (items) => {
+          // 수입 데이터가 비어있고 프로필이 있으면 근로소득 기본값 추가
+          if (category === "incomes" && items.length === 0 && profile) {
+            try {
+              const defaultWageIncome = createDefaultWageIncome(profile);
+              await dataItemService.addItem(profileId, "incomes", defaultWageIncome);
+              console.log("근로소득 기본값 추가됨:", defaultWageIncome);
+            } catch (error) {
+              console.error("근로소득 기본값 추가 오류:", error);
+            }
+          }
+          
           setData((prev) => ({
             ...prev,
             [category]: items,
@@ -183,7 +195,7 @@ export default function DashboardPage() {
     return () => {
       unsubscribes.forEach((unsubscribe) => unsubscribe());
     };
-  }, [profileId]);
+  }, [profileId, profile]);
 
   // 모달 열기 핸들러
   const handleOpenModal = (category) => {
