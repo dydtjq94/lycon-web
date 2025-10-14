@@ -109,7 +109,6 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-
     // 연금 종류 변경 시 기본값 설정
     if (name === "pensionType") {
       let defaultStartAge = 65;
@@ -152,56 +151,6 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
     }
   };
 
-  // 빈도 변경 핸들러
-  const handleFrequencyChange = (e) => {
-    const frequency = e.target.value;
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentQuarter = Math.ceil(currentMonth / 3);
-
-    let newStartDate = "";
-    let newEndDate = "";
-
-    switch (frequency) {
-      case "yearly":
-        newStartDate = `${currentYear}-01-01`;
-        newEndDate = `${currentYear}-12-31`;
-        break;
-      case "quarterly":
-        newStartDate = `${currentYear}-01-01`;
-        newEndDate = `${currentYear}-03-31`;
-        break;
-      case "monthly":
-        newStartDate = `${currentYear}-${String(currentMonth).padStart(
-          2,
-          "0"
-        )}-01`;
-        newEndDate = `${currentYear}-${String(currentMonth).padStart(
-          2,
-          "0"
-        )}-${new Date(currentYear, currentMonth, 0).getDate()}`;
-        break;
-      case "daily":
-        newStartDate = getTodayString();
-        newEndDate = getTodayString();
-        break;
-      case "once":
-        newStartDate = `${currentYear}-01-01`;
-        newEndDate = `${currentYear}-12-31`;
-        break;
-      default:
-        newStartDate = getTodayString();
-        newEndDate = "";
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      frequency,
-      startDate: newStartDate,
-      endDate: newEndDate,
-    }));
-  };
 
   // 시작일 변경 핸들러 (끝일을 시작일과 같게 설정)
   const handleStartDateChange = (e) => {
@@ -534,7 +483,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                 id="frequency"
                 name="frequency"
                 value={formData.frequency}
-                onChange={handleFrequencyChange}
+                onChange={handleChange}
                 className={styles.input}
                 disabled={isSubmitting}
               >
@@ -547,101 +496,52 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
           {/* 부채가 아닌 경우의 날짜 입력 */}
           {category !== "debts" && (
             <>
-              {/* 년: 시작년도, 끝년도 */}
-              {formData.frequency === "yearly" && (
-                <>
-                  <div className={styles.field}>
-                    <label htmlFor="startYear" className={styles.label}>
-                      시작 년도 *
-                    </label>
-                    <select
-                      id="startYear"
-                      name="startYear"
-                      value={formData.startYear}
-                      onChange={handleChange}
-                      className={styles.input}
-                      disabled={isSubmitting}
-                    >
-                      {yearOptions.map((year) => (
-                        <option key={year} value={year}>
-                          {year}년
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              {/* 시작년도, 끝년도 (빈도와 관계없이 동일) */}
+              <div className={styles.field}>
+                <label htmlFor="startYear" className={styles.label}>
+                  시작 년도 *
+                </label>
+                <input
+                  type="number"
+                  id="startYear"
+                  name="startYear"
+                  value={formData.startYear}
+                  onChange={handleChange}
+                  min="1900"
+                  max="2100"
+                  className={`${styles.input} ${
+                    errors.startYear ? styles.inputError : ""
+                  }`}
+                  disabled={isSubmitting}
+                />
+                {errors.startYear && (
+                  <span className={styles.errorText}>
+                    {errors.startYear}
+                  </span>
+                )}
+              </div>
 
-                  <div className={styles.field}>
-                    <label htmlFor="endYear" className={styles.label}>
-                      끝 년도
-                    </label>
-                    <select
-                      id="endYear"
-                      name="endYear"
-                      value={formData.endYear}
-                      onChange={handleChange}
-                      className={styles.input}
-                      disabled={isSubmitting}
-                    >
-                      {yearOptions.map((year) => (
-                        <option key={year} value={year}>
-                          {year}년
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {/* 월: 시작년도, 끝년도 */}
-              {formData.frequency === "monthly" && (
-                <>
-                  <div className={styles.field}>
-                    <label htmlFor="startYear" className={styles.label}>
-                      시작 년도 *
-                    </label>
-                    <input
-                      type="number"
-                      id="startYear"
-                      name="startYear"
-                      value={formData.startYear}
-                      onChange={handleChange}
-                      min="1900"
-                      max="2100"
-                      className={`${styles.input} ${
-                        errors.startYear ? styles.inputError : ""
-                      }`}
-                      disabled={isSubmitting}
-                    />
-                    {errors.startYear && (
-                      <span className={styles.errorText}>
-                        {errors.startYear}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label htmlFor="endYear" className={styles.label}>
-                      종료 년도
-                    </label>
-                    <input
-                      type="number"
-                      id="endYear"
-                      name="endYear"
-                      value={formData.endYear}
-                      onChange={handleChange}
-                      min="1900"
-                      max="2100"
-                      className={`${styles.input} ${
-                        errors.endYear ? styles.inputError : ""
-                      }`}
-                      disabled={isSubmitting}
-                    />
-                    {errors.endYear && (
-                      <span className={styles.errorText}>{errors.endYear}</span>
-                    )}
-                  </div>
-                </>
-              )}
+              <div className={styles.field}>
+                <label htmlFor="endYear" className={styles.label}>
+                  종료 년도
+                </label>
+                <input
+                  type="number"
+                  id="endYear"
+                  name="endYear"
+                  value={formData.endYear}
+                  onChange={handleChange}
+                  min="1900"
+                  max="2100"
+                  className={`${styles.input} ${
+                    errors.endYear ? styles.inputError : ""
+                  }`}
+                  disabled={isSubmitting}
+                />
+                {errors.endYear && (
+                  <span className={styles.errorText}>{errors.endYear}</span>
+                )}
+              </div>
             </>
           )}
 
