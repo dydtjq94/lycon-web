@@ -190,7 +190,7 @@ export default function DashboardPage() {
             try {
               const defaultIncomes = createDefaultIncomes(profile);
               for (const income of defaultIncomes) {
-                await dataItemService.addItem(profileId, "incomes", income);
+                await dataItemService.createItem(profileId, "incomes", income);
               }
               console.log("기본 수입 항목들 추가됨:", defaultIncomes);
             } catch (error) {
