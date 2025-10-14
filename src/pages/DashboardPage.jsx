@@ -321,19 +321,6 @@ export default function DashboardPage() {
               )}
             </div>
           )}
-          {profile.retirementAssets > 0 && (
-            <div className={styles.retirementGoalSection}>
-              <div className={styles.retirementGoal}>
-                <span className={styles.goalLabel}>은퇴 시점 자산 규모</span>
-                <span className={styles.goalAmount}>
-                  {new Intl.NumberFormat("ko-KR").format(
-                    profile.retirementAssets
-                  )}
-                  만원
-                </span>
-              </div>
-            </div>
-          )}
           <div className={styles.profileDetails}>
             <span>현재 나이: {currentAge}세</span>
             <span>희망 은퇴 나이: {profile.retirementAge}세</span>

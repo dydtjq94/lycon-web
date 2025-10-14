@@ -15,7 +15,6 @@ export default function AddProfileModal({
     birthDate: "",
     retirementAge: 55,
     retirementGoal: 0,
-    retirementAssets: 0, // 은퇴 시점 자산 규모 (만원)
     goalDescription: "",
     hasSpouse: false,
     householdSize: 1,
@@ -37,7 +36,6 @@ export default function AddProfileModal({
         birthDate: editingProfile.birthDate || "",
         retirementAge: editingProfile.retirementAge || 55,
         retirementGoal: editingProfile.retirementGoal || 0,
-        retirementAssets: editingProfile.retirementAssets || 0,
         goalDescription: editingProfile.goalDescription || "",
         hasSpouse: hasSpouse,
         householdSize: editingProfile.householdSize || 1,
@@ -50,7 +48,6 @@ export default function AddProfileModal({
         birthDate: "",
         retirementAge: 55,
         retirementGoal: 0,
-        retirementAssets: 0,
         goalDescription: "",
         hasSpouse: false,
         householdSize: 1,
@@ -210,11 +207,6 @@ export default function AddProfileModal({
       newErrors.retirementGoal = "은퇴 목표 금액은 0만원 이상이어야 합니다.";
     }
 
-    // 은퇴 시점 자산 규모 검증
-    if (formData.retirementAssets && formData.retirementAssets < 0) {
-      newErrors.retirementAssets = "은퇴 시점 자산 규모는 0만원 이상이어야 합니다.";
-    }
-
     // 가계 구성원 검증
     formData.householdMembers.forEach((member, index) => {
       if (!member.name.trim()) {
@@ -277,7 +269,6 @@ export default function AddProfileModal({
         birthDate: "",
         retirementAge: 55,
         retirementGoal: 0,
-        retirementAssets: 0,
         goalDescription: "",
         hasSpouse: false,
         householdSize: 1,
@@ -299,7 +290,6 @@ export default function AddProfileModal({
         birthDate: "",
         retirementAge: 55,
         retirementGoal: 0,
-        retirementAssets: 0,
         goalDescription: "",
         hasSpouse: false,
         householdSize: 1,
@@ -446,39 +436,6 @@ export default function AddProfileModal({
             )}
           </div>
 
-          <div className={styles.field}>
-            <label htmlFor="retirementAssets" className={styles.label}>
-              은퇴 시점 자산 규모 (만원)
-            </label>
-            <input
-              type="number"
-              id="retirementAssets"
-              name="retirementAssets"
-              value={formData.retirementAssets}
-              onChange={handleChange}
-              min="0"
-              step="100"
-              className={`${styles.input} ${
-                errors.retirementAssets ? styles.inputError : ""
-              }`}
-              placeholder="예: 100000 (10억원)"
-              disabled={isSubmitting}
-            />
-            {formData.retirementAssets > 0 && (
-              <div className={styles.calculatedAge}>
-                자산 규모:{" "}
-                <strong>
-                  {new Intl.NumberFormat("ko-KR").format(
-                    formData.retirementAssets
-                  )}
-                  만원
-                </strong>
-              </div>
-            )}
-            {errors.retirementAssets && (
-              <span className={styles.errorText}>{errors.retirementAssets}</span>
-            )}
-          </div>
 
           <div className={styles.field}>
             <label htmlFor="goalDescription" className={styles.label}>
