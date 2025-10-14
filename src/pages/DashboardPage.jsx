@@ -97,15 +97,15 @@ export default function DashboardPage() {
     const birthDate = new Date(profile.birthDate);
     const retirementYear = birthDate.getFullYear() + profile.retirementAge;
     
-    // 시뮬레이션 종료년도: 2100년까지 또는 은퇴 후 30년 중 더 짧은 것
-    const maxEndYear = Math.min(retirementYear + 30, 2100);
+    // 시뮬레이션 종료년도: 90세가 되는 년도
+    const maxEndYear = birthDate.getFullYear() + 90;
 
     console.log("=== 시뮬레이션 시작 (년별 방식) ===");
     console.log("현재 년도:", currentYear);
     console.log("생년월일:", profile.birthDate);
     console.log("은퇴나이:", profile.retirementAge);
     console.log("은퇴년도:", retirementYear);
-    console.log("시뮬레이션 종료년도:", maxEndYear);
+    console.log("시뮬레이션 종료년도 (90세):", maxEndYear);
 
     // 새로운 년별 계산 방식 사용
     const yearlyCashflow = calculateYearlyCashflow(data, currentYear, maxEndYear, profile.birthDate);
