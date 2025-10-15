@@ -22,7 +22,8 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
     if (editData) {
       setFormData({
         title: editData.title || "",
-        frequency: editData.originalFrequency || editData.frequency || "monthly",
+        frequency:
+          editData.originalFrequency || editData.frequency || "monthly",
         amount: editData.originalAmount || editData.amount || "",
         startYear: editData.startYear || new Date().getFullYear(),
         endYear: editData.endYear || new Date().getFullYear() + 10,

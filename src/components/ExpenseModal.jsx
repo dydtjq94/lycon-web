@@ -80,10 +80,13 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
 
     const expenseData = {
       ...formData,
+      amount: parseInt(formData.amount),
+      originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
     };
 
     onSave(expenseData);
+    onClose();
   };
 
   // 모달 닫기 핸들러

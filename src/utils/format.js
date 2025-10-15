@@ -57,15 +57,19 @@ export function formatAmountShort(amount) {
   const numAmount = Number(amount);
 
   if (numAmount >= 10000) {
-    const eok = numAmount / 10000;
-    if (eok >= 1) {
-      return `${eok.toFixed(1)}억원`;
+    const eok = Math.floor(numAmount / 10000);
+    const man = numAmount % 10000;
+    
+    if (man > 0) {
+      return `${eok}억 ${man.toLocaleString()}만원`;
+    } else {
+      return `${eok}억원`;
     }
   }
 
   if (numAmount >= 1000) {
-    const cheon = numAmount / 1000;
-    return `${cheon.toFixed(1)}천만원`;
+    const cheon = Math.floor(numAmount / 1000);
+    return `${cheon.toLocaleString()}천만원`;
   }
 
   return `${numAmount.toLocaleString()}만원`;
@@ -85,10 +89,10 @@ export function formatAmountForChart(amount) {
 
   if (numAmount >= 10000) {
     const eok = Math.floor(numAmount / 10000);
-    const cheon = Math.floor((numAmount % 10000) / 1000);
+    const man = numAmount % 10000;
     
-    if (cheon > 0) {
-      return `${eok}억 ${cheon}천만원`;
+    if (man > 0) {
+      return `${eok}억 ${man.toLocaleString()}만원`;
     } else {
       return `${eok}억원`;
     }
