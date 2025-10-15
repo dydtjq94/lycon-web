@@ -14,7 +14,12 @@ const rulesFile = path.join(__dirname, ".cursor/rules/my-rule.mdc");
 
 // 현재 버전 읽기
 const versionData = JSON.parse(fs.readFileSync(versionFile, "utf8"));
-const currentVersion = versionData.version.split(".").map(Number);
+const versionParts = versionData.version.split(".");
+const currentVersion = [
+  parseInt(versionParts[0]) || 0,
+  parseInt(versionParts[1]) || 0,
+  parseInt(versionParts[2]) || 0
+];
 
 // 버전 업데이트
 const updateType = process.argv[2] || "patch";
@@ -47,7 +52,7 @@ fs.writeFileSync(versionFile, JSON.stringify(updatedVersionData, null, 2));
 // .cursor/rules/my-rule.mdc 업데이트
 const rulesContent = fs.readFileSync(rulesFile, "utf8");
 const updatedRulesContent = rulesContent.replace(
-  /현재 버전 : \d+\.\d+/,
+  /현재 버전 : \d+\.\d+(\.\d+)?/,
   `현재 버전 : ${newVersionString}`
 );
 fs.writeFileSync(rulesFile, updatedRulesContent);
