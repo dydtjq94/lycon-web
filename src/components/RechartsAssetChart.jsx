@@ -160,7 +160,7 @@ function RechartsAssetChart({
             {/* 동적 자산 항목 Bar들 */}
             {assetKeys.map((key, index) => (
               <Bar
-                key={key}
+                key={`${key}-${index}`}
                 dataKey={key}
                 stackId="assets"
                 fill={colors[index % colors.length]}

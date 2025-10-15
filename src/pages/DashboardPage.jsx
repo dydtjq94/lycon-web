@@ -26,6 +26,7 @@ import PensionModal from "../components/PensionModal";
 import PensionList from "../components/PensionList";
 import RealEstateModal from "../components/RealEstateModal";
 import RealEstateList from "../components/RealEstateList";
+import ProfileEditModal from "../components/ProfileEditModal";
 import styles from "./DashboardPage.module.css";
 
 /**
@@ -36,7 +37,7 @@ function DashboardPage() {
   const { profileId } = useParams();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("income");
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeChart, setActiveChart] = useState("cashflow");
@@ -212,6 +213,10 @@ function DashboardPage() {
 
   // 시뮬레이션 데이터 생성
   const generateSimulationData = (profileData) => {
+    if (!profileData) {
+      return;
+    }
+    
     const currentYear = new Date().getFullYear();
     const startAge = profileData.currentKoreanAge;
     const retirementAge = profileData.retirementAge;
@@ -251,32 +256,22 @@ function DashboardPage() {
   };
 
   // 프로필 수정 핸들러
-  const handleProfileUpdate = async (field, value) => {
-    const updatedProfile = {
-      ...profileData,
-      [field]: value,
-    };
 
-    setProfileData(updatedProfile);
-
-    try {
-      await profileService.updateProfile(profileId, updatedProfile);
-    } catch (error) {
-      console.error("프로필 업데이트 오류:", error);
-      alert("프로필 업데이트 중 오류가 발생했습니다.");
-    }
+  // 프로필 수정 모달 열기
+  const handleEditProfile = () => {
+    setIsProfileEditModalOpen(true);
   };
 
-  // 프로필 저장
-  const handleSaveProfile = async () => {
-    try {
-      await profileService.updateProfile(profileId, profileData);
-      setIsEditingProfile(false);
-      alert("프로필이 저장되었습니다!");
-    } catch (error) {
-      console.error("프로필 저장 오류:", error);
-      alert("프로필 저장 중 오류가 발생했습니다.");
-    }
+  // 프로필 수정 모달 닫기
+  const handleCloseProfileEditModal = () => {
+    setIsProfileEditModalOpen(false);
+  };
+
+  // 프로필 수정 저장
+  const handleSaveProfileEdit = (updatedProfile) => {
+    setProfileData(updatedProfile);
+    // 시뮬레이션 재계산
+    generateSimulationData();
   };
 
   // 사이드바 뷰 핸들러들
@@ -699,6 +694,12 @@ function DashboardPage() {
               </span>
             </span>
             <span className={styles.detailItem}>
+              <span className={styles.label}>현재 현금:</span>
+              <span className={styles.value}>
+                {formatAmount(profileData.currentCash)}
+              </span>
+            </span>
+            <span className={styles.detailItem}>
               <span className={styles.label}>목표 자산:</span>
               <span className={styles.value}>
                 {formatAmount(profileData.targetAssets)}
@@ -716,78 +717,14 @@ function DashboardPage() {
           </div>
         </div>
         <div className={styles.profileActions}>
-          <button
-            className={styles.editButton}
-            onClick={() => setIsEditingProfile(!isEditingProfile)}
-          >
-            {isEditingProfile ? "취소" : "수정"}
+          <button className={styles.editButton} onClick={handleEditProfile}>
+            프로필 수정
           </button>
-          {isEditingProfile && (
-            <button className={styles.saveButton} onClick={handleSaveProfile}>
-              저장
-            </button>
-          )}
           <button className={styles.backButton} onClick={() => navigate("/")}>
             목록으로
           </button>
         </div>
       </div>
-
-      {/* 프로필 수정 폼 */}
-      {isEditingProfile && (
-        <div className={styles.editForm}>
-          <div className={styles.formRow}>
-            <div className={styles.formField}>
-              <label>은퇴 나이</label>
-              <input
-                type="text"
-                value={profileData.retirementAge}
-                onChange={(e) =>
-                  handleProfileUpdate(
-                    "retirementAge",
-                    parseInt(e.target.value) || 0
-                  )
-                }
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) e.preventDefault();
-                }}
-              />
-            </div>
-            <div className={styles.formField}>
-              <label>목표 자산 (만원)</label>
-              <input
-                type="text"
-                value={profileData.targetAssets}
-                onChange={(e) =>
-                  handleProfileUpdate(
-                    "targetAssets",
-                    parseInt(e.target.value) || 0
-                  )
-                }
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) e.preventDefault();
-                }}
-              />
-            </div>
-            <div className={styles.formField}>
-              <label>은퇴 시점 생활비 (만원/월)</label>
-              <input
-                type="text"
-                value={profileData.retirementLivingExpenses}
-                onChange={(e) =>
-                  handleProfileUpdate(
-                    "retirementLivingExpenses",
-                    parseInt(e.target.value) || 0
-                  )
-                }
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) e.preventDefault();
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 메인 대시보드 */}
       <div className={styles.dashboardMain}>
@@ -928,6 +865,13 @@ function DashboardPage() {
         onClose={() => setIsRealEstateModalOpen(false)}
         onSave={handleSaveRealEstate}
         editData={editingRealEstate}
+        profileData={profileData}
+      />
+
+      <ProfileEditModal
+        isOpen={isProfileEditModalOpen}
+        onClose={handleCloseProfileEditModal}
+        onSave={handleSaveProfileEdit}
         profileData={profileData}
       />
     </div>

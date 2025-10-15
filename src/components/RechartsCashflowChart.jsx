@@ -48,7 +48,10 @@ function RechartsCashflowChart({ data, retirementAge, deathAge = 90 }) {
   const tickStep = roundedMax / 4; // 4개 구간으로 나누기
   const ticks = [];
   for (let i = -4; i <= 4; i++) {
-    ticks.push(i * tickStep);
+    const tickValue = i * tickStep;
+    if (!ticks.includes(tickValue)) {
+      ticks.push(tickValue);
+    }
   }
 
   return (
