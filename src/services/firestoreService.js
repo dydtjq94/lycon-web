@@ -371,3 +371,81 @@ export const savingsService = {
     }
   },
 };
+
+/**
+ * 연금 관련 서비스
+ */
+export const pensionService = {
+  // 연금 데이터 생성
+  async createPension(profileId, pensionData) {
+    try {
+      const docRef = await addDoc(collection(db, "profiles", profileId, "pensions"), {
+        ...pensionData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error("연금 데이터 생성 오류:", error);
+      throw error;
+    }
+  },
+
+  // 연금 데이터 목록 조회
+  async getPensions(profileId) {
+    try {
+      const q = query(
+        collection(db, "profiles", profileId, "pensions"),
+        orderBy("createdAt", "asc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("연금 데이터 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 연금 데이터 단건 조회
+  async getPension(profileId, pensionId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "pensions", pensionId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      }
+      return null;
+    } catch (error) {
+      console.error("연금 데이터 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 연금 데이터 수정
+  async updatePension(profileId, pensionId, updateData) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "pensions", pensionId);
+      await updateDoc(docRef, {
+        ...updateData,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("연금 데이터 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  // 연금 데이터 삭제
+  async deletePension(profileId, pensionId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "pensions", pensionId);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("연금 데이터 삭제 오류:", error);
+      throw error;
+    }
+  },
+};

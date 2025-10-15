@@ -11,6 +11,7 @@ import {
   incomeService,
   expenseService,
   savingsService,
+  pensionService,
 } from "../services/firestoreService";
 import RechartsCashflowChart from "../components/RechartsCashflowChart";
 import RechartsAssetChart from "../components/RechartsAssetChart";
@@ -20,6 +21,8 @@ import ExpenseModal from "../components/ExpenseModal";
 import ExpenseList from "../components/ExpenseList";
 import SavingModal from "../components/SavingModal";
 import SavingList from "../components/SavingList";
+import PensionModal from "../components/PensionModal";
+import PensionList from "../components/PensionList";
 import styles from "./DashboardPage.module.css";
 
 /**
@@ -47,6 +50,9 @@ function DashboardPage() {
   const [savings, setSavings] = useState([]);
   const [isSavingModalOpen, setIsSavingModalOpen] = useState(false);
   const [editingSaving, setEditingSaving] = useState(null);
+  const [pensions, setPensions] = useState([]);
+  const [isPensionModalOpen, setIsPensionModalOpen] = useState(false);
+  const [editingPension, setEditingPension] = useState(null);
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
 
   // 프로필 데이터 로드
@@ -149,12 +155,32 @@ function DashboardPage() {
     loadSavings();
   }, [profileId]);
 
+  // 연금 데이터 로드
+  useEffect(() => {
+    const loadPensions = async () => {
+      if (!profileId) return;
+
+      try {
+        const pensionData = await pensionService.getPensions(profileId);
+        // 생성 순서대로 정렬 (createdAt 기준)
+        const sortedPensions = pensionData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+        setPensions(sortedPensions);
+      } catch (error) {
+        console.error("연금 데이터 로드 오류:", error);
+      }
+    };
+
+    loadPensions();
+  }, [profileId]);
+
   // 수입 데이터가 변경될 때마다 시뮬레이션 재계산
   useEffect(() => {
     if (profileData) {
       generateSimulationData(profileData);
     }
-  }, [incomes, expenses, savings, profileData]);
+  }, [incomes, expenses, savings, pensions, profileData]);
 
   // 시뮬레이션 데이터 생성
   const generateSimulationData = (profileData) => {
@@ -178,7 +204,7 @@ function DashboardPage() {
       incomes,
       expenses, // 지출 데이터 사용
       savings, // 저축 데이터 사용
-      [] // 연금 (추후 구현)
+      pensions // 연금 데이터 사용
     );
 
     // 자산 시뮬레이션 데이터
@@ -187,7 +213,7 @@ function DashboardPage() {
       incomes,
       expenses,
       savings, // 저축 데이터 사용
-      [] // 연금 (추후 구현)
+      pensions // 연금 데이터 사용
     );
 
     setSimulationData({ cashflow, assets });
@@ -407,6 +433,63 @@ function DashboardPage() {
     }
   };
 
+  // 연금 핸들러들
+  const handleAddPension = () => {
+    setEditingPension(null);
+    setIsPensionModalOpen(true);
+  };
+
+  const handleEditPension = (pension) => {
+    setEditingPension(pension);
+    setIsPensionModalOpen(true);
+  };
+
+  const handleSavePension = async (pensionData) => {
+    try {
+      if (editingPension) {
+        // 수정
+        await pensionService.updatePension(
+          profileId,
+          editingPension.id,
+          pensionData
+        );
+        setPensions(
+          pensions.map((pension) =>
+            pension.id === editingPension.id
+              ? { ...pension, ...pensionData }
+              : pension
+          )
+        );
+      } else {
+        // 추가
+        const pensionId = await pensionService.createPension(profileId, pensionData);
+        setPensions([...pensions, { id: pensionId, ...pensionData }]);
+      }
+
+      setEditingPension(null);
+      setIsPensionModalOpen(false);
+
+      // 시뮬레이션 데이터 재생성
+      generateSimulationData(profileData);
+    } catch (error) {
+      console.error("연금 데이터 저장 오류:", error);
+    }
+  };
+
+  const handleDeletePension = async (pensionId) => {
+    if (!window.confirm("이 연금 데이터를 삭제하시겠습니까?")) return;
+
+    try {
+      await pensionService.deletePension(profileId, pensionId);
+      setPensions(pensions.filter((pension) => pension.id !== pensionId));
+
+      // 시뮬레이션 데이터 재생성
+      generateSimulationData(profileData);
+    } catch (error) {
+      console.error("연금 데이터 삭제 오류:", error);
+    }
+  };
+
   // 카테고리별 추가 핸들러
   const handleAddData = () => {
     switch (selectedCategory) {
@@ -420,8 +503,7 @@ function DashboardPage() {
         handleAddSaving();
         break;
       case "pension":
-        // TODO: 연금 추가 기능
-        alert("연금 추가 기능은 준비 중입니다.");
+        handleAddPension();
         break;
       case "assets":
         // TODO: 자산 추가 기능
@@ -473,7 +555,7 @@ function DashboardPage() {
     { id: "income", name: "수입", color: "#10b981", count: incomes.length },
     { id: "expense", name: "지출", color: "#ef4444", count: expenses.length },
     { id: "savings", name: "저축", color: "#3b82f6", count: savings.length },
-    { id: "pension", name: "연금", color: "#8b5cf6", count: 0 },
+    { id: "pension", name: "연금", color: "#8b5cf6", count: pensions.length },
     { id: "assets", name: "자산", color: "#f59e0b", count: 0 },
     { id: "debt", name: "부채", color: "#6b7280", count: 0 },
   ];
@@ -657,6 +739,12 @@ function DashboardPage() {
                     onEdit={handleEditSaving}
                     onDelete={handleDeleteSaving}
                   />
+                ) : selectedCategory === "pension" ? (
+                  <PensionList
+                    pensions={pensions}
+                    onEdit={handleEditPension}
+                    onDelete={handleDeletePension}
+                  />
                 ) : (
                   <div className={styles.emptyList}>
                     <p>데이터가 없습니다.</p>
@@ -714,6 +802,13 @@ function DashboardPage() {
         onClose={() => setIsSavingModalOpen(false)}
         onSave={handleSaveSaving}
         editData={editingSaving}
+      />
+
+      <PensionModal
+        isOpen={isPensionModalOpen}
+        onClose={() => setIsPensionModalOpen(false)}
+        onSave={handleSavePension}
+        editData={editingPension}
       />
     </div>
   );

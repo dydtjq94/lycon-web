@@ -94,14 +94,27 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 연금 계산 (추후 구현)
+    // 연금 계산
     pensions.forEach((pension) => {
-      if (year >= pension.startYear && year <= pension.endYear) {
-        const yearsElapsed = year - pension.startYear;
-        const growthRate = pension.growthRate / 100;
-        const adjustedAmount =
-          pension.amount * Math.pow(1 + growthRate, yearsElapsed);
-        totalPension += adjustedAmount;
+      if (pension.type === "national") {
+        // 국민연금: 수령 기간 동안 현금흐름에 추가
+        if (year >= pension.startYear && year <= pension.endYear) {
+          const yearsElapsed = year - pension.startYear;
+          const inflationRate = 2.5 / 100; // 물가상승률 (기본값)
+          const adjustedAmount = pension.monthlyAmount * 12 * Math.pow(1 + inflationRate, yearsElapsed);
+          totalPension += adjustedAmount;
+        }
+      } else {
+        // 퇴직연금/개인연금: 수령 기간 동안 현금흐름에 추가
+        const paymentStartYear = pension.contributionEndYear + 1;
+        const paymentEndYear = paymentStartYear + pension.paymentYears - 1;
+        
+        if (year >= paymentStartYear && year <= paymentEndYear) {
+          // 수령 기간: 연금 자산에서 월 수령액만큼 현금흐름에 추가
+          // 월 수령액은 자산 시뮬레이션에서 계산된 값을 사용
+          const monthlyPayment = pension.monthlyPayment || 0;
+          totalPension += monthlyPayment * 12;
+        }
       }
     });
 
@@ -159,6 +172,26 @@ export function calculateAssetSimulation(
     };
   });
 
+  // 연금별 누적 자산 (제목별로 분리)
+  const pensionsByTitle = {};
+  pensions.forEach((pension) => {
+    if (pension.type !== "national") {
+      // 퇴직연금/개인연금만 자산으로 관리
+      pensionsByTitle[pension.title] = {
+        amount: 0,
+        contributionStartYear: pension.contributionStartYear,
+        contributionEndYear: pension.contributionEndYear,
+        paymentStartYear: pension.contributionEndYear + 1,
+        paymentEndYear: pension.contributionEndYear + pension.paymentYears,
+        returnRate: pension.returnRate || 5.0,
+        contributionAmount: pension.contributionAmount,
+        contributionFrequency: pension.contributionFrequency,
+        monthlyPayment: 0, // 월 수령액 (적립 종료 후 계산)
+        isActive: true,
+      };
+    }
+  });
+
   for (let i = 0; i < simulationYears; i++) {
     const year = currentYear + i;
     const age = startAge + i;
@@ -205,6 +238,38 @@ export function calculateAssetSimulation(
       }
     });
 
+    // 연금 계산 (퇴직연금/개인연금)
+    Object.keys(pensionsByTitle).forEach((title) => {
+      const pension = pensionsByTitle[title];
+
+      if (!pension.isActive) return; // 비활성 연금은 건너뛰기
+
+      if (year >= pension.contributionStartYear && year <= pension.contributionEndYear) {
+        // 적립 기간: 연금 자산에 추가
+        const yearsElapsed = year - pension.contributionStartYear;
+        const returnRate = pension.returnRate / 100;
+        
+        // 월간/연간 적립 금액 계산
+        const monthlyAmount = pension.contributionFrequency === "monthly" 
+          ? pension.contributionAmount 
+          : pension.contributionAmount / 12;
+        const yearlyAmount = monthlyAmount * 12;
+
+        // 작년 자산에 수익률 적용 + 올해 적립 추가
+        pension.amount = pension.amount * (1 + returnRate) + yearlyAmount;
+      } else if (year === pension.paymentStartYear) {
+        // 수령 시작년도: 월 수령액 계산
+        pension.monthlyPayment = pension.amount / (pension.paymentEndYear - pension.paymentStartYear + 1) / 12;
+        pension.amount -= pension.monthlyPayment * 12; // 첫 해 수령액 차감
+      } else if (year > pension.paymentStartYear && year <= pension.paymentEndYear) {
+        // 수령 기간: 자산에서 월 수령액만큼 차감
+        pension.amount -= pension.monthlyPayment * 12;
+      } else if (year > pension.paymentEndYear) {
+        // 수령 종료: 연금 비활성화
+        pension.isActive = false;
+      }
+    });
+
     // 자산 데이터 구성
     const assetItem = {
       year,
@@ -217,6 +282,14 @@ export function calculateAssetSimulation(
       const saving = savingsByTitle[title];
       if (saving.isActive) {
         assetItem[title] = saving.amount;
+      }
+    });
+
+    // 활성 연금별 자산 추가
+    Object.keys(pensionsByTitle).forEach((title) => {
+      const pension = pensionsByTitle[title];
+      if (pension.isActive) {
+        assetItem[title] = pension.amount;
       }
     });
 
