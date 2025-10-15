@@ -213,3 +213,83 @@ export const incomeService = {
     }
   },
 };
+
+// 지출 데이터 서비스
+export const expenseService = {
+  // 지출 데이터 생성
+  async createExpense(profileId, expenseData) {
+    try {
+      const docRef = await addDoc(
+        collection(db, "profiles", profileId, "expenses"),
+        {
+          ...expenseData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      );
+      return { id: docRef.id, ...expenseData };
+    } catch (error) {
+      console.error("지출 데이터 생성 오류:", error);
+      throw error;
+    }
+  },
+
+  // 지출 데이터 목록 조회
+  async getExpenses(profileId) {
+    try {
+      const q = query(
+        collection(db, "profiles", profileId, "expenses"),
+        orderBy("createdAt", "asc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("지출 데이터 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 지출 데이터 조회
+  async getExpense(profileId, expenseId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "expenses", expenseId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error("지출 데이터 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 지출 데이터 업데이트
+  async updateExpense(profileId, expenseId, updateData) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "expenses", expenseId);
+      await updateDoc(docRef, {
+        ...updateData,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("지출 데이터 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  // 지출 데이터 삭제
+  async deleteExpense(profileId, expenseId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "expenses", expenseId);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("지출 데이터 삭제 오류:", error);
+      throw error;
+    }
+  },
+};

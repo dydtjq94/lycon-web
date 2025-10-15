@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { calculateKoreanAge, getKoreanAgeInYear } from "../utils/koreanAge";
-import { profileService, incomeService } from "../services/firestoreService";
+import { profileService, incomeService, expenseService } from "../services/firestoreService";
 import styles from "./ProfileCreatePage.module.css";
 
 /**
@@ -70,6 +70,45 @@ function ProfileCreatePage() {
         await incomeService.createIncome(profileId, income);
       } catch (error) {
         console.error(`기본 수입 데이터 생성 오류 (${income.title}):`, error);
+      }
+    }
+  };
+
+  // 기본 지출 데이터 생성 함수
+  const createDefaultExpenses = async (profileId, birthYear, retirementAge, retirementLivingExpenses) => {
+    const currentYear = new Date().getFullYear();
+    const deathYear = birthYear + 90 - 1; // 90세까지
+    const retirementYear = birthYear + retirementAge - 1;
+
+    const defaultExpenses = [
+      {
+        title: "은퇴 전 생활비",
+        amount: 0, // 사용자가 입력할 수 있도록 0으로 설정
+        frequency: "monthly",
+        startYear: currentYear,
+        endYear: retirementYear,
+        growthRate: 2.5, // 물가상승률 기본값
+        memo: "물가상승률 적용",
+        category: "expense"
+      },
+      {
+        title: "은퇴 후 생활비",
+        amount: retirementLivingExpenses || 0, // 프로필에서 입력한 은퇴 후 생활비 사용
+        frequency: "monthly",
+        startYear: retirementYear + 1, // 은퇴 다음 년도부터
+        endYear: deathYear,
+        growthRate: 2.5, // 물가상승률 기본값
+        memo: "물가상승률 적용",
+        category: "expense"
+      }
+    ];
+
+    // 각 기본 지출 데이터를 Firebase에 저장
+    for (const expense of defaultExpenses) {
+      try {
+        await expenseService.createExpense(profileId, expense);
+      } catch (error) {
+        console.error(`기본 지출 데이터 생성 오류 (${expense.title}):`, error);
       }
     }
   };
@@ -268,6 +307,20 @@ function ProfileCreatePage() {
       } catch (error) {
         console.error("기본 수입 데이터 생성 오류:", error);
         // 기본 수입 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
+      }
+
+      // 기본 지출 데이터 생성
+      try {
+        await createDefaultExpenses(
+          createdProfile.id,
+          birthYear,
+          formData.retirementAge,
+          formData.retirementLivingExpenses
+        );
+        console.log("기본 지출 데이터 생성 완료");
+      } catch (error) {
+        console.error("기본 지출 데이터 생성 오류:", error);
+        // 기본 지출 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
       }
 
       // 대시보드로 이동
