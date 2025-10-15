@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProfileListPage from "./pages/ProfileListPage";
 import ProfileCreatePage from "./pages/ProfileCreatePage";
 import DashboardPage from "./pages/DashboardPage";
+import VersionDisplay from "./components/VersionDisplay";
 import "./App.css";
 
 /**
@@ -23,6 +24,9 @@ function App() {
           {/* 프로필별 대시보드 페이지 */}
           <Route path="/dashboard/:profileId" element={<DashboardPage />} />
         </Routes>
+        
+        {/* 버전 표시 (개발자용) */}
+        <VersionDisplay />
       </div>
     </Router>
   );
