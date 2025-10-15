@@ -1,629 +1,558 @@
-/* 대시보드 페이지 스타일 */
+/* 대시보드 페이지 스타일 - 블랙 & 화이트 톤앤매너 */
 .container {
   min-height: 100vh;
-  background: #f8fafc;
-  padding: 2rem;
-}
-
-.topNavigation {
+  background: #ffffff;
+  color: #111827;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+  flex-direction: column;
 }
 
-.backToProfilesButton {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #e5e7eb;
-  color: #374151;
-  padding: 0.5rem 1rem;
+/* 로딩 및 에러 상태 */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 1.2rem;
+  color: #6b7280;
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 1.2rem;
+  color: #ef4444;
+  gap: 1rem;
+}
+
+.error button {
+  padding: 0.75rem 1.5rem;
+  background: #111827;
+  color: white;
+  border: none;
   border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
+  font-weight: 600;
 }
 
-.backToProfilesButton:hover {
-  background: rgba(255, 255, 255, 1);
-  border-color: #3b82f6;
-  color: #3b82f6;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.header {
+/* 상단 프로필 헤더 */
+.profileHeader {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 2rem;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .profileInfo {
   flex: 1;
+  min-width: 300px;
 }
 
 .profileName {
   font-size: 2rem;
   font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 0.5rem 0;
-}
-
-.profileDetails {
-  display: flex;
-  gap: 2rem;
-  color: #6b7280;
-  font-size: 0.9rem;
-}
-
-.profileDetails span {
-  padding: 0.25rem 0.75rem;
-  background: #f3f4f6;
-  border-radius: 6px;
-  font-weight: 500;
-}
-
-.spouseIndicator {
-  color: #3b82f6;
-  font-weight: 600;
-}
-
-.retirementGoalSection {
-  margin: 1rem 0;
-  padding: 1rem;
-  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
-  border-radius: 12px;
-  border: 2px solid #a7f3d0;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
-}
-
-.retirementGoal {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.goalLabel {
-  color: #059669;
-  font-weight: 700;
-  font-size: 1.1rem;
-  background: #10b981;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-}
-
-.goalAmount {
-  color: #047857;
-  font-weight: 800;
-  font-size: 1.5rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.goalDescription {
-  color: #374151;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  font-style: italic;
-  padding-left: 0.5rem;
-  border-left: 3px solid #10b981;
-}
-
-.householdInfo {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.householdInfo h3 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.memberList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.memberItem {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.85rem;
-}
-
-.memberName {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.memberRelationship {
-  color: #6b7280;
-  font-style: italic;
-}
-
-.memberAge {
-  color: #3b82f6;
-  font-weight: 500;
-}
-
-.loading {
-  text-align: center;
-  color: #6b7280;
-  font-size: 1.2rem;
-  padding: 4rem;
-}
-
-.error {
-  text-align: center;
-  padding: 4rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.error h2 {
-  color: #ef4444;
+  color: #111827;
   margin-bottom: 1rem;
 }
 
-.error p {
-  color: #6b7280;
-  margin-bottom: 2rem;
-}
-
-.errorBanner {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  text-align: center;
-}
-
-.main {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-/* 3단 분할 레이아웃 - 시뮬레이션 중심 */
-.layout {
+.profileDetails {
   display: grid;
-  grid-template-columns: 160px 300px 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
-  height: calc(100vh - 120px);
-  min-height: 600px;
 }
 
-/* 왼쪽: 카테고리 사이드바 - 컴팩트 */
-.categorySidebar {
-  background: white;
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.value {
+  font-size: 1.125rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.profileActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.editButton,
+.saveButton,
+.backButton {
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.editButton {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.editButton:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.saveButton {
+  background: #111827;
+  color: white;
+}
+
+.saveButton:hover {
+  background: #374151;
+}
+
+.backButton {
+  background: #6b7280;
+  color: white;
+}
+
+.backButton:hover {
+  background: #4b5563;
+}
+
+/* 프로필 수정 폼 */
+.editForm {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1.5rem 2rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formField label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.formField input {
   padding: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.formField input:focus {
+  outline: none;
+  border-color: #111827;
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+}
+
+/* 메인 대시보드 */
+.dashboardMain {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 좌측 사이드바 */
+.sidebar {
+  width: 250px;
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  padding: 2rem 1.5rem;
   overflow-y: auto;
 }
 
-.categoryButtons {
+.sidebarTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 1.5rem;
+}
+
+.categoryList {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
 .categoryButton {
-  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: center;
-  font-size: 0.875rem;
-  color: #64748b;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  font-weight: 500;
+  color: #374151;
+  text-align: left;
 }
 
 .categoryButton:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #475569;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: #f3f4f6;
+  border-color: #d1d5db;
 }
 
 .categoryButton.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: #111827;
   color: white;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  border-color: #111827;
 }
 
-/* 가운데: 데이터 패널 - 컴팩트 */
-.dataPanel {
+.categoryColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--category-color);
+  flex-shrink: 0;
+}
+
+.categoryButton.active .categoryColor {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
-.dataPanelHeader {
+.categoryName {
+  flex: 1;
+  text-align: left;
+}
+
+.categoryCount {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* 리스트 뷰 스타일 */
+.listHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f8fafc;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
 }
 
-.dataPanelTitle {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1f2937;
+.listContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0.5rem;
+}
+
+.listTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  padding: 0.75rem 1rem;
+  background: #f3f4f6;
+  border-radius: 6px;
+  border-left: 4px solid var(--category-color, #6b7280);
+}
+
+.emptyList {
+  text-align: center;
+  color: #6b7280;
+  padding: 3rem 1rem;
+  font-style: italic;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+}
+
+/* 리스트 헤더 버튼들 */
+.listHeader .backButton {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.listHeader .backButton:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.listHeader .addButton {
+  background: #111827;
+  border: 1px solid #111827;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.listHeader .addButton:hover {
+  background: #374151;
+  border-color: #374151;
+}
+
+/* 우측 메인 콘텐츠 - 그래프만 */
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: white;
+}
+
+/* 데이터 입력 섹션 (매우 작고 심플) */
+.dataInputSection {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  min-height: auto;
+}
+
+.dataInputHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.sectionTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
   margin: 0;
 }
 
+.inputArea {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .addButton {
-  padding: 0.5rem 1rem;
-  background: #10b981;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.addDataButton {
+  background: #111827;
   color: white;
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.addDataButton:hover {
+  background: #374151;
+}
+
+.dataList {
+  min-height: 60px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 0.5rem;
+  background: white;
+}
+
+.emptyMessage {
+  color: #9ca3af;
+  text-align: center;
+  margin: 0.5rem 0;
+  font-style: italic;
   font-size: 0.8rem;
 }
 
-.addButton:hover {
-  background: #059669;
-  transform: translateY(-1px);
-}
-
-.dataListWrapper {
+/* 그래프 섹션 - 전체 공간 차지 */
+.chartSection {
   flex: 1;
-  overflow-y: auto;
-  padding: 0.75rem;
-}
-
-/* 오른쪽: 차트 패널 - 메인 영역 */
-.chartsPanel {
+  background: white;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  overflow: visible;
-  padding: 0.25rem;
-  height: 100%;
+  min-height: 100vh;
+  padding: 1rem;
 }
 
-.chartsPanel .chartContainer {
-  flex: 1;
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border-radius: 8px;
-  padding: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow: visible;
-}
-
-.chartsPanel .chartContainer > div {
-  flex: 1;
-  min-height: 350px;
-  width: 100%;
-}
-
-.chartsPanel .chartTitle {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 0.75rem 0;
-  text-align: center;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.dataButtons {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-}
-
-.dataButton {
-  padding: 1rem 1.5rem;
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.dataButton:hover {
-  border-color: #3b82f6;
-  background: #f0f9ff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-}
-
-.chartsSection {
+.chartGrid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 2rem;
-  margin-bottom: 3rem;
+  height: 100%;
+  min-height: 500px;
 }
 
 .chartContainer {
   background: white;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+}
+
+.chartHeader {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .chartTitle {
   font-size: 1.25rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 1.5rem 0;
-  text-align: center;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
 }
 
-.dataSection {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+.chartTabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
 }
 
-.dataListContainer {
+.chartTab {
+  padding: 1rem 2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.chartTab:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.chartTab.active {
+  color: #111827;
+  border-bottom-color: #111827;
   background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.dataListTitle {
+.chartContainer {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chartPlaceholder {
+  text-align: center;
+  color: #6b7280;
+  padding: 3rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.chartPlaceholder p {
+  margin: 0.5rem 0;
   font-size: 1.1rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
 }
 
 /* 반응형 디자인 */
 @media (max-width: 1200px) {
-  .layout {
-    grid-template-columns: 140px 280px 1fr;
+  .chartGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
-  .chartsSection {
-    grid-template-columns: 1fr;
+  .chartContainer {
+    min-height: 400px;
   }
 }
 
 @media (max-width: 1024px) {
-  .layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
-    height: auto;
-    min-height: 800px;
+  .profileHeader {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .categorySidebar {
-    order: 1;
+  .profileActions {
+    justify-content: flex-start;
   }
 
-  .categoryButtons {
+  .dashboardMain {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .categoryList {
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 0.25rem;
   }
 
   .categoryButton {
     flex: 1;
-    min-width: 100px;
-    padding: 0.4rem 0.5rem;
-    font-size: 0.8rem;
-    text-align: center;
-  }
-
-  .dataPanel {
-    order: 2;
-    height: 400px;
-  }
-
-  .chartsPanel {
-    order: 3;
-    height: 600px;
-    min-height: 600px;
-  }
-}
-
-@media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
-
-  .header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-
-  .profileDetails {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .dataButtons {
-    justify-content: center;
-  }
-
-  .dataButton {
-    flex: 1;
     min-width: 120px;
     justify-content: center;
   }
+}
 
-  .dataSection {
+@media (max-width: 768px) {
+  .profileHeader {
+    padding: 1.5rem;
+  }
+
+  .profileDetails {
     grid-template-columns: 1fr;
   }
-}
 
-@media (max-width: 480px) {
-  .dataButtons {
-    flex-direction: column;
+  .formRow {
+    grid-template-columns: 1fr;
   }
 
-  .dataButton {
-    width: 100%;
-  }
-}
-
-/* 인라인 설정 패널 스타일 */
-.inlineSettings {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-
-/* 설정 헤더 (제목 + 적용 버튼) */
-.settingsHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.settingsHeader h4 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-/* 동적 상승률 섹션 */
-.dynamicRatesSection {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
-  background: rgba(249, 250, 251, 0.5);
-  border-radius: 6px;
-  padding: 1rem;
-  margin-left: 0;
-  padding-left: 0;
-}
-
-.inlineSettings h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.settingsRow {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.settingField {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 140px;
-}
-
-.settingField label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
-  white-space: nowrap;
-  min-width: 60px;
-}
-
-.settingField input {
-  padding: 0.25rem 0.375rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  width: 60px;
-  text-align: center;
-}
-
-.settingField input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-}
-
-.settingField span {
-  font-size: 0.75rem;
-  color: #6b7280;
-  font-weight: 500;
-  min-width: 12px;
-}
-
-.applyButton {
-  color: green;
-  border: none;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  cursor: pointer;
-}
-
-.applyButton:hover {
-  opacity: 0.5;
-}
-
-/* 모바일 반응형 */
-@media (max-width: 768px) {
-  .settingsRow {
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: stretch;
+  .dataInputSection {
+    padding: 1.5rem;
   }
 
-  .settingField {
-    min-width: 100%;
-    justify-content: space-between;
-  }
-
-  .settingField input {
-    width: 60px;
-  }
-
-  .settingsHeader {
-    gap: 0.5rem;
+  .chartContainer {
+    padding: 1rem;
   }
 }

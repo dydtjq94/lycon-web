@@ -1,11 +1,11 @@
 import React from "react";
 import { formatAmountForChart } from "../utils/format";
-import styles from "./CashflowChart.module.css";
+import styles from "./AssetChart.module.css";
 
 /**
- * 현금 흐름 시뮬레이션 차트 컴포넌트
+ * 자산 시뮬레이션 차트 컴포넌트
  */
-function CashflowChart({ data, retirementAge, deathAge = 90 }) {
+function AssetChart({ data, retirementAge, deathAge = 90 }) {
   if (!data || data.length === 0) {
     return (
       <div className={styles.chartContainer}>
@@ -25,9 +25,9 @@ function CashflowChart({ data, retirementAge, deathAge = 90 }) {
   const maxAmount = Math.max(...amounts);
   const amountRange = maxAmount - minAmount;
 
-  // 0을 포함하도록 범위 조정
-  const yMin = Math.min(minAmount, 0) - amountRange * 0.1;
-  const yMax = Math.max(maxAmount, 0) + amountRange * 0.1;
+  // 여유 공간 추가
+  const yMin = Math.max(0, minAmount - amountRange * 0.1);
+  const yMax = maxAmount + amountRange * 0.1;
   const yRange = yMax - yMin;
 
   // 스케일 계산
@@ -38,9 +38,6 @@ function CashflowChart({ data, retirementAge, deathAge = 90 }) {
   // 좌표 변환 함수
   const getX = (index) => padding.left + index * xScale;
   const getY = (amount) => padding.top + (yMax - amount) * yScale;
-
-  // 0선 그리기
-  const zeroY = getY(0);
 
   // 은퇴 시점 찾기
   const retirementIndex = data.findIndex((d) => d.age === retirementAge);
@@ -55,28 +52,35 @@ function CashflowChart({ data, retirementAge, deathAge = 90 }) {
     .join(" ");
 
   // 영역 채우기 경로
-  const areaData = `${pathData} L ${getX(data.length - 1)} ${zeroY} L ${getX(
+  const areaData = `${pathData} L ${getX(data.length - 1)} ${getY(0)} L ${getX(
     0
-  )} ${zeroY} Z`;
+  )} ${getY(0)} Z`;
 
   return (
     <div className={styles.chartContainer}>
       <div className={styles.chartHeader}>
-        <h3 className={styles.chartTitle}>현금 흐름 시뮬레이션</h3>
+        <h3 className={styles.chartTitle}>자산 시뮬레이션</h3>
         <div className={styles.chartLegend}>
+          <div className={styles.legendItem}>
+            <div
+              className={styles.legendColor}
+              style={{ backgroundColor: "#3b82f6" }}
+            ></div>
+            <span>총 자산</span>
+          </div>
+          <div className={styles.legendItem}>
+            <div
+              className={styles.legendColor}
+              style={{ backgroundColor: "#8b5cf6" }}
+            ></div>
+            <span>연금</span>
+          </div>
           <div className={styles.legendItem}>
             <div
               className={styles.legendColor}
               style={{ backgroundColor: "#10b981" }}
             ></div>
-            <span>수입</span>
-          </div>
-          <div className={styles.legendItem}>
-            <div
-              className={styles.legendColor}
-              style={{ backgroundColor: "#ef4444" }}
-            ></div>
-            <span>지출</span>
+            <span>현금성 자산</span>
           </div>
         </div>
       </div>
@@ -101,22 +105,11 @@ function CashflowChart({ data, retirementAge, deathAge = 90 }) {
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
 
-          {/* 0선 */}
-          <line
-            x1={padding.left}
-            y1={zeroY}
-            x2={chartWidth - padding.right}
-            y2={zeroY}
-            stroke="#6b7280"
-            strokeWidth="2"
-            strokeDasharray="5,5"
-          />
-
           {/* 영역 채우기 */}
-          <path d={areaData} fill="url(#gradient)" opacity="0.3" />
+          <path d={areaData} fill="url(#gradient)" opacity="0.2" />
 
           {/* 선 그래프 */}
-          <path d={pathData} fill="none" stroke="#111827" strokeWidth="3" />
+          <path d={pathData} fill="none" stroke="#3b82f6" strokeWidth="3" />
 
           {/* 데이터 포인트 */}
           {data.map((point, index) => (
@@ -125,7 +118,7 @@ function CashflowChart({ data, retirementAge, deathAge = 90 }) {
               cx={getX(index)}
               cy={getY(point.amount)}
               r="4"
-              fill={point.amount >= 0 ? "#10b981" : "#ef4444"}
+              fill="#3b82f6"
               stroke="white"
               strokeWidth="2"
             />
@@ -144,26 +137,39 @@ function CashflowChart({ data, retirementAge, deathAge = 90 }) {
             />
           )}
 
+          {/* 목표 자산선 (예시) */}
+          <line
+            x1={padding.left}
+            y1={getY(50000)} // 5억원 목표선
+            x2={chartWidth - padding.right}
+            y2={getY(50000)}
+            stroke="#f59e0b"
+            strokeWidth="2"
+            strokeDasharray="5,5"
+          />
+
           {/* 그라디언트 정의 */}
           <defs>
             <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#ef4444" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.1" />
             </linearGradient>
           </defs>
         </svg>
 
         {/* Y축 레이블 */}
         <div className={styles.yAxis}>
-          {[yMax, yMax * 0.5, 0, yMin * 0.5, yMin].map((value, index) => (
-            <div
-              key={index}
-              className={styles.yLabel}
-              style={{ top: getY(value) - 10 }}
-            >
-              {formatAmountForChart(value)}
-            </div>
-          ))}
+          {[yMax, yMax * 0.75, yMax * 0.5, yMax * 0.25, yMin].map(
+            (value, index) => (
+              <div
+                key={index}
+                className={styles.yLabel}
+                style={{ top: getY(value) - 10 }}
+              >
+                {formatAmountForChart(value)}
+              </div>
+            )
+          )}
         </div>
 
         {/* X축 레이블 */}
@@ -191,8 +197,14 @@ function CashflowChart({ data, retirementAge, deathAge = 90 }) {
           </span>
         </div>
       )}
+
+      {/* 목표 자산 표시 */}
+      <div className={styles.targetMarker}>
+        <div className={styles.targetLine}></div>
+        <span className={styles.targetLabel}>목표 자산 (5억원)</span>
+      </div>
     </div>
   );
 }
 
-export default CashflowChart;
+export default AssetChart;

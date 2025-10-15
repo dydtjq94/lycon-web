@@ -1,9 +1,9 @@
-// Firebase 초기화: Firestore / Auth / Storage
+// Firebase 설정
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
 
+// Firebase 설정 (환경변수에서 가져오기)
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -13,9 +13,28 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// Firebase 초기화
 const app = initializeApp(firebaseConfig);
 
-// 이 객체들을 필요한 곳에서 import 하여 사용
+// Firestore 인스턴스
 export const db = getFirestore(app);
+
+// Auth 인스턴스
 export const auth = getAuth(app);
-export const storage = getStorage(app);
+
+// Firebase 연결 상태 확인
+console.log("Firebase 초기화 완료");
+console.log("프로젝트 ID:", firebaseConfig.projectId);
+console.log("API 키:", firebaseConfig.apiKey ? "설정됨" : "없음");
+
+// AbortError 전역 처리 (개발 환경에서만)
+if (import.meta.env.DEV) {
+  window.addEventListener("unhandledrejection", (event) => {
+    if (event.reason && event.reason.name === "AbortError") {
+      console.warn("AbortError 무시됨:", event.reason);
+      event.preventDefault(); // 에러를 콘솔에 표시하지 않음
+    }
+  });
+}
+
+export default app;

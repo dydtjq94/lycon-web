@@ -1,77 +1,57 @@
-// 프로필 관리/선택 페이지
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { profileService } from "../services/firestoreService.js";
-import { calculateAge } from "../utils/date.js";
-import AddProfileModal from "../components/AddProfileModal.jsx";
+import { profileService } from "../services/firestoreService";
+import { calculateKoreanAge } from "../utils/koreanAge";
 import styles from "./ProfileListPage.module.css";
 
-export default function ProfileListPage() {
+/**
+ * 프로필 목록 페이지
+ * 재무 상담사가 여러 내담자 프로필을 관리할 수 있습니다.
+ */
+function ProfileListPage() {
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProfile, setEditingProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 프로필 목록 실시간 구독
+  // 프로필 목록 로드
   useEffect(() => {
-    const unsubscribe = profileService.subscribeToProfiles((profilesData) => {
-      setProfiles(profilesData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    loadProfiles();
   }, []);
 
-  // 프로필 추가 핸들러
-  const handleAddProfile = async (profileData) => {
+  const loadProfiles = async () => {
     try {
-      setError(null);
-      const profileId = await profileService.createProfile(profileData);
-
-      // 프로필 추가 후 해당 프로필의 대시보드로 이동
-      navigate(`/dashboard/${profileId}`);
+      setLoading(true);
+      const profilesData = await profileService.getAllProfiles();
+      // 생성일 기준으로 오래된 것부터 정렬 (오름차순)
+      const sortedProfiles = profilesData.sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      );
+      setProfiles(sortedProfiles);
     } catch (error) {
-      console.error("프로필 추가 오류:", error);
-      setError("프로필 추가에 실패했습니다. 다시 시도해주세요.");
+      console.error("프로필 로드 오류:", error);
+      setError("프로필을 불러오는 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 프로필 수정 핸들러
-  const handleEditProfile = async (profileData) => {
-    try {
-      setError(null);
-      await profileService.updateProfile(editingProfile.id, profileData);
-      setEditingProfile(null);
-    } catch (error) {
-      console.error("프로필 수정 오류:", error);
-      setError("프로필 수정에 실패했습니다. 다시 시도해주세요.");
-    }
-  };
-
-  // 프로필 수정 시작
-  const handleStartEdit = (profile) => {
-    setEditingProfile(profile);
-  };
-
-  // 프로필 삭제 핸들러
+  // 프로필 삭제
   const handleDeleteProfile = async (profileId, profileName) => {
-    if (window.confirm(`"${profileName}" 프로필을 삭제하시겠습니까?`)) {
-      try {
-        setError(null);
-        await profileService.deleteProfile(profileId);
-      } catch (error) {
-        console.error("프로필 삭제 오류:", error);
-        setError("프로필 삭제에 실패했습니다. 다시 시도해주세요.");
-      }
+    if (!confirm(`"${profileName}" 프로필을 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      await profileService.deleteProfile(profileId);
+      await loadProfiles(); // 목록 새로고침
+    } catch (error) {
+      console.error("프로필 삭제 오류:", error);
+      alert("프로필 삭제 중 오류가 발생했습니다.");
     }
   };
 
-  // 프로필 카드 클릭 핸들러
-  const handleProfileClick = (profileId) => {
-    navigate(`/dashboard/${profileId}`);
-  };
+  // 한국 나이 계산 (이미 calculateKoreanAge 함수를 import했으므로 제거)
 
   if (loading) {
     return (
@@ -81,158 +61,94 @@ export default function ProfileListPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.error}>{error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>재무 상담 대시보드</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Lycon Planning</h1>
+        <p className={styles.subtitle}>재무 상담사용 내담자 관리 시스템</p>
         <button
-          className={styles.addButton}
-          onClick={() => setIsModalOpen(true)}
-          aria-label="프로필 추가"
+          className={styles.createButton}
+          onClick={() => navigate("/create")}
         >
-          + 프로필 추가
+          + 새 프로필 추가
         </button>
-      </header>
+      </div>
 
-      {error && (
-        <div className={styles.error} role="alert">
-          {error}
-        </div>
-      )}
-
-      <main className={styles.main}>
+      <div className={styles.profileGrid}>
         {profiles.length === 0 ? (
           <div className={styles.emptyState}>
-            <h2>아직 프로필이 없습니다</h2>
-            <p>새로운 프로필을 추가하여 재무 상담을 시작해보세요.</p>
-            <button
-              className={styles.emptyAddButton}
-              onClick={() => setIsModalOpen(true)}
-            >
-              첫 프로필 추가하기
-            </button>
+            <h3>등록된 프로필이 없습니다</h3>
+            <p>새로운 내담자 프로필을 추가해보세요.</p>
           </div>
         ) : (
-          <div className={styles.profileGrid}>
-            {profiles.map((profile) => {
-              const currentAge = calculateAge(profile.birthDate);
-              return (
-                <div
-                  key={profile.id}
-                  className={styles.profileCard}
-                  onClick={() => handleProfileClick(profile.id)}
-                >
-                  <div className={styles.profileHeader}>
-                    <h3 className={styles.profileName}>{profile.name}</h3>
-                    <div className={styles.profileActions}>
-                      <button
-                        className={styles.editButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartEdit(profile);
-                        }}
-                        aria-label={`${profile.name} 프로필 수정`}
-                        title="수정"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        className={styles.deleteButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteProfile(profile.id, profile.name);
-                        }}
-                        aria-label={`${profile.name} 프로필 삭제`}
-                        title="삭제"
-                      >
-                        ×
-                      </button>
-                    </div>
+          profiles.map((profile) => (
+            <div key={profile.id} className={styles.profileCard}>
+              <div className={styles.profileInfo}>
+                <h3 className={styles.profileName}>{profile.name}</h3>
+                <div className={styles.profileDetails}>
+                  <div className={styles.detailItem}>
+                    <span className={styles.label}>현재 나이:</span>
+                    <span className={styles.value}>
+                      {profile.currentKoreanAge ||
+                        calculateKoreanAge(profile.birthYear)}
+                      세
+                    </span>
                   </div>
-                  <div className={styles.profileInfo}>
-                    <div className={styles.infoItem}>
-                      <span className={styles.label}>현재 나이:</span>
-                      <span className={styles.value}>{currentAge}세</span>
-                    </div>
-                    <div className={styles.infoItem}>
-                      <span className={styles.label}>희망 은퇴 나이:</span>
-                      <span className={styles.value}>
-                        {profile.retirementAge}세
-                      </span>
-                    </div>
-                    <div className={styles.infoItem}>
-                      <span className={styles.label}>은퇴까지:</span>
-                      <span className={styles.value}>
-                        {profile.retirementAge - currentAge}년
-                      </span>
-                    </div>
-                    {profile.retirementGoal > 0 && (
-                      <div className={styles.infoItem}>
-                        <span className={styles.label}>은퇴 목표:</span>
-                        <span className={styles.value}>
-                          {new Intl.NumberFormat("ko-KR").format(
-                            profile.retirementGoal
-                          )}
-                          원
-                        </span>
-                      </div>
-                    )}
-                    <div className={styles.infoItem}>
-                      <span className={styles.label}>가계 구성원:</span>
-                      <span className={styles.value}>
-                        {profile.householdSize || 1}명
-                        {profile.hasSpouse && (
-                          <span className={styles.spouseIndicator}>
-                            {" "}
-                            (배우자 포함)
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    {profile.householdMembers &&
-                      profile.householdMembers.length > 0 && (
-                        <div className={styles.householdMembers}>
-                          <span className={styles.label}>구성원:</span>
-                          <div className={styles.memberList}>
-                            {profile.householdMembers.map((member, index) => (
-                              <span
-                                key={member.id || index}
-                                className={styles.memberTag}
-                              >
-                                {member.name} ({member.relationship})
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                  <div className={styles.detailItem}>
+                    <span className={styles.label}>은퇴 나이:</span>
+                    <span className={styles.value}>
+                      {profile.retirementAge}세 ({profile.retirementYear}년)
+                    </span>
                   </div>
-                  <div className={styles.profileFooter}>
-                    <span className={styles.clickHint}>
-                      클릭하여 대시보드 열기
+                  <div className={styles.detailItem}>
+                    <span className={styles.label}>목표 자산:</span>
+                    <span className={styles.value}>
+                      {profile.targetAssets?.toLocaleString() ||
+                        profile.targetAmount?.toLocaleString() ||
+                        0}
+                      만원
+                    </span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.label}>가구 구성:</span>
+                    <span className={styles.value}>
+                      {profile.familyMembers
+                        ? profile.familyMembers.length + 1
+                        : 1}
+                      명
                     </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+
+              <div className={styles.profileActions}>
+                <button
+                  className={styles.selectButton}
+                  onClick={() => navigate(`/dashboard/${profile.id}`)}
+                >
+                  상세 보기
+                </button>
+                <button
+                  className={styles.deleteButton}
+                  onClick={() => handleDeleteProfile(profile.id, profile.name)}
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))
         )}
-      </main>
-
-      <AddProfileModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAdd={handleAddProfile}
-      />
-
-      {editingProfile && (
-        <AddProfileModal
-          isOpen={!!editingProfile}
-          onClose={() => setEditingProfile(null)}
-          onAdd={handleEditProfile}
-          editingProfile={editingProfile}
-          isEdit={true}
-        />
-      )}
+      </div>
     </div>
   );
 }
+
+export default ProfileListPage;
