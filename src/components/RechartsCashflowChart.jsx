@@ -92,9 +92,10 @@ function RechartsCashflowChart({ data, retirementAge, deathAge = 90 }) {
               type="number"
               scale="linear"
               domain={["dataMin - 1", "dataMax + 1"]}
-              tickFormatter={(value) => `${value}세`}
+              tickFormatter={(value) => `${value}`}
               stroke="#6b7280"
               fontSize={12}
+              label={{ value: "(세)", position: "insideBottom", offset: -5 }}
             />
 
             {/* Y축 - 금액 */}
@@ -102,13 +103,14 @@ function RechartsCashflowChart({ data, retirementAge, deathAge = 90 }) {
               domain={yDomain}
               ticks={ticks}
               tickFormatter={(value) => {
-                if (value === 0) return "0만원";
+                if (value === 0) return "0";
                 const absValue = Math.abs(value);
                 const formatted = formatAmountForChart(absValue);
-                return value > 0 ? `+${formatted}만원` : `-${formatted}만원`;
+                return value > 0 ? `+${formatted}` : `-${formatted}`;
               }}
               stroke="#6b7280"
               fontSize={12}
+              label={{ value: "(만원)", angle: -90, position: "insideLeft" }}
             />
 
             {/* 툴팁 */}

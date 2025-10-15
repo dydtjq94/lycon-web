@@ -94,9 +94,10 @@ function RechartsAssetChart({
               type="number"
               scale="linear"
               domain={["dataMin", "dataMax"]}
-              tickFormatter={(value) => `${value}세`}
+              tickFormatter={(value) => `${value}`}
               stroke="#6b7280"
               fontSize={12}
+              label={{ value: "(세)", position: "insideBottom", offset: -5 }}
             />
 
             {/* Y축 - 금액 */}
@@ -105,6 +106,7 @@ function RechartsAssetChart({
               tickFormatter={(value) => formatAmountForChart(value)}
               stroke="#6b7280"
               fontSize={12}
+              label={{ value: "(만원)", angle: -90, position: "insideLeft" }}
             />
 
             {/* 툴팁 */}
