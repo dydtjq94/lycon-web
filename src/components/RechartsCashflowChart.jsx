@@ -55,22 +55,6 @@ function RechartsCashflowChart({ data, retirementAge, deathAge = 90 }) {
     <div className={styles.chartContainer}>
       <div className={styles.chartHeader}>
         <h3 className={styles.chartTitle}>현금 흐름 시뮬레이션</h3>
-        <div className={styles.chartLegend}>
-          <div className={styles.legendItem}>
-            <div
-              className={styles.legendColor}
-              style={{ backgroundColor: "#10b981" }}
-            ></div>
-            <span>흑자 (수입 > 지출)</span>
-          </div>
-          <div className={styles.legendItem}>
-            <div
-              className={styles.legendColor}
-              style={{ backgroundColor: "#ef4444" }}
-            ></div>
-            <span>적자 (지출 > 수입)</span>
-          </div>
-        </div>
       </div>
 
       <div className={styles.chartWrapper}>
