@@ -396,8 +396,15 @@ export function calculateAssetSimulation(
             realEstate.isActive = false;
           }
         }
-      } else if (year > realEstate.endYear) {
-        // 보유 종료: 부동산 비활성화
+      } else if (year === realEstate.endYear + 1) {
+        // 보유 종료 다음 해: 부동산 자산을 현금으로 변환
+        if (realEstate.isActive && realEstate.amount > 0) {
+          currentCash += realEstate.amount;
+          realEstate.amount = 0;
+        }
+        realEstate.isActive = false;
+      } else if (year > realEstate.endYear + 1) {
+        // 보유 종료 이후: 부동산 비활성화
         realEstate.isActive = false;
       }
     });
