@@ -46,6 +46,19 @@ const RealEstateList = ({ realEstates, onEdit, onDelete }) => {
               보유 기간: {new Date().getFullYear()}년 - {realEstate.endYear}년
             </div>
 
+            {realEstate.hasRentalIncome && (
+              <div className={styles.rentalInfo}>
+                <div className={styles.rentalPeriod}>
+                  임대 수입: {realEstate.rentalIncomeStartYear}년 -{" "}
+                  {realEstate.rentalIncomeEndYear}년
+                </div>
+                <div className={styles.rentalAmount}>
+                  월 임대 수입: {formatAmount(realEstate.monthlyRentalIncome)}
+                  /월
+                </div>
+              </div>
+            )}
+
             {realEstate.convertToPension && (
               <div className={styles.pensionInfo}>
                 <div className={styles.pensionPeriod}>

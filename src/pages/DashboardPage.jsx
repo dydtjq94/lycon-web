@@ -77,7 +77,7 @@ function DashboardPage() {
           if (profile) {
             setProfileData(profile);
             generateSimulationData(profile);
-        } else {
+          } else {
             navigate("/");
           }
         }
@@ -88,7 +88,7 @@ function DashboardPage() {
         }
       } finally {
         if (isMounted) {
-        setLoading(false);
+          setLoading(false);
         }
       }
     };
@@ -164,7 +164,7 @@ function DashboardPage() {
   // 연금 데이터 로드
   useEffect(() => {
     const loadPensions = async () => {
-    if (!profileId) return;
+      if (!profileId) return;
 
       try {
         const pensionData = await pensionService.getPensions(profileId);
@@ -243,6 +243,7 @@ function DashboardPage() {
       expenses, // 지출 데이터 사용
       savings, // 저축 데이터 사용
       pensions, // 연금 데이터 사용
+      realEstates, // 부동산 데이터 사용
       assets // 자산 시뮬레이션 데이터 전달
     );
 
@@ -381,9 +382,9 @@ function DashboardPage() {
       } else {
         // 추가
         const newExpense = await expenseService.createExpense(
-        profileId,
+          profileId,
           expenseData
-      );
+        );
         setExpenses([...expenses, newExpense]);
       }
 
@@ -403,7 +404,7 @@ function DashboardPage() {
 
       // 시뮬레이션 데이터 재생성
       generateSimulationData(profileData);
-      } catch (error) {
+    } catch (error) {
       console.error("지출 데이터 삭제 오류:", error);
     }
   };
@@ -715,22 +716,22 @@ function DashboardPage() {
           </div>
         </div>
         <div className={styles.profileActions}>
-              <button
+          <button
             className={styles.editButton}
             onClick={() => setIsEditingProfile(!isEditingProfile)}
           >
             {isEditingProfile ? "취소" : "수정"}
-              </button>
+          </button>
           {isEditingProfile && (
             <button className={styles.saveButton} onClick={handleSaveProfile}>
               저장
-              </button>
+            </button>
           )}
           <button className={styles.backButton} onClick={() => navigate("/")}>
             목록으로
-              </button>
-            </div>
-          </div>
+          </button>
+        </div>
+      </div>
 
       {/* 프로필 수정 폼 */}
       {isEditingProfile && (
@@ -864,22 +865,22 @@ function DashboardPage() {
               </div>
             </>
           )}
-          </div>
+        </div>
 
         {/* 우측 메인 콘텐츠 - 그래프만 */}
         <div className={styles.mainContent}>
           <div className={styles.chartSection}>
             <div className={styles.chartGrid}>
               {/* 현금 흐름 시뮬레이션 */}
-            <div className={styles.chartContainer}>
+              <div className={styles.chartContainer}>
                 <RechartsCashflowChart
                   data={simulationData.cashflow}
                   retirementAge={profileData.retirementAge}
                 />
-            </div>
+              </div>
 
               {/* 자산 시뮬레이션 */}
-            <div className={styles.chartContainer}>
+              <div className={styles.chartContainer}>
                 <RechartsAssetChart
                   data={simulationData.assets}
                   retirementAge={profileData.retirementAge}

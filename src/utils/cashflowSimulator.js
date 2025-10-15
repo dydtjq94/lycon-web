@@ -17,6 +17,7 @@ export function calculateCashflowSimulation(
   expenses = [],
   savings = [],
   pensions = [],
+  realEstates = [],
   assetData = [] // 자산 시뮬레이션 데이터 추가
 ) {
   const currentYear = new Date().getFullYear();
@@ -152,9 +153,39 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 현금흐름 = 수입 - 지출 - 저축 + 연금 (각 년도별 순현금흐름)
+    // 임대 수입 계산
+    let totalRentalIncome = 0;
+    realEstates.forEach((realEstate) => {
+      if (realEstate.hasRentalIncome) {
+        if (
+          year >= realEstate.rentalIncomeStartYear &&
+          year <= realEstate.rentalIncomeEndYear
+        ) {
+          // 임대 수입 기간 동안 현금흐름에 추가
+          totalRentalIncome += realEstate.monthlyRentalIncome * 12;
+        }
+      }
+    });
+
+    // 주택연금 계산
+    let totalRealEstatePension = 0;
+    realEstates.forEach((realEstate) => {
+      if (realEstate.convertToPension) {
+        if (year >= realEstate.pensionStartYear) {
+          // 주택연금 수령 기간 동안 현금흐름에 추가
+          totalRealEstatePension += realEstate.monthlyPensionAmount * 12;
+        }
+      }
+    });
+
+    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 (각 년도별 순현금흐름)
     const netCashflow =
-      totalIncome - totalExpense - totalSavings + totalPension;
+      totalIncome -
+      totalExpense -
+      totalSavings +
+      totalPension +
+      totalRentalIncome +
+      totalRealEstatePension;
 
     cashflowData.push({
       year,
@@ -164,6 +195,8 @@ export function calculateCashflowSimulation(
       expense: totalExpense,
       savings: totalSavings,
       pension: totalPension,
+      rentalIncome: totalRentalIncome,
+      realEstatePension: totalRealEstatePension,
     });
   }
 
@@ -333,27 +366,35 @@ export function calculateAssetSimulation(
     // 부동산 처리
     Object.keys(realEstatesByTitle).forEach((title) => {
       const realEstate = realEstatesByTitle[title];
-      
-      if (year >= realEstate.startYear && year <= realEstate.endYear && realEstate.isActive) {
+
+      if (
+        year >= realEstate.startYear &&
+        year <= realEstate.endYear &&
+        realEstate.isActive
+      ) {
+        // 주택연금 수령 중이 아닌 경우에만 상승률 적용
+        const isPensionActive =
+          realEstate.convertToPension && year >= realEstate.pensionStartYear;
+
         if (year === realEstate.startYear) {
           // 첫 해: 현재 가치로 시작
           realEstate.amount = realEstate.amount;
-        } else {
-          // 이후 해: 상승률 적용
+        } else if (!isPensionActive) {
+          // 주택연금 수령 중이 아닌 경우: 상승률 적용
           const growthRate = realEstate.growthRate / 100;
           realEstate.amount = realEstate.amount * (1 + growthRate);
         }
-        
+        // 주택연금 수령 중인 경우: 상승률 적용하지 않음
+
         // 주택연금 전환 처리
-        if (realEstate.convertToPension && year >= realEstate.pensionStartYear) {
-          // 주택연금 전환 시: 자산에서 월 수령액만큼 차감하고 현금에 추가
+        if (isPensionActive) {
+          // 주택연금 수령 시: 자산에서 월 수령액만큼 차감 (현금으로 변환하지 않음)
           const yearlyPensionAmount = realEstate.monthlyPensionAmount * 12;
           if (realEstate.amount >= yearlyPensionAmount) {
             realEstate.amount -= yearlyPensionAmount;
-            currentCash += yearlyPensionAmount; // 현금에 추가
+            // 현금으로 변환하지 않음 - 현금흐름 시뮬레이션에서만 처리
           } else {
-            // 부동산 가치가 부족하면 남은 가치만 현금에 추가
-            currentCash += realEstate.amount;
+            // 부동산 가치가 부족하면 남은 가치만 차감
             realEstate.amount = 0;
             realEstate.isActive = false;
           }

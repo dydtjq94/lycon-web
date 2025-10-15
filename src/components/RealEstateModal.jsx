@@ -13,6 +13,10 @@ const RealEstateModal = ({
     currentValue: "",
     growthRate: 2.5,
     endYear: "",
+    hasRentalIncome: false,
+    monthlyRentalIncome: "",
+    rentalIncomeStartYear: "",
+    rentalIncomeEndYear: "",
     convertToPension: false,
     pensionStartYear: "",
     monthlyPensionAmount: "",
@@ -30,6 +34,10 @@ const RealEstateModal = ({
           currentValue: editData.currentValue || "",
           growthRate: editData.growthRate || 2.5,
           endYear: editData.endYear || "",
+          hasRentalIncome: editData.hasRentalIncome || false,
+          monthlyRentalIncome: editData.monthlyRentalIncome || "",
+          rentalIncomeStartYear: editData.rentalIncomeStartYear || "",
+          rentalIncomeEndYear: editData.rentalIncomeEndYear || "",
           convertToPension: editData.convertToPension || false,
           pensionStartYear: editData.pensionStartYear || "",
           monthlyPensionAmount: editData.monthlyPensionAmount || "",
@@ -41,6 +49,10 @@ const RealEstateModal = ({
           currentValue: "",
           growthRate: 2.5,
           endYear: "",
+          hasRentalIncome: false,
+          monthlyRentalIncome: "",
+          rentalIncomeStartYear: "",
+          rentalIncomeEndYear: "",
           convertToPension: false,
           pensionStartYear: "",
           monthlyPensionAmount: "",
@@ -57,6 +69,10 @@ const RealEstateModal = ({
       currentValue: "",
       growthRate: 2.5,
       endYear: "",
+      hasRentalIncome: false,
+      monthlyRentalIncome: "",
+      rentalIncomeStartYear: "",
+      rentalIncomeEndYear: "",
       convertToPension: false,
       pensionStartYear: "",
       monthlyPensionAmount: "",
@@ -88,6 +104,20 @@ const RealEstateModal = ({
       newErrors.endYear = "보유 종료년도를 입력해주세요";
     }
 
+    if (formData.hasRentalIncome) {
+      if (!formData.monthlyRentalIncome || formData.monthlyRentalIncome <= 0) {
+        newErrors.monthlyRentalIncome = "월 임대 수입을 입력해주세요";
+      }
+
+      if (!formData.rentalIncomeStartYear || formData.rentalIncomeStartYear <= 0) {
+        newErrors.rentalIncomeStartYear = "임대 수입 시작년도를 입력해주세요";
+      }
+
+      if (!formData.rentalIncomeEndYear || formData.rentalIncomeEndYear <= 0) {
+        newErrors.rentalIncomeEndYear = "임대 수입 종료년도를 입력해주세요";
+      }
+    }
+
     if (formData.convertToPension) {
       if (!formData.pensionStartYear || formData.pensionStartYear <= 0) {
         newErrors.pensionStartYear = "주택연금 시작년도를 입력해주세요";
@@ -114,6 +144,10 @@ const RealEstateModal = ({
       currentValue: parseInt(formData.currentValue),
       growthRate: parseFloat(formData.growthRate),
       endYear: parseInt(formData.endYear),
+      hasRentalIncome: formData.hasRentalIncome,
+      monthlyRentalIncome: formData.hasRentalIncome ? parseInt(formData.monthlyRentalIncome) : null,
+      rentalIncomeStartYear: formData.hasRentalIncome ? parseInt(formData.rentalIncomeStartYear) : null,
+      rentalIncomeEndYear: formData.hasRentalIncome ? parseInt(formData.rentalIncomeEndYear) : null,
       convertToPension: formData.convertToPension,
       pensionStartYear: formData.convertToPension ? parseInt(formData.pensionStartYear) : null,
       monthlyPensionAmount: formData.convertToPension ? parseInt(formData.monthlyPensionAmount) : null,
@@ -217,6 +251,91 @@ const RealEstateModal = ({
               <span className={styles.errorText}>{errors.endYear}</span>
             )}
           </div>
+
+          {/* 임대 수입 여부 */}
+          <div className={styles.field}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={formData.hasRentalIncome}
+                onChange={(e) =>
+                  setFormData({ ...formData, hasRentalIncome: e.target.checked })
+                }
+                className={styles.checkbox}
+              />
+              <span className={styles.checkboxText}>임대 수입 있음</span>
+            </label>
+          </div>
+
+          {/* 임대 수입 관련 필드들 */}
+          {formData.hasRentalIncome && (
+            <>
+              <div className={styles.field}>
+                <label className={styles.label}>월 임대 수입 (만원)</label>
+                <input
+                  type="text"
+                  value={formData.monthlyRentalIncome}
+                  onChange={(e) =>
+                    setFormData({ ...formData, monthlyRentalIncome: e.target.value })
+                  }
+                  onKeyPress={handleKeyPress}
+                  className={`${styles.input} ${
+                    errors.monthlyRentalIncome ? styles.error : ""
+                  }`}
+                  placeholder="예: 100"
+                />
+                {errors.monthlyRentalIncome && (
+                  <span className={styles.errorText}>
+                    {errors.monthlyRentalIncome}
+                  </span>
+                )}
+              </div>
+
+              <div className={styles.row}>
+                <div className={styles.field}>
+                  <label className={styles.label}>임대 수입 시작년도</label>
+                  <input
+                    type="text"
+                    value={formData.rentalIncomeStartYear}
+                    onChange={(e) =>
+                      setFormData({ ...formData, rentalIncomeStartYear: e.target.value })
+                    }
+                    onKeyPress={handleKeyPress}
+                    className={`${styles.input} ${
+                      errors.rentalIncomeStartYear ? styles.error : ""
+                    }`}
+                    placeholder="예: 2025"
+                  />
+                  {errors.rentalIncomeStartYear && (
+                    <span className={styles.errorText}>
+                      {errors.rentalIncomeStartYear}
+                    </span>
+                  )}
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label}>임대 수입 종료년도</label>
+                  <input
+                    type="text"
+                    value={formData.rentalIncomeEndYear}
+                    onChange={(e) =>
+                      setFormData({ ...formData, rentalIncomeEndYear: e.target.value })
+                    }
+                    onKeyPress={handleKeyPress}
+                    className={`${styles.input} ${
+                      errors.rentalIncomeEndYear ? styles.error : ""
+                    }`}
+                    placeholder="예: 2083"
+                  />
+                  {errors.rentalIncomeEndYear && (
+                    <span className={styles.errorText}>
+                      {errors.rentalIncomeEndYear}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* 주택연금 전환 여부 */}
           <div className={styles.field}>
