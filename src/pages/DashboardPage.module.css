@@ -53,25 +53,30 @@
 .profileInfo {
   flex: 1;
   min-width: 300px;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
 }
 
 .profileName {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #111827;
-  margin-bottom: 1rem;
+  margin: 0;
+  white-space: nowrap;
 }
 
 .profileDetails {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .detailItem {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .label {

@@ -302,33 +302,24 @@ function DashboardPage() {
             {profileData.name}님의 은퇴 준비 현황
           </h1>
           <div className={styles.profileDetails}>
-            <div className={styles.detailItem}>
+            <span className={styles.detailItem}>
               <span className={styles.label}>현재 나이:</span>
-              <span className={styles.value}>
-                {profileData.currentKoreanAge}세
-              </span>
-            </div>
-            <div className={styles.detailItem}>
+              <span className={styles.value}>{profileData.currentKoreanAge}세</span>
+            </span>
+            <span className={styles.detailItem}>
               <span className={styles.label}>은퇴 나이:</span>
-              <span className={styles.value}>
-                {profileData.retirementAge}세
-              </span>
-            </div>
-            <div className={styles.detailItem}>
+              <span className={styles.value}>{profileData.retirementAge}세</span>
+            </span>
+            <span className={styles.detailItem}>
               <span className={styles.label}>목표 자산:</span>
-              <span className={styles.value}>
-                {formatAmount(profileData.targetAssets)}
-              </span>
-            </div>
-            <div className={styles.detailItem}>
+              <span className={styles.value}>{formatAmount(profileData.targetAssets)}</span>
+            </span>
+            <span className={styles.detailItem}>
               <span className={styles.label}>가구 구성:</span>
               <span className={styles.value}>
-                {profileData.familyMembers
-                  ? profileData.familyMembers.length + 1
-                  : 1}
-                명
+                {profileData.familyMembers ? profileData.familyMembers.length + 1 : 1}명
               </span>
-            </div>
+            </span>
           </div>
         </div>
         <div className={styles.profileActions}>
