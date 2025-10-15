@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { calculateKoreanAge, getKoreanAgeInYear } from "../utils/koreanAge";
-import { profileService, incomeService, expenseService } from "../services/firestoreService";
+import {
+  profileService,
+  incomeService,
+  expenseService,
+} from "../services/firestoreService";
 import styles from "./ProfileCreatePage.module.css";
 
 /**
@@ -75,7 +79,12 @@ function ProfileCreatePage() {
   };
 
   // 기본 지출 데이터 생성 함수
-  const createDefaultExpenses = async (profileId, birthYear, retirementAge, retirementLivingExpenses) => {
+  const createDefaultExpenses = async (
+    profileId,
+    birthYear,
+    retirementAge,
+    retirementLivingExpenses
+  ) => {
     const currentYear = new Date().getFullYear();
     const deathYear = birthYear + 90 - 1; // 90세까지
     const retirementYear = birthYear + retirementAge - 1;
@@ -89,7 +98,7 @@ function ProfileCreatePage() {
         endYear: retirementYear,
         growthRate: 2.5, // 물가상승률 기본값
         memo: "물가상승률 적용",
-        category: "expense"
+        category: "expense",
       },
       {
         title: "은퇴 후 생활비",
@@ -99,8 +108,8 @@ function ProfileCreatePage() {
         endYear: deathYear,
         growthRate: 2.5, // 물가상승률 기본값
         memo: "물가상승률 적용",
-        category: "expense"
-      }
+        category: "expense",
+      },
     ];
 
     // 각 기본 지출 데이터를 Firebase에 저장

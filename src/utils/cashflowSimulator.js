@@ -39,19 +39,31 @@ export function calculateCashflowSimulation(
       if (year >= income.startYear && year <= income.endYear) {
         const yearsElapsed = year - income.startYear;
         const growthRate = income.growthRate / 100;
+
+        // 빈도에 따라 연간 금액 계산
+        const yearlyAmount =
+          income.frequency === "monthly" ? income.amount * 12 : income.amount;
+
         const adjustedAmount =
-          income.amount * Math.pow(1 + growthRate, yearsElapsed);
+          yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
         totalIncome += adjustedAmount;
       }
     });
 
-    // 지출 계산 (추후 구현)
+    // 지출 계산
     expenses.forEach((expense) => {
       if (year >= expense.startYear && year <= expense.endYear) {
         const yearsElapsed = year - expense.startYear;
         const growthRate = expense.growthRate / 100;
+
+        // 빈도에 따라 연간 금액 계산
+        const yearlyAmount =
+          expense.frequency === "monthly"
+            ? expense.amount * 12
+            : expense.amount;
+
         const adjustedAmount =
-          expense.amount * Math.pow(1 + growthRate, yearsElapsed);
+          yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
         totalExpense += adjustedAmount;
       }
     });

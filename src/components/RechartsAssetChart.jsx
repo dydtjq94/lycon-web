@@ -112,7 +112,7 @@ function RechartsAssetChart({
             {/* 툴팁 */}
             <Tooltip
               formatter={(value, name) => [
-                formatAmountForChart(value),
+                `${formatAmountForChart(value)}만원`,
                 name === "amount" ? "총 자산" : name,
               ]}
               labelFormatter={(label, payload) => {

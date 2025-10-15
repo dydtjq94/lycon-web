@@ -81,14 +81,16 @@ export function formatAmountForChart(amount) {
     return "0";
   }
 
-  const numAmount = Number(amount);
+  const numAmount = Math.floor(Number(amount)); // 소수점 버림
 
   if (numAmount >= 10000) {
-    return `${(numAmount / 10000).toFixed(1)}억`;
+    const eok = Math.floor(numAmount / 10000);
+    return `${eok}억`;
   }
 
   if (numAmount >= 1000) {
-    return `${(numAmount / 1000).toFixed(1)}천`;
+    const cheon = Math.floor(numAmount / 1000);
+    return `${cheon}천`;
   }
 
   return `${numAmount}`;

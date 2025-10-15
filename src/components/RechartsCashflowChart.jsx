@@ -116,7 +116,7 @@ function RechartsCashflowChart({ data, retirementAge, deathAge = 90 }) {
             {/* 툴팁 */}
             <Tooltip
               formatter={(value, name) => [
-                formatAmountForChart(value),
+                `${formatAmountForChart(value)}만원`,
                 name === "amount" ? "현금 흐름" : name,
               ]}
               labelFormatter={(label, payload) => {
