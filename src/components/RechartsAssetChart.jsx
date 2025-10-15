@@ -50,29 +50,6 @@ function RechartsAssetChart({
     <div className={styles.chartContainer}>
       <div className={styles.chartHeader}>
         <h3 className={styles.chartTitle}>자산 시뮬레이션</h3>
-        <div className={styles.chartLegend}>
-          <div className={styles.legendItem}>
-            <div
-              className={styles.legendColor}
-              style={{ backgroundColor: "#3b82f6" }}
-            ></div>
-            <span>총 자산</span>
-          </div>
-          <div className={styles.legendItem}>
-            <div
-              className={styles.legendColor}
-              style={{ backgroundColor: "#8b5cf6" }}
-            ></div>
-            <span>연금</span>
-          </div>
-          <div className={styles.legendItem}>
-            <div
-              className={styles.legendColor}
-              style={{ backgroundColor: "#10b981" }}
-            ></div>
-            <span>현금성 자산</span>
-          </div>
-        </div>
       </div>
 
       <div className={styles.chartWrapper}>
@@ -82,7 +59,7 @@ function RechartsAssetChart({
             margin={{
               top: 20,
               right: 30,
-              left: 20,
+              left: 40,
               bottom: 20,
             }}
           >
@@ -93,7 +70,7 @@ function RechartsAssetChart({
               dataKey="age"
               type="number"
               scale="linear"
-              domain={["dataMin", "dataMax"]}
+              domain={["dataMin - 1", "dataMax + 1"]}
               tickFormatter={(value) => `${value}`}
               stroke="#6b7280"
               fontSize={12}
