@@ -68,19 +68,29 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 저축 계산
+    // 저축 계산 (현금흐름에서는 월간 저축 상승률만 적용, 이자율 적용 안함)
     savings.forEach((saving) => {
       if (year >= saving.startYear && year <= saving.endYear) {
         const yearsElapsed = year - saving.startYear;
-        const growthRate = saving.growthRate / 100;
+        const monthlyGrowthRate = (saving.monthlyGrowthRate || 0) / 100;
 
-        // 빈도에 따라 연간 금액 계산
-        const yearlyAmount =
-          saving.frequency === "monthly" ? saving.amount * 12 : saving.amount;
+        if (saving.frequency === "one_time") {
+          // 일회성 저축: 시작년도에만 현금흐름에 반영
+          if (year === saving.startYear) {
+            totalSavings += saving.amount;
+          }
+        } else {
+          // 월간/연간 저축
+          const monthlyAmount =
+            saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
 
-        const adjustedAmount =
-          yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
-        totalSavings += adjustedAmount;
+          // 월간 저축 상승률 적용
+          const adjustedMonthlyAmount =
+            monthlyAmount * Math.pow(1 + monthlyGrowthRate, yearsElapsed);
+          const yearlyAmount = adjustedMonthlyAmount * 12;
+
+          totalSavings += yearlyAmount;
+        }
       }
     });
 
@@ -131,57 +141,92 @@ export function calculateAssetSimulation(
 
   const assetData = [];
 
-  // 자산 유형별 누적 자산
-  let cumulativeSavings = 0; // 저축 자산
-  let cumulativeCash = 0; // 현금성 자산 (기본)
-  let cumulativePension = 0; // 연금 자산 (추후 구현)
-  let cumulativeRealEstate = 0; // 부동산 자산 (추후 구현)
+  // 현재 현금 (프로필에서 가져옴)
+  let currentCash = profileData.currentCash || 0;
+
+  // 저축별 누적 자산 (제목별로 분리)
+  const savingsByTitle = {};
+  savings.forEach((saving) => {
+    savingsByTitle[saving.title] = {
+      amount: 0,
+      startYear: saving.startYear,
+      endYear: saving.endYear,
+      interestRate: saving.interestRate || 3.0, // 이자율
+      monthlyGrowthRate: saving.monthlyGrowthRate || 0, // 월간 저축 상승률
+      frequency: saving.frequency,
+      originalAmount: saving.amount,
+      isActive: true, // 활성 상태 추가
+    };
+  });
 
   for (let i = 0; i < simulationYears; i++) {
     const year = currentYear + i;
     const age = startAge + i;
 
-    // 해당 연도의 저축 계산
-    let yearlySavings = 0;
-    savings.forEach((saving) => {
-      if (year >= saving.startYear && year <= saving.endYear) {
+    // 해당 연도의 저축 계산 (제목별로)
+    Object.keys(savingsByTitle).forEach((title) => {
+      const saving = savingsByTitle[title];
+
+      if (!saving.isActive) return; // 비활성 저축은 건너뛰기
+
+      if (year === saving.endYear + 1) {
+        // 저축 만료 시 현금으로 이동
+        currentCash += saving.amount;
+        saving.isActive = false; // 저축 비활성화 (차트에서 제거됨)
+      } else if (year >= saving.startYear && year <= saving.endYear) {
+        // 저축 기간 중
         const yearsElapsed = year - saving.startYear;
-        const growthRate = saving.growthRate / 100;
+        const interestRate = saving.interestRate / 100;
+        const monthlyGrowthRate = saving.monthlyGrowthRate / 100;
 
-        // 빈도에 따라 연간 금액 계산
-        const yearlyAmount =
-          saving.frequency === "monthly" ? saving.amount * 12 : saving.amount;
+        if (saving.frequency === "one_time") {
+          // 일회성 저축 (정기예금 등)
+          if (year === saving.startYear) {
+            saving.amount = saving.originalAmount;
+          } else if (year > saving.startYear) {
+            // 시작년도 다음 해부터 만료년도까지 이자율만 적용
+            saving.amount *= 1 + interestRate;
+          }
+        } else {
+          // 월간/연간 저축
+          const monthlyAmount =
+            saving.frequency === "monthly"
+              ? saving.originalAmount
+              : saving.originalAmount / 12;
 
-        const adjustedAmount =
-          yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
-        yearlySavings += adjustedAmount;
+          // 월간 저축 상승률 적용
+          const adjustedMonthlyAmount =
+            monthlyAmount * Math.pow(1 + monthlyGrowthRate, yearsElapsed);
+          const yearlyAmount = adjustedMonthlyAmount * 12;
+
+          // 작년 자산에 이자율 적용 + 올해 저축 추가
+          saving.amount = saving.amount * (1 + interestRate) + yearlyAmount;
+        }
       }
     });
 
-    // 저축 자산에 추가
-    cumulativeSavings += yearlySavings;
-    
-    // 저축 자산 성장률 적용 (3%)
-    cumulativeSavings *= 1.03;
-
-    // 현금성 자산 (기본 1000만원에서 시작)
-    if (i === 0) {
-      cumulativeCash = 1000; // 1000만원
-    }
-    cumulativeCash *= 1.02; // 2% 성장률
-
-    // 총 자산 계산
-    const totalAssets = cumulativeSavings + cumulativeCash + cumulativePension + cumulativeRealEstate;
-
-    assetData.push({
+    // 자산 데이터 구성
+    const assetItem = {
       year,
       age,
-      totalAmount: totalAssets,
-      savings: cumulativeSavings,
-      cash: cumulativeCash,
-      pension: cumulativePension,
-      realEstate: cumulativeRealEstate,
+      현금: currentCash, // 현금으로 통일
+    };
+
+    // 활성 저축별 자산 추가
+    Object.keys(savingsByTitle).forEach((title) => {
+      const saving = savingsByTitle[title];
+      if (saving.isActive) {
+        assetItem[title] = saving.amount;
+      }
     });
+
+    // 총 자산 계산
+    const totalAmount = Object.values(assetItem).reduce((sum, value) => {
+      return typeof value === "number" ? sum + value : sum;
+    }, 0);
+
+    assetItem.totalAmount = totalAmount;
+    assetData.push(assetItem);
   }
 
   return assetData;

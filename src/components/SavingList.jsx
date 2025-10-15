@@ -20,8 +20,8 @@ function SavingList({ savings, onEdit, onDelete }) {
   return (
     <div className={styles.savingList}>
       {savings.map((saving) => (
-        <div 
-          key={saving.id} 
+        <div
+          key={saving.id}
           className={styles.savingItem}
           onClick={() => onEdit(saving)}
         >
@@ -44,19 +44,21 @@ function SavingList({ savings, onEdit, onDelete }) {
 
             <div className={styles.savingAmount}>
               {formatAmount(saving.originalAmount)}/
-              {saving.originalFrequency === "monthly" ? "월" : "년"}
+              {saving.originalFrequency === "monthly"
+                ? "월"
+                : saving.originalFrequency === "yearly"
+                ? "년"
+                : "일회성"}
             </div>
 
             <div className={styles.savingPeriod}>
               {saving.startYear}년 - {saving.endYear}년
               <br />
-              (상승률 {saving.growthRate}% 적용)
+              (이자율 {saving.interestRate || 3.0}% 적용)
             </div>
 
             {saving.memo && (
-              <div className={styles.savingMemo}>
-                {saving.memo}
-              </div>
+              <div className={styles.savingMemo}>{saving.memo}</div>
             )}
           </div>
         </div>

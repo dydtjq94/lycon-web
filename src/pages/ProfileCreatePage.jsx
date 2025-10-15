@@ -20,6 +20,7 @@ function ProfileCreatePage() {
     retirementAge: 55,
     retirementLivingExpenses: "",
     targetAssets: "",
+    currentCash: "", // 현재 현금 추가
     hasSpouse: false,
     spouseName: "",
     spouseBirthYear: "",
@@ -296,6 +297,7 @@ function ProfileCreatePage() {
         retirementYear,
         retirementLivingExpenses: parseInt(formData.retirementLivingExpenses),
         targetAssets: parseInt(formData.targetAssets),
+        currentCash: parseInt(formData.currentCash) || 0, // 현재 현금 추가
         familyMembers,
         createdAt: new Date().toISOString(),
       };
@@ -501,6 +503,33 @@ function ProfileCreatePage() {
               />
               {errors.targetAssets && (
                 <span className={styles.errorText}>{errors.targetAssets}</span>
+              )}
+            </div>
+
+            {/* 현재 현금 */}
+            <div className={styles.field}>
+              <label htmlFor="currentCash" className={styles.label}>
+                현재 현금 (만원)
+              </label>
+              <input
+                type="text"
+                id="currentCash"
+                name="currentCash"
+                value={formData.currentCash}
+                onChange={handleChange}
+                className={`${styles.input} ${
+                  errors.currentCash ? styles.inputError : ""
+                }`}
+                placeholder="1000"
+                disabled={isSubmitting}
+                onKeyPress={(e) => {
+                  if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+              />
+              {errors.currentCash && (
+                <span className={styles.errorText}>{errors.currentCash}</span>
               )}
             </div>
           </div>

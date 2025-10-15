@@ -7,12 +7,13 @@ import styles from "./SavingModal.module.css";
 function SavingModal({ isOpen, onClose, onSave, editData = null }) {
   const [formData, setFormData] = useState({
     title: "",
-    frequency: "monthly", // monthly, yearly
+    frequency: "monthly", // monthly, yearly, one_time
     amount: "",
     startYear: new Date().getFullYear(),
     endYear: new Date().getFullYear() + 10,
     memo: "",
-    growthRate: 2.5, // 기본 상승률 2.5%
+    interestRate: 3.0, // 이자율 3%
+    monthlyGrowthRate: 0, // 월간 저축 상승률 0%
   });
 
   const [errors, setErrors] = useState({});
@@ -22,12 +23,14 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
     if (editData) {
       setFormData({
         title: editData.title || "",
-        frequency: editData.originalFrequency || editData.frequency || "monthly",
+        frequency:
+          editData.originalFrequency || editData.frequency || "monthly",
         amount: editData.originalAmount || editData.amount || "",
         startYear: editData.startYear || new Date().getFullYear(),
         endYear: editData.endYear || new Date().getFullYear() + 10,
         memo: editData.memo || "",
-        growthRate: editData.growthRate || 2.5,
+        interestRate: editData.interestRate || 3.0,
+        monthlyGrowthRate: editData.monthlyGrowthRate || 0,
       });
     } else {
       // 새 데이터일 때 초기화
@@ -38,7 +41,8 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
         startYear: new Date().getFullYear(),
         endYear: new Date().getFullYear() + 10,
         memo: "",
-        growthRate: 2.5,
+        interestRate: 3.0,
+        monthlyGrowthRate: 0,
       });
     }
   }, [editData]);
@@ -65,7 +69,10 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
 
   // 숫자만 입력 허용
   const handleKeyPress = (e) => {
-    if (!/[0-9]/.test(e.key) && !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)) {
+    if (
+      !/[0-9]/.test(e.key) &&
+      !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)
+    ) {
       e.preventDefault();
     }
   };
@@ -73,7 +80,7 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
   // 폼 제출 핸들러
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -83,6 +90,8 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
       amount: parseInt(formData.amount),
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
+      // 일회성 저축도 사용자가 설정한 endYear 사용
+      endYear: formData.endYear,
     };
 
     onSave(savingData);
@@ -98,7 +107,8 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
       memo: "",
-      growthRate: 2.5,
+      interestRate: 3.0,
+      monthlyGrowthRate: 0,
     });
     setErrors({});
     onClose();
@@ -155,6 +165,7 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
               >
                 <option value="monthly">월</option>
                 <option value="yearly">년</option>
+                <option value="one_time">일회성</option>
               </select>
             </div>
 
@@ -170,7 +181,9 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
                   setFormData({ ...formData, amount: e.target.value })
                 }
                 onKeyPress={handleKeyPress}
-                className={`${styles.input} ${errors.amount ? styles.error : ""}`}
+                className={`${styles.input} ${
+                  errors.amount ? styles.error : ""
+                }`}
                 placeholder="예: 100"
               />
               {errors.amount && (
@@ -210,7 +223,9 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
                   setFormData({ ...formData, endYear: e.target.value })
                 }
                 onKeyPress={handleKeyPress}
-                className={`${styles.input} ${errors.endYear ? styles.error : ""}`}
+                className={`${styles.input} ${
+                  errors.endYear ? styles.error : ""
+                }`}
                 placeholder="2035"
               />
               {errors.endYear && (
@@ -219,22 +234,46 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
             </div>
           </div>
 
-          {/* 상승률 */}
-          <div className={styles.field}>
-            <label htmlFor="growthRate" className={styles.label}>
-              상승률 (%)
-            </label>
-            <input
-              type="text"
-              id="growthRate"
-              value={formData.growthRate}
-              onChange={(e) =>
-                setFormData({ ...formData, growthRate: e.target.value })
-              }
-              onKeyPress={handleKeyPress}
-              className={styles.input}
-              placeholder="2.5"
-            />
+          {/* 이자율과 월간 저축 상승률 */}
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <label htmlFor="interestRate" className={styles.label}>
+                이자율 (%)
+              </label>
+              <input
+                type="text"
+                id="interestRate"
+                value={formData.interestRate}
+                onChange={(e) =>
+                  setFormData({ ...formData, interestRate: e.target.value })
+                }
+                onKeyPress={handleKeyPress}
+                className={styles.input}
+                placeholder="3.0"
+              />
+            </div>
+
+            {formData.frequency !== "one_time" && (
+              <div className={styles.field}>
+                <label htmlFor="monthlyGrowthRate" className={styles.label}>
+                  월간 저축 상승률 (%)
+                </label>
+                <input
+                  type="text"
+                  id="monthlyGrowthRate"
+                  value={formData.monthlyGrowthRate}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      monthlyGrowthRate: e.target.value,
+                    })
+                  }
+                  onKeyPress={handleKeyPress}
+                  className={styles.input}
+                  placeholder="0"
+                />
+              </div>
+            )}
           </div>
 
           {/* 메모 */}
@@ -255,7 +294,11 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
           </div>
 
           <div className={styles.modalFooter}>
-            <button type="button" className={styles.cancelButton} onClick={handleClose}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={handleClose}
+            >
               취소
             </button>
             <button type="submit" className={styles.saveButton}>

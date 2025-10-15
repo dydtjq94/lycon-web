@@ -31,17 +31,38 @@ function RechartsAssetChart({
     );
   }
 
-  // 차트 데이터 포맷팅
+  // 차트 데이터 포맷팅 및 동적 자산 항목 추출
   const chartData = data.map((item) => ({
     age: item.age,
     year: item.year,
     totalAmount: item.totalAmount || item.amount,
-    savings: item.savings || 0,
-    cash: item.cash || 0,
-    pension: item.pension || 0,
-    realEstate: item.realEstate || 0,
+    ...item, // 모든 자산 항목 포함
     formattedAmount: formatAmountForChart(item.totalAmount || item.amount),
   }));
+
+  // 동적 자산 항목 추출 (기본 필드 제외)
+  const assetKeys =
+    data.length > 0
+      ? Object.keys(data[0]).filter(
+          (key) =>
+            key !== "year" &&
+            key !== "age" &&
+            key !== "totalAmount" &&
+            key !== "formattedAmount"
+        )
+      : [];
+
+  // 색상 팔레트
+  const colors = [
+    "#3b82f6", // 파란색
+    "#10b981", // 초록색
+    "#8b5cf6", // 보라색
+    "#f59e0b", // 주황색
+    "#ef4444", // 빨간색
+    "#06b6d4", // 청록색
+    "#84cc16", // 라임색
+    "#f97316", // 오렌지색
+  ];
 
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
@@ -93,10 +114,7 @@ function RechartsAssetChart({
 
             {/* 툴팁 */}
             <Tooltip
-              formatter={(value, name) => [
-                formatAmountForChart(value),
-                name,
-              ]}
+              formatter={(value, name) => [formatAmountForChart(value), name]}
               labelFormatter={(label, payload) => {
                 if (payload && payload[0]) {
                   return `${payload[0].payload.age}세 (${payload[0].payload.year}년)`;
@@ -139,15 +157,20 @@ function RechartsAssetChart({
               }}
             />
 
-            {/* 자산 유형별 Bar 그래프 */}
-            <Bar dataKey="savings" stackId="assets" fill="#3b82f6" name="저축" />
-            <Bar dataKey="cash" stackId="assets" fill="#10b981" name="현금성 자산" />
-            <Bar dataKey="pension" stackId="assets" fill="#8b5cf6" name="연금" />
-            <Bar dataKey="realEstate" stackId="assets" fill="#f59e0b" name="부동산" />
-            
+            {/* 동적 자산 항목 Bar들 */}
+            {assetKeys.map((key, index) => (
+              <Bar
+                key={key}
+                dataKey={key}
+                stackId="assets"
+                fill={colors[index % colors.length]}
+                name={key}
+              />
+            ))}
+
             {/* 범례 */}
-            <Legend 
-              verticalAlign="bottom" 
+            <Legend
+              verticalAlign="bottom"
               height={36}
               wrapperStyle={{ paddingTop: "20px" }}
             />
