@@ -60,3 +60,13 @@
     min-height: 300px;
   }
 }
+
+/* 범례 스타일 */
+:global(.recharts-legend-wrapper) {
+  padding-top: 1rem !important;
+}
+
+:global(.recharts-legend-item-text) {
+  font-size: 0.875rem !important;
+  color: #374151 !important;
+}

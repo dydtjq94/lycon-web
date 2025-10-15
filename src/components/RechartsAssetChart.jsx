@@ -8,6 +8,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  Legend,
+  Cell,
 } from "recharts";
 import { formatAmountForChart } from "../utils/format";
 import styles from "./RechartsAssetChart.module.css";
@@ -33,15 +35,19 @@ function RechartsAssetChart({
   const chartData = data.map((item) => ({
     age: item.age,
     year: item.year,
-    amount: item.amount,
-    formattedAmount: formatAmountForChart(item.amount),
+    totalAmount: item.totalAmount || item.amount,
+    savings: item.savings || 0,
+    cash: item.cash || 0,
+    pension: item.pension || 0,
+    realEstate: item.realEstate || 0,
+    formattedAmount: formatAmountForChart(item.totalAmount || item.amount),
   }));
 
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
 
   // Y축 도메인 계산 (0부터 시작)
-  const amounts = data.map((d) => d.amount);
+  const amounts = data.map((d) => d.totalAmount || d.amount);
   const maxAmount = Math.max(...amounts);
   const padding = maxAmount * 0.1;
   const yDomain = [0, maxAmount + padding];
@@ -89,7 +95,7 @@ function RechartsAssetChart({
             <Tooltip
               formatter={(value, name) => [
                 formatAmountForChart(value),
-                name === "amount" ? "총 자산" : name,
+                name,
               ]}
               labelFormatter={(label, payload) => {
                 if (payload && payload[0]) {
@@ -133,8 +139,18 @@ function RechartsAssetChart({
               }}
             />
 
-            {/* Bar 그래프 */}
-            <Bar dataKey="amount" fill="#3b82f6" radius={[2, 2, 0, 0]} />
+            {/* 자산 유형별 Bar 그래프 */}
+            <Bar dataKey="savings" stackId="assets" fill="#3b82f6" name="저축" />
+            <Bar dataKey="cash" stackId="assets" fill="#10b981" name="현금성 자산" />
+            <Bar dataKey="pension" stackId="assets" fill="#8b5cf6" name="연금" />
+            <Bar dataKey="realEstate" stackId="assets" fill="#f59e0b" name="부동산" />
+            
+            {/* 범례 */}
+            <Legend 
+              verticalAlign="bottom" 
+              height={36}
+              wrapperStyle={{ paddingTop: "20px" }}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>

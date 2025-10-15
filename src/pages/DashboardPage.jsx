@@ -364,13 +364,18 @@ function DashboardPage() {
         );
         setSavings(
           savings.map((saving) =>
-            saving.id === editingSaving.id ? { ...saving, ...savingData } : saving
+            saving.id === editingSaving.id
+              ? { ...saving, ...savingData }
+              : saving
           )
         );
         setEditingSaving(null);
       } else {
         // 추가
-        const newSaving = await savingsService.createSaving(profileId, savingData);
+        const newSaving = await savingsService.createSaving(
+          profileId,
+          savingData
+        );
         setSavings([...savings, newSaving]);
       }
 

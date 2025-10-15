@@ -131,7 +131,11 @@ export function calculateAssetSimulation(
 
   const assetData = [];
 
-  let cumulativeAssets = 0; // 누적 자산
+  // 자산 유형별 누적 자산
+  let cumulativeSavings = 0; // 저축 자산
+  let cumulativeCash = 0; // 현금성 자산 (기본)
+  let cumulativePension = 0; // 연금 자산 (추후 구현)
+  let cumulativeRealEstate = 0; // 부동산 자산 (추후 구현)
 
   for (let i = 0; i < simulationYears; i++) {
     const year = currentYear + i;
@@ -154,16 +158,29 @@ export function calculateAssetSimulation(
       }
     });
 
-    // 누적 자산에 저축 추가
-    cumulativeAssets += yearlySavings;
+    // 저축 자산에 추가
+    cumulativeSavings += yearlySavings;
+    
+    // 저축 자산 성장률 적용 (3%)
+    cumulativeSavings *= 1.03;
 
-    // 기본 자산 성장률 적용 (3%)
-    cumulativeAssets *= 1.03;
+    // 현금성 자산 (기본 1000만원에서 시작)
+    if (i === 0) {
+      cumulativeCash = 1000; // 1000만원
+    }
+    cumulativeCash *= 1.02; // 2% 성장률
+
+    // 총 자산 계산
+    const totalAssets = cumulativeSavings + cumulativeCash + cumulativePension + cumulativeRealEstate;
 
     assetData.push({
       year,
       age,
-      amount: cumulativeAssets,
+      totalAmount: totalAssets,
+      savings: cumulativeSavings,
+      cash: cumulativeCash,
+      pension: cumulativePension,
+      realEstate: cumulativeRealEstate,
     });
   }
 
