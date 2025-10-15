@@ -127,18 +127,24 @@ export function calculateCashflowSimulation(
         } else if (year >= paymentStartYear && year <= paymentEndYear) {
           // 수령 기간: 현금흐름에 추가 (플러스)
           // 적립 완료 시점의 총 금액을 직접 계산
-          const monthlyAmount = pension.contributionFrequency === "monthly" 
-            ? pension.contributionAmount 
-            : pension.contributionAmount / 12;
+          const monthlyAmount =
+            pension.contributionFrequency === "monthly"
+              ? pension.contributionAmount
+              : pension.contributionAmount / 12;
           const yearlyContribution = monthlyAmount * 12;
           const returnRate = pension.returnRate / 100;
-          
+
           // 적립 기간 동안의 총 적립액 계산 (복리 적용)
           let totalAccumulated = 0;
-          for (let i = 0; i < pension.contributionEndYear - pension.contributionStartYear + 1; i++) {
-            totalAccumulated = totalAccumulated * (1 + returnRate) + yearlyContribution;
+          for (
+            let i = 0;
+            i < pension.contributionEndYear - pension.contributionStartYear + 1;
+            i++
+          ) {
+            totalAccumulated =
+              totalAccumulated * (1 + returnRate) + yearlyContribution;
           }
-          
+
           // 월 수령액 계산 (총 적립액 ÷ 수령 년수 ÷ 12)
           const monthlyPayment = totalAccumulated / pension.paymentYears / 12;
           totalPension += monthlyPayment * 12; // 플러스로 추가
@@ -172,7 +178,8 @@ export function calculateAssetSimulation(
   incomes = [],
   expenses = [],
   savings = [],
-  pensions = []
+  pensions = [],
+  realEstates = []
 ) {
   // 현재는 더미 데이터 반환
   const currentYear = new Date().getFullYear();
@@ -218,6 +225,21 @@ export function calculateAssetSimulation(
         isActive: true,
       };
     }
+  });
+
+  // 부동산별 자산 (제목별로 분리)
+  const realEstatesByTitle = {};
+  realEstates.forEach((realEstate) => {
+    realEstatesByTitle[realEstate.title] = {
+      amount: realEstate.currentValue, // 현재 가치로 시작
+      startYear: currentYear,
+      endYear: realEstate.endYear,
+      growthRate: realEstate.growthRate || 2.5,
+      convertToPension: realEstate.convertToPension || false,
+      pensionStartYear: realEstate.pensionStartYear,
+      monthlyPensionAmount: realEstate.monthlyPensionAmount,
+      isActive: true,
+    };
   });
 
   for (let i = 0; i < simulationYears; i++) {
@@ -308,6 +330,40 @@ export function calculateAssetSimulation(
       }
     });
 
+    // 부동산 처리
+    Object.keys(realEstatesByTitle).forEach((title) => {
+      const realEstate = realEstatesByTitle[title];
+      
+      if (year >= realEstate.startYear && year <= realEstate.endYear && realEstate.isActive) {
+        if (year === realEstate.startYear) {
+          // 첫 해: 현재 가치로 시작
+          realEstate.amount = realEstate.amount;
+        } else {
+          // 이후 해: 상승률 적용
+          const growthRate = realEstate.growthRate / 100;
+          realEstate.amount = realEstate.amount * (1 + growthRate);
+        }
+        
+        // 주택연금 전환 처리
+        if (realEstate.convertToPension && year >= realEstate.pensionStartYear) {
+          // 주택연금 전환 시: 자산에서 월 수령액만큼 차감하고 현금에 추가
+          const yearlyPensionAmount = realEstate.monthlyPensionAmount * 12;
+          if (realEstate.amount >= yearlyPensionAmount) {
+            realEstate.amount -= yearlyPensionAmount;
+            currentCash += yearlyPensionAmount; // 현금에 추가
+          } else {
+            // 부동산 가치가 부족하면 남은 가치만 현금에 추가
+            currentCash += realEstate.amount;
+            realEstate.amount = 0;
+            realEstate.isActive = false;
+          }
+        }
+      } else if (year > realEstate.endYear) {
+        // 보유 종료: 부동산 비활성화
+        realEstate.isActive = false;
+      }
+    });
+
     // 자산 데이터 구성
     const assetItem = {
       year,
@@ -328,6 +384,14 @@ export function calculateAssetSimulation(
       const pension = pensionsByTitle[title];
       if (pension.isActive) {
         assetItem[title] = pension.amount;
+      }
+    });
+
+    // 활성 부동산별 자산 추가
+    Object.keys(realEstatesByTitle).forEach((title) => {
+      const realEstate = realEstatesByTitle[title];
+      if (realEstate.isActive) {
+        assetItem[title] = realEstate.amount;
       }
     });
 

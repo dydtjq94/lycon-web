@@ -1,0 +1,165 @@
+.realEstateList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.realEstateItem {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.realEstateItem:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.realEstateHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.realEstateTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deleteButton:hover {
+  background-color: #f3f4f6;
+  color: #ef4444;
+}
+
+.realEstateContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.realEstateValue {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.realEstateRate {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.pensionInfo {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.pensionPeriod {
+  font-size: 14px;
+  color: #1e40af;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.pensionAmount {
+  font-size: 14px;
+  color: #1e40af;
+}
+
+.memo {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.memoLabel {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.memoText {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.emptyState p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+}
+
+.emptyState p:last-child {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* 모바일 대응 */
+@media (max-width: 640px) {
+  .realEstateItem {
+    padding: 12px;
+  }
+
+  .realEstateHeader {
+    margin-bottom: 8px;
+  }
+
+  .title {
+    font-size: 15px;
+  }
+
+  .realEstateContent {
+    gap: 6px;
+  }
+
+  .realEstateValue,
+  .realEstateRate {
+    font-size: 13px;
+  }
+
+  .pensionInfo {
+    padding: 10px;
+  }
+
+  .pensionPeriod,
+  .pensionAmount {
+    font-size: 13px;
+  }
+}

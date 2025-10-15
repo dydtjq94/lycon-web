@@ -234,17 +234,6 @@
   border-color: #111827;
 }
 
-.categoryColor {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--category-color);
-  flex-shrink: 0;
-}
-
-.categoryButton.active .categoryColor {
-  background: white;
-}
 
 .categoryName {
   flex: 1;

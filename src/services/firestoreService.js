@@ -452,3 +452,101 @@ export const pensionService = {
     }
   },
 };
+
+// 부동산 데이터 서비스
+export const realEstateService = {
+  // 부동산 데이터 생성
+  async createRealEstate(profileId, realEstateData) {
+    try {
+      const docRef = await addDoc(
+        collection(db, "profiles", profileId, "realEstates"),
+        {
+          ...realEstateData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      );
+      return docRef.id;
+    } catch (error) {
+      console.error("부동산 데이터 생성 오류:", error);
+      throw error;
+    }
+  },
+
+  // 부동산 데이터 조회
+  async getRealEstates(profileId) {
+    try {
+      const q = query(
+        collection(db, "profiles", profileId, "realEstates"),
+        orderBy("createdAt", "asc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("부동산 데이터 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 부동산 데이터 단일 조회
+  async getRealEstate(profileId, realEstateId) {
+    try {
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "realEstates",
+        realEstateId
+      );
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error("부동산 데이터 단일 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 부동산 데이터 업데이트
+  async updateRealEstate(profileId, realEstateId, updateData) {
+    try {
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "realEstates",
+        realEstateId
+      );
+      await updateDoc(docRef, {
+        ...updateData,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("부동산 데이터 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  // 부동산 데이터 삭제
+  async deleteRealEstate(profileId, realEstateId) {
+    try {
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "realEstates",
+        realEstateId
+      );
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("부동산 데이터 삭제 오류:", error);
+      throw error;
+    }
+  },
+};
