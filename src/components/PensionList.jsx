@@ -53,7 +53,11 @@ function PensionList({ pensions, onEdit, onDelete }) {
   return (
     <div className={styles.pensionList}>
       {pensions.map((pension) => (
-        <div key={pension.id} className={styles.pensionItem} onClick={() => onEdit(pension)}>
+        <div
+          key={pension.id}
+          className={styles.pensionItem}
+          onClick={() => onEdit(pension)}
+        >
           <div className={styles.pensionHeader}>
             <div className={styles.pensionTitle}>
               <span
@@ -62,7 +66,6 @@ function PensionList({ pensions, onEdit, onDelete }) {
               >
                 {getTypeLabel(pension.type)}
               </span>
-              <span className={styles.title}>{pension.title}</span>
             </div>
             <button
               className={styles.deleteButton}
@@ -85,7 +88,7 @@ function PensionList({ pensions, onEdit, onDelete }) {
                 <div className={styles.pensionPeriod}>
                   {pension.startYear}년 - {pension.endYear}년
                   <br />
-                  (물가상승률 적용)
+                  (물가상승률 {pension.inflationRate || 2.5}% 적용)
                 </div>
               </>
             ) : (
@@ -96,9 +99,11 @@ function PensionList({ pensions, onEdit, onDelete }) {
                   {pension.contributionFrequency === "monthly" ? "월" : "년"}
                 </div>
                 <div className={styles.pensionPeriod}>
-                  적립: {pension.contributionStartYear}년 - {pension.contributionEndYear}년
+                  적립: {pension.contributionStartYear}년 -{" "}
+                  {pension.contributionEndYear}년
                   <br />
-                  수령: {pension.contributionEndYear + 1}년 - {pension.contributionEndYear + pension.paymentYears}년
+                  수령: {pension.contributionEndYear + 1}년 -{" "}
+                  {pension.contributionEndYear + pension.paymentYears}년
                   <br />
                   (수익률 {pension.returnRate}% 적용)
                 </div>

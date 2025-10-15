@@ -16,7 +16,8 @@ export function calculateCashflowSimulation(
   incomes = [],
   expenses = [],
   savings = [],
-  pensions = []
+  pensions = [],
+  assetData = [] // 자산 시뮬레이션 데이터 추가
 ) {
   const currentYear = new Date().getFullYear();
   const startAge = profileData.currentKoreanAge;
@@ -100,20 +101,47 @@ export function calculateCashflowSimulation(
         // 국민연금: 수령 기간 동안 현금흐름에 추가
         if (year >= pension.startYear && year <= pension.endYear) {
           const yearsElapsed = year - pension.startYear;
-          const inflationRate = 2.5 / 100; // 물가상승률 (기본값)
-          const adjustedAmount = pension.monthlyAmount * 12 * Math.pow(1 + inflationRate, yearsElapsed);
+          const inflationRate = (pension.inflationRate || 2.5) / 100; // 물가상승률
+          const adjustedAmount =
+            pension.monthlyAmount *
+            12 *
+            Math.pow(1 + inflationRate, yearsElapsed);
           totalPension += adjustedAmount;
         }
       } else {
-        // 퇴직연금/개인연금: 수령 기간 동안 현금흐름에 추가
+        // 퇴직연금/개인연금: 적립 기간과 수령 기간 모두 현금흐름에 반영
         const paymentStartYear = pension.contributionEndYear + 1;
         const paymentEndYear = paymentStartYear + pension.paymentYears - 1;
-        
-        if (year >= paymentStartYear && year <= paymentEndYear) {
-          // 수령 기간: 연금 자산에서 월 수령액만큼 현금흐름에 추가
-          // 월 수령액은 자산 시뮬레이션에서 계산된 값을 사용
-          const monthlyPayment = pension.monthlyPayment || 0;
-          totalPension += monthlyPayment * 12;
+
+        if (
+          year >= pension.contributionStartYear &&
+          year <= pension.contributionEndYear
+        ) {
+          // 적립 기간: 현금흐름에서 차감 (마이너스)
+          const monthlyAmount =
+            pension.contributionFrequency === "monthly"
+              ? pension.contributionAmount
+              : pension.contributionAmount / 12;
+          const yearlyContribution = monthlyAmount * 12;
+          totalPension -= yearlyContribution; // 마이너스로 차감
+        } else if (year >= paymentStartYear && year <= paymentEndYear) {
+          // 수령 기간: 현금흐름에 추가 (플러스)
+          // 적립 완료 시점의 총 금액을 직접 계산
+          const monthlyAmount = pension.contributionFrequency === "monthly" 
+            ? pension.contributionAmount 
+            : pension.contributionAmount / 12;
+          const yearlyContribution = monthlyAmount * 12;
+          const returnRate = pension.returnRate / 100;
+          
+          // 적립 기간 동안의 총 적립액 계산 (복리 적용)
+          let totalAccumulated = 0;
+          for (let i = 0; i < pension.contributionEndYear - pension.contributionStartYear + 1; i++) {
+            totalAccumulated = totalAccumulated * (1 + returnRate) + yearlyContribution;
+          }
+          
+          // 월 수령액 계산 (총 적립액 ÷ 수령 년수 ÷ 12)
+          const monthlyPayment = totalAccumulated / pension.paymentYears / 12;
+          totalPension += monthlyPayment * 12; // 플러스로 추가
         }
       }
     });
@@ -244,24 +272,34 @@ export function calculateAssetSimulation(
 
       if (!pension.isActive) return; // 비활성 연금은 건너뛰기
 
-      if (year >= pension.contributionStartYear && year <= pension.contributionEndYear) {
+      if (
+        year >= pension.contributionStartYear &&
+        year <= pension.contributionEndYear
+      ) {
         // 적립 기간: 연금 자산에 추가
         const yearsElapsed = year - pension.contributionStartYear;
         const returnRate = pension.returnRate / 100;
-        
+
         // 월간/연간 적립 금액 계산
-        const monthlyAmount = pension.contributionFrequency === "monthly" 
-          ? pension.contributionAmount 
-          : pension.contributionAmount / 12;
+        const monthlyAmount =
+          pension.contributionFrequency === "monthly"
+            ? pension.contributionAmount
+            : pension.contributionAmount / 12;
         const yearlyAmount = monthlyAmount * 12;
 
         // 작년 자산에 수익률 적용 + 올해 적립 추가
         pension.amount = pension.amount * (1 + returnRate) + yearlyAmount;
       } else if (year === pension.paymentStartYear) {
         // 수령 시작년도: 월 수령액 계산
-        pension.monthlyPayment = pension.amount / (pension.paymentEndYear - pension.paymentStartYear + 1) / 12;
+        pension.monthlyPayment =
+          pension.amount /
+          (pension.paymentEndYear - pension.paymentStartYear + 1) /
+          12;
         pension.amount -= pension.monthlyPayment * 12; // 첫 해 수령액 차감
-      } else if (year > pension.paymentStartYear && year <= pension.paymentEndYear) {
+      } else if (
+        year > pension.paymentStartYear &&
+        year <= pension.paymentEndYear
+      ) {
         // 수령 기간: 자산에서 월 수령액만큼 차감
         pension.amount -= pension.monthlyPayment * 12;
       } else if (year > pension.paymentEndYear) {

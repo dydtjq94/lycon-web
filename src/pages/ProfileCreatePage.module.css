@@ -272,7 +272,6 @@
 
 .submitButton:hover:not(:disabled) {
   background: #374151;
-  transform: translateY(-1px);
 }
 
 .submitButton:active:not(:disabled) {

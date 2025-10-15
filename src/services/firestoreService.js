@@ -379,11 +379,14 @@ export const pensionService = {
   // 연금 데이터 생성
   async createPension(profileId, pensionData) {
     try {
-      const docRef = await addDoc(collection(db, "profiles", profileId, "pensions"), {
-        ...pensionData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      const docRef = await addDoc(
+        collection(db, "profiles", profileId, "pensions"),
+        {
+          ...pensionData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      );
       return docRef.id;
     } catch (error) {
       console.error("연금 데이터 생성 오류:", error);

@@ -65,9 +65,17 @@
   margin-bottom: 20px;
 }
 
+.fieldWithMargin {
+  margin-top: 20px;
+}
+
 .row {
   display: flex;
   gap: 12px;
+}
+
+.rowWithMargin {
+  margin-top: 20px;
 }
 
 .row .field {
@@ -188,6 +196,48 @@
 
 .saveButton:active {
   background-color: #1d4ed8;
+}
+
+/* 체크박스 스타일 */
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.checkboxLabel:hover {
+  background-color: #f9fafb;
+  border-color: #3b82f6;
+}
+
+.checkboxLabel:has(input:checked) {
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.checkboxText {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
 }
 
 /* 반응형 디자인 */

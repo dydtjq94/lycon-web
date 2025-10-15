@@ -198,22 +198,23 @@ function DashboardPage() {
       years.push({ year, age });
     }
 
-    // 실제 수입 데이터를 기반으로 현금흐름 시뮬레이션 계산
-    const cashflow = calculateCashflowSimulation(
-      profileData,
-      incomes,
-      expenses, // 지출 데이터 사용
-      savings, // 저축 데이터 사용
-      pensions // 연금 데이터 사용
-    );
-
-    // 자산 시뮬레이션 데이터
+    // 자산 시뮬레이션 데이터 먼저 계산
     const assets = calculateAssetSimulation(
       profileData,
       incomes,
       expenses,
       savings, // 저축 데이터 사용
       pensions // 연금 데이터 사용
+    );
+
+    // 실제 수입 데이터를 기반으로 현금흐름 시뮬레이션 계산
+    const cashflow = calculateCashflowSimulation(
+      profileData,
+      incomes,
+      expenses, // 지출 데이터 사용
+      savings, // 저축 데이터 사용
+      pensions, // 연금 데이터 사용
+      assets // 자산 시뮬레이션 데이터 전달
     );
 
     setSimulationData({ cashflow, assets });
@@ -462,7 +463,10 @@ function DashboardPage() {
         );
       } else {
         // 추가
-        const pensionId = await pensionService.createPension(profileId, pensionData);
+        const pensionId = await pensionService.createPension(
+          profileId,
+          pensionData
+        );
         setPensions([...pensions, { id: pensionId, ...pensionData }]);
       }
 

@@ -39,7 +39,6 @@
 
 .createButton:hover {
   background: #374151;
-  transform: translateY(-1px);
 }
 
 .profileGrid {
