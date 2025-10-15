@@ -20,24 +20,24 @@ function ExpenseList({ expenses, onEdit, onDelete }) {
   return (
     <div className={styles.expenseList}>
       {expenses.map((expense) => (
-        <div key={expense.id} className={styles.expenseItem}>
+        <div 
+          key={expense.id} 
+          className={styles.expenseItem}
+          onClick={() => onEdit(expense)}
+        >
           <div className={styles.expenseInfo}>
             <div className={styles.expenseHeader}>
               <h4 className={styles.expenseTitle}>{expense.title}</h4>
               <div className={styles.expenseActions}>
                 <button
-                  className={styles.editButton}
-                  onClick={() => onEdit(expense)}
-                  title="수정"
-                >
-                  ✏️
-                </button>
-                <button
                   className={styles.deleteButton}
-                  onClick={() => onDelete(expense.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(expense.id);
+                  }}
                   title="삭제"
                 >
-                  🗑️
+                  ×
                 </button>
               </div>
             </div>

@@ -20,24 +20,24 @@ function IncomeList({ incomes, onEdit, onDelete }) {
   return (
     <div className={styles.incomeList}>
       {incomes.map((income) => (
-        <div key={income.id} className={styles.incomeItem}>
+        <div 
+          key={income.id} 
+          className={styles.incomeItem}
+          onClick={() => onEdit(income)}
+        >
           <div className={styles.incomeInfo}>
             <div className={styles.incomeHeader}>
               <h4 className={styles.incomeTitle}>{income.title}</h4>
               <div className={styles.incomeActions}>
                 <button
-                  className={styles.editButton}
-                  onClick={() => onEdit(income)}
-                  title="수정"
-                >
-                  ✏️
-                </button>
-                <button
                   className={styles.deleteButton}
-                  onClick={() => onDelete(income.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(income.id);
+                  }}
                   title="삭제"
                 >
-                  🗑️
+                  ×
                 </button>
               </div>
             </div>
