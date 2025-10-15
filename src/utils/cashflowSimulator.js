@@ -169,11 +169,7 @@ export function calculateAssetSimulation(
 
       if (!saving.isActive) return; // 비활성 저축은 건너뛰기
 
-      if (year === saving.endYear + 1) {
-        // 저축 만료 시 현금으로 이동
-        currentCash += saving.amount;
-        saving.isActive = false; // 저축 비활성화 (차트에서 제거됨)
-      } else if (year >= saving.startYear && year <= saving.endYear) {
+      if (year >= saving.startYear && year <= saving.endYear) {
         // 저축 기간 중
         const yearsElapsed = year - saving.startYear;
         const interestRate = saving.interestRate / 100;
@@ -202,6 +198,10 @@ export function calculateAssetSimulation(
           // 작년 자산에 이자율 적용 + 올해 저축 추가
           saving.amount = saving.amount * (1 + interestRate) + yearlyAmount;
         }
+      } else if (year === saving.endYear + 1) {
+        // 저축 만료 시 현금으로 이동
+        currentCash += saving.amount;
+        saving.isActive = false; // 저축 비활성화 (차트에서 제거됨)
       }
     });
 

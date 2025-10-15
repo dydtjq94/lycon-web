@@ -18,34 +18,36 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
 
   const [errors, setErrors] = useState({});
 
-  // 수정 모드일 때 데이터 로드
+  // 수정 모드일 때 데이터 로드, 모달이 열릴 때마다 초기화
   useEffect(() => {
-    if (editData) {
-      setFormData({
-        title: editData.title || "",
-        frequency:
-          editData.originalFrequency || editData.frequency || "monthly",
-        amount: editData.originalAmount || editData.amount || "",
-        startYear: editData.startYear || new Date().getFullYear(),
-        endYear: editData.endYear || new Date().getFullYear() + 10,
-        memo: editData.memo || "",
-        interestRate: editData.interestRate || 3.0,
-        monthlyGrowthRate: editData.monthlyGrowthRate || 0,
-      });
-    } else {
-      // 새 데이터일 때 초기화
-      setFormData({
-        title: "",
-        frequency: "monthly",
-        amount: "",
-        startYear: new Date().getFullYear(),
-        endYear: new Date().getFullYear() + 10,
-        memo: "",
-        interestRate: 3.0,
-        monthlyGrowthRate: 0,
-      });
+    if (isOpen) {
+      if (editData) {
+        setFormData({
+          title: editData.title || "",
+          frequency:
+            editData.originalFrequency || editData.frequency || "monthly",
+          amount: editData.originalAmount || editData.amount || "",
+          startYear: editData.startYear || new Date().getFullYear(),
+          endYear: editData.endYear || new Date().getFullYear() + 10,
+          memo: editData.memo || "",
+          interestRate: editData.interestRate || 3.0,
+          monthlyGrowthRate: editData.monthlyGrowthRate || 0,
+        });
+      } else {
+        // 새 데이터일 때 초기화
+        setFormData({
+          title: "",
+          frequency: "monthly",
+          amount: "",
+          startYear: new Date().getFullYear(),
+          endYear: new Date().getFullYear() + 10,
+          memo: "",
+          interestRate: 3.0,
+          monthlyGrowthRate: 0,
+        });
+      }
     }
-  }, [editData]);
+  }, [isOpen, editData]);
 
   // 폼 유효성 검사
   const validateForm = () => {
@@ -70,7 +72,7 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
   // 숫자만 입력 허용
   const handleKeyPress = (e) => {
     if (
-      !/[0-9]/.test(e.key) &&
+      !/[0-9.]/.test(e.key) &&
       !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)
     ) {
       e.preventDefault();

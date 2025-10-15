@@ -17,32 +17,34 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
 
   const [errors, setErrors] = useState({});
 
-  // 수정 모드일 때 데이터 로드
+  // 수정 모드일 때 데이터 로드, 모달이 열릴 때마다 초기화
   useEffect(() => {
-    if (editData) {
-      setFormData({
-        title: editData.title || "",
-        frequency:
-          editData.originalFrequency || editData.frequency || "monthly",
-        amount: editData.originalAmount || editData.amount || "",
-        startYear: editData.startYear || new Date().getFullYear(),
-        endYear: editData.endYear || new Date().getFullYear() + 10,
-        memo: editData.memo || "",
-        growthRate: editData.growthRate || 2.5,
-      });
-    } else {
-      // 새 데이터일 때 초기화
-      setFormData({
-        title: "",
-        frequency: "monthly",
-        amount: "",
-        startYear: new Date().getFullYear(),
-        endYear: new Date().getFullYear() + 10,
-        memo: "",
-        growthRate: 2.5,
-      });
+    if (isOpen) {
+      if (editData) {
+        setFormData({
+          title: editData.title || "",
+          frequency:
+            editData.originalFrequency || editData.frequency || "monthly",
+          amount: editData.originalAmount || editData.amount || "",
+          startYear: editData.startYear || new Date().getFullYear(),
+          endYear: editData.endYear || new Date().getFullYear() + 10,
+          memo: editData.memo || "",
+          growthRate: editData.growthRate || 2.5,
+        });
+      } else {
+        // 새 데이터일 때 초기화
+        setFormData({
+          title: "",
+          frequency: "monthly",
+          amount: "",
+          startYear: new Date().getFullYear(),
+          endYear: new Date().getFullYear() + 10,
+          memo: "",
+          growthRate: 2.5,
+        });
+      }
     }
-  }, [editData]);
+  }, [isOpen, editData]);
 
   // 폼 유효성 검사
   const validateForm = () => {
@@ -172,7 +174,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
                 }`}
                 placeholder="100"
                 onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) e.preventDefault();
+                  if (!/[0-9.]/.test(e.key)) e.preventDefault();
                 }}
               />
               {errors.amount && (
@@ -199,7 +201,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
                 }
                 className={styles.input}
                 onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) e.preventDefault();
+                  if (!/[0-9.]/.test(e.key)) e.preventDefault();
                 }}
               />
             </div>
@@ -222,7 +224,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
                   errors.endYear ? styles.error : ""
                 }`}
                 onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) e.preventDefault();
+                  if (!/[0-9.]/.test(e.key)) e.preventDefault();
                 }}
               />
               {errors.endYear && (
