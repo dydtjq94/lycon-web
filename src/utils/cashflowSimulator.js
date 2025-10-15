@@ -65,6 +65,18 @@ export function calculateCashflowSimulation(
         const adjustedAmount =
           yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
         totalExpense += adjustedAmount;
+
+        // 디버깅 로그
+        if (year === 2025) {
+          console.log(`${year}년 지출 계산:`, {
+            title: expense.title,
+            amount: expense.amount,
+            frequency: expense.frequency,
+            yearlyAmount,
+            adjustedAmount,
+            totalExpense
+          });
+        }
       }
     });
 

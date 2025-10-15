@@ -22,8 +22,8 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
     if (editData) {
       setFormData({
         title: editData.title || "",
-        frequency: editData.frequency || "monthly",
-        amount: editData.amount || "",
+        frequency: editData.originalFrequency || editData.frequency || "monthly",
+        amount: editData.originalAmount || editData.amount || "",
         startYear: editData.startYear || new Date().getFullYear(),
         endYear: editData.endYear || new Date().getFullYear() + 10,
         memo: editData.memo || "",

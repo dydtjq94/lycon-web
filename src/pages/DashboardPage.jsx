@@ -90,13 +90,10 @@ function DashboardPage() {
 
       try {
         const incomeData = await incomeService.getIncomes(profileId);
-        // 근로소득, 사업소득, 임대소득 순서로 정렬
-        const sortedIncomes = incomeData.sort((a, b) => {
-          const order = { 근로소득: 1, 사업소득: 2, 임대소득: 3 };
-          const aOrder = order[a.title] || 999;
-          const bOrder = order[b.title] || 999;
-          return aOrder - bOrder;
-        });
+        // 생성 순서대로 정렬 (createdAt 기준)
+        const sortedIncomes = incomeData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
         setIncomes(sortedIncomes);
       } catch (error) {
         console.error("수입 데이터 로드 오류:", error);
@@ -113,13 +110,10 @@ function DashboardPage() {
 
       try {
         const expenseData = await expenseService.getExpenses(profileId);
-        // 은퇴 전 생활비, 은퇴 후 생활비 순서로 정렬
-        const sortedExpenses = expenseData.sort((a, b) => {
-          const order = { "은퇴 전 생활비": 1, "은퇴 후 생활비": 2 };
-          const aOrder = order[a.title] || 999;
-          const bOrder = order[b.title] || 999;
-          return aOrder - bOrder;
-        });
+        // 생성 순서대로 정렬 (createdAt 기준)
+        const sortedExpenses = expenseData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
         setExpenses(sortedExpenses);
       } catch (error) {
         console.error("지출 데이터 로드 오류:", error);
@@ -263,7 +257,7 @@ function DashboardPage() {
           profileId,
           incomeData
         );
-        setIncomes([newIncome, ...incomes]);
+        setIncomes([...incomes, newIncome]);
       }
 
       // 시뮬레이션 데이터 재생성
@@ -320,7 +314,7 @@ function DashboardPage() {
           profileId,
           expenseData
         );
-        setExpenses([newExpense, ...expenses]);
+        setExpenses([...expenses, newExpense]);
       }
 
       // 시뮬레이션 데이터 재생성

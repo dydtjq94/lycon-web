@@ -22,8 +22,8 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
     if (editData) {
       setFormData({
         title: editData.title || "",
-        frequency: editData.frequency || "monthly",
-        amount: editData.amount || "",
+        frequency: editData.originalFrequency || editData.frequency || "monthly",
+        amount: editData.originalAmount || editData.amount || "",
         startYear: editData.startYear || new Date().getFullYear(),
         endYear: editData.endYear || new Date().getFullYear() + 10,
         memo: editData.memo || "",
@@ -75,15 +75,9 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
       return;
     }
 
-    // 월 단위인 경우 연 단위로 변환
-    const yearlyAmount =
-      formData.frequency === "monthly"
-        ? parseInt(formData.amount) * 12
-        : parseInt(formData.amount);
-
     const incomeData = {
       ...formData,
-      amount: yearlyAmount,
+      amount: parseInt(formData.amount),
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
     };

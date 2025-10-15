@@ -85,13 +85,15 @@ export function formatAmountForChart(amount) {
 
   if (numAmount >= 10000) {
     const eok = Math.floor(numAmount / 10000);
-    return `${eok}억`;
+    const cheon = Math.floor((numAmount % 10000) / 1000);
+    
+    if (cheon > 0) {
+      return `${eok}억 ${cheon}천만원`;
+    } else {
+      return `${eok}억원`;
+    }
   }
 
-  if (numAmount >= 1000) {
-    const cheon = Math.floor(numAmount / 1000);
-    return `${cheon}천`;
-  }
-
-  return `${numAmount}`;
+  // 천만원 미만은 그냥 원래 금액을 천 단위 구분해서 표시
+  return `${numAmount.toLocaleString()}만원`;
 }
