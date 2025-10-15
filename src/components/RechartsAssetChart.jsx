@@ -106,7 +106,6 @@ function RechartsAssetChart({
               tickFormatter={(value) => formatAmountForChart(value)}
               stroke="#6b7280"
               fontSize={12}
-              label={{ value: "(만원)", angle: -90, position: "insideLeft" }}
             />
 
             {/* 툴팁 */}
