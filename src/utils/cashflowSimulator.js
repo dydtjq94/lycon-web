@@ -17,7 +17,6 @@ export function calculateCashflowSimulation(
   expenses = [],
   savings = [],
   pensions = [],
-  realEstates = [],
   assetData = [] // 자산 시뮬레이션 데이터 추가
 ) {
   const currentYear = new Date().getFullYear();
@@ -135,8 +134,8 @@ export function calculateCashflowSimulation(
           const yearlyContribution = monthlyAmount * 12;
           const returnRate = pension.returnRate / 100;
 
-          // 적립 기간 동안의 총 적립액 계산 (복리 적용)
-          let totalAccumulated = 0;
+          // 현재 보유액을 포함한 총 적립액 계산 (복리 적용)
+          let totalAccumulated = pension.currentAmount || 0; // 현재 보유액으로 시작
           for (
             let i = 0;
             i < pension.contributionEndYear - pension.contributionStartYear + 1;
@@ -153,39 +152,9 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 임대 수입 계산
-    let totalRentalIncome = 0;
-    realEstates.forEach((realEstate) => {
-      if (realEstate.hasRentalIncome) {
-        if (
-          year >= realEstate.rentalIncomeStartYear &&
-          year <= realEstate.rentalIncomeEndYear
-        ) {
-          // 임대 수입 기간 동안 현금흐름에 추가
-          totalRentalIncome += realEstate.monthlyRentalIncome * 12;
-        }
-      }
-    });
-
-    // 주택연금 계산
-    let totalRealEstatePension = 0;
-    realEstates.forEach((realEstate) => {
-      if (realEstate.convertToPension) {
-        if (year >= realEstate.pensionStartYear) {
-          // 주택연금 수령 기간 동안 현금흐름에 추가
-          totalRealEstatePension += realEstate.monthlyPensionAmount * 12;
-        }
-      }
-    });
-
-    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 (각 년도별 순현금흐름)
+    // 현금흐름 = 수입 - 지출 - 저축 + 연금 (각 년도별 순현금흐름)
     const netCashflow =
-      totalIncome -
-      totalExpense -
-      totalSavings +
-      totalPension +
-      totalRentalIncome +
-      totalRealEstatePension;
+      totalIncome - totalExpense - totalSavings + totalPension;
 
     cashflowData.push({
       year,
@@ -195,8 +164,6 @@ export function calculateCashflowSimulation(
       expense: totalExpense,
       savings: totalSavings,
       pension: totalPension,
-      rentalIncome: totalRentalIncome,
-      realEstatePension: totalRealEstatePension,
     });
   }
 
@@ -246,7 +213,7 @@ export function calculateAssetSimulation(
     if (pension.type !== "national") {
       // 퇴직연금/개인연금만 자산으로 관리
       pensionsByTitle[pension.title] = {
-        amount: 0,
+        amount: pension.currentAmount || 0, // 현재 보유액으로 시작
         contributionStartYear: pension.contributionStartYear,
         contributionEndYear: pension.contributionEndYear,
         paymentStartYear: pension.contributionEndYear + 1,
@@ -372,29 +339,28 @@ export function calculateAssetSimulation(
         year <= realEstate.endYear &&
         realEstate.isActive
       ) {
-        // 주택연금 수령 중이 아닌 경우에만 상승률 적용
-        const isPensionActive =
-          realEstate.convertToPension && year >= realEstate.pensionStartYear;
-
         if (year === realEstate.startYear) {
           // 첫 해: 현재 가치로 시작
           realEstate.amount = realEstate.amount;
-        } else if (!isPensionActive) {
-          // 주택연금 수령 중이 아닌 경우: 상승률 적용
+        } else {
+          // 이후 해: 상승률 적용
           const growthRate = realEstate.growthRate / 100;
           realEstate.amount = realEstate.amount * (1 + growthRate);
         }
-        // 주택연금 수령 중인 경우: 상승률 적용하지 않음
 
         // 주택연금 전환 처리
-        if (isPensionActive) {
-          // 주택연금 수령 시: 자산에서 월 수령액만큼 차감 (현금으로 변환하지 않음)
+        if (
+          realEstate.convertToPension &&
+          year >= realEstate.pensionStartYear
+        ) {
+          // 주택연금 전환 시: 자산에서 월 수령액만큼 차감하고 현금에 추가
           const yearlyPensionAmount = realEstate.monthlyPensionAmount * 12;
           if (realEstate.amount >= yearlyPensionAmount) {
             realEstate.amount -= yearlyPensionAmount;
-            // 현금으로 변환하지 않음 - 현금흐름 시뮬레이션에서만 처리
+            currentCash += yearlyPensionAmount; // 현금에 추가
           } else {
-            // 부동산 가치가 부족하면 남은 가치만 차감
+            // 부동산 가치가 부족하면 남은 가치만 현금에 추가
+            currentCash += realEstate.amount;
             realEstate.amount = 0;
             realEstate.isActive = false;
           }

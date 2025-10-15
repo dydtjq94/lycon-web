@@ -94,6 +94,11 @@ function PensionList({ pensions, onEdit, onDelete }) {
             ) : (
               // 퇴직연금/개인연금 정보
               <>
+                {pension.currentAmount > 0 && (
+                  <div className={styles.pensionCurrentAmount}>
+                    현재 보유: {formatAmount(pension.currentAmount)}
+                  </div>
+                )}
                 <div className={styles.pensionAmount}>
                   {formatAmount(pension.contributionAmount)}/
                   {pension.contributionFrequency === "monthly" ? "월" : "년"}

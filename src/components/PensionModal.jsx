@@ -14,6 +14,7 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
     endYear: new Date().getFullYear() + 20,
     inflationRate: 2.5, // 물가상승률 (국민연금용)
     // 퇴직연금/개인연금용 필드
+    currentAmount: "", // 현재 보유액
     contributionAmount: "", // 월/년 적립 금액
     contributionFrequency: "monthly", // monthly, yearly
     contributionStartYear: new Date().getFullYear(),
@@ -35,6 +36,7 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
           monthlyAmount: editData.monthlyAmount || "",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 20,
+          currentAmount: editData.currentAmount || "",
           contributionAmount: editData.contributionAmount || "",
           contributionFrequency: editData.contributionFrequency || "monthly",
           contributionStartYear:
@@ -54,6 +56,7 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
           startYear: new Date().getFullYear(),
           endYear: new Date().getFullYear() + 20,
           inflationRate: 2.5,
+          currentAmount: "",
           contributionAmount: "",
           contributionFrequency: "monthly",
           contributionStartYear: new Date().getFullYear(),
@@ -115,6 +118,9 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
       }
     } else {
       // 퇴직연금/개인연금
+      if (formData.currentAmount && formData.currentAmount < 0) {
+        newErrors.currentAmount = "현재 보유액은 0 이상이어야 합니다.";
+      }
       if (!formData.contributionAmount || formData.contributionAmount <= 0) {
         newErrors.contributionAmount = "적립 금액을 입력해주세요.";
       }
@@ -158,6 +164,10 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
         formData.type === "national" ? parseInt(formData.monthlyAmount) : 0,
       inflationRate:
         formData.type === "national" ? parseFloat(formData.inflationRate) : 0,
+      currentAmount:
+        formData.type !== "national" && formData.currentAmount
+          ? parseInt(formData.currentAmount)
+          : 0,
       contributionAmount:
         formData.type !== "national"
           ? parseInt(formData.contributionAmount)
@@ -180,6 +190,7 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
       monthlyAmount: "",
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 20,
+      currentAmount: "",
       contributionAmount: "",
       contributionFrequency: "monthly",
       contributionStartYear: new Date().getFullYear(),
@@ -369,6 +380,30 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
               ) : (
                 // 퇴직연금/개인연금 필드
                 <>
+                  <div className={styles.field}>
+                    <label className={styles.label}>현재 보유액 (만원)</label>
+                    <input
+                      type="text"
+                      value={formData.currentAmount}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          currentAmount: e.target.value,
+                        })
+                      }
+                      onKeyPress={handleKeyPress}
+                      className={`${styles.input} ${
+                        errors.currentAmount ? styles.error : ""
+                      }`}
+                      placeholder="예: 1000 (선택사항)"
+                    />
+                    {errors.currentAmount && (
+                      <span className={styles.errorText}>
+                        {errors.currentAmount}
+                      </span>
+                    )}
+                  </div>
+
                   <div className={styles.field}>
                     <label className={styles.label}>적립 금액 (만원)</label>
                     <div className={styles.row}>
