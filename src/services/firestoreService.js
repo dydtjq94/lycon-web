@@ -293,3 +293,81 @@ export const expenseService = {
     }
   },
 };
+
+// 저축 데이터 서비스
+export const savingsService = {
+  // 저축 데이터 생성
+  async createSaving(profileId, savingData) {
+    try {
+      const docRef = await addDoc(
+        collection(db, "profiles", profileId, "savings"),
+        {
+          ...savingData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      );
+      return { id: docRef.id, ...savingData };
+    } catch (error) {
+      console.error("저축 데이터 생성 오류:", error);
+      throw error;
+    }
+  },
+
+  // 저축 데이터 조회 (전체)
+  async getSavings(profileId) {
+    try {
+      const querySnapshot = await getDocs(
+        collection(db, "profiles", profileId, "savings")
+      );
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("저축 데이터 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 저축 데이터 조회 (단일)
+  async getSaving(profileId, savingId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "savings", savingId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error("저축 데이터 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 저축 데이터 업데이트
+  async updateSaving(profileId, savingId, updateData) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "savings", savingId);
+      await updateDoc(docRef, {
+        ...updateData,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("저축 데이터 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  // 저축 데이터 삭제
+  async deleteSaving(profileId, savingId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "savings", savingId);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("저축 데이터 삭제 오류:", error);
+      throw error;
+    }
+  },
+};

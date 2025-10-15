@@ -8,9 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "version:patch": "node update-version.js patch",
-    "version:minor": "node update-version.js minor",
-    "version:major": "node update-version.js major"
+    "version:patch": "node update-version.cjs patch",
+    "version:minor": "node update-version.cjs minor",
+    "version:major": "node update-version.cjs major"
   },
   "dependencies": {
     "firebase": "^12.4.0",

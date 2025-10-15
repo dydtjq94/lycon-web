@@ -10,6 +10,7 @@ import {
   profileService,
   incomeService,
   expenseService,
+  savingsService,
 } from "../services/firestoreService";
 import RechartsCashflowChart from "../components/RechartsCashflowChart";
 import RechartsAssetChart from "../components/RechartsAssetChart";
@@ -17,6 +18,8 @@ import IncomeModal from "../components/IncomeModal";
 import IncomeList from "../components/IncomeList";
 import ExpenseModal from "../components/ExpenseModal";
 import ExpenseList from "../components/ExpenseList";
+import SavingModal from "../components/SavingModal";
+import SavingList from "../components/SavingList";
 import styles from "./DashboardPage.module.css";
 
 /**
@@ -41,6 +44,9 @@ function DashboardPage() {
   const [expenses, setExpenses] = useState([]);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [savings, setSavings] = useState([]);
+  const [isSavingModalOpen, setIsSavingModalOpen] = useState(false);
+  const [editingSaving, setEditingSaving] = useState(null);
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
 
   // 프로필 데이터 로드
@@ -123,12 +129,32 @@ function DashboardPage() {
     loadExpenses();
   }, [profileId]);
 
+  // 저축 데이터 로드
+  useEffect(() => {
+    const loadSavings = async () => {
+      if (!profileId) return;
+
+      try {
+        const savingData = await savingsService.getSavings(profileId);
+        // 생성 순서대로 정렬 (createdAt 기준)
+        const sortedSavings = savingData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+        setSavings(sortedSavings);
+      } catch (error) {
+        console.error("저축 데이터 로드 오류:", error);
+      }
+    };
+
+    loadSavings();
+  }, [profileId]);
+
   // 수입 데이터가 변경될 때마다 시뮬레이션 재계산
   useEffect(() => {
     if (profileData) {
       generateSimulationData(profileData);
     }
-  }, [incomes, expenses, profileData]);
+  }, [incomes, expenses, savings, profileData]);
 
   // 시뮬레이션 데이터 생성
   const generateSimulationData = (profileData) => {
@@ -151,36 +177,18 @@ function DashboardPage() {
       profileData,
       incomes,
       expenses, // 지출 데이터 사용
-      [], // 저축 (추후 구현)
+      savings, // 저축 데이터 사용
       [] // 연금 (추후 구현)
     );
 
     // 자산 시뮬레이션 데이터
-    const assets = years.map(({ year, age }) => {
-      let amount = 0;
-
-      if (age <= profileData.retirementAge) {
-        // 은퇴 전: 자산 누적
-        const baseAmount = profileData.targetAssets || 50000; // 목표 자산
-        const yearsToRetirement = profileData.retirementAge - age;
-        const annualGrowth = baseAmount / yearsToRetirement;
-        amount = Math.max(
-          0,
-          baseAmount - yearsToRetirement * annualGrowth * 0.3
-        );
-      } else {
-        // 은퇴 후: 자산 감소
-        const retirementAssets = profileData.targetAssets || 50000;
-        const yearsAfterRetirement = age - profileData.retirementAge;
-        const annualDepletion = retirementAssets / 20; // 20년간 소진
-        amount = Math.max(
-          0,
-          retirementAssets - yearsAfterRetirement * annualDepletion
-        );
-      }
-
-      return { year, age, amount };
-    });
+    const assets = calculateAssetSimulation(
+      profileData,
+      incomes,
+      expenses,
+      savings, // 저축 데이터 사용
+      [] // 연금 (추후 구현)
+    );
 
     setSimulationData({ cashflow, assets });
   };
@@ -287,6 +295,12 @@ function DashboardPage() {
     setIsExpenseModalOpen(true);
   };
 
+  // 저축 핸들러들
+  const handleAddSaving = () => {
+    setEditingSaving(null);
+    setIsSavingModalOpen(true);
+  };
+
   const handleEditExpense = (expense) => {
     setEditingExpense(expense);
     setIsExpenseModalOpen(true);
@@ -338,6 +352,56 @@ function DashboardPage() {
     }
   };
 
+  // 저축 저장 핸들러
+  const handleSaveSaving = async (savingData) => {
+    try {
+      if (editingSaving) {
+        // 수정
+        await savingsService.updateSaving(
+          profileId,
+          editingSaving.id,
+          savingData
+        );
+        setSavings(
+          savings.map((saving) =>
+            saving.id === editingSaving.id ? { ...saving, ...savingData } : saving
+          )
+        );
+        setEditingSaving(null);
+      } else {
+        // 추가
+        const newSaving = await savingsService.createSaving(profileId, savingData);
+        setSavings([...savings, newSaving]);
+      }
+
+      // 시뮬레이션 데이터 재생성
+      generateSimulationData(profileData);
+    } catch (error) {
+      console.error("저축 데이터 저장 오류:", error);
+    }
+  };
+
+  // 저축 수정 핸들러
+  const handleEditSaving = (saving) => {
+    setEditingSaving(saving);
+    setIsSavingModalOpen(true);
+  };
+
+  // 저축 삭제 핸들러
+  const handleDeleteSaving = async (savingId) => {
+    if (!window.confirm("이 저축 데이터를 삭제하시겠습니까?")) return;
+
+    try {
+      await savingsService.deleteSaving(profileId, savingId);
+      setSavings(savings.filter((saving) => saving.id !== savingId));
+
+      // 시뮬레이션 데이터 재생성
+      generateSimulationData(profileData);
+    } catch (error) {
+      console.error("저축 데이터 삭제 오류:", error);
+    }
+  };
+
   // 카테고리별 추가 핸들러
   const handleAddData = () => {
     switch (selectedCategory) {
@@ -348,8 +412,7 @@ function DashboardPage() {
         handleAddExpense();
         break;
       case "savings":
-        // TODO: 저축 추가 기능
-        alert("저축 추가 기능은 준비 중입니다.");
+        handleAddSaving();
         break;
       case "pension":
         // TODO: 연금 추가 기능
@@ -404,7 +467,7 @@ function DashboardPage() {
   const categories = [
     { id: "income", name: "수입", color: "#10b981", count: incomes.length },
     { id: "expense", name: "지출", color: "#ef4444", count: expenses.length },
-    { id: "savings", name: "저축", color: "#3b82f6", count: 0 },
+    { id: "savings", name: "저축", color: "#3b82f6", count: savings.length },
     { id: "pension", name: "연금", color: "#8b5cf6", count: 0 },
     { id: "assets", name: "자산", color: "#f59e0b", count: 0 },
     { id: "debt", name: "부채", color: "#6b7280", count: 0 },
@@ -583,6 +646,12 @@ function DashboardPage() {
                     onEdit={handleEditExpense}
                     onDelete={handleDeleteExpense}
                   />
+                ) : selectedCategory === "savings" ? (
+                  <SavingList
+                    savings={savings}
+                    onEdit={handleEditSaving}
+                    onDelete={handleDeleteSaving}
+                  />
                 ) : (
                   <div className={styles.emptyList}>
                     <p>데이터가 없습니다.</p>
@@ -632,6 +701,14 @@ function DashboardPage() {
         onClose={() => setIsExpenseModalOpen(false)}
         onSave={handleSaveExpense}
         editData={editingExpense}
+      />
+
+      {/* 저축 모달 */}
+      <SavingModal
+        isOpen={isSavingModalOpen}
+        onClose={() => setIsSavingModalOpen(false)}
+        onSave={handleSaveSaving}
+        editData={editingSaving}
       />
     </div>
   );
