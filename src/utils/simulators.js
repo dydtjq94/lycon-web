@@ -9,6 +9,7 @@ let RENTAL_GROWTH_RATE = 2.0; // 임대소득상승률 (연간, %)
 let DEFAULT_INCOME_GROWTH_RATE = 2.0; // 기본 수입상승률 (연간, %)
 let INFLATION_RATE = 2.5; // 물가상승률 (연간, %)
 let DEFAULT_RETURN_RATE = 5.0; // 기본 수익률 (연간, %)
+let PENSION_RETURN_RATE = 5.0; // 연금 수익률 (연간, %)
 
 // 동적 상승률 관리 (사용자 항목별)
 let DYNAMIC_GROWTH_RATES = {}; // { "교육비": 2.5, "의료비": 3.0, ... }
@@ -38,6 +39,10 @@ export function updateDefaultReturnRate(rate) {
   DEFAULT_RETURN_RATE = rate;
 }
 
+export function updatePensionReturnRate(rate) {
+  PENSION_RETURN_RATE = rate;
+}
+
 // 현재 설정값 조회 함수들
 export function getWageGrowthRate() {
   return WAGE_GROWTH_RATE;
@@ -61,6 +66,56 @@ export function getInflationRate() {
 
 export function getDefaultReturnRate() {
   return DEFAULT_RETURN_RATE;
+}
+
+export function getPensionReturnRate() {
+  return PENSION_RETURN_RATE;
+}
+
+// 연금 적립금액 계산 함수 (자산 계산과 동일한 로직 사용)
+function calculatePensionAccumulatedAmount(
+  pension,
+  endYear,
+  rateSettings = null
+) {
+  const startYear = pension.startYear;
+  const annualRate =
+    (rateSettings?.pensionReturnRate || PENSION_RETURN_RATE) / 100;
+  let accumulated = 0;
+
+  console.log(`연금 적립금액 계산: ${pension.title}`, {
+    startYear,
+    endYear,
+    annualRate,
+    pensionRate: pension.pensionRate,
+  });
+
+  for (let year = startYear; year <= endYear; year++) {
+    // 이전 년도 값에 수익률 적용 (올해 원금 추가 전)
+    if (year > startYear) {
+      accumulated *= 1 + annualRate;
+    }
+
+    // 새로운 적립금 추가 (올해 넣는 원금)
+    const yearlyAmount = getYearlyAmount(pension);
+    const adjustedAmount = applyYearlyGrowthRate(
+      yearlyAmount,
+      pension,
+      year,
+      "pensions",
+      rateSettings
+    );
+    accumulated += adjustedAmount;
+
+    console.log(
+      `  ${year}년: ${accumulated.toFixed(
+        0
+      )}만원 (yearlyAmount: ${yearlyAmount}, adjustedAmount: ${adjustedAmount})`
+    );
+  }
+
+  console.log(`최종 적립금액: ${accumulated.toFixed(0)}만원`);
+  return accumulated;
 }
 
 // 동적 상승률 관리 함수들
@@ -267,6 +322,42 @@ export function calculateYearlyCashflow(
   } = data;
   const cashflow = [];
 
+  // 디버깅 로그 제거
+  // console.log("calculateYearlyCashflow 데이터 확인:", {
+  //   incomes: incomes.length,
+  //   expenses: expenses.length,
+  //   pensions: pensions.length,
+  //   savings: savings.length,
+  //   debts: debts.length,
+  // });
+
+  // 디버깅 로그 제거
+  // console.log(
+  //   `현금흐름 계산 시작 - 연금 데이터:`,
+  //   pensions.map((p) => ({
+  //     title: p.title,
+  //     pensionType: p.pensionType,
+  //     startYear: p.startYear,
+  //     endYear: p.endYear,
+  //     monthlyAmount: p.monthlyAmount,
+  //     pensionRate: p.pensionRate,
+  //     receiptYears: p.receiptYears,
+  //   }))
+  // );
+
+  // console.log(
+  //   `현금흐름 계산 시작 - 지출 데이터:`,
+  //   expenses.map((e) => ({
+  //     title: e.title,
+  //     amount: e.amount,
+  //     startDate: e.startDate,
+  //     endDate: e.endDate,
+  //     frequency: e.frequency,
+  //   }))
+  // );
+
+  // console.log(`지출 데이터 개수: ${expenses.length}`);
+
   // console.log("=== calculateYearlyCashflow 시작 ===");
   // console.log("시작년도:", startYear, "종료년도:", endYear);
 
@@ -293,24 +384,76 @@ export function calculateYearlyCashflow(
       }
     });
 
-    // 연금 계산 (나이 기반)
+    // 연금 계산 (타입별)
     pensions.forEach((pension) => {
-      if (isPensionActiveInYear(pension, year, currentAge)) {
-        const yearlyAmount = getYearlyAmount(pension);
-        const adjustedAmount = applyYearlyGrowthRate(
-          yearlyAmount,
-          pension,
-          year,
-          "pensions",
-          rateSettings
-        );
-        totalPension += adjustedAmount;
+      if (pension.pensionType === "national") {
+        // 국민연금: 수령시작년도부터 현금흐름에만 영향
+        if (pension.startYear && year >= pension.startYear) {
+          const yearlyAmount = getYearlyAmount(pension);
+          const adjustedAmount = applyYearlyGrowthRate(
+            yearlyAmount,
+            pension,
+            year,
+            "pensions",
+            rateSettings
+          );
+
+          console.log(`국민연금 현금흐름: ${pension.title}`, {
+            year,
+            startYear: pension.startYear,
+            yearlyAmount: yearlyAmount.toFixed(0),
+            adjustedAmount: adjustedAmount.toFixed(0),
+            beforeTotal: totalPension.toFixed(0),
+          });
+
+          totalPension += adjustedAmount;
+        }
+      } else if (
+        pension.pensionType === "retirement" ||
+        pension.pensionType === "private"
+      ) {
+        // 퇴직연금/개인연금: 수령기간에만 현금흐름에 영향
+        // 자산 시뮬레이션에서 이미 계산된 값을 사용 (별도 계산 불필요)
+        const endYear = pension.endYear;
+        const receiptStartYear = endYear + 1; // 적립 종료 다음년부터 수령
+        const receiptEndYear = receiptStartYear + pension.receiptYears - 1;
+
+        // 수령기간: 자산 시뮬레이션과 동일한 방식으로 적립 종료 시점 총 자산 계산 후 수령기간으로 나눈 금액
+        if (year >= receiptStartYear && year <= receiptEndYear) {
+          // 자산 시뮬레이션과 동일한 로직으로 적립 종료 시점 총 자산 계산
+          const totalAccumulated = calculatePensionAccumulatedAmount(
+            pension,
+            endYear,
+            rateSettings
+          );
+          const yearlyReceiptAmount = totalAccumulated / pension.receiptYears;
+
+          console.log(`현금흐름 수령: ${pension.title}`, {
+            year,
+            totalAccumulated: totalAccumulated.toFixed(0),
+            receiptYears: pension.receiptYears,
+            yearlyReceiptAmount: yearlyReceiptAmount.toFixed(0),
+          });
+
+          totalPension += yearlyReceiptAmount;
+        }
       }
     });
 
     // 지출 계산 (물가 상승률 적용)
-    expenses.forEach((expense) => {
-      if (isActiveInYear(expense, year)) {
+    console.log(`${year}년 지출 계산 시작 - 총 ${expenses.length}개 항목`);
+    expenses.forEach((expense, index) => {
+      const isActive = isActiveInYear(expense, year);
+      console.log(`지출 ${index + 1}: ${expense.title}`, {
+        year,
+        startDate: expense.startDate,
+        endDate: expense.endDate,
+        isActive,
+        amount: expense.amount,
+        frequency: expense.frequency,
+      });
+
+      if (isActive) {
         const yearlyAmount = getYearlyAmount(expense);
         const adjustedAmount = applyYearlyGrowthRate(
           yearlyAmount,
@@ -320,8 +463,16 @@ export function calculateYearlyCashflow(
           rateSettings
         );
         totalExpense += adjustedAmount;
+
+        console.log(`지출 계산: ${expense.title}`, {
+          year,
+          yearlyAmount: yearlyAmount.toFixed(0),
+          adjustedAmount: adjustedAmount.toFixed(0),
+          totalExpense: totalExpense.toFixed(0),
+        });
       }
     });
+    console.log(`${year}년 총 지출: ${totalExpense.toFixed(0)}만원`);
 
     // 저축 계산 (연 단위) - 현금흐름에서는 지출로 처리
     let totalSavings = 0;
@@ -356,6 +507,18 @@ export function calculateYearlyCashflow(
         ? netCashflow
         : cashflow[cashflow.length - 1].cumulativeCashflow + netCashflow;
 
+    // 연금 현금흐름 디버깅 로그
+    if (totalPension > 0) {
+      console.log(`현금흐름 연금 합계: ${year}년`, {
+        totalIncome: totalIncome.toFixed(0),
+        totalPension: totalPension.toFixed(0),
+        totalExpense: totalExpense.toFixed(0),
+        totalSavings: totalSavings.toFixed(0),
+        totalDebtPayment: totalDebtPayment.toFixed(0),
+        netCashflow: netCashflow.toFixed(0),
+      });
+    }
+
     // 만원 미만 버림 처리
     cashflow.push({
       year,
@@ -389,7 +552,7 @@ export function calculateYearlyAssets(
   birthDate,
   rateSettings = null
 ) {
-  const { assets = [], savings = [], debts = [] } = data;
+  const { assets = [], savings = [], pensions = [], debts = [] } = data;
   const assetData = [];
 
   // 자산별 누적 값 추적
@@ -513,6 +676,83 @@ export function calculateYearlyAssets(
         }
       });
     }
+
+    // 연금 자산 처리 (퇴직연금/개인연금만)
+    pensions.forEach((pension) => {
+      if (
+        pension.pensionType === "retirement" ||
+        pension.pensionType === "private"
+      ) {
+        const pensionKey = pension.title;
+
+        if (!assetValues[pensionKey]) {
+          assetValues[pensionKey] = {
+            principal: 0,
+            accumulated: 0,
+            lastContributionYear: null,
+            totalAccumulatedAtEnd: null, // 적립 종료 시점의 총 자산 저장
+          };
+        }
+
+        const annualRate =
+          (rateSettings?.pensionReturnRate || PENSION_RETURN_RATE) / 100;
+        const startYear = pension.startYear;
+        const endYear = pension.endYear;
+        const receiptStartYear = endYear + 1;
+        const receiptEndYear = receiptStartYear + pension.receiptYears - 1;
+
+        // 적립 기간: 수익률 적용 + 자산 추가
+        if (year >= startYear && year <= endYear) {
+          // 이전 년도 값에 수익률 적용 (올해 원금 추가 전)
+          if (year > startYear) {
+            assetValues[pensionKey].accumulated *= 1 + annualRate;
+          }
+
+          // 새로운 적립금 추가 (올해 넣는 원금)
+          const yearlyAmount = getYearlyAmount(pension);
+          const adjustedAmount = applyYearlyGrowthRate(
+            yearlyAmount,
+            pension,
+            year,
+            "pensions",
+            rateSettings
+          );
+          assetValues[pensionKey].accumulated += adjustedAmount;
+          assetValues[pensionKey].principal += adjustedAmount;
+          assetValues[pensionKey].lastContributionYear = year;
+
+          // 적립 종료 시점의 총 자산 저장
+          if (year === endYear) {
+            assetValues[pensionKey].totalAccumulatedAtEnd =
+              assetValues[pensionKey].accumulated;
+            console.log(`적립 종료 시점 자산 저장: ${pension.title}`, {
+              endYear,
+              totalAccumulated: assetValues[pensionKey].accumulated.toFixed(0),
+            });
+          }
+        }
+
+        // 수령 기간: 수익률 없이 N분의 1로 차감
+        if (year >= receiptStartYear && year <= receiptEndYear) {
+          // 적립 종료 시점의 실제 자산을 수령기간으로 나눈 금액만큼 차감
+          const totalAccumulated =
+            assetValues[pensionKey].totalAccumulatedAtEnd;
+          if (totalAccumulated) {
+            const yearlyReceiptAmount = totalAccumulated / pension.receiptYears;
+
+            console.log(`자산 차감: ${pension.title}`, {
+              year,
+              totalAccumulated: totalAccumulated.toFixed(0),
+              receiptYears: pension.receiptYears,
+              yearlyReceiptAmount: yearlyReceiptAmount.toFixed(0),
+              beforeAccumulated: assetValues[pensionKey].accumulated.toFixed(0),
+            });
+
+            assetValues[pensionKey].accumulated -= yearlyReceiptAmount;
+          }
+        }
+      }
+    });
 
     // 총 자산 및 부채 계산
     let totalAssets = 0;
@@ -876,34 +1116,18 @@ function isActiveInMonth(item, month) {
  */
 function isPensionActiveInMonth(pension, month, birthDate = null) {
   // 연금 관련 필드가 없으면 기존 로직 사용
-  if (!pension.startAge) {
+  if (!pension.startYear) {
     return isActiveInMonth(pension, month);
   }
 
-  // 생년월일이 제공된 경우 사용, 없으면 현재 나이 30세로 추정
-  let birthYear, birthMonth;
-  if (birthDate) {
-    const birth = new Date(birthDate);
-    birthYear = birth.getFullYear();
-    birthMonth = birth.getMonth() + 1;
-  } else {
-    const currentDate = new Date();
-    birthYear = currentDate.getFullYear() - 30;
-    birthMonth = currentDate.getMonth() + 1;
-  }
-
-  // 현재 월의 나이 계산
   const currentMonth = new Date(month);
-  const currentAge =
-    currentMonth.getFullYear() -
-    birthYear +
-    (currentMonth.getMonth() + 1 - birthMonth) / 12;
+  const currentYear = currentMonth.getFullYear();
 
-  // 수령 시작/종료 나이 확인
-  const startAge = pension.startAge || 65;
-  const endAge = pension.endAge || 100;
+  // 수령 시작/종료 년도 확인
+  const startYear = pension.startYear || 0;
+  const endYear = pension.endYear || 9999;
 
-  return currentAge >= startAge && currentAge <= endAge;
+  return currentYear >= startYear && currentYear <= endYear;
 }
 
 /**
@@ -964,7 +1188,36 @@ function isActiveInYear(item, year) {
   const startYear = itemStart.getFullYear();
   const endYear = itemEnd ? itemEnd.getFullYear() : null;
 
-  return year >= startYear && (!endYear || year <= endYear);
+  const isActive = year >= startYear && (!endYear || year <= endYear);
+
+  // 근로소득 디버깅 로그
+  if (
+    item.title &&
+    (item.title.includes("근로소득") || item.title.includes("급여"))
+  ) {
+    console.log(`isActiveInYear 체크: ${item.title}`, {
+      year,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      startYear,
+      endYear,
+      isActive,
+    });
+  }
+
+  // 지출 데이터 디버깅 로그
+  if (item.title && item.title.includes("생활비")) {
+    console.log(`isActiveInYear 체크: ${item.title}`, {
+      year,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      startYear,
+      endYear,
+      isActive,
+    });
+  }
+
+  return isActive;
 }
 
 /**
@@ -976,17 +1229,15 @@ function isActiveInYear(item, year) {
  */
 function isPensionActiveInYear(pension, year, currentAge) {
   // 연금 관련 필드가 없으면 기존 로직 사용
-  if (!pension.startAge) {
+  if (!pension.startYear) {
     return isActiveInYear(pension, year);
   }
 
-  if (!currentAge) return false;
+  // 수령 시작/종료 년도 확인
+  const startYear = pension.startYear || 0;
+  const endYear = pension.endYear || 9999;
 
-  // 수령 시작/종료 나이 확인
-  const startAge = pension.startAge || 65;
-  const endAge = pension.endAge || 100;
-
-  return currentAge >= startAge && currentAge <= endAge;
+  return year >= startYear && year <= endYear;
 }
 
 /**
@@ -997,20 +1248,60 @@ function isPensionActiveInYear(pension, year, currentAge) {
 function getYearlyAmount(item) {
   const frequency = item.frequency || "yearly";
 
-  switch (frequency) {
-    case "daily":
-      return item.amount * 365;
-    case "monthly":
-      return item.amount * 12;
-    case "quarterly":
-      return item.amount * 4;
-    case "yearly":
-      return item.amount;
-    case "once":
-      return item.amount;
-    default:
-      return item.amount;
+  // 연금의 경우 monthlyAmount 사용, 그 외에는 amount 사용
+  let amount;
+  if (item.monthlyAmount !== undefined && item.monthlyAmount !== null) {
+    amount = item.monthlyAmount;
+  } else if (item.amount !== undefined && item.amount !== null) {
+    amount = item.amount;
+  } else {
+    amount = 0; // 기본값 0
   }
+
+  const yearlyAmount = (() => {
+    switch (frequency) {
+      case "daily":
+        return amount * 365;
+      case "monthly":
+        return amount * 12;
+      case "quarterly":
+        return amount * 4;
+      case "yearly":
+        return amount;
+      case "once":
+        return amount;
+      default:
+        return amount;
+    }
+  })();
+
+  // 근로소득 디버깅 로그
+  if (
+    item.title &&
+    (item.title.includes("근로소득") || item.title.includes("급여"))
+  ) {
+    console.log(`getYearlyAmount: ${item.title}`, {
+      amount,
+      frequency,
+      yearlyAmount,
+      monthlyAmount: item.monthlyAmount,
+      originalAmount: item.amount,
+    });
+  }
+
+  // 연금 디버깅 로그
+  if (item.title && (item.title.includes("연금") || item.pensionType)) {
+    console.log(`getYearlyAmount: ${item.title} (연금)`, {
+      amount,
+      frequency,
+      yearlyAmount,
+      monthlyAmount: item.monthlyAmount,
+      originalAmount: item.amount,
+      pensionType: item.pensionType,
+    });
+  }
+
+  return yearlyAmount;
 }
 
 /**
@@ -1039,7 +1330,7 @@ function applyYearlyGrowthRate(
       // rateSettings가 제공된 경우 사용
       switch (category) {
         case "incomes":
-          if (item.title === "근로소득") {
+          if (item.title === "근로소득" || item.title === "급여") {
             growthRate = rateSettings.wageGrowthRate || WAGE_GROWTH_RATE;
           } else if (item.title === "사업소득") {
             growthRate =
@@ -1066,7 +1357,18 @@ function applyYearlyGrowthRate(
           growthRate = item.rate || 0;
           break;
         case "pensions":
-          growthRate = rateSettings.wageGrowthRate || WAGE_GROWTH_RATE;
+          // 연금 타입별 상승률 적용
+          if (item.pensionType === "national") {
+            // 국민연금: 동적 상승률 사용 (연금명 기준)
+            const pensionRate = rateSettings.dynamicRates?.[item.title];
+            growthRate = pensionRate !== undefined ? pensionRate : 2.5; // 기본값 2.5%
+          } else if (
+            item.pensionType === "retirement" ||
+            item.pensionType === "private"
+          ) {
+            // 퇴직연금/개인연금: 올해 넣는 원금에는 상승률 적용 안함
+            growthRate = 0;
+          }
           break;
         default:
           growthRate = 0;
@@ -1075,7 +1377,7 @@ function applyYearlyGrowthRate(
       // 기존 전역 변수 사용
       switch (category) {
         case "incomes":
-          if (item.title === "근로소득") {
+          if (item.title === "근로소득" || item.title === "급여") {
             growthRate = WAGE_GROWTH_RATE;
           } else if (item.title === "사업소득") {
             growthRate = BUSINESS_GROWTH_RATE;
@@ -1098,7 +1400,9 @@ function applyYearlyGrowthRate(
           growthRate = item.rate || 0;
           break;
         case "pensions":
-          growthRate = WAGE_GROWTH_RATE;
+          // 연금은 동적 상승률 사용 (연금명 기준)
+          const pensionRate = DYNAMIC_GROWTH_RATES[item.title];
+          growthRate = pensionRate !== undefined ? pensionRate : 2.5; // 기본값 2.5%
           break;
         default:
           growthRate = 0;
@@ -1118,6 +1422,20 @@ function applyYearlyGrowthRate(
   // 상승률 적용 (매년 작년 기준 × 상승률)
   const rate = growthRate / 100;
   const adjustedAmount = baseAmount * Math.pow(1 + rate, yearsElapsed);
+
+  // 근로소득 디버깅 로그
+  if (
+    item.title &&
+    (item.title.includes("근로소득") || item.title.includes("급여"))
+  ) {
+    console.log(`applyYearlyGrowthRate: ${item.title}`, {
+      baseAmount,
+      growthRate,
+      yearsElapsed,
+      rate,
+      adjustedAmount,
+    });
+  }
 
   return adjustedAmount;
 }
@@ -1295,7 +1613,7 @@ export function calculateYearlyAssetBreakdown(
   birthDate,
   rateSettings = null
 ) {
-  const { assets = [], savings = [] } = data;
+  const { assets = [], savings = [], pensions = [] } = data;
   const yearlyBreakdown = {};
 
   // 자산별 누적 값 추적 (세부 내역용)
@@ -1395,6 +1713,71 @@ export function calculateYearlyAssetBreakdown(
         assetDetails[cashKey].accumulated
       );
     }
+
+    // 연금 자산 처리 (퇴직연금/개인연금만)
+    pensions.forEach((pension) => {
+      if (
+        pension.pensionType === "retirement" ||
+        pension.pensionType === "private"
+      ) {
+        const pensionKey = pension.title;
+
+        if (!assetDetails[pensionKey]) {
+          assetDetails[pensionKey] = {
+            accumulated: 0,
+            totalAccumulatedAtEnd: null, // 적립 종료 시점의 총 자산 저장
+          };
+        }
+
+        const annualRate =
+          (rateSettings?.pensionReturnRate || PENSION_RETURN_RATE) / 100;
+        const startYear = pension.startYear;
+        const endYear = pension.endYear;
+        const receiptStartYear = endYear + 1;
+        const receiptEndYear = receiptStartYear + pension.receiptYears - 1;
+
+        // 적립 기간: 수익률 적용 + 자산 추가
+        if (year >= startYear && year <= endYear) {
+          // 이전 년도 값에 수익률 적용 (올해 원금 추가 전)
+          if (year > startYear) {
+            assetDetails[pensionKey].accumulated *= 1 + annualRate;
+          }
+
+          // 새로운 적립금 추가 (올해 넣는 원금)
+          const yearlyAmount = getYearlyAmount(pension);
+          const adjustedAmount = applyYearlyGrowthRate(
+            yearlyAmount,
+            pension,
+            year,
+            "pensions",
+            rateSettings
+          );
+          assetDetails[pensionKey].accumulated += adjustedAmount;
+
+          // 적립 종료 시점의 총 자산 저장
+          if (year === endYear) {
+            assetDetails[pensionKey].totalAccumulatedAtEnd =
+              assetDetails[pensionKey].accumulated;
+          }
+        }
+
+        // 수령 기간: 수익률 없이 N분의 1로 차감
+        if (year >= receiptStartYear && year <= receiptEndYear) {
+          // 적립 종료 시점의 실제 자산을 수령기간으로 나눈 금액만큼 차감
+          const totalAccumulated =
+            assetDetails[pensionKey].totalAccumulatedAtEnd;
+          if (totalAccumulated) {
+            const yearlyReceiptAmount = totalAccumulated / pension.receiptYears;
+            assetDetails[pensionKey].accumulated -= yearlyReceiptAmount;
+          }
+        }
+
+        // 해당 년도의 자산 가치 저장 (만원 미만 버림)
+        yearlyBreakdown[year][pensionKey] = Math.floor(
+          assetDetails[pensionKey].accumulated
+        );
+      }
+    });
   }
 
   return yearlyBreakdown;
@@ -1584,15 +1967,26 @@ export function createDefaultIncomes(profile) {
 export function createDefaultExpenses(profile) {
   const currentYear = new Date().getFullYear();
   const birthYear = new Date(profile.birthDate).getFullYear();
+  const retirementYear = birthYear + profile.retirementAge;
   const deathYear = birthYear + 89; // 90세까지 (89 + 1 = 90)
 
   const baseTime = new Date();
 
   return [
     {
-      title: "생활비",
+      title: "은퇴 전 생활비",
       amount: 0, // 기본값 0원
       startDate: `${currentYear}-01-01`,
+      endDate: `${retirementYear - 1}-12-31`, // 은퇴 전까지
+      frequency: "monthly", // 월 단위
+      note: "물가상승률 적용",
+      category: "expenses",
+      createdAt: new Date(baseTime.getTime() - 2000), // 기본 지출
+    },
+    {
+      title: "은퇴 후 생활비",
+      amount: 0, // 기본값 0원
+      startDate: `${retirementYear}-01-01`,
       endDate: `${deathYear}-12-31`, // 90세까지
       frequency: "monthly", // 월 단위
       note: "물가상승률 적용",
@@ -1621,6 +2015,28 @@ function calculateAge(birthDate) {
 }
 
 /**
+ * 연금 적립 금액 계산
+ * @param {Object} pension - 연금 데이터
+ * @param {number} endYear - 적립 종료 년도
+ * @param {Object} rateSettings - 비율 설정
+ * @returns {number} 적립된 연금 금액
+ */
+function calculatePensionAccumulated(pension, endYear, rateSettings) {
+  const monthlyAmount = pension.monthlyAmount || 0;
+  const annualRate = (pension.pensionRate || 0) / 100;
+  const startYear = pension.startYear || 0;
+
+  let accumulated = 0;
+
+  for (let year = startYear; year < endYear; year++) {
+    const yearlyAmount = monthlyAmount * 12;
+    accumulated = (accumulated + yearlyAmount) * (1 + annualRate);
+  }
+
+  return accumulated;
+}
+
+/**
  * 기본 현금 자산 생성
  * @param {string} birthDate - 생년월일
  * @param {number} retirementAge - 은퇴 나이
@@ -1638,7 +2054,7 @@ export function createDefaultAssets(birthDate, retirementAge) {
       title: "현금",
       amount: 0, // 기본값 0원
       startDate: `${currentYear}-01-01`,
-      endDate: `${deathYear}-12-31`, // 90세까지
+      endDate: `${currentYear}-12-31`, // 현재 년도만
       frequency: "yearly", // 년 단위
       note: "기본 수익률 적용",
       rate: 0, // 현금은 수익률 0%

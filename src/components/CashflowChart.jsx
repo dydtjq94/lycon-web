@@ -1,5 +1,5 @@
 // 현금 흐름 시뮬레이션 차트 컴포넌트 (년 단위 Bar Chart)
-import React from "react";
+import React, { memo } from "react";
 import {
   BarChart,
   Bar,
@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import styles from "./CashflowChart.module.css";
 
-export default function CashflowChart({ data, profile = null }) {
+const CashflowChart = memo(function CashflowChart({ data, profile = null }) {
   if (!data || data.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -103,6 +103,7 @@ export default function CashflowChart({ data, profile = null }) {
     year: item.year,
     age: item.age, // 나이 정보 추가
     netCashflow: Number(item.netCashflow) || 0,
+    pension: Number(item.pension) || 0, // 연금 정보 추가
   }));
 
   // X축 라벨 포맷팅 함수 (나이 기반)
@@ -150,6 +151,7 @@ export default function CashflowChart({ data, profile = null }) {
         <BarChart
           data={chartData}
           margin={{ top: 50, right: 10, left: 40, bottom: 30 }}
+          animationDuration={0}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
@@ -258,4 +260,6 @@ export default function CashflowChart({ data, profile = null }) {
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+export default CashflowChart;

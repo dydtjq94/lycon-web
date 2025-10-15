@@ -1,5 +1,5 @@
 // 자산 시뮬레이션 차트 컴포넌트 (년 단위 Bar Chart with 자산 세부 내역)
-import React from "react";
+import React, { memo } from "react";
 import {
   BarChart,
   Bar,
@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import styles from "./AssetProjectionChart.module.css";
 
-export default function AssetProjectionChart({
+const AssetProjectionChart = memo(function AssetProjectionChart({
   data,
   assetBreakdown,
   profile = null,
@@ -131,9 +131,10 @@ export default function AssetProjectionChart({
   }
 
   // 디버깅을 위한 로그
-  console.log("AssetProjectionChart - assetBreakdown:", assetBreakdown);
-  console.log("AssetProjectionChart - assetTypes:", Array.from(assetTypes));
-  console.log("AssetProjectionChart - chartData:", chartData);
+  // 디버깅 로그 제거
+  // console.log("AssetProjectionChart - assetBreakdown:", assetBreakdown);
+  // console.log("AssetProjectionChart - assetTypes:", Array.from(assetTypes));
+  // console.log("AssetProjectionChart - chartData:", chartData);
 
   // 자산 데이터가 없을 때 빈 상태 표시
   if (assetTypes.size === 0) {
@@ -151,6 +152,7 @@ export default function AssetProjectionChart({
         <BarChart
           data={chartData}
           margin={{ top: 50, right: 10, left: 40, bottom: 30 }}
+          animationDuration={0}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
@@ -239,4 +241,6 @@ export default function AssetProjectionChart({
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+export default AssetProjectionChart;

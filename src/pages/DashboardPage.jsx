@@ -28,11 +28,13 @@ import {
   updateRentalGrowthRate,
   updateInflationRate,
   updateDefaultReturnRate,
+  updatePensionReturnRate,
   getWageGrowthRate,
   getBusinessGrowthRate,
   getRentalGrowthRate,
   getInflationRate,
   getDefaultReturnRate,
+  getPensionReturnRate,
   setDynamicGrowthRate,
   getDynamicGrowthRate,
   getAllDynamicGrowthRates,
@@ -71,6 +73,7 @@ export default function DashboardPage() {
     rentalGrowthRate: getRentalGrowthRate(),
     inflationRate: getInflationRate(),
     defaultReturnRate: getDefaultReturnRate(),
+    pensionReturnRate: 5.0, // 연금 수익률 기본값
   });
 
   // 동적 상승률 상태
@@ -80,18 +83,81 @@ export default function DashboardPage() {
   const calculateDataHash = (profile, data, settings, dynamicRates) => {
     if (!profile || !data) return null;
 
+    // 실제 데이터 내용만 해시에 포함 (참조가 아닌 값)
     const dataString = JSON.stringify({
       profile: {
         birthDate: profile.birthDate,
         retirementAge: profile.retirementAge,
       },
       data: {
-        incomes: data.incomes || [],
-        assets: data.assets || [],
-        debts: data.debts || [],
-        expenses: data.expenses || [],
-        savings: data.savings || [],
-        pensions: data.pensions || [],
+        incomes: (data.incomes || []).map((item) => ({
+          id: item.id,
+          title: item.title,
+          amount: item.amount,
+          monthlyAmount: item.monthlyAmount,
+          frequency: item.frequency,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          startYear: item.startYear,
+          endYear: item.endYear,
+          memo: item.memo,
+        })),
+        assets: (data.assets || []).map((item) => ({
+          id: item.id,
+          title: item.title,
+          amount: item.amount,
+          frequency: item.frequency,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          startYear: item.startYear,
+          endYear: item.endYear,
+          rate: item.rate,
+          memo: item.memo,
+        })),
+        debts: (data.debts || []).map((item) => ({
+          id: item.id,
+          title: item.title,
+          principalAmount: item.principalAmount,
+          monthlyPayment: item.monthlyPayment,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          startYear: item.startYear,
+          endYear: item.endYear,
+          rate: item.rate,
+          memo: item.memo,
+        })),
+        expenses: (data.expenses || []).map((item) => ({
+          id: item.id,
+          title: item.title,
+          amount: item.amount,
+          frequency: item.frequency,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          startYear: item.startYear,
+          endYear: item.endYear,
+          memo: item.memo,
+        })),
+        savings: (data.savings || []).map((item) => ({
+          id: item.id,
+          title: item.title,
+          amount: item.amount,
+          frequency: item.frequency,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          startYear: item.startYear,
+          endYear: item.endYear,
+          memo: item.memo,
+        })),
+        pensions: (data.pensions || []).map((item) => ({
+          id: item.id,
+          title: item.title,
+          pensionType: item.pensionType,
+          monthlyAmount: item.monthlyAmount,
+          startYear: item.startYear,
+          endYear: item.endYear,
+          receiptYears: item.receiptYears,
+          memo: item.memo,
+        })),
       },
       settings: settings || {},
       dynamicRates: dynamicRates || {},
@@ -110,6 +176,15 @@ export default function DashboardPage() {
   // 시뮬레이션 계산 함수
   const calculateSimulation = (profile, data) => {
     if (!profile || !data) return null;
+
+    console.log("시뮬레이션 계산 시작 - 데이터 확인:", {
+      incomes: data.incomes?.length || 0,
+      expenses: data.expenses?.length || 0,
+      pensions: data.pensions?.length || 0,
+      assets: data.assets?.length || 0,
+      savings: data.savings?.length || 0,
+      debts: data.debts?.length || 0,
+    });
 
     // 데이터가 비어있는지 확인
     const hasData =
@@ -195,7 +270,7 @@ export default function DashboardPage() {
       setSimulationCache(simulationResult);
       setLastDataHash(currentDataHash);
     }
-  }, [profile, data, settings, dynamicRates, lastDataHash]);
+  }, [profile, data, settings, dynamicRates]);
 
   // 프로필 데이터 로드
   useEffect(() => {
@@ -229,6 +304,7 @@ export default function DashboardPage() {
           profileId
         );
         console.log("저장된 비율 설정:", savedSettings);
+        console.log("동적 상승률:", savedSettings?.dynamicRates);
 
         if (savedSettings) {
           const newSettings = {
@@ -252,6 +328,10 @@ export default function DashboardPage() {
               savedSettings.defaultReturnRate !== undefined
                 ? savedSettings.defaultReturnRate
                 : getDefaultReturnRate(),
+            pensionReturnRate:
+              savedSettings.pensionReturnRate !== undefined
+                ? savedSettings.pensionReturnRate
+                : 5.0,
           };
 
           console.log("복원할 설정:", newSettings);
@@ -342,6 +422,14 @@ export default function DashboardPage() {
             }
           }
 
+          // 데이터 로딩 디버깅
+          if (category === "expenses") {
+            console.log(`지출 데이터 로드됨: ${items.length}개 항목`, items);
+          }
+          if (category === "incomes") {
+            console.log(`수입 데이터 로드됨: ${items.length}개 항목`, items);
+          }
+
           setData((prev) => {
             const newData = {
               ...prev,
@@ -349,7 +437,12 @@ export default function DashboardPage() {
             };
 
             // 동적 상승률 복원 (새로고침 시)
-            if (category === "incomes" || category === "expenses") {
+            if (
+              category === "incomes" ||
+              category === "expenses" ||
+              category === "savings" ||
+              category === "pensions"
+            ) {
               const newDynamicRates = {};
               items.forEach((item) => {
                 if (
@@ -372,7 +465,12 @@ export default function DashboardPage() {
               });
 
               if (Object.keys(newDynamicRates).length > 0) {
-                setDynamicRates((prev) => ({ ...prev, ...newDynamicRates }));
+                console.log("동적 상승률 업데이트:", newDynamicRates);
+                setDynamicRates((prev) => {
+                  const updated = { ...prev, ...newDynamicRates };
+                  console.log("동적 상승률 상태 업데이트:", updated);
+                  return updated;
+                });
               }
             }
 
@@ -411,17 +509,32 @@ export default function DashboardPage() {
       setError(null);
       await dataItemService.createItem(profileId, modalCategory, itemData);
 
-      // 동적 상승률 자동 추가 (수입/지출/저축 항목인 경우)
+      // 동적 상승률 자동 추가 (수입/지출/저축/연금 항목인 경우)
       if (
         (modalCategory === "incomes" ||
           modalCategory === "expenses" ||
-          modalCategory === "savings") &&
+          modalCategory === "savings" ||
+          modalCategory === "pensions") &&
         itemData.title
       ) {
-        setDynamicGrowthRate(itemData.title, 2.5); // 기본값 2.5%
+        // 연금 타입별로 다른 기본값 설정
+        let defaultRate = 2.5; // 기본값
+        if (modalCategory === "pensions") {
+          if (itemData.pensionType === "national") {
+            defaultRate = 2.5; // 국민연금은 동적 상승률
+          } else if (
+            itemData.pensionType === "retirement" ||
+            itemData.pensionType === "private"
+          ) {
+            // 퇴직연금/개인연금은 연금 수익률을 사용하므로 동적 상승률 추가하지 않음
+            return;
+          }
+        }
+
+        setDynamicGrowthRate(itemData.title, defaultRate);
         setDynamicRates((prev) => ({
           ...prev,
-          [itemData.title]: 2.5,
+          [itemData.title]: defaultRate,
         }));
       }
 
@@ -453,14 +566,39 @@ export default function DashboardPage() {
   };
 
   // 데이터 삭제 핸들러
-  const handleDeleteData = async (itemId, itemTitle) => {
+  const handleDeleteData = async (itemId, itemTitle, category) => {
     if (window.confirm(`"${itemTitle}" 항목을 삭제하시겠습니까?`)) {
       try {
         setError(null);
-        await dataItemService.deleteItem(profileId, selectedCategory, itemId); // Use selectedCategory here
 
-        // 동적 상승률도 함께 삭제
-        if (dynamicRates[itemTitle]) {
+        // 파라미터 유효성 검사
+        if (!itemId || !category) {
+          throw new Error(
+            `삭제에 필요한 정보가 부족합니다. itemId: ${itemId}, category: ${category}`
+          );
+        }
+
+        if (!profileId) {
+          throw new Error("프로필 ID가 없습니다. 페이지를 새로고침해주세요.");
+        }
+
+        await dataItemService.deleteItem(profileId, category, itemId);
+
+        // 동적 상승률도 함께 삭제 (수입/지출/저축/연금 항목인 경우)
+        if (
+          (category === "incomes" ||
+            category === "expenses" ||
+            category === "savings" ||
+            category === "pensions") &&
+          dynamicRates[itemTitle]
+        ) {
+          // 연금의 경우 국민연금만 동적 상승률 삭제
+          if (category === "pensions") {
+            // 연금 데이터에서 타입 확인 (임시로 모든 연금에 대해 동적 상승률 삭제)
+            // 실제로는 삭제할 연금의 타입을 확인해야 하지만,
+            // 국민연금만 동적 상승률을 사용하므로 일단 삭제
+          }
+
           removeDynamicGrowthRate(itemTitle);
           setDynamicRates((prev) => {
             const newRates = { ...prev };
@@ -615,16 +753,28 @@ export default function DashboardPage() {
                     updateRentalGrowthRate(settings.rentalGrowthRate);
                     updateInflationRate(settings.inflationRate);
                     updateDefaultReturnRate(settings.defaultReturnRate);
+                    updatePensionReturnRate(settings.pensionReturnRate);
+
+                    // settings 상태도 업데이트
+                    setSettings(settings);
 
                     // Firebase에 비율 설정 저장
-                    await rateSettingsService.saveRateSettings(profileId, {
+                    const rateSettingsToSave = {
                       wageGrowthRate: settings.wageGrowthRate,
                       businessGrowthRate: settings.businessGrowthRate,
                       rentalGrowthRate: settings.rentalGrowthRate,
                       inflationRate: settings.inflationRate,
                       defaultReturnRate: settings.defaultReturnRate,
+                      pensionReturnRate: settings.pensionReturnRate,
                       dynamicRates: dynamicRates,
-                    });
+                    };
+
+                    console.log("저장할 비율 설정:", rateSettingsToSave);
+                    console.log("현재 dynamicRates 상태:", dynamicRates);
+                    await rateSettingsService.saveRateSettings(
+                      profileId,
+                      rateSettingsToSave
+                    );
 
                     setLastDataHash(null);
                     console.log("✅ 비율 설정이 Firebase에 저장되었습니다.");
@@ -722,6 +872,24 @@ export default function DashboardPage() {
                     setSettings((prev) => ({
                       ...prev,
                       defaultReturnRate: parseFloat(e.target.value),
+                    }))
+                  }
+                  step="0.1"
+                  min="0"
+                  max="20"
+                />
+                <span>%</span>
+              </div>
+
+              <div className={styles.settingField}>
+                <label>연금 수익률</label>
+                <input
+                  type="number"
+                  value={settings.pensionReturnRate}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      pensionReturnRate: parseFloat(e.target.value),
                     }))
                   }
                   step="0.1"
@@ -850,8 +1018,8 @@ export default function DashboardPage() {
                 onEdit={(itemId, updateData) =>
                   handleUpdateData(itemId, updateData)
                 }
-                onDelete={(itemId, itemTitle) =>
-                  handleDeleteData(itemId, itemTitle)
+                onDelete={(itemId, itemTitle, category) =>
+                  handleDeleteData(itemId, itemTitle, category)
                 }
               />
             </div>
@@ -884,6 +1052,7 @@ export default function DashboardPage() {
         onClose={handleCloseModal}
         onAdd={handleAddData}
         category={modalCategory}
+        profile={profile}
       />
     </div>
   );

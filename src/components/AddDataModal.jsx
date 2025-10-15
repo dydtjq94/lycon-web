@@ -3,7 +3,13 @@ import React, { useState, useEffect } from "react";
 import { getTodayString, isValidDate } from "../utils/date.js";
 import styles from "./AddDataModal.module.css";
 
-export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
+export default function AddDataModal({
+  isOpen,
+  onClose,
+  onAdd,
+  category,
+  profile,
+}) {
   const today = getTodayString();
   const [formData, setFormData] = useState({
     title: "",
@@ -21,9 +27,11 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
     monthlyPayment: "",
     minimumPaymentRate: "",
     // 연금 관련 필드
-    pensionType: "national", // national, private, retirement
-    startAge: 65, // 수령 시작 나이
-    endAge: 100, // 수령 종료 나이 (생존 가정)
+    pensionType: "national", // 국민연금, 퇴직연금, 개인연금
+    startYear: "", // 수령 시작 년도 (국민연금) 또는 적립 시작 년도 (퇴직/개인연금)
+    endYear: "", // 적립 종료 년도 (퇴직/개인연금)
+    monthlyAmount: "", // 월 수령 금액 (국민연금) 또는 월 적립 금액 (퇴직/개인연금)
+    receiptYears: "", // 수령 기간 (퇴직/개인연금)
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,28 +42,49 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
       setErrors({});
       // 모달이 열릴 때마다 폼 초기화
       const currentYear = new Date().getFullYear();
+      const birthYear = profile?.birthDate
+        ? new Date(profile.birthDate).getFullYear()
+        : currentYear - 30;
+
+      const pensionStartYear =
+        category === "pensions" ? String(birthYear + 64) : String(currentYear);
+      const pensionEndYear =
+        category === "pensions"
+          ? String(birthYear + profile?.retirementAge - 1)
+          : String(currentYear);
+
+      console.log("연금 모달 초기화:", {
+        birthYear,
+        pensionStartYear,
+        pensionEndYear,
+        category,
+      });
+
       setFormData({
         title: "",
         amount: "",
-        startYear: currentYear,
-        endYear: currentYear,
+        startYear: pensionStartYear,
+        endYear: String(currentYear),
         frequency: "monthly",
         note: "",
         rate: "",
         growthRate: "",
-        // 부채 관련 필드 초기화
         principalAmount: "",
         interestRate: "",
         repaymentType: "equal_payment",
         monthlyPayment: "",
         minimumPaymentRate: "",
-        // 연금 관련 필드 초기화
+        // 연금 관련 필드
         pensionType: "national",
-        startAge: 65,
-        endAge: 100,
+        startYear:
+          category === "pensions" ? pensionStartYear : String(currentYear),
+        endYear: category === "pensions" ? pensionEndYear : String(currentYear),
+        monthlyAmount: category === "pensions" ? "200" : "",
+        pensionRate: category === "pensions" ? "3.0" : "",
+        receiptYears: category === "pensions" ? "10" : "",
       });
     }
-  }, [isOpen]);
+  }, [isOpen, category, profile]);
 
   // 카테고리별 설정
   const categoryConfig = {
@@ -117,38 +146,10 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // 연금 종류 변경 시 기본값 설정
-    if (name === "pensionType") {
-      let defaultStartAge = 65;
-      let defaultEndAge = 100;
-
-      switch (value) {
-        case "national":
-          defaultStartAge = 65;
-          defaultEndAge = 100;
-          break;
-        case "private":
-          defaultStartAge = 60;
-          defaultEndAge = 100;
-          break;
-        case "retirement":
-          defaultStartAge = 55;
-          defaultEndAge = 100;
-          break;
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-        startAge: defaultStartAge,
-        endAge: defaultEndAge,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
     // 해당 필드의 오류 제거
     if (errors[name]) {
@@ -211,32 +212,39 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
   const validateForm = () => {
     const newErrors = {};
 
-    // 제목 검증
-    if (!formData.title.trim()) {
+    // 제목 검증 (연금이 아닌 경우에만)
+    if (category !== "pensions" && !formData.title.trim()) {
       newErrors.title = "제목을 입력해주세요.";
     }
 
-    // 금액 검증 (부채가 아닌 경우에만)
-    if (category !== "debts" && (!formData.amount || formData.amount <= 0)) {
+    // 금액 검증 (부채와 연금이 아닌 경우에만)
+    if (
+      category !== "debts" &&
+      category !== "pensions" &&
+      (!formData.amount || formData.amount <= 0)
+    ) {
       newErrors.amount = "금액을 입력해주세요.";
     }
 
-    // 시작년도 검증
+    // 시작년도 검증 (연금이 아닌 경우에만)
     if (
-      !formData.startYear ||
-      formData.startYear < 1900 ||
-      formData.startYear > 2100
+      category !== "pensions" &&
+      (!formData.startYear ||
+        formData.startYear < 1900 ||
+        formData.startYear > 2100)
     ) {
       newErrors.startYear = "올바른 시작년도를 입력해주세요.";
     }
 
-    // 종료년도 검증 (입력된 경우)
+    // 종료년도 검증 (입력된 경우, 연금이 아닌 경우에만)
     if (
+      category !== "pensions" &&
       formData.endYear &&
       (formData.endYear < 1900 || formData.endYear > 2100)
     ) {
       newErrors.endYear = "올바른 종료년도를 입력해주세요.";
     } else if (
+      category !== "pensions" &&
       formData.endYear &&
       formData.startYear &&
       formData.endYear < formData.startYear
@@ -262,9 +270,21 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
       newErrors.growthRate = "상승률은 -100%에서 100% 사이여야 합니다.";
     }
 
-    // 연금 관련 검증 (단순화)
-    if (config.showPensionFields) {
-      // 연금 종류는 필수이지만 기본값이 있으므로 검증 생략
+    // 연금 관련 검증
+    if (category === "pensions") {
+      if (!formData.title?.trim()) {
+        newErrors.title = "연금명을 입력해주세요.";
+      }
+      if (
+        !formData.startYear ||
+        formData.startYear < 1900 ||
+        formData.startYear > 2100
+      ) {
+        newErrors.startYear = "올바른 수령시작년도를 입력해주세요.";
+      }
+      if (!formData.monthlyAmount || formData.monthlyAmount <= 0) {
+        newErrors.monthlyAmount = "월 수령금액을 입력해주세요.";
+      }
     }
 
     // 부채 관련 검증
@@ -358,7 +378,34 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
             ? Number(formData.minimumPaymentRate)
             : null,
         // 연금 관련 필드
-        pensionType: config.showPensionFields ? formData.pensionType : null,
+        pensionType: category === "pensions" ? formData.pensionType : null,
+        startYear:
+          config.showPensionFields && formData.startYear
+            ? Number(formData.startYear)
+            : null,
+        endYear:
+          category === "pensions"
+            ? formData.pensionType === "national"
+              ? profile
+                ? new Date(profile.birthDate).getFullYear() + 90
+                : 2100
+              : formData.endYear
+              ? Number(formData.endYear)
+              : null
+            : formData.endYear,
+        monthlyAmount:
+          config.showPensionFields && formData.monthlyAmount
+            ? Number(formData.monthlyAmount)
+            : null,
+        // pensionRate는 전역 설정에서 가져오므로 null로 설정
+        pensionRate: null,
+        receiptYears:
+          category === "pensions" &&
+          (formData.pensionType === "retirement" ||
+            formData.pensionType === "private")
+            ? Number(formData.receiptYears)
+            : null,
+        frequency: category === "pensions" ? "monthly" : formData.frequency,
       };
 
       await onAdd(submitData);
@@ -429,46 +476,58 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
             <div className={styles.errorBanner}>{errors.form}</div>
           )}
 
-          <div className={styles.field}>
-            <label htmlFor="title" className={styles.label}>
-              제목 *
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className={`${styles.input} ${
-                errors.title ? styles.inputError : ""
-              }`}
-              placeholder={
-                category === "debts"
-                  ? "예: 주택담보대출, 신용대출, 카드론"
+          {/* 제목 필드 - 연금을 제외한 모든 카테고리에서 표시 */}
+          {category !== "pensions" && (
+            <div className={styles.field}>
+              <label htmlFor="title" className={styles.label}>
+                {category === "debts"
+                  ? "대출명"
                   : category === "incomes"
-                  ? "예: 급여, 사업 소득"
+                  ? "수입명"
                   : category === "expenses"
-                  ? "예: 생활비, 교육비, 의료비"
+                  ? "지출명"
                   : category === "savings"
-                  ? "예: 정기저축, 적금, 목돈마련"
-                  : category === "pensions"
-                  ? "예: 국민연금, 개인연금(IRP), 퇴직연금"
+                  ? "저축명"
                   : category === "assets"
-                  ? "예: 예금, 주식, 부동산"
-                  : "제목을 입력하세요"
-              }
-              disabled={isSubmitting}
-            />
-            {errors.title && (
-              <span className={styles.errorText}>{errors.title}</span>
-            )}
-          </div>
+                  ? "자산명"
+                  : "제목"}
+                *
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className={`${styles.input} ${
+                  errors.title ? styles.inputError : ""
+                }`}
+                placeholder={
+                  category === "debts"
+                    ? "예: 주택담보대출, 신용대출, 카드론"
+                    : category === "incomes"
+                    ? "예: 급여, 사업 소득"
+                    : category === "expenses"
+                    ? "예: 생활비, 교육비, 의료비"
+                    : category === "savings"
+                    ? "예: 정기저축, 적금, 목돈마련"
+                    : category === "assets"
+                    ? "예: 예금, 주식, 부동산"
+                    : "제목을 입력하세요"
+                }
+                disabled={isSubmitting}
+              />
+              {errors.title && (
+                <span className={styles.errorText}>{errors.title}</span>
+              )}
+            </div>
+          )}
 
-          {/* 부채가 아닌 경우에만 금액 필드 표시 */}
-          {category !== "debts" && (
+          {/* 부채와 연금이 아닌 경우에만 금액 필드 표시 */}
+          {category !== "debts" && category !== "pensions" && (
             <div className={styles.field}>
               <label htmlFor="amount" className={styles.label}>
-                {category === "pensions" ? "월 연금액 (만원)" : "금액 (만원)"} *
+                금액 (만원) *
               </label>
               <input
                 type="text"
@@ -481,9 +540,7 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
                 className={`${styles.input} ${
                   errors.amount ? styles.inputError : ""
                 }`}
-                placeholder={
-                  category === "pensions" ? "예: 200 (월 200만원)" : "예: 5000"
-                }
+                placeholder="예: 5000"
                 disabled={isSubmitting}
               />
               {errors.amount && (
@@ -492,8 +549,8 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
             </div>
           )}
 
-          {/* 부채가 아닌 경우에만 빈도 필드 표시 */}
-          {category !== "debts" && (
+          {/* 부채와 연금이 아닌 경우에만 빈도 필드 표시 */}
+          {category !== "debts" && category !== "pensions" && (
             <div className={styles.field}>
               <label htmlFor="frequency" className={styles.label}>
                 빈도 *
@@ -512,8 +569,8 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
             </div>
           )}
 
-          {/* 부채가 아닌 경우의 날짜 입력 */}
-          {category !== "debts" && (
+          {/* 부채와 연금이 아닌 경우의 날짜 입력 */}
+          {category !== "debts" && category !== "pensions" && (
             <>
               {/* 시작년도, 끝년도 (빈도와 관계없이 동일) */}
               <div className={styles.field}>
@@ -736,23 +793,226 @@ export default function AddDataModal({ isOpen, onClose, onAdd, category }) {
           {category === "pensions" && (
             <>
               <div className={styles.field}>
-                <label htmlFor="pensionType" className={styles.label}>
-                  연금 종류 *
-                </label>
-                <select
-                  id="pensionType"
-                  name="pensionType"
-                  value={formData.pensionType}
-                  onChange={handleChange}
-                  className={styles.input}
-                  disabled={isSubmitting}
-                >
-                  <option value="national">국민연금</option>
-                  <option value="private">개인연금</option>
-                  <option value="retirement">퇴직연금</option>
-                </select>
-                <span className={styles.helpText}>연금 종류를 선택하세요</span>
+                <label className={styles.label}>연금 타입 *</label>
+                <div className={styles.radioGroup}>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="pensionType"
+                      value="national"
+                      checked={formData.pensionType === "national"}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                    />
+                    <span className={styles.radioText}>국민연금</span>
+                  </label>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="pensionType"
+                      value="retirement"
+                      checked={formData.pensionType === "retirement"}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                    />
+                    <span className={styles.radioText}>퇴직연금</span>
+                  </label>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="pensionType"
+                      value="private"
+                      checked={formData.pensionType === "private"}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                    />
+                    <span className={styles.radioText}>개인연금</span>
+                  </label>
+                </div>
               </div>
+
+              <div className={styles.field}>
+                <label htmlFor="title" className={styles.label}>
+                  연금명 *
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className={`${styles.input} ${
+                    errors.title ? styles.inputError : ""
+                  }`}
+                  placeholder="예: 국민연금, IRP, ISA"
+                  disabled={isSubmitting}
+                />
+                {errors.title && (
+                  <span className={styles.errorText}>{errors.title}</span>
+                )}
+              </div>
+
+              {/* 국민연금 필드 */}
+              {formData.pensionType === "national" && (
+                <>
+                  <div className={styles.field}>
+                    <label htmlFor="startYear" className={styles.label}>
+                      수령시작년도 *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      id="startYear"
+                      name="startYear"
+                      value={formData.startYear}
+                      onChange={handleChange}
+                      className={`${styles.input} ${
+                        errors.startYear ? styles.inputError : ""
+                      }`}
+                      placeholder="예: 2048"
+                      disabled={isSubmitting}
+                    />
+                    {errors.startYear && (
+                      <span className={styles.errorText}>
+                        {errors.startYear}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className={styles.field}>
+                    <label htmlFor="monthlyAmount" className={styles.label}>
+                      월 수령금액 (만원) *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      id="monthlyAmount"
+                      name="monthlyAmount"
+                      value={formData.monthlyAmount}
+                      onChange={handleChange}
+                      className={`${styles.input} ${
+                        errors.monthlyAmount ? styles.inputError : ""
+                      }`}
+                      placeholder="예: 200"
+                      disabled={isSubmitting}
+                    />
+                    {errors.monthlyAmount && (
+                      <span className={styles.errorText}>
+                        {errors.monthlyAmount}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* 퇴직연금/개인연금 필드 */}
+              {(formData.pensionType === "retirement" ||
+                formData.pensionType === "private") && (
+                <>
+                  <div className={styles.field}>
+                    <label htmlFor="startYear" className={styles.label}>
+                      적립시작년도 *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      id="startYear"
+                      name="startYear"
+                      value={formData.startYear}
+                      onChange={handleChange}
+                      className={`${styles.input} ${
+                        errors.startYear ? styles.inputError : ""
+                      }`}
+                      placeholder="예: 2025"
+                      disabled={isSubmitting}
+                    />
+                    {errors.startYear && (
+                      <span className={styles.errorText}>
+                        {errors.startYear}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className={styles.field}>
+                    <label htmlFor="endYear" className={styles.label}>
+                      적립종료년도 *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      id="endYear"
+                      name="endYear"
+                      value={formData.endYear}
+                      onChange={handleChange}
+                      className={`${styles.input} ${
+                        errors.endYear ? styles.inputError : ""
+                      }`}
+                      placeholder="예: 2048"
+                      disabled={isSubmitting}
+                    />
+                    {errors.endYear && (
+                      <span className={styles.errorText}>{errors.endYear}</span>
+                    )}
+                  </div>
+
+                  <div className={styles.field}>
+                    <label htmlFor="monthlyAmount" className={styles.label}>
+                      월 적립금액 (만원) *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      id="monthlyAmount"
+                      name="monthlyAmount"
+                      value={formData.monthlyAmount}
+                      onChange={handleChange}
+                      className={`${styles.input} ${
+                        errors.monthlyAmount ? styles.inputError : ""
+                      }`}
+                      placeholder="예: 50"
+                      disabled={isSubmitting}
+                    />
+                    {errors.monthlyAmount && (
+                      <span className={styles.errorText}>
+                        {errors.monthlyAmount}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className={styles.field}>
+                    <label htmlFor="receiptYears" className={styles.label}>
+                      수령기간 (년) *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      id="receiptYears"
+                      name="receiptYears"
+                      value={formData.receiptYears}
+                      onChange={handleChange}
+                      className={`${styles.input} ${
+                        errors.receiptYears ? styles.inputError : ""
+                      }`}
+                      placeholder="예: 10"
+                      disabled={isSubmitting}
+                    />
+                    {errors.receiptYears && (
+                      <span className={styles.errorText}>
+                        {errors.receiptYears}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* 연금은 항상 월 단위로 설정 */}
+              <input type="hidden" name="frequency" value="monthly" />
             </>
           )}
 

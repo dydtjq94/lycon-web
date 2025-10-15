@@ -66,7 +66,10 @@ export default function DataList({ items, category, onEdit, onDelete }) {
     setEditingId(item.id);
     setEditData({
       title: item.title,
-      amount: item.amount,
+      amount:
+        category === "pensions"
+          ? item.monthlyAmount || item.amount
+          : item.amount,
       startYear: item.startDate
         ? parseInt(item.startDate.split("-")[0])
         : new Date().getFullYear(),
@@ -85,6 +88,18 @@ export default function DataList({ items, category, onEdit, onDelete }) {
       minimumPaymentRate: item.minimumPaymentRate || "",
       // 연금 관련 필드
       pensionType: item.pensionType || "national",
+      startYear:
+        item.startYear ||
+        (item.startDate
+          ? parseInt(item.startDate.split("-")[0])
+          : new Date().getFullYear()),
+      endYear:
+        item.endYear ||
+        (item.endDate
+          ? parseInt(item.endDate.split("-")[0])
+          : new Date().getFullYear()),
+      monthlyAmount: item.monthlyAmount || "",
+      receiptYears: item.receiptYears || "",
     });
     setErrors({});
   };
@@ -234,7 +249,8 @@ export default function DataList({ items, category, onEdit, onDelete }) {
       // AddDataModal과 동일한 형식으로 데이터 변환
       const submitData = {
         title: editData.title.trim(),
-        ...(category !== "debts" && { amount: Number(editData.amount) }),
+        ...(category !== "debts" &&
+          category !== "pensions" && { amount: Number(editData.amount) }),
         startDate: `${editData.startYear}-01-01`,
         endDate: editData.endYear ? `${editData.endYear}-12-31` : null,
         ...(category !== "debts" && { frequency: editData.frequency }),
@@ -261,7 +277,24 @@ export default function DataList({ items, category, onEdit, onDelete }) {
           config.showDebtFields && editData.minimumPaymentRate
             ? Number(editData.minimumPaymentRate)
             : null,
+        // 연금 관련 필드
         pensionType: config.showPensionFields ? editData.pensionType : null,
+        startYear:
+          config.showPensionFields && editData.startYear
+            ? Number(editData.startYear)
+            : null,
+        endYear:
+          config.showPensionFields && editData.endYear
+            ? Number(editData.endYear)
+            : null,
+        monthlyAmount:
+          config.showPensionFields && editData.monthlyAmount
+            ? Number(editData.monthlyAmount)
+            : null,
+        receiptYears:
+          config.showPensionFields && editData.receiptYears
+            ? Number(editData.receiptYears)
+            : null,
       };
 
       onEdit(editingId, submitData);
@@ -349,14 +382,9 @@ export default function DataList({ items, category, onEdit, onDelete }) {
               </div>
 
               {/* 부채가 아닌 경우에만 금액 필드 표시 */}
-              {category !== "debts" && (
+              {category !== "debts" && category !== "pensions" && (
                 <div className={styles.editField}>
-                  <label>
-                    {category === "pensions"
-                      ? "월 연금액 (만원)"
-                      : "금액 (만원)"}{" "}
-                    *
-                  </label>
+                  <label>금액 (만원) *</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -368,11 +396,7 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                     className={`${styles.editInput} ${
                       errors.amount ? styles.inputError : ""
                     }`}
-                    placeholder={
-                      category === "pensions"
-                        ? "예: 200 (월 200만원)"
-                        : "예: 5000"
-                    }
+                    placeholder="예: 5000"
                   />
                   {errors.amount && (
                     <span className={styles.errorText}>{errors.amount}</span>
@@ -592,23 +616,183 @@ export default function DataList({ items, category, onEdit, onDelete }) {
 
               {/* 연금 관련 필드 - 연금 카테고리에서만 표시 */}
               {category === "pensions" && (
-                <div className={styles.editField}>
-                  <label>연금 종류 *</label>
-                  <select
-                    value={editData.pensionType}
-                    onChange={(e) =>
-                      handleEditChange("pensionType", e.target.value)
-                    }
-                    className={styles.editInput}
-                  >
-                    <option value="national">국민연금</option>
-                    <option value="private">개인연금</option>
-                    <option value="retirement">퇴직연금</option>
-                  </select>
-                  <span className={styles.helpText}>
-                    연금 종류를 선택하세요
-                  </span>
-                </div>
+                <>
+                  <div className={styles.editField}>
+                    <label>연금 종류 *</label>
+                    <select
+                      value={editData.pensionType}
+                      onChange={(e) =>
+                        handleEditChange("pensionType", e.target.value)
+                      }
+                      className={styles.editInput}
+                    >
+                      <option value="national">국민연금</option>
+                      <option value="private">개인연금</option>
+                      <option value="retirement">퇴직연금</option>
+                    </select>
+                    <span className={styles.helpText}>
+                      연금 종류를 선택하세요
+                    </span>
+                  </div>
+
+                  {/* 국민연금 필드 */}
+                  {editData.pensionType === "national" && (
+                    <>
+                      <div className={styles.editField}>
+                        <label>수령시작년도 *</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={editData.startYear}
+                          onChange={(e) =>
+                            handleEditChange(
+                              "startYear",
+                              Number(e.target.value)
+                            )
+                          }
+                          className={`${styles.editInput} ${
+                            errors.startYear ? styles.inputError : ""
+                          }`}
+                          placeholder="예: 2048"
+                        />
+                        {errors.startYear && (
+                          <span className={styles.errorText}>
+                            {errors.startYear}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className={styles.editField}>
+                        <label>월 수령금액 (만원) *</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={editData.monthlyAmount}
+                          onChange={(e) =>
+                            handleEditChange(
+                              "monthlyAmount",
+                              Number(e.target.value)
+                            )
+                          }
+                          className={`${styles.editInput} ${
+                            errors.monthlyAmount ? styles.inputError : ""
+                          }`}
+                          placeholder="예: 200"
+                        />
+                        {errors.monthlyAmount && (
+                          <span className={styles.errorText}>
+                            {errors.monthlyAmount}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* 퇴직연금/개인연금 필드 */}
+                  {(editData.pensionType === "retirement" ||
+                    editData.pensionType === "private") && (
+                    <>
+                      <div className={styles.editField}>
+                        <label>적립시작년도 *</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={editData.startYear}
+                          onChange={(e) =>
+                            handleEditChange(
+                              "startYear",
+                              Number(e.target.value)
+                            )
+                          }
+                          className={`${styles.editInput} ${
+                            errors.startYear ? styles.inputError : ""
+                          }`}
+                          placeholder="예: 2025"
+                        />
+                        {errors.startYear && (
+                          <span className={styles.errorText}>
+                            {errors.startYear}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className={styles.editField}>
+                        <label>적립종료년도 *</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={editData.endYear}
+                          onChange={(e) =>
+                            handleEditChange("endYear", Number(e.target.value))
+                          }
+                          className={`${styles.editInput} ${
+                            errors.endYear ? styles.inputError : ""
+                          }`}
+                          placeholder="예: 2048"
+                        />
+                        {errors.endYear && (
+                          <span className={styles.errorText}>
+                            {errors.endYear}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className={styles.editField}>
+                        <label>월 적립금액 (만원) *</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={editData.monthlyAmount}
+                          onChange={(e) =>
+                            handleEditChange(
+                              "monthlyAmount",
+                              Number(e.target.value)
+                            )
+                          }
+                          className={`${styles.editInput} ${
+                            errors.monthlyAmount ? styles.inputError : ""
+                          }`}
+                          placeholder="예: 50"
+                        />
+                        {errors.monthlyAmount && (
+                          <span className={styles.errorText}>
+                            {errors.monthlyAmount}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className={styles.editField}>
+                        <label>수령기간 (년) *</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={editData.receiptYears}
+                          onChange={(e) =>
+                            handleEditChange(
+                              "receiptYears",
+                              Number(e.target.value)
+                            )
+                          }
+                          className={`${styles.editInput} ${
+                            errors.receiptYears ? styles.inputError : ""
+                          }`}
+                          placeholder="예: 10"
+                        />
+                        {errors.receiptYears && (
+                          <span className={styles.errorText}>
+                            {errors.receiptYears}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
               )}
 
               {/* 부채 관련 필드 */}
@@ -778,7 +962,9 @@ export default function DataList({ items, category, onEdit, onDelete }) {
                     ✎
                   </button>
                   <button
-                    onClick={() => onDelete(item.id, item.title)}
+                    onClick={() =>
+                      onDelete(String(item.id), item.title, category)
+                    }
                     className={styles.deleteButton}
                     title="삭제"
                   >
@@ -789,16 +975,35 @@ export default function DataList({ items, category, onEdit, onDelete }) {
 
               {/* 두 번째 줄: 금액 빈도 기간 */}
               <div className={styles.itemSummary}>
-                <span>{formatAmount(item.amount)}</span>
+                <span>
+                  {category === "pensions"
+                    ? formatAmount(item.monthlyAmount)
+                    : formatAmount(item.amount)}
+                </span>
                 <span>{getFrequencyText(item.frequency)}</span>
                 <span>
-                  {formatYear(item.startDate)}-
-                  {item.endDate ? formatYear(item.endDate) : "∞"}
+                  {category === "pensions"
+                    ? item.pensionType === "national"
+                      ? `${item.startYear}-∞` // 국민연금은 수령시작년도부터 무제한
+                      : `${item.startYear}-${item.endYear}` // 퇴직/개인연금은 적립기간
+                    : `${formatYear(item.startDate)}-${
+                        item.endDate ? formatYear(item.endDate) : "∞"
+                      }`}
                 </span>
               </div>
 
               {/* 세 번째 줄: 메모 */}
-              {item.note && <div className={styles.itemNote}>{item.note}</div>}
+              {item.note && (
+                <div className={styles.itemNote}>
+                  {category === "pensions" && item.pensionType === "national"
+                    ? item.note
+                    : category === "pensions" &&
+                      (item.pensionType === "retirement" ||
+                        item.pensionType === "private")
+                    ? `${item.note} (수익률: ${item.pensionRate}%, 수령기간: ${item.receiptYears}년)`
+                    : item.note}
+                </div>
+              )}
             </div>
           )}
         </div>

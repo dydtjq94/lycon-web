@@ -1,4 +1,48 @@
 /* 데이터 추가 모달 스타일 */
+
+/* 라디오 버튼 그룹 스타일 */
+.radioGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.radioLabel:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.radioLabel input[type="radio"] {
+  margin-right: 0.5rem;
+  accent-color: #3b82f6;
+}
+
+.radioLabel input[type="radio"]:checked + .radioText {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.radioLabel:has(input[type="radio"]:checked) {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.radioText {
+  font-size: 0.875rem;
+  color: #374151;
+  transition: color 0.2s ease;
+}
 .overlay {
   position: fixed;
   top: 0;
@@ -212,4 +256,75 @@
   .submitButton {
     width: 100%;
   }
+}
+
+/* 라디오 버튼 그룹 스타일 */
+.radioGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: #f9fafb;
+}
+
+.radioLabel:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.radioLabel input[type="radio"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+}
+
+.radioLabel input[type="radio"]:checked + .radioText {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.radioLabel:has(input[type="radio"]:checked) {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.radioText {
+  font-size: 0.9rem;
+  color: #374151;
+  transition: color 0.2s ease;
+}
+
+/* 연금 헤더 스타일 */
+.pensionHeader {
+  text-align: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  margin-bottom: 1rem;
+}
+
+.pensionHeader h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.pensionDescription {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.4;
 }

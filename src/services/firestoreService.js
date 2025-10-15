@@ -121,6 +121,12 @@ export const dataItemService = {
 export const rateSettingsService = {
   async saveRateSettings(profileId, rateSettings) {
     const ref = doc(db, "profiles", profileId, "settings", "rates");
+    console.log("rateSettingsService.saveRateSettings 호출:", {
+      profileId,
+      rateSettings,
+      ref: ref.path,
+    });
+
     await setDoc(
       ref,
       {
@@ -129,12 +135,22 @@ export const rateSettingsService = {
       },
       { merge: true }
     );
+
+    console.log("rateSettingsService.saveRateSettings 완료");
   },
 
   async getRateSettings(profileId) {
     const ref = doc(db, "profiles", profileId, "settings", "rates");
+    console.log("rateSettingsService.getRateSettings 호출:", {
+      profileId,
+      ref: ref.path,
+    });
+
     const snap = await getDoc(ref);
-    return snap.exists() ? snap.data() : null;
+    const data = snap.exists() ? snap.data() : null;
+
+    console.log("rateSettingsService.getRateSettings 결과:", data);
+    return data;
   },
 
   subscribeToRateSettings(profileId, onData, onError) {
