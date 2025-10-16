@@ -18,7 +18,8 @@ export function calculateCashflowSimulation(
   savings = [],
   pensions = [],
   realEstates = [], // 부동산 데이터 추가
-  assets = [] // 자산 데이터 추가
+  assets = [], // 자산 데이터 추가
+  debts = [] // 부채 데이터 추가
 ) {
   const currentYear = new Date().getFullYear();
   const startAge = profileData.currentKoreanAge;
@@ -67,6 +68,16 @@ export function calculateCashflowSimulation(
         const adjustedAmount =
           yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
         totalExpense += adjustedAmount;
+      }
+    });
+
+    // 부채 이자 지출 계산
+    let totalDebtInterest = 0;
+    debts.forEach((debt) => {
+      if (year >= debt.startYear && year <= debt.endYear) {
+        // 부채 이자율을 연간 지출로 계산
+        const yearlyInterest = (debt.debtAmount * debt.interestRate) / 100;
+        totalDebtInterest += yearlyInterest;
       }
     });
 
@@ -190,7 +201,7 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 + 자산수익 (각 년도별 순현금흐름)
+    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 + 자산수익 - 부채이자 (각 년도별 순현금흐름)
     const netCashflow =
       totalIncome -
       totalExpense -
@@ -198,7 +209,8 @@ export function calculateCashflowSimulation(
       totalPension +
       totalRentalIncome +
       totalRealEstatePension +
-      totalAssetIncome;
+      totalAssetIncome -
+      totalDebtInterest;
 
     cashflowData.push({
       year,
@@ -211,6 +223,7 @@ export function calculateCashflowSimulation(
       rentalIncome: totalRentalIncome,
       realEstatePension: totalRealEstatePension,
       assetIncome: totalAssetIncome,
+      debtInterest: totalDebtInterest,
     });
   }
 
@@ -527,4 +540,60 @@ export function calculateAssetSimulation(
   }
 
   return assetData;
+}
+
+/**
+ * 부채 시뮬레이션 계산
+ */
+export function calculateDebtSimulation(profileData, debts = []) {
+  const currentYear = new Date().getFullYear();
+  const startAge = profileData.currentKoreanAge;
+  const deathAge = 90;
+  const simulationYears = deathAge - startAge + 1;
+
+  const debtData = [];
+
+  // 부채별 자산 (제목별로 분리)
+  const debtsByTitle = {};
+  debts.forEach((debt) => {
+    debtsByTitle[debt.title] = {
+      amount: debt.debtAmount, // 부채 금액 (음수로 표시)
+      startYear: debt.startYear,
+      endYear: debt.endYear,
+      interestRate: debt.interestRate || 0,
+      isActive: true,
+    };
+  });
+
+  for (let i = 0; i < simulationYears; i++) {
+    const year = currentYear + i;
+    const age = startAge + i;
+
+    const debtItem = { year, age };
+
+    // 부채 상환 처리
+    Object.keys(debtsByTitle).forEach((title) => {
+      const debt = debtsByTitle[title];
+
+      if (debt.isActive) {
+        if (year >= debt.startYear && year <= debt.endYear) {
+          // 부채 기간 중 - 부채 금액을 음수로 표시
+          debtItem[title] = -debt.amount;
+        } else if (year === debt.endYear + 1) {
+          // 상환년도 다음 해 - 부채 제거
+          debt.isActive = false;
+        }
+      }
+    });
+
+    // 총 부채 계산
+    const totalAmount = Object.values(debtItem).reduce((sum, value) => {
+      return typeof value === "number" ? sum + value : sum;
+    }, 0);
+
+    debtItem.totalAmount = totalAmount;
+    debtData.push(debtItem);
+  }
+
+  return debtData;
 }

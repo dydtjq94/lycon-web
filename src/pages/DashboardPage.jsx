@@ -238,12 +238,28 @@ function DashboardPage() {
       }
 
       const currentYear = new Date().getFullYear();
-      const startAge = profileData.currentKoreanAge;
-      const retirementAge = profileData.retirementAge;
+      const startAge = parseInt(profileData.currentKoreanAge);
+      const retirementAge = parseInt(profileData.retirementAge);
       const deathAge = 90;
       const startYear = currentYear;
-      const retirementYear = profileData.birthYear + retirementAge - 1;
-      const deathYear = profileData.birthYear + deathAge - 1;
+
+      // 디버깅을 위한 로그
+      console.log("현재 나이:", startAge, "은퇴 나이:", retirementAge);
+
+      // 현재 나이와 은퇴 나이의 차이를 계산해서 은퇴 년도 구하기
+      const yearsToRetirement = retirementAge - startAge;
+      const retirementYear = currentYear + yearsToRetirement;
+
+      // 현재 나이와 죽을 나이의 차이를 계산해서 죽을 년도 구하기
+      const yearsToDeath = deathAge - startAge;
+      const deathYear = currentYear + yearsToDeath;
+
+      console.log(
+        "은퇴까지 남은 년수:",
+        yearsToRetirement,
+        "은퇴 년도:",
+        retirementYear
+      );
 
       const years = [];
       for (let year = startYear; year <= deathYear; year++) {

@@ -33,8 +33,11 @@ function ProfileCreatePage() {
   // 기본 수입 데이터 생성 함수
   const createDefaultIncomes = async (profileId, birthYear, retirementAge) => {
     const currentYear = new Date().getFullYear();
-    const deathYear = birthYear + 90 - 1; // 90세까지
-    const retirementYear = birthYear + retirementAge - 1;
+    const currentAge = currentYear - birthYear + 1; // 현재 나이 계산
+    const yearsToRetirement = retirementAge - currentAge; // 은퇴까지 남은 년수
+    const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도
+    const yearsToDeath = 90 - currentAge; // 죽을 때까지 남은 년수
+    const deathYear = currentYear + yearsToDeath; // 죽을 년도
 
     const defaultIncomes = [
       {
@@ -87,8 +90,11 @@ function ProfileCreatePage() {
     retirementLivingExpenses
   ) => {
     const currentYear = new Date().getFullYear();
-    const deathYear = birthYear + 90 - 1; // 90세까지
-    const retirementYear = birthYear + retirementAge - 1;
+    const currentAge = currentYear - birthYear + 1; // 현재 나이 계산
+    const yearsToRetirement = retirementAge - currentAge; // 은퇴까지 남은 년수
+    const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도
+    const yearsToDeath = 90 - currentAge; // 죽을 때까지 남은 년수
+    const deathYear = currentYear + yearsToDeath; // 죽을 년도
 
     const defaultExpenses = [
       {
@@ -265,7 +271,8 @@ function ProfileCreatePage() {
       const birthYear = parseInt(formData.birthYear);
       const currentYear = new Date().getFullYear();
       const currentKoreanAge = calculateKoreanAge(birthYear, currentYear);
-      const retirementYear = birthYear + formData.retirementAge - 1;
+      const yearsToRetirement = formData.retirementAge - currentKoreanAge; // 은퇴까지 남은 년수
+      const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도
 
       // 가구 구성원 정보 정리
       const familyMembers = [];
