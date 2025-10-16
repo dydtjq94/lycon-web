@@ -511,6 +511,89 @@ export const pensionService = {
   },
 };
 
+/**
+ * 자산 데이터 관련 서비스
+ */
+export const assetService = {
+  // 자산 데이터 생성
+  async createAsset(profileId, assetData) {
+    try {
+      const docRef = await addDoc(
+        collection(db, "profiles", profileId, "assets"),
+        {
+          ...assetData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      );
+      return docRef.id;
+    } catch (error) {
+      console.error("자산 데이터 생성 오류:", error);
+      throw error;
+    }
+  },
+
+  // 자산 목록 조회
+  async getAssets(profileId) {
+    try {
+      const querySnapshot = await getDocs(
+        query(
+          collection(db, "profiles", profileId, "assets"),
+          orderBy("createdAt", "desc")
+        )
+      );
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("자산 목록 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 자산 조회
+  async getAsset(profileId, assetId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "assets", assetId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      } else {
+        throw new Error("자산을 찾을 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("자산 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 자산 수정
+  async updateAsset(profileId, assetId, assetData) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "assets", assetId);
+      await updateDoc(docRef, {
+        ...assetData,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("자산 수정 오류:", error);
+      throw error;
+    }
+  },
+
+  // 자산 삭제
+  async deleteAsset(profileId, assetId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "assets", assetId);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("자산 삭제 오류:", error);
+      throw error;
+    }
+  },
+};
+
 // 부동산 데이터 서비스
 export const realEstateService = {
   // 부동산 데이터 생성

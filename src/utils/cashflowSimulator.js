@@ -18,7 +18,7 @@ export function calculateCashflowSimulation(
   savings = [],
   pensions = [],
   realEstates = [], // 부동산 데이터 추가
-  assetData = [] // 자산 시뮬레이션 데이터 추가
+  assets = [] // 자산 데이터 추가
 ) {
   const currentYear = new Date().getFullYear();
   const startAge = profileData.currentKoreanAge;
@@ -207,7 +207,8 @@ export function calculateAssetSimulation(
   expenses = [],
   savings = [],
   pensions = [],
-  realEstates = []
+  realEstates = [],
+  assets = []
 ) {
   // 현재는 더미 데이터 반환
   const currentYear = new Date().getFullYear();
@@ -266,6 +267,18 @@ export function calculateAssetSimulation(
       convertToPension: realEstate.convertToPension || false,
       pensionStartYear: realEstate.pensionStartYear,
       monthlyPensionAmount: realEstate.monthlyPensionAmount,
+      isActive: true,
+    };
+  });
+
+  // 자산별 자산 (제목별로 분리)
+  const assetsByTitle = {};
+  assets.forEach((asset) => {
+    assetsByTitle[asset.title] = {
+      amount: asset.currentValue, // 현재 가치로 시작
+      startYear: asset.startYear,
+      endYear: asset.endYear,
+      growthRate: asset.growthRate || 0,
       isActive: true,
     };
   });
@@ -409,6 +422,31 @@ export function calculateAssetSimulation(
       }
     });
 
+    // 자산 계산 (제목별로)
+    Object.keys(assetsByTitle).forEach((title) => {
+      const asset = assetsByTitle[title];
+
+      if (year >= asset.startYear && year <= asset.endYear && asset.isActive) {
+        if (year === asset.startYear) {
+          // 첫 해: 현재 가치로 시작
+          asset.amount = asset.amount;
+        } else {
+          // 상승률 적용
+          asset.amount *= 1 + asset.growthRate;
+        }
+      } else if (year === asset.endYear + 1) {
+        // 보유 종료 다음 해: 자산을 현금으로 변환
+        if (asset.isActive && asset.amount > 0) {
+          currentCash += asset.amount;
+          asset.amount = 0;
+        }
+        asset.isActive = false;
+      } else if (year > asset.endYear + 1) {
+        // 보유 종료 이후: 자산 비활성화
+        asset.isActive = false;
+      }
+    });
+
     // 자산 데이터 구성
     const assetItem = {
       year,
@@ -437,6 +475,14 @@ export function calculateAssetSimulation(
       const realEstate = realEstatesByTitle[title];
       if (realEstate.isActive) {
         assetItem[title] = realEstate.amount;
+      }
+    });
+
+    // 활성 자산별 자산 추가
+    Object.keys(assetsByTitle).forEach((title) => {
+      const asset = assetsByTitle[title];
+      if (asset.isActive) {
+        assetItem[title] = asset.amount;
       }
     });
 

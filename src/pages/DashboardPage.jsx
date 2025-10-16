@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { calculateKoreanAge, getKoreanAgeInYear } from "../utils/koreanAge";
 import { formatAmount } from "../utils/format";
@@ -13,6 +13,7 @@ import {
   savingsService,
   pensionService,
   realEstateService,
+  assetService,
 } from "../services/firestoreService";
 import RechartsCashflowChart from "../components/RechartsCashflowChart";
 import RechartsAssetChart from "../components/RechartsAssetChart";
@@ -26,6 +27,8 @@ import PensionModal from "../components/PensionModal";
 import PensionList from "../components/PensionList";
 import RealEstateModal from "../components/RealEstateModal";
 import RealEstateList from "../components/RealEstateList";
+import AssetModal from "../components/AssetModal";
+import AssetList from "../components/AssetList";
 import ProfileEditModal from "../components/ProfileEditModal";
 import styles from "./DashboardPage.module.css";
 
@@ -60,6 +63,9 @@ function DashboardPage() {
   const [realEstates, setRealEstates] = useState([]);
   const [isRealEstateModalOpen, setIsRealEstateModalOpen] = useState(false);
   const [editingRealEstate, setEditingRealEstate] = useState(null);
+  const [assets, setAssets] = useState([]);
+  const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+  const [editingAsset, setEditingAsset] = useState(null);
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
 
   // 프로필 데이터 로드
@@ -77,7 +83,7 @@ function DashboardPage() {
         if (isMounted) {
           if (profile) {
             setProfileData(profile);
-            generateSimulationData(profile);
+            // generateSimulationData는 별도 useEffect에서 처리
           } else {
             navigate("/");
           }
@@ -204,56 +210,89 @@ function DashboardPage() {
     loadRealEstates();
   }, [profileId]);
 
+  // 자산 데이터 로드
+  useEffect(() => {
+    const loadAssets = async () => {
+      if (!profileId) return;
+
+      try {
+        const assetsData = await assetService.getAssets(profileId);
+        // 생성 순서대로 정렬 (createdAt 기준)
+        const sortedAssets = assetsData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+        setAssets(sortedAssets);
+      } catch (error) {
+        console.error("자산 데이터 로드 오류:", error);
+      }
+    };
+
+    loadAssets();
+  }, [profileId]);
+
+  // 시뮬레이션 데이터 생성
+  const generateSimulationData = useCallback(
+    (profileData) => {
+      if (!profileData) {
+        return;
+      }
+
+      const currentYear = new Date().getFullYear();
+      const startAge = profileData.currentKoreanAge;
+      const retirementAge = profileData.retirementAge;
+      const deathAge = 90;
+      const startYear = currentYear;
+      const retirementYear = profileData.birthYear + retirementAge - 1;
+      const deathYear = profileData.birthYear + deathAge - 1;
+
+      const years = [];
+      for (let year = startYear; year <= deathYear; year++) {
+        const age = getKoreanAgeInYear(profileData.birthYear, year);
+        years.push({ year, age });
+      }
+
+      // 자산 시뮬레이션 데이터 먼저 계산
+      const assetSimulation = calculateAssetSimulation(
+        profileData,
+        incomes,
+        expenses,
+        savings, // 저축 데이터 사용
+        pensions, // 연금 데이터 사용
+        realEstates, // 부동산 데이터 사용
+        assets // 자산 데이터 사용
+      );
+
+      // 실제 수입 데이터를 기반으로 현금흐름 시뮬레이션 계산
+      const cashflow = calculateCashflowSimulation(
+        profileData,
+        incomes,
+        expenses, // 지출 데이터 사용
+        savings, // 저축 데이터 사용
+        pensions, // 연금 데이터 사용
+        realEstates, // 부동산 데이터 사용
+        assets // 자산 시뮬레이션 데이터 전달
+      );
+
+      setSimulationData({ cashflow, assets: assetSimulation });
+    },
+    [incomes, expenses, savings, pensions, realEstates, assets]
+  );
+
   // 수입 데이터가 변경될 때마다 시뮬레이션 재계산
   useEffect(() => {
     if (profileData) {
       generateSimulationData(profileData);
     }
-  }, [incomes, expenses, savings, pensions, realEstates, profileData]);
-
-  // 시뮬레이션 데이터 생성
-  const generateSimulationData = (profileData) => {
-    if (!profileData) {
-      return;
-    }
-
-    const currentYear = new Date().getFullYear();
-    const startAge = profileData.currentKoreanAge;
-    const retirementAge = profileData.retirementAge;
-    const deathAge = 90;
-    const startYear = currentYear;
-    const retirementYear = profileData.birthYear + retirementAge - 1;
-    const deathYear = profileData.birthYear + deathAge - 1;
-
-    const years = [];
-    for (let year = startYear; year <= deathYear; year++) {
-      const age = getKoreanAgeInYear(profileData.birthYear, year);
-      years.push({ year, age });
-    }
-
-    // 자산 시뮬레이션 데이터 먼저 계산
-    const assets = calculateAssetSimulation(
-      profileData,
-      incomes,
-      expenses,
-      savings, // 저축 데이터 사용
-      pensions, // 연금 데이터 사용
-      realEstates // 부동산 데이터 사용
-    );
-
-    // 실제 수입 데이터를 기반으로 현금흐름 시뮬레이션 계산
-    const cashflow = calculateCashflowSimulation(
-      profileData,
-      incomes,
-      expenses, // 지출 데이터 사용
-      savings, // 저축 데이터 사용
-      pensions, // 연금 데이터 사용
-      realEstates, // 부동산 데이터 사용
-      assets // 자산 시뮬레이션 데이터 전달
-    );
-
-    setSimulationData({ cashflow, assets });
-  };
+  }, [
+    incomes,
+    expenses,
+    savings,
+    pensions,
+    realEstates,
+    assets,
+    profileData,
+    generateSimulationData,
+  ]);
 
   // 프로필 수정 핸들러
 
@@ -270,8 +309,7 @@ function DashboardPage() {
   // 프로필 수정 저장
   const handleSaveProfileEdit = (updatedProfile) => {
     setProfileData(updatedProfile);
-    // 시뮬레이션 재계산
-    generateSimulationData();
+    // 시뮬레이션 재계산은 useEffect에서 자동 처리
   };
 
   // 사이드바 뷰 핸들러들
@@ -319,9 +357,6 @@ function DashboardPage() {
         );
         setIncomes([...incomes, newIncome]);
       }
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("수입 데이터 저장 오류:", error);
     }
@@ -333,9 +368,6 @@ function DashboardPage() {
     try {
       await incomeService.deleteIncome(profileId, incomeId);
       setIncomes(incomes.filter((income) => income.id !== incomeId));
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("수입 데이터 삭제 오류:", error);
     }
@@ -382,9 +414,6 @@ function DashboardPage() {
         );
         setExpenses([...expenses, newExpense]);
       }
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("지출 데이터 저장 오류:", error);
     }
@@ -396,9 +425,6 @@ function DashboardPage() {
     try {
       await expenseService.deleteExpense(profileId, expenseId);
       setExpenses(expenses.filter((expense) => expense.id !== expenseId));
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("지출 데이터 삭제 오류:", error);
     }
@@ -430,9 +456,6 @@ function DashboardPage() {
         );
         setSavings([...savings, newSaving]);
       }
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("저축 데이터 저장 오류:", error);
     }
@@ -451,9 +474,6 @@ function DashboardPage() {
     try {
       await savingsService.deleteSaving(profileId, savingId);
       setSavings(savings.filter((saving) => saving.id !== savingId));
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("저축 데이터 삭제 오류:", error);
     }
@@ -497,9 +517,6 @@ function DashboardPage() {
 
       setEditingPension(null);
       setIsPensionModalOpen(false);
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("연금 데이터 저장 오류:", error);
     }
@@ -511,9 +528,6 @@ function DashboardPage() {
     try {
       await pensionService.deletePension(profileId, pensionId);
       setPensions(pensions.filter((pension) => pension.id !== pensionId));
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("연금 데이터 삭제 오류:", error);
     }
@@ -559,9 +573,6 @@ function DashboardPage() {
       }
 
       setIsRealEstateModalOpen(false);
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("부동산 데이터 저장 오류:", error);
     }
@@ -575,11 +586,50 @@ function DashboardPage() {
       setRealEstates(
         realEstates.filter((realEstate) => realEstate.id !== realEstateId)
       );
-
-      // 시뮬레이션 데이터 재생성
-      generateSimulationData(profileData);
     } catch (error) {
       console.error("부동산 데이터 삭제 오류:", error);
+    }
+  };
+
+  // 자산 관련 핸들러들
+  const handleAddAsset = () => {
+    setEditingAsset(null);
+    setIsAssetModalOpen(true);
+  };
+
+  const handleEditAsset = (asset) => {
+    setEditingAsset(asset);
+    setIsAssetModalOpen(true);
+  };
+
+  const handleSaveAsset = async (assetData) => {
+    try {
+      if (editingAsset) {
+        await assetService.updateAsset(profileId, editingAsset.id, assetData);
+        setAssets(
+          assets.map((asset) =>
+            asset.id === editingAsset.id ? { ...asset, ...assetData } : asset
+          )
+        );
+      } else {
+        const newAssetId = await assetService.createAsset(profileId, assetData);
+        setAssets([...assets, { id: newAssetId, ...assetData }]);
+      }
+
+      setIsAssetModalOpen(false);
+    } catch (error) {
+      console.error("자산 데이터 저장 오류:", error);
+    }
+  };
+
+  const handleDeleteAsset = async (assetId) => {
+    if (!window.confirm("이 자산 데이터를 삭제하시겠습니까?")) return;
+
+    try {
+      await assetService.deleteAsset(profileId, assetId);
+      setAssets(assets.filter((asset) => asset.id !== assetId));
+    } catch (error) {
+      console.error("자산 데이터 삭제 오류:", error);
     }
   };
 
@@ -602,8 +652,7 @@ function DashboardPage() {
         handleAddRealEstate();
         break;
       case "assets":
-        // TODO: 자산 추가 기능
-        alert("자산 추가 기능은 준비 중입니다.");
+        handleAddAsset();
         break;
       case "debt":
         // TODO: 부채 추가 기능
@@ -659,7 +708,7 @@ function DashboardPage() {
       color: "#f59e0b",
       count: realEstates.length,
     },
-    { id: "assets", name: "자산", color: "#f59e0b", count: 0 },
+    { id: "assets", name: "자산", color: "#f59e0b", count: assets.length },
     { id: "debt", name: "부채", color: "#6b7280", count: 0 },
   ];
 
@@ -794,6 +843,12 @@ function DashboardPage() {
                     onEdit={handleEditRealEstate}
                     onDelete={handleDeleteRealEstate}
                   />
+                ) : selectedCategory === "assets" ? (
+                  <AssetList
+                    assets={assets}
+                    onEdit={handleEditAsset}
+                    onDelete={handleDeleteAsset}
+                  />
                 ) : (
                   <div className={styles.emptyList}>
                     <p>데이터가 없습니다.</p>
@@ -872,6 +927,15 @@ function DashboardPage() {
         isOpen={isProfileEditModalOpen}
         onClose={handleCloseProfileEditModal}
         onSave={handleSaveProfileEdit}
+        profileData={profileData}
+      />
+
+      {/* 자산 모달 */}
+      <AssetModal
+        isOpen={isAssetModalOpen}
+        onClose={() => setIsAssetModalOpen(false)}
+        onSave={handleSaveAsset}
+        editData={editingAsset}
         profileData={profileData}
       />
     </div>
