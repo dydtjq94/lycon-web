@@ -40,14 +40,21 @@ function RechartsAssetChart({
       formattedAmount: formatAmountForChart(item.totalAmount || item.amount),
     };
 
-    // 자산 항목들을 처리 (부채는 음수로 변환)
+    // 자산 항목들을 처리
     Object.keys(item).forEach((key) => {
       if (key !== "year" && key !== "age" && key !== "totalAmount") {
-        if (key === "현금부족") {
-          // 현금부족은 음수로 표시
-          processedItem[key] = -(item[key] || 0);
+        if (key === "현금") {
+          // 현금을 자산/부채로 분리
+          const cashValue = item[key] || 0;
+          if (cashValue >= 0) {
+            processedItem["현금(자산)"] = cashValue;
+            processedItem["현금(부채)"] = 0;
+          } else {
+            processedItem["현금(자산)"] = 0;
+            processedItem["현금(부채)"] = cashValue; // 음수 그대로
+          }
         } else {
-          // 다른 자산들은 양수로 표시
+          // 다른 자산들은 그대로 표시
           processedItem[key] = item[key] || 0;
         }
       }
@@ -92,11 +99,12 @@ function RechartsAssetChart({
       }
     });
   });
-  
+
   const maxValue = Math.max(...allValues, 0);
   const minValue = Math.min(...allValues, 0);
-  const padding = Math.max(maxValue, Math.abs(minValue)) * 0.1;
-  const yDomain = [minValue - padding, maxValue + padding];
+  const maxAbsValue = Math.max(Math.abs(maxValue), Math.abs(minValue));
+  const padding = maxAbsValue * 0.1;
+  const yDomain = [-maxAbsValue - padding, maxAbsValue + padding];
 
   return (
     <div className={styles.chartContainer}>
@@ -197,19 +205,40 @@ function RechartsAssetChart({
 
             {/* 동적 자산 항목 Bar들 */}
             {assetKeys.map((key, index) => {
-              // 부채 항목은 빨간색 계열로 표시
-              const isDebt = key === "현금부족";
-              const color = isDebt ? "#ef4444" : colors[index % colors.length];
-              
-              return (
-                <Bar
-                  key={`${key}-${index}`}
-                  dataKey={key}
-                  stackId="assets"
-                  fill={color}
-                  name={key}
-                />
-              );
+              if (key === "현금(자산)") {
+                // 현금(자산)은 초록색
+                return (
+                  <Bar
+                    key={`${key}-${index}`}
+                    dataKey={key}
+                    stackId="assets"
+                    fill="#10b981"
+                    name={key}
+                  />
+                );
+              } else if (key === "현금(부채)") {
+                // 현금(부채)는 옅은 보라색
+                return (
+                  <Bar
+                    key={`${key}-${index}`}
+                    dataKey={key}
+                    stackId="assets"
+                    fill="#a855f7"
+                    name={key}
+                  />
+                );
+              } else {
+                // 다른 자산들은 기본 색상 사용
+                return (
+                  <Bar
+                    key={`${key}-${index}`}
+                    dataKey={key}
+                    stackId="assets"
+                    fill={colors[index % colors.length]}
+                    name={key}
+                  />
+                );
+              }
             })}
 
             {/* 범례 */}

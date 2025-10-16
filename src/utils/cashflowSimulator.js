@@ -482,12 +482,8 @@ export function calculateAssetSimulation(
       age,
     };
 
-    // 현금을 양수/음수로 분리
-    if (currentCash >= 0) {
-      assetItem.현금 = currentCash; // 양수면 자산
-    } else {
-      assetItem.현금부족 = Math.abs(currentCash); // 음수면 부채
-    }
+    // 현금을 그대로 표시 (양수면 자산, 음수면 부채)
+    assetItem.현금 = currentCash;
 
     // 활성 저축별 자산 추가
     Object.keys(savingsByTitle).forEach((title) => {

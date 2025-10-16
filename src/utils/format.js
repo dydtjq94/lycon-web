@@ -86,15 +86,17 @@ export function formatAmountForChart(amount) {
   }
 
   const numAmount = Math.floor(Number(amount)); // 소수점 버림
+  const isNegative = numAmount < 0;
+  const absAmount = Math.abs(numAmount);
 
-  if (numAmount >= 10000) {
-    const eok = Math.floor(numAmount / 10000);
-    const man = numAmount % 10000;
+  if (absAmount >= 10000) {
+    const eok = Math.floor(absAmount / 10000);
+    const man = absAmount % 10000;
     
     if (man > 0) {
-      return `${eok}억 ${man.toLocaleString()}만원`;
+      return `${isNegative ? '-' : ''}${eok}억 ${man.toLocaleString()}만원`;
     } else {
-      return `${eok}억원`;
+      return `${isNegative ? '-' : ''}${eok}억원`;
     }
   }
 
