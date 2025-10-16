@@ -44,30 +44,13 @@ function AssetList({ assets, onEdit, onDelete }) {
             </div>
 
             <div className={styles.assetAmount}>
-              {formatAmount(asset.currentValue)}만원
+              {formatAmount(asset.currentValue)}
             </div>
 
-            <div className={styles.assetDetails}>
-              <div className={styles.detailRow}>
-                <span className={styles.label}>상승률:</span>
-                <span className={styles.value}>
-                  {(asset.growthRate * 100).toFixed(1)}%
-                </span>
-              </div>
-              
-              <div className={styles.detailRow}>
-                <span className={styles.label}>보유 기간:</span>
-                <span className={styles.value}>
-                  {asset.startYear}년 - {asset.endYear}년
-                </span>
-              </div>
-
-              {asset.memo && (
-                <div className={styles.memoSection}>
-                  <span className={styles.memoLabel}>메모:</span>
-                  <p className={styles.memoText}>{asset.memo}</p>
-                </div>
-              )}
+            <div className={styles.assetPeriod}>
+              {asset.startYear}년 - {asset.endYear}년
+              <br />
+              (상승률 {(asset.growthRate * 100).toFixed(1)}% 적용)
             </div>
           </div>
         </div>
