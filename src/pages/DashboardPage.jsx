@@ -251,17 +251,6 @@ function DashboardPage() {
         years.push({ year, age });
       }
 
-      // 자산 시뮬레이션 데이터 먼저 계산
-      const assetSimulation = calculateAssetSimulation(
-        profileData,
-        incomes,
-        expenses,
-        savings, // 저축 데이터 사용
-        pensions, // 연금 데이터 사용
-        realEstates, // 부동산 데이터 사용
-        assets // 자산 데이터 사용
-      );
-
       // 실제 수입 데이터를 기반으로 현금흐름 시뮬레이션 계산
       const cashflow = calculateCashflowSimulation(
         profileData,
@@ -271,6 +260,18 @@ function DashboardPage() {
         pensions, // 연금 데이터 사용
         realEstates, // 부동산 데이터 사용
         assets // 자산 시뮬레이션 데이터 전달
+      );
+
+      // 자산 시뮬레이션 데이터 계산 (현금 흐름 데이터 포함)
+      const assetSimulation = calculateAssetSimulation(
+        profileData,
+        incomes,
+        expenses,
+        savings, // 저축 데이터 사용
+        pensions, // 연금 데이터 사용
+        realEstates, // 부동산 데이터 사용
+        assets, // 자산 데이터 사용
+        cashflow // 현금 흐름 데이터 전달
       );
 
       setSimulationData({ cashflow, assets: assetSimulation });

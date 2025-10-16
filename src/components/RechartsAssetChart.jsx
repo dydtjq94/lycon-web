@@ -32,18 +32,34 @@ function RechartsAssetChart({
   }
 
   // 차트 데이터 포맷팅 및 동적 자산 항목 추출
-  const chartData = data.map((item) => ({
-    age: item.age,
-    year: item.year,
-    totalAmount: item.totalAmount || item.amount,
-    ...item, // 모든 자산 항목 포함
-    formattedAmount: formatAmountForChart(item.totalAmount || item.amount),
-  }));
+  const chartData = data.map((item) => {
+    const processedItem = {
+      age: item.age,
+      year: item.year,
+      totalAmount: item.totalAmount || item.amount,
+      formattedAmount: formatAmountForChart(item.totalAmount || item.amount),
+    };
+
+    // 자산 항목들을 처리 (부채는 음수로 변환)
+    Object.keys(item).forEach((key) => {
+      if (key !== "year" && key !== "age" && key !== "totalAmount") {
+        if (key === "현금부족") {
+          // 현금부족은 음수로 표시
+          processedItem[key] = -(item[key] || 0);
+        } else {
+          // 다른 자산들은 양수로 표시
+          processedItem[key] = item[key] || 0;
+        }
+      }
+    });
+
+    return processedItem;
+  });
 
   // 동적 자산 항목 추출 (기본 필드 제외)
   const assetKeys =
-    data.length > 0
-      ? Object.keys(data[0]).filter(
+    chartData.length > 0
+      ? Object.keys(chartData[0]).filter(
           (key) =>
             key !== "year" &&
             key !== "age" &&
@@ -67,11 +83,20 @@ function RechartsAssetChart({
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
 
-  // Y축 도메인 계산 (0부터 시작)
-  const amounts = data.map((d) => d.totalAmount || d.amount);
-  const maxAmount = Math.max(...amounts);
-  const padding = maxAmount * 0.1;
-  const yDomain = [0, maxAmount + padding];
+  // Y축 도메인 계산 (음수 포함)
+  const allValues = [];
+  chartData.forEach((item) => {
+    assetKeys.forEach((key) => {
+      if (item[key] !== undefined) {
+        allValues.push(item[key]);
+      }
+    });
+  });
+  
+  const maxValue = Math.max(...allValues, 0);
+  const minValue = Math.min(...allValues, 0);
+  const padding = Math.max(maxValue, Math.abs(minValue)) * 0.1;
+  const yDomain = [minValue - padding, maxValue + padding];
 
   return (
     <div className={styles.chartContainer}>
@@ -144,6 +169,19 @@ function RechartsAssetChart({
               />
             )}
 
+            {/* Y축 0 기준선 */}
+            <ReferenceLine
+              y={0}
+              stroke="#374151"
+              strokeWidth={2}
+              strokeDasharray="3 3"
+              label={{
+                value: "0",
+                position: "top",
+                style: { fill: "#374151", fontSize: "12px" },
+              }}
+            />
+
             {/* 목표 자산선 */}
             <ReferenceLine
               y={targetAssets}
@@ -158,15 +196,21 @@ function RechartsAssetChart({
             />
 
             {/* 동적 자산 항목 Bar들 */}
-            {assetKeys.map((key, index) => (
-              <Bar
-                key={`${key}-${index}`}
-                dataKey={key}
-                stackId="assets"
-                fill={colors[index % colors.length]}
-                name={key}
-              />
-            ))}
+            {assetKeys.map((key, index) => {
+              // 부채 항목은 빨간색 계열로 표시
+              const isDebt = key === "현금부족";
+              const color = isDebt ? "#ef4444" : colors[index % colors.length];
+              
+              return (
+                <Bar
+                  key={`${key}-${index}`}
+                  dataKey={key}
+                  stackId="assets"
+                  fill={color}
+                  name={key}
+                />
+              );
+            })}
 
             {/* 범례 */}
             <Legend

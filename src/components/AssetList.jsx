@@ -51,9 +51,10 @@ function AssetList({ assets, onEdit, onDelete }) {
               {asset.startYear}년 - {asset.endYear}년
               <br />
               (상승률 {(asset.growthRate * 100).toFixed(1)}% 적용
-              {asset.assetType === "income" && asset.incomeRate > 0 && 
-                `, 수익률 ${(asset.incomeRate * 100).toFixed(1)}%`
-              })
+              {asset.assetType === "income" &&
+                asset.incomeRate > 0 &&
+                `, 수익률 ${(asset.incomeRate * 100).toFixed(1)}%`}
+              )
             </div>
           </div>
         </div>

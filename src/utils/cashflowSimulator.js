@@ -184,7 +184,8 @@ export function calculateCashflowSimulation(
       ) {
         // 해당 연도의 자산 가치를 계산 (자산 시뮬레이션에서 가져와야 하지만, 여기서는 간단히 계산)
         const yearsElapsed = year - asset.startYear;
-        const currentAssetValue = asset.currentValue * Math.pow(1 + asset.growthRate, yearsElapsed);
+        const currentAssetValue =
+          asset.currentValue * Math.pow(1 + asset.growthRate, yearsElapsed);
         totalAssetIncome += currentAssetValue * asset.incomeRate;
       }
     });
@@ -226,7 +227,8 @@ export function calculateAssetSimulation(
   savings = [],
   pensions = [],
   realEstates = [],
-  assets = []
+  assets = [],
+  cashflowData = []
 ) {
   // 현재는 더미 데이터 반환
   const currentYear = new Date().getFullYear();
@@ -306,6 +308,13 @@ export function calculateAssetSimulation(
   for (let i = 0; i < simulationYears; i++) {
     const year = currentYear + i;
     const age = startAge + i;
+
+    // 해당 연도의 현금 흐름 가져오기
+    const yearCashflow = cashflowData.find((cf) => cf.year === year);
+    const netCashflow = yearCashflow ? yearCashflow.amount : 0;
+
+    // 현금 흐름을 현재 현금에 적용
+    currentCash += netCashflow;
 
     // 해당 연도의 저축 계산 (제목별로)
     Object.keys(savingsByTitle).forEach((title) => {
@@ -471,8 +480,14 @@ export function calculateAssetSimulation(
     const assetItem = {
       year,
       age,
-      현금: currentCash, // 현금으로 통일
     };
+
+    // 현금을 양수/음수로 분리
+    if (currentCash >= 0) {
+      assetItem.현금 = currentCash; // 양수면 자산
+    } else {
+      assetItem.현금부족 = Math.abs(currentCash); // 음수면 부채
+    }
 
     // 활성 저축별 자산 추가
     Object.keys(savingsByTitle).forEach((title) => {
