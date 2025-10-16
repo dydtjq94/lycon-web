@@ -12,7 +12,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
     startYear: new Date().getFullYear(),
     endYear: new Date().getFullYear() + 10,
     memo: "",
-    growthRate: 2.5, // 기본 상승률 2.5%
+    growthRate: "2.5", // 기본 상승률 2.5%
   });
 
   const [errors, setErrors] = useState({});
@@ -29,7 +29,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 10,
           memo: editData.memo || "",
-          growthRate: editData.growthRate || 2.5,
+          growthRate: editData.growthRate ? editData.growthRate.toString() : "2.5",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -40,7 +40,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
           startYear: new Date().getFullYear(),
           endYear: new Date().getFullYear() + 10,
           memo: "",
-          growthRate: 2.5,
+          growthRate: "2.5",
         });
       }
     }
@@ -62,8 +62,9 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
       newErrors.endYear = "종료년도는 시작년도보다 늦어야 합니다.";
     }
 
-    if (formData.growthRate < 0 || formData.growthRate > 100) {
-      newErrors.growthRate = "상승률은 0-100% 사이여야 합니다.";
+    const growthRateNum = parseFloat(formData.growthRate);
+    if (isNaN(growthRateNum) || growthRateNum < 0 || growthRateNum > 100) {
+      newErrors.growthRate = "상승률은 0-100% 사이의 유효한 숫자여야 합니다.";
     }
 
     setErrors(newErrors);
@@ -81,6 +82,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
     const incomeData = {
       ...formData,
       amount: parseInt(formData.amount),
+      growthRate: parseFloat(formData.growthRate),
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
     };
@@ -98,7 +100,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
       memo: "",
-      growthRate: 2.5,
+      growthRate: "2.5",
     });
     setErrors({});
     onClose();
@@ -242,19 +244,20 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
               type="text"
               id="growthRate"
               value={formData.growthRate}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  growthRate: parseFloat(e.target.value) || 0,
-                })
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                // 숫자와 소수점만 허용
+                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                  setFormData({
+                    ...formData,
+                    growthRate: value,
+                  });
+                }
+              }}
               className={`${styles.input} ${
                 errors.growthRate ? styles.error : ""
               }`}
               placeholder="2.5"
-              onKeyPress={(e) => {
-                if (!/[0-9.]/.test(e.key)) e.preventDefault();
-              }}
             />
             {errors.growthRate && (
               <span className={styles.errorText}>{errors.growthRate}</span>
