@@ -173,14 +173,31 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 (각 년도별 순현금흐름)
+    // 자산 수익 계산 (수익형 자산의 이자/배당)
+    let totalAssetIncome = 0;
+    assets.forEach((asset) => {
+      if (
+        asset.assetType === "income" &&
+        asset.incomeRate > 0 &&
+        year >= asset.startYear &&
+        year <= asset.endYear
+      ) {
+        // 해당 연도의 자산 가치를 계산 (자산 시뮬레이션에서 가져와야 하지만, 여기서는 간단히 계산)
+        const yearsElapsed = year - asset.startYear;
+        const currentAssetValue = asset.currentValue * Math.pow(1 + asset.growthRate, yearsElapsed);
+        totalAssetIncome += currentAssetValue * asset.incomeRate;
+      }
+    });
+
+    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 + 자산수익 (각 년도별 순현금흐름)
     const netCashflow =
       totalIncome -
       totalExpense -
       totalSavings +
       totalPension +
       totalRentalIncome +
-      totalRealEstatePension;
+      totalRealEstatePension +
+      totalAssetIncome;
 
     cashflowData.push({
       year,
@@ -192,6 +209,7 @@ export function calculateCashflowSimulation(
       pension: totalPension,
       rentalIncome: totalRentalIncome,
       realEstatePension: totalRealEstatePension,
+      assetIncome: totalAssetIncome,
     });
   }
 
@@ -279,6 +297,8 @@ export function calculateAssetSimulation(
       startYear: asset.startYear,
       endYear: asset.endYear,
       growthRate: asset.growthRate || 0,
+      assetType: asset.assetType || "general", // "general" 또는 "income"
+      incomeRate: asset.incomeRate || 0, // 수익형 자산의 수익률
       isActive: true,
     };
   });

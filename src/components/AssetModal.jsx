@@ -13,6 +13,8 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
     growthRate: "",
     startYear: new Date().getFullYear(),
     endYear: "",
+    assetType: "general", // "general" 또는 "income"
+    incomeRate: "", // 수익형 자산일 때만 사용
     memo: "",
   });
 
@@ -28,6 +30,8 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
           growthRate: editData.growthRate || "",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || "",
+          assetType: editData.assetType || "general",
+          incomeRate: editData.incomeRate || "",
           memo: editData.memo || "",
         });
       } else {
@@ -41,6 +45,8 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
           growthRate: "",
           startYear: currentYear,
           endYear: deathYear,
+          assetType: "general",
+          incomeRate: "",
           memo: "",
         });
       }
@@ -65,6 +71,12 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
 
     if (!formData.endYear || parseInt(formData.endYear) <= formData.startYear) {
       newErrors.endYear = "종료 연도는 시작 연도보다 커야 합니다.";
+    }
+
+    if (formData.assetType === "income") {
+      if (!formData.incomeRate || parseFloat(formData.incomeRate) < 0) {
+        newErrors.incomeRate = "수익률은 0 이상이어야 합니다.";
+      }
     }
 
     setErrors(newErrors);
@@ -95,6 +107,8 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
       growthRate: parseFloat(formData.growthRate) / 100, // 백분율을 소수로 변환
       startYear: parseInt(formData.startYear),
       endYear: parseInt(formData.endYear),
+      assetType: formData.assetType,
+      incomeRate: formData.assetType === "income" ? parseFloat(formData.incomeRate) / 100 : 0, // 수익형 자산일 때만 수익률 적용
       memo: formData.memo.trim(),
     };
 
@@ -109,6 +123,8 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
       growthRate: "",
       startYear: new Date().getFullYear(),
       endYear: "",
+      assetType: "general",
+      incomeRate: "",
       memo: "",
     });
     setErrors({});
@@ -162,6 +178,36 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
           </div>
 
           <div className={styles.field}>
+            <label className={styles.label}>자산 타입 *</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="assetType"
+                  value="general"
+                  checked={formData.assetType === "general"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, assetType: e.target.value })
+                  }
+                />
+                <span className={styles.radioText}>일반 자산</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="assetType"
+                  value="income"
+                  checked={formData.assetType === "income"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, assetType: e.target.value })
+                  }
+                />
+                <span className={styles.radioText}>수익형 자산</span>
+              </label>
+            </div>
+          </div>
+
+          <div className={styles.field}>
             <label className={styles.label}>연간 상승률 (%) *</label>
             <input
               type="text"
@@ -177,6 +223,25 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
               <span className={styles.errorText}>{errors.growthRate}</span>
             )}
           </div>
+
+          {formData.assetType === "income" && (
+            <div className={styles.field}>
+              <label className={styles.label}>연간 수익률 (%) *</label>
+              <input
+                type="text"
+                value={formData.incomeRate}
+                onChange={(e) =>
+                  setFormData({ ...formData, incomeRate: e.target.value })
+                }
+                onKeyPress={handleKeyPress}
+                className={`${styles.input} ${errors.incomeRate ? styles.error : ""}`}
+                placeholder="예: 3.0 (이자/배당률)"
+              />
+              {errors.incomeRate && (
+                <span className={styles.errorText}>{errors.incomeRate}</span>
+              )}
+            </div>
+          )}
 
           <div className={styles.field}>
             <label className={styles.label}>보유 기간 *</label>
