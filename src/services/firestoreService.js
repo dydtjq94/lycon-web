@@ -23,6 +23,7 @@ export const profileService = {
       console.log("프로필 생성 시작:", profileData);
       const docRef = await addDoc(collection(db, "profiles"), {
         ...profileData,
+        isActive: true, // 기본값으로 활성 상태 설정
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -42,20 +43,44 @@ export const profileService = {
     }
   },
 
-  // 모든 프로필 조회
+  // 모든 활성 프로필 조회 (isActive가 true이거나 undefined인 것들)
   async getAllProfiles() {
     try {
       console.log("프로필 목록 조회 시작");
       const querySnapshot = await getDocs(
         query(collection(db, "profiles"), orderBy("createdAt", "desc"))
       );
-      console.log("조회된 프로필 수:", querySnapshot.docs.length);
+      const profiles = querySnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((profile) => profile.isActive !== false); // isActive가 false가 아닌 것만
+      console.log("조회된 활성 프로필 수:", profiles.length);
+      return profiles;
+    } catch (error) {
+      console.error("프로필 조회 오류:", error);
+      if (error.name === "AbortError") {
+        throw new Error("네트워크 연결이 중단되었습니다. 다시 시도해주세요.");
+      }
+      throw error;
+    }
+  },
+
+  // 모든 프로필 조회 (삭제된 것 포함)
+  async getAllProfilesIncludingDeleted() {
+    try {
+      console.log("모든 프로필 조회 시작 (삭제된 것 포함)");
+      const querySnapshot = await getDocs(
+        query(collection(db, "profiles"), orderBy("createdAt", "desc"))
+      );
+      console.log("조회된 전체 프로필 수:", querySnapshot.docs.length);
       return querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
     } catch (error) {
-      console.error("프로필 조회 오류:", error);
+      console.error("전체 프로필 조회 오류:", error);
       if (error.name === "AbortError") {
         throw new Error("네트워크 연결이 중단되었습니다. 다시 시도해주세요.");
       }
@@ -112,13 +137,46 @@ export const profileService = {
     }
   },
 
-  // 프로필 삭제
+  // 프로필 소프트 삭제 (isActive를 false로 설정)
   async deleteProfile(profileId) {
     try {
       const docRef = doc(db, "profiles", profileId);
-      await deleteDoc(docRef);
+      await updateDoc(docRef, {
+        isActive: false,
+        deletedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("프로필 소프트 삭제 완료:", profileId);
     } catch (error) {
       console.error("프로필 삭제 오류:", error);
+      throw error;
+    }
+  },
+
+  // 프로필 복원 (isActive를 true로 설정)
+  async restoreProfile(profileId) {
+    try {
+      const docRef = doc(db, "profiles", profileId);
+      await updateDoc(docRef, {
+        isActive: true,
+        restoredAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("프로필 복원 완료:", profileId);
+    } catch (error) {
+      console.error("프로필 복원 오류:", error);
+      throw error;
+    }
+  },
+
+  // 프로필 완전 삭제 (실제 데이터 삭제)
+  async permanentDeleteProfile(profileId) {
+    try {
+      const docRef = doc(db, "profiles", profileId);
+      await deleteDoc(docRef);
+      console.log("프로필 완전 삭제 완료:", profileId);
+    } catch (error) {
+      console.error("프로필 완전 삭제 오류:", error);
       throw error;
     }
   },

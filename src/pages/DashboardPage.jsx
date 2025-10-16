@@ -216,7 +216,7 @@ function DashboardPage() {
     if (!profileData) {
       return;
     }
-    
+
     const currentYear = new Date().getFullYear();
     const startAge = profileData.currentKoreanAge;
     const retirementAge = profileData.retirementAge;

@@ -41,6 +41,41 @@
   background: #374151;
 }
 
+.headerActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.toggleButton {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.toggleButton.active {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
+
+.toggleButton.active:hover {
+  background: #374151;
+}
+
 .profileGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
@@ -190,4 +225,55 @@
   .profileActions {
     flex-direction: column;
   }
+}
+
+/* 삭제된 프로필 스타일 */
+.deletedCard {
+  opacity: 0.7;
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+}
+
+.deletedBadge {
+  display: inline-block;
+  background: #ef4444;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.restoreButton {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: 0.5rem;
+}
+
+.restoreButton:hover {
+  background: #059669;
+}
+
+.permanentDeleteButton {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.permanentDeleteButton:hover {
+  background: #dc2626;
 }
