@@ -290,7 +290,11 @@ function DashboardPage() {
         cashflow // 현금 흐름 데이터 전달
       );
 
-      setSimulationData({ cashflow, assets: assetSimulation });
+      setSimulationData({
+        cashflow,
+        cashflowDetailed: cashflow, // 상세 데이터는 cashflow와 동일
+        assets: assetSimulation,
+      });
     },
     [incomes, expenses, savings, pensions, realEstates, assets]
   );
@@ -885,6 +889,7 @@ function DashboardPage() {
                 <RechartsCashflowChart
                   data={simulationData.cashflow}
                   retirementAge={profileData.retirementAge}
+                  detailedData={simulationData.cashflowDetailed}
                 />
               </div>
 

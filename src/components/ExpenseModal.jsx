@@ -12,7 +12,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
     startYear: new Date().getFullYear(),
     endYear: new Date().getFullYear() + 10,
     memo: "",
-    growthRate: 2.5, // 기본 상승률 2.5%
+    growthRate: "2.5", // 기본 상승률 2.5%
   });
 
   const [errors, setErrors] = useState({});
@@ -28,7 +28,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 10,
           memo: editData.memo || "",
-          growthRate: editData.growthRate || 2.5,
+          growthRate: editData.growthRate ? (editData.growthRate * 100).toString() : "2.5",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -39,7 +39,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
           startYear: new Date().getFullYear(),
           endYear: new Date().getFullYear() + 10,
           memo: "",
-          growthRate: 2.5,
+          growthRate: "2.5",
         });
       }
     }
@@ -83,6 +83,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
     const expenseData = {
       ...formData,
       amount: parseInt(formData.amount),
+      growthRate: parseFloat(formData.growthRate) / 100, // 백분율을 소수로 변환
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
     };
@@ -100,7 +101,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
       memo: "",
-      growthRate: 2.5,
+      growthRate: "2.5",
     });
     setErrors({});
     onClose();
@@ -230,9 +231,13 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
               type="text"
               id="growthRate"
               value={formData.growthRate}
-              onChange={(e) =>
-                setFormData({ ...formData, growthRate: e.target.value })
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                // 숫자와 소수점만 허용
+                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                  setFormData({ ...formData, growthRate: value });
+                }
+              }}
               onKeyPress={handleKeyPress}
               className={styles.input}
               placeholder="2.5"

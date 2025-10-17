@@ -10,11 +10,11 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
   const [formData, setFormData] = useState({
     title: "",
     currentValue: "",
-    growthRate: "",
+    growthRate: "5", // % 단위로 기본값 설정
     startYear: new Date().getFullYear(),
     endYear: "",
     assetType: "general", // "general" 또는 "income"
-    incomeRate: "", // 수익형 자산일 때만 사용
+    incomeRate: "3", // % 단위로 기본값 설정
     memo: "",
   });
 
@@ -27,11 +27,11 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
         setFormData({
           title: editData.title || "",
           currentValue: editData.currentValue || "",
-          growthRate: editData.growthRate || "",
+          growthRate: editData.growthRate ? (editData.growthRate * 100).toString() : "5",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || "",
           assetType: editData.assetType || "general",
-          incomeRate: editData.incomeRate || "",
+          incomeRate: editData.incomeRate ? (editData.incomeRate * 100).toString() : "3",
           memo: editData.memo || "",
         });
       } else {
@@ -42,11 +42,11 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
         setFormData({
           title: "",
           currentValue: "",
-          growthRate: "",
+          growthRate: "5",
           startYear: currentYear,
           endYear: deathYear,
           assetType: "general",
-          incomeRate: "",
+          incomeRate: "3",
           memo: "",
         });
       }
@@ -65,8 +65,9 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
       newErrors.currentValue = "현재 가치는 0보다 큰 값을 입력해주세요.";
     }
 
-    if (!formData.growthRate || parseFloat(formData.growthRate) < 0) {
-      newErrors.growthRate = "상승률은 0 이상이어야 합니다.";
+    const growthRateNum = parseFloat(formData.growthRate);
+    if (isNaN(growthRateNum) || growthRateNum < 0 || growthRateNum > 100) {
+      newErrors.growthRate = "상승률은 0-100% 사이의 유효한 숫자여야 합니다.";
     }
 
     if (!formData.endYear || parseInt(formData.endYear) <= formData.startYear) {
@@ -74,8 +75,9 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
     }
 
     if (formData.assetType === "income") {
-      if (!formData.incomeRate || parseFloat(formData.incomeRate) < 0) {
-        newErrors.incomeRate = "수익률은 0 이상이어야 합니다.";
+      const incomeRateNum = parseFloat(formData.incomeRate);
+      if (isNaN(incomeRateNum) || incomeRateNum < 0 || incomeRateNum > 100) {
+        newErrors.incomeRate = "수익률은 0-100% 사이의 유효한 숫자여야 합니다.";
       }
     }
 
@@ -212,10 +214,13 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
             <input
               type="text"
               value={formData.growthRate}
-              onChange={(e) =>
-                setFormData({ ...formData, growthRate: e.target.value })
-              }
-              onKeyPress={handleKeyPress}
+              onChange={(e) => {
+                const value = e.target.value;
+                // 숫자와 소수점만 허용
+                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                  setFormData({ ...formData, growthRate: value });
+                }
+              }}
               className={`${styles.input} ${errors.growthRate ? styles.error : ""}`}
               placeholder="예: 5.0"
             />
@@ -230,10 +235,13 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
               <input
                 type="text"
                 value={formData.incomeRate}
-                onChange={(e) =>
-                  setFormData({ ...formData, incomeRate: e.target.value })
-                }
-                onKeyPress={handleKeyPress}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // 숫자와 소수점만 허용
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setFormData({ ...formData, incomeRate: value });
+                  }
+                }}
                 className={`${styles.input} ${errors.incomeRate ? styles.error : ""}`}
                 placeholder="예: 3.0 (이자/배당률)"
               />

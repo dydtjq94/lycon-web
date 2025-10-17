@@ -12,8 +12,8 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
     startYear: new Date().getFullYear(),
     endYear: new Date().getFullYear() + 10,
     memo: "",
-    interestRate: 3.0, // 이자율 3%
-    monthlyGrowthRate: 0, // 월간 저축 상승률 0%
+    interestRate: "3.0", // 이자율 3%
+    monthlyGrowthRate: "0", // 월간 저축 상승률 0%
   });
 
   const [errors, setErrors] = useState({});
@@ -30,8 +30,8 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 10,
           memo: editData.memo || "",
-          interestRate: editData.interestRate || 3.0,
-          monthlyGrowthRate: editData.monthlyGrowthRate || 0,
+          interestRate: editData.interestRate ? (editData.interestRate * 100).toString() : "3.0",
+          monthlyGrowthRate: editData.monthlyGrowthRate ? (editData.monthlyGrowthRate * 100).toString() : "0",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -42,8 +42,8 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
           startYear: new Date().getFullYear(),
           endYear: new Date().getFullYear() + 10,
           memo: "",
-          interestRate: 3.0,
-          monthlyGrowthRate: 0,
+          interestRate: "3.0",
+          monthlyGrowthRate: "0",
         });
       }
     }
@@ -90,6 +90,8 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
     const savingData = {
       ...formData,
       amount: parseInt(formData.amount),
+      interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
+      monthlyGrowthRate: parseFloat(formData.monthlyGrowthRate) / 100, // 백분율을 소수로 변환
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
       // 일회성 저축도 사용자가 설정한 endYear 사용
@@ -109,8 +111,8 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
       memo: "",
-      interestRate: 3.0,
-      monthlyGrowthRate: 0,
+      interestRate: "3.0",
+      monthlyGrowthRate: "0",
     });
     setErrors({});
     onClose();
@@ -246,9 +248,13 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
                 type="text"
                 id="interestRate"
                 value={formData.interestRate}
-                onChange={(e) =>
-                  setFormData({ ...formData, interestRate: e.target.value })
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // 숫자와 소수점만 허용
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setFormData({ ...formData, interestRate: value });
+                  }
+                }}
                 onKeyPress={handleKeyPress}
                 className={styles.input}
                 placeholder="3.0"
@@ -264,12 +270,16 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
                   type="text"
                   id="monthlyGrowthRate"
                   value={formData.monthlyGrowthRate}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      monthlyGrowthRate: e.target.value,
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // 숫자와 소수점만 허용
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setFormData({
+                        ...formData,
+                        monthlyGrowthRate: value,
+                      });
+                    }
+                  }}
                   onKeyPress={handleKeyPress}
                   className={styles.input}
                   placeholder="0"

@@ -11,7 +11,7 @@ const RealEstateModal = ({
   const [formData, setFormData] = useState({
     title: "",
     currentValue: "",
-    growthRate: 2.5,
+    growthRate: "2.5",
     endYear: "",
     hasRentalIncome: false,
     monthlyRentalIncome: "",
@@ -32,7 +32,7 @@ const RealEstateModal = ({
         setFormData({
           title: editData.title || "",
           currentValue: editData.currentValue || "",
-          growthRate: editData.growthRate || 2.5,
+          growthRate: editData.growthRate ? (editData.growthRate * 100).toString() : "2.5",
           endYear: editData.endYear || "",
           hasRentalIncome: editData.hasRentalIncome || false,
           monthlyRentalIncome: editData.monthlyRentalIncome || "",
@@ -47,7 +47,7 @@ const RealEstateModal = ({
         setFormData({
           title: "",
           currentValue: "",
-          growthRate: 2.5,
+          growthRate: "2.5",
           endYear: "",
           hasRentalIncome: false,
           monthlyRentalIncome: "",
@@ -67,7 +67,7 @@ const RealEstateModal = ({
     setFormData({
       title: "",
       currentValue: "",
-      growthRate: 2.5,
+      growthRate: "2.5",
       endYear: "",
       hasRentalIncome: false,
       monthlyRentalIncome: "",
@@ -142,7 +142,7 @@ const RealEstateModal = ({
     const realEstateData = {
       title: formData.title.trim(),
       currentValue: parseInt(formData.currentValue),
-      growthRate: parseFloat(formData.growthRate),
+      growthRate: parseFloat(formData.growthRate) / 100, // 백분율을 소수로 변환
       endYear: parseInt(formData.endYear),
       hasRentalIncome: formData.hasRentalIncome,
       monthlyRentalIncome: formData.hasRentalIncome ? parseInt(formData.monthlyRentalIncome) : null,
@@ -218,10 +218,13 @@ const RealEstateModal = ({
             <input
               type="text"
               value={formData.growthRate}
-              onChange={(e) =>
-                setFormData({ ...formData, growthRate: e.target.value })
-              }
-              onKeyPress={handleKeyPress}
+              onChange={(e) => {
+                const value = e.target.value;
+                // 숫자와 소수점만 허용
+                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                  setFormData({ ...formData, growthRate: value });
+                }
+              }}
               className={`${styles.input} ${
                 errors.growthRate ? styles.error : ""
               }`}

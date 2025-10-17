@@ -43,6 +43,94 @@
   font-style: italic;
 }
 
+/* 상세 내역 섹션 */
+.detailedSection {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.detailedTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.detailedList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detailedItem {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.yearHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.year {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+}
+
+.amount.positive {
+  color: #059669;
+  background-color: #d1fae5;
+}
+
+.amount.negative {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
+
+.breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.breakdownItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.value {
+  font-weight: 600;
+  color: #374151;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .chartHeader {
@@ -57,5 +145,19 @@
 
   .chartWrapper {
     min-height: 300px;
+  }
+
+  .detailedSection {
+    padding: 1rem;
+  }
+
+  .breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .yearHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 }
