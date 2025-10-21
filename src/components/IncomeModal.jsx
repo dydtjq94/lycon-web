@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./IncomeModal.module.css";
+import { formatAmountForChart } from "../utils/format";
 
 /**
  * 수입 데이터 추가/수정 모달
@@ -195,6 +196,11 @@ function IncomeModal({
                   if (!/[0-9.]/.test(e.key)) e.preventDefault();
                 }}
               />
+              {formData.amount && !isNaN(parseInt(formData.amount)) && (
+                <div className={styles.amountPreview}>
+                  {formatAmountForChart(parseInt(formData.amount))}
+                </div>
+              )}
               {errors.amount && (
                 <span className={styles.errorText}>{errors.amount}</span>
               )}

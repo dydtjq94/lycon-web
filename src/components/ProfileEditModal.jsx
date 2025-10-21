@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { calculateKoreanAge, getKoreanAgeInYear } from "../utils/koreanAge";
 import { profileService } from "../services/firestoreService";
+import { formatAmountForChart } from "../utils/format";
 import styles from "./ProfileEditModal.module.css";
 
 /**
@@ -277,6 +278,11 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
               }`}
               placeholder="예: 1000"
             />
+            {formData.currentCash && !isNaN(parseInt(formData.currentCash)) && (
+              <div className={styles.amountPreview}>
+                {formatAmountForChart(parseInt(formData.currentCash))}
+              </div>
+            )}
             {errors.currentCash && (
               <span className={styles.errorText}>{errors.currentCash}</span>
             )}
@@ -296,6 +302,12 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
               }`}
               placeholder="예: 10000"
             />
+            {formData.targetAssets &&
+              !isNaN(parseInt(formData.targetAssets)) && (
+                <div className={styles.amountPreview}>
+                  {formatAmountForChart(parseInt(formData.targetAssets))}
+                </div>
+              )}
             {errors.targetAssets && (
               <span className={styles.errorText}>{errors.targetAssets}</span>
             )}

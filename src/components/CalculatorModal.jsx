@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./CalculatorModal.module.css";
+import { formatAmountForChart } from "../utils/format";
 
 /**
  * 계산기 모달 컴포넌트
@@ -170,6 +171,14 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                   }`}
                   placeholder="예: 10000"
                 />
+                {goalFormData.targetAmount &&
+                  !isNaN(parseInt(goalFormData.targetAmount)) && (
+                    <div className={styles.amountPreview}>
+                      {formatAmountForChart(
+                        parseInt(goalFormData.targetAmount)
+                      )}
+                    </div>
+                  )}
                 {goalErrors.targetAmount && (
                   <span className={styles.errorText}>
                     {goalErrors.targetAmount}

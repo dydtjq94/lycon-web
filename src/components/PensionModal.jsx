@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./PensionModal.module.css";
+import { formatAmountForChart } from "../utils/format";
 
 /**
  * 연금 데이터 추가/수정 모달
@@ -397,6 +398,14 @@ function PensionModal({
                       }`}
                       placeholder="예: 100"
                     />
+                    {formData.monthlyAmount &&
+                      !isNaN(parseInt(formData.monthlyAmount)) && (
+                        <div className={styles.amountPreview}>
+                          {formatAmountForChart(
+                            parseInt(formData.monthlyAmount)
+                          )}
+                        </div>
+                      )}
                     {errors.monthlyAmount && (
                       <span className={styles.errorText}>
                         {errors.monthlyAmount}
@@ -491,6 +500,14 @@ function PensionModal({
                       }`}
                       placeholder="예: 1000 (선택사항)"
                     />
+                    {formData.currentAmount &&
+                      !isNaN(parseInt(formData.currentAmount)) && (
+                        <div className={styles.amountPreview}>
+                          {formatAmountForChart(
+                            parseInt(formData.currentAmount)
+                          )}
+                        </div>
+                      )}
                     {errors.currentAmount && (
                       <span className={styles.errorText}>
                         {errors.currentAmount}
@@ -530,6 +547,14 @@ function PensionModal({
                         <option value="yearly">년</option>
                       </select>
                     </div>
+                    {formData.contributionAmount &&
+                      !isNaN(parseInt(formData.contributionAmount)) && (
+                        <div className={styles.amountPreview}>
+                          {formatAmountForChart(
+                            parseInt(formData.contributionAmount)
+                          )}
+                        </div>
+                      )}
                     {errors.contributionAmount && (
                       <span className={styles.errorText}>
                         {errors.contributionAmount}

@@ -137,6 +137,14 @@
   margin-top: 4px;
 }
 
+.amountPreview {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-weight: 500;
+  margin-left: 12px;
+}
+
 .calculateButton {
   background: #3b82f6;
   color: white;

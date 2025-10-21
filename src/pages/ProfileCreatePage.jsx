@@ -6,6 +6,7 @@ import {
   incomeService,
   expenseService,
 } from "../services/firestoreService";
+import { formatAmountForChart } from "../utils/format";
 import styles from "./ProfileCreatePage.module.css";
 
 /**
@@ -505,6 +506,12 @@ function ProfileCreatePage() {
                   }
                 }}
               />
+              {formData.targetAssets &&
+                !isNaN(parseInt(formData.targetAssets)) && (
+                  <div className={styles.amountPreview}>
+                    {formatAmountForChart(parseInt(formData.targetAssets))}
+                  </div>
+                )}
               {errors.targetAssets && (
                 <span className={styles.errorText}>{errors.targetAssets}</span>
               )}
@@ -532,6 +539,12 @@ function ProfileCreatePage() {
                   }
                 }}
               />
+              {formData.currentCash &&
+                !isNaN(parseInt(formData.currentCash)) && (
+                  <div className={styles.amountPreview}>
+                    {formatAmountForChart(parseInt(formData.currentCash))}
+                  </div>
+                )}
               {errors.currentCash && (
                 <span className={styles.errorText}>{errors.currentCash}</span>
               )}

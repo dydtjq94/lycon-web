@@ -109,6 +109,14 @@
   margin-top: 0.25rem;
 }
 
+.amountPreview {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-weight: 500;
+  margin-left: 12px;
+}
+
 .textarea {
   resize: vertical;
   min-height: 80px;

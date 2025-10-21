@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./SavingModal.module.css";
+import { formatAmountForChart } from "../utils/format";
 
 /**
  * 저축/투자 데이터 추가/수정 모달
@@ -208,6 +209,11 @@ function SavingModal({
                 }`}
                 placeholder="예: 100"
               />
+              {formData.amount && !isNaN(parseInt(formData.amount)) && (
+                <div className={styles.amountPreview}>
+                  {formatAmountForChart(parseInt(formData.amount))}
+                </div>
+              )}
               {errors.amount && (
                 <span className={styles.errorText}>{errors.amount}</span>
               )}

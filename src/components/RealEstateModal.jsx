@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./RealEstateModal.module.css";
+import { formatAmountForChart } from "../utils/format";
 
 const RealEstateModal = ({
   isOpen,
@@ -32,7 +33,9 @@ const RealEstateModal = ({
         setFormData({
           title: editData.title || "",
           currentValue: editData.currentValue || "",
-          growthRate: editData.growthRate ? (editData.growthRate * 100).toString() : "2.5",
+          growthRate: editData.growthRate
+            ? (editData.growthRate * 100).toString()
+            : "2.5",
           endYear: editData.endYear || "",
           hasRentalIncome: editData.hasRentalIncome || false,
           monthlyRentalIncome: editData.monthlyRentalIncome || "",
@@ -96,34 +99,37 @@ const RealEstateModal = ({
       newErrors.title = "부동산명을 입력해주세요";
     }
 
-    if (!formData.currentValue || formData.currentValue <= 0) {
+    if (!formData.currentValue || formData.currentValue < 0) {
       newErrors.currentValue = "현재 가치를 입력해주세요";
     }
 
-    if (!formData.endYear || formData.endYear <= 0) {
+    if (!formData.endYear || formData.endYear < 0) {
       newErrors.endYear = "보유 종료년도를 입력해주세요";
     }
 
     if (formData.hasRentalIncome) {
-      if (!formData.monthlyRentalIncome || formData.monthlyRentalIncome <= 0) {
+      if (!formData.monthlyRentalIncome || formData.monthlyRentalIncome < 0) {
         newErrors.monthlyRentalIncome = "월 임대 수입을 입력해주세요";
       }
 
-      if (!formData.rentalIncomeStartYear || formData.rentalIncomeStartYear <= 0) {
+      if (
+        !formData.rentalIncomeStartYear ||
+        formData.rentalIncomeStartYear < 0
+      ) {
         newErrors.rentalIncomeStartYear = "임대 수입 시작년도를 입력해주세요";
       }
 
-      if (!formData.rentalIncomeEndYear || formData.rentalIncomeEndYear <= 0) {
+      if (!formData.rentalIncomeEndYear || formData.rentalIncomeEndYear < 0) {
         newErrors.rentalIncomeEndYear = "임대 수입 종료년도를 입력해주세요";
       }
     }
 
     if (formData.convertToPension) {
-      if (!formData.pensionStartYear || formData.pensionStartYear <= 0) {
+      if (!formData.pensionStartYear || formData.pensionStartYear < 0) {
         newErrors.pensionStartYear = "주택연금 시작년도를 입력해주세요";
       }
 
-      if (!formData.monthlyPensionAmount || formData.monthlyPensionAmount <= 0) {
+      if (!formData.monthlyPensionAmount || formData.monthlyPensionAmount < 0) {
         newErrors.monthlyPensionAmount = "월 수령액을 입력해주세요";
       }
     }
@@ -145,12 +151,22 @@ const RealEstateModal = ({
       growthRate: parseFloat(formData.growthRate) / 100, // 백분율을 소수로 변환
       endYear: parseInt(formData.endYear),
       hasRentalIncome: formData.hasRentalIncome,
-      monthlyRentalIncome: formData.hasRentalIncome ? parseInt(formData.monthlyRentalIncome) : null,
-      rentalIncomeStartYear: formData.hasRentalIncome ? parseInt(formData.rentalIncomeStartYear) : null,
-      rentalIncomeEndYear: formData.hasRentalIncome ? parseInt(formData.rentalIncomeEndYear) : null,
+      monthlyRentalIncome: formData.hasRentalIncome
+        ? parseInt(formData.monthlyRentalIncome)
+        : null,
+      rentalIncomeStartYear: formData.hasRentalIncome
+        ? parseInt(formData.rentalIncomeStartYear)
+        : null,
+      rentalIncomeEndYear: formData.hasRentalIncome
+        ? parseInt(formData.rentalIncomeEndYear)
+        : null,
       convertToPension: formData.convertToPension,
-      pensionStartYear: formData.convertToPension ? parseInt(formData.pensionStartYear) : null,
-      monthlyPensionAmount: formData.convertToPension ? parseInt(formData.monthlyPensionAmount) : null,
+      pensionStartYear: formData.convertToPension
+        ? parseInt(formData.pensionStartYear)
+        : null,
+      monthlyPensionAmount: formData.convertToPension
+        ? parseInt(formData.monthlyPensionAmount)
+        : null,
       memo: formData.memo.trim(),
     };
 
@@ -182,9 +198,7 @@ const RealEstateModal = ({
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
-              className={`${styles.input} ${
-                errors.title ? styles.error : ""
-              }`}
+              className={`${styles.input} ${errors.title ? styles.error : ""}`}
               placeholder="예: 아파트, 빌라, 상가"
             />
             {errors.title && (
@@ -207,6 +221,12 @@ const RealEstateModal = ({
               }`}
               placeholder="예: 50000"
             />
+            {formData.currentValue &&
+              !isNaN(parseInt(formData.currentValue)) && (
+                <div className={styles.amountPreview}>
+                  {formatAmountForChart(parseInt(formData.currentValue))}
+                </div>
+              )}
             {errors.currentValue && (
               <span className={styles.errorText}>{errors.currentValue}</span>
             )}
@@ -221,7 +241,7 @@ const RealEstateModal = ({
               onChange={(e) => {
                 const value = e.target.value;
                 // 숫자와 소수점만 허용
-                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                if (value === "" || /^\d*\.?\d*$/.test(value)) {
                   setFormData({ ...formData, growthRate: value });
                 }
               }}
@@ -262,7 +282,10 @@ const RealEstateModal = ({
                 type="checkbox"
                 checked={formData.hasRentalIncome}
                 onChange={(e) =>
-                  setFormData({ ...formData, hasRentalIncome: e.target.checked })
+                  setFormData({
+                    ...formData,
+                    hasRentalIncome: e.target.checked,
+                  })
                 }
                 className={styles.checkbox}
               />
@@ -279,7 +302,10 @@ const RealEstateModal = ({
                   type="text"
                   value={formData.monthlyRentalIncome}
                   onChange={(e) =>
-                    setFormData({ ...formData, monthlyRentalIncome: e.target.value })
+                    setFormData({
+                      ...formData,
+                      monthlyRentalIncome: e.target.value,
+                    })
                   }
                   onKeyPress={handleKeyPress}
                   className={`${styles.input} ${
@@ -287,6 +313,14 @@ const RealEstateModal = ({
                   }`}
                   placeholder="예: 100"
                 />
+                {formData.monthlyRentalIncome &&
+                  !isNaN(parseInt(formData.monthlyRentalIncome)) && (
+                    <div className={styles.amountPreview}>
+                      {formatAmountForChart(
+                        parseInt(formData.monthlyRentalIncome)
+                      )}
+                    </div>
+                  )}
                 {errors.monthlyRentalIncome && (
                   <span className={styles.errorText}>
                     {errors.monthlyRentalIncome}
@@ -301,7 +335,10 @@ const RealEstateModal = ({
                     type="text"
                     value={formData.rentalIncomeStartYear}
                     onChange={(e) =>
-                      setFormData({ ...formData, rentalIncomeStartYear: e.target.value })
+                      setFormData({
+                        ...formData,
+                        rentalIncomeStartYear: e.target.value,
+                      })
                     }
                     onKeyPress={handleKeyPress}
                     className={`${styles.input} ${
@@ -322,7 +359,10 @@ const RealEstateModal = ({
                     type="text"
                     value={formData.rentalIncomeEndYear}
                     onChange={(e) =>
-                      setFormData({ ...formData, rentalIncomeEndYear: e.target.value })
+                      setFormData({
+                        ...formData,
+                        rentalIncomeEndYear: e.target.value,
+                      })
                     }
                     onKeyPress={handleKeyPress}
                     className={`${styles.input} ${
@@ -347,7 +387,10 @@ const RealEstateModal = ({
                 type="checkbox"
                 checked={formData.convertToPension}
                 onChange={(e) =>
-                  setFormData({ ...formData, convertToPension: e.target.checked })
+                  setFormData({
+                    ...formData,
+                    convertToPension: e.target.checked,
+                  })
                 }
                 className={styles.checkbox}
               />
@@ -364,7 +407,10 @@ const RealEstateModal = ({
                   type="text"
                   value={formData.pensionStartYear}
                   onChange={(e) =>
-                    setFormData({ ...formData, pensionStartYear: e.target.value })
+                    setFormData({
+                      ...formData,
+                      pensionStartYear: e.target.value,
+                    })
                   }
                   onKeyPress={handleKeyPress}
                   className={`${styles.input} ${
@@ -396,6 +442,14 @@ const RealEstateModal = ({
                   }`}
                   placeholder="예: 200"
                 />
+                {formData.monthlyPensionAmount &&
+                  !isNaN(parseInt(formData.monthlyPensionAmount)) && (
+                    <div className={styles.amountPreview}>
+                      {formatAmountForChart(
+                        parseInt(formData.monthlyPensionAmount)
+                      )}
+                    </div>
+                  )}
                 {errors.monthlyPensionAmount && (
                   <span className={styles.errorText}>
                     {errors.monthlyPensionAmount}
@@ -421,7 +475,11 @@ const RealEstateModal = ({
 
           {/* 버튼들 */}
           <div className={styles.buttonGroup}>
-            <button type="button" className={styles.cancelButton} onClick={handleClose}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={handleClose}
+            >
               취소
             </button>
             <button type="submit" className={styles.saveButton}>

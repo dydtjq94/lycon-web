@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { formatAmount } from "../utils/format";
+import { formatAmount, formatAmountForChart } from "../utils/format";
 import styles from "./AssetModal.module.css";
 
 /**
@@ -189,6 +189,12 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
               }`}
               placeholder="예: 1000"
             />
+            {formData.currentValue &&
+              !isNaN(parseInt(formData.currentValue)) && (
+                <div className={styles.amountPreview}>
+                  {formatAmountForChart(parseInt(formData.currentValue))}
+                </div>
+              )}
             {errors.currentValue && (
               <span className={styles.errorText}>{errors.currentValue}</span>
             )}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./ExpenseModal.module.css";
+import { formatAmountForChart } from "../utils/format";
 
 /**
  * 지출 데이터 추가/수정 모달
@@ -200,6 +201,11 @@ function ExpenseModal({
                 }`}
                 placeholder="예: 300"
               />
+              {formData.amount && !isNaN(parseInt(formData.amount)) && (
+                <div className={styles.amountPreview}>
+                  {formatAmountForChart(parseInt(formData.amount))}
+                </div>
+              )}
               {errors.amount && (
                 <span className={styles.errorText}>{errors.amount}</span>
               )}

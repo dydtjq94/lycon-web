@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./DebtModal.module.css";
+import { formatAmountForChart } from "../utils/format";
 
 /**
  * 부채 데이터 추가/수정 모달
@@ -228,6 +229,11 @@ function DebtModal({
                 }`}
                 placeholder="예: 30000"
               />
+              {formData.debtAmount && !isNaN(parseInt(formData.debtAmount)) && (
+                <div className={styles.amountPreview}>
+                  {formatAmountForChart(parseInt(formData.debtAmount))}
+                </div>
+              )}
               {errors.debtAmount && (
                 <span className={styles.errorText}>{errors.debtAmount}</span>
               )}
