@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import styles from "./SavingModal.module.css";
 
 /**
- * 저축 데이터 추가/수정 모달
+ * 저축/투자 데이터 추가/수정 모달
  */
 function SavingModal({ isOpen, onClose, onSave, editData = null }) {
   const [formData, setFormData] = useState({
@@ -58,11 +58,11 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "저축 항목명을 입력해주세요.";
+      newErrors.title = "저축/투자 항목명을 입력해주세요.";
     }
 
     if (!formData.amount || formData.amount < 0) {
-      newErrors.amount = "저축 금액을 입력해주세요.";
+      newErrors.amount = "저축/투자 금액을 입력해주세요.";
     }
 
     if (formData.startYear > formData.endYear) {
@@ -129,7 +129,7 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>
-            {editData ? "저축 수정" : "저축 추가"}
+            {editData ? "저축/투자 수정" : "저축/투자 추가"}
           </h2>
           <button className={styles.closeButton} onClick={handleClose}>
             ×
@@ -140,7 +140,7 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
           {/* 저축 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
-              저축 항목명 *
+              저축/투자 항목명 *
             </label>
             <input
               type="text"
@@ -276,7 +276,7 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
             {formData.frequency !== "one_time" && (
               <div className={styles.field}>
                 <label htmlFor="yearlyGrowthRate" className={styles.label}>
-                  년간 저축 상승률 (%)
+                  년간 저축/투자 상승률 (%)
                 </label>
                 <input
                   type="text"

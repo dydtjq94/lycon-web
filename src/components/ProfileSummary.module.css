@@ -37,7 +37,7 @@
   width: auto;
   padding: 8px 12px;
   background: transparent;
-  border: 1px solid #d1d5db;
+  border: 1px solid #e3e3e3;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -148,7 +148,7 @@
 @media (prefers-color-scheme: dark) {
   .financeCard {
     background: transparent;
-    border-color: #4b5563;
+    border-color: #e3e3e3;
   }
 
   .financeCard:hover {

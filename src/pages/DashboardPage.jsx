@@ -155,7 +155,7 @@ function DashboardPage() {
     loadExpenses();
   }, [profileId]);
 
-  // 저축 데이터 로드
+  // 저축/투자 데이터 로드
   useEffect(() => {
     const loadSavings = async () => {
       if (!profileId) return;
@@ -168,7 +168,7 @@ function DashboardPage() {
         );
         setSavings(sortedSavings);
       } catch (error) {
-        console.error("저축 데이터 로드 오류:", error);
+        console.error("저축/투자 데이터 로드 오류:", error);
       }
     };
 
@@ -272,7 +272,7 @@ function DashboardPage() {
 
       // 디버깅을 위한 로그
       console.log("현재 나이:", startAge, "은퇴 나이:", retirementAge);
-      console.log("저축 데이터 (DashboardPage):", savings);
+      console.log("저축/투자 데이터 (DashboardPage):", savings);
 
       // 현재 나이와 은퇴 나이의 차이를 계산해서 은퇴 년도 구하기
       const yearsToRetirement = retirementAge - startAge;
@@ -300,7 +300,7 @@ function DashboardPage() {
         profileData,
         incomes,
         expenses, // 지출 데이터 사용
-        savings, // 저축 데이터 사용
+        savings, // 저축/투자 데이터 사용
         pensions, // 연금 데이터 사용
         realEstates, // 부동산 데이터 사용
         assets, // 자산 데이터 사용
@@ -312,7 +312,7 @@ function DashboardPage() {
         profileData,
         incomes,
         expenses,
-        savings, // 저축 데이터 사용
+        savings, // 저축/투자 데이터 사용
         pensions, // 연금 데이터 사용
         realEstates, // 부동산 데이터 사용
         assets, // 자산 데이터 사용
@@ -431,7 +431,7 @@ function DashboardPage() {
     setIsExpenseModalOpen(true);
   };
 
-  // 저축 핸들러들
+  // 저축/투자 핸들러들
   const handleAddSaving = () => {
     setEditingSaving(null);
     setIsSavingModalOpen(true);
@@ -482,7 +482,7 @@ function DashboardPage() {
     }
   };
 
-  // 저축 저장 핸들러
+  // 저축/투자 저장 핸들러
   const handleSaveSaving = async (savingData) => {
     try {
       if (editingSaving) {
@@ -509,25 +509,25 @@ function DashboardPage() {
         setSavings([...savings, newSaving]);
       }
     } catch (error) {
-      console.error("저축 데이터 저장 오류:", error);
+      console.error("저축/투자 데이터 저장 오류:", error);
     }
   };
 
-  // 저축 수정 핸들러
+  // 저축/투자 수정 핸들러
   const handleEditSaving = (saving) => {
     setEditingSaving(saving);
     setIsSavingModalOpen(true);
   };
 
-  // 저축 삭제 핸들러
+  // 저축/투자 삭제 핸들러
   const handleDeleteSaving = async (savingId) => {
-    if (!window.confirm("이 저축 데이터를 삭제하시겠습니까?")) return;
+    if (!window.confirm("이 저축/투자 데이터를 삭제하시겠습니까?")) return;
 
     try {
       await savingsService.deleteSaving(profileId, savingId);
       setSavings(savings.filter((saving) => saving.id !== savingId));
     } catch (error) {
-      console.error("저축 데이터 삭제 오류:", error);
+      console.error("저축/투자 데이터 삭제 오류:", error);
     }
   };
 
@@ -824,7 +824,7 @@ function DashboardPage() {
     const categoryMap = {
       income: "수입",
       expense: "지출",
-      savings: "저축",
+      savings: "저축/투자",
       pension: "연금",
       realEstate: "부동산",
       assets: "자산",
@@ -856,7 +856,12 @@ function DashboardPage() {
   const categories = [
     { id: "income", name: "수입", color: "#10b981", count: incomes.length },
     { id: "expense", name: "지출", color: "#ef4444", count: expenses.length },
-    { id: "savings", name: "저축", color: "#3b82f6", count: savings.length },
+    {
+      id: "savings",
+      name: "저축/투자",
+      color: "#3b82f6",
+      count: savings.length,
+    },
     { id: "pension", name: "연금", color: "#8b5cf6", count: pensions.length },
     {
       id: "realEstate",
@@ -1089,7 +1094,7 @@ function DashboardPage() {
         profileData={profileData}
       />
 
-      {/* 저축 모달 */}
+      {/* 저축/투자 모달 */}
       <SavingModal
         isOpen={isSavingModalOpen}
         onClose={() => setIsSavingModalOpen(false)}
@@ -1102,6 +1107,7 @@ function DashboardPage() {
         onClose={() => setIsPensionModalOpen(false)}
         onSave={handleSavePension}
         editData={editingPension}
+        profileData={profileData}
       />
 
       <RealEstateModal

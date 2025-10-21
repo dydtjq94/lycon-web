@@ -1,4 +1,4 @@
-/* 저축 모달 스타일 */
+/* 저축/투자 모달 스타일 */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -15,7 +15,8 @@
 .modalContent {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 90%;
   max-width: 500px;
   max-height: 90vh;

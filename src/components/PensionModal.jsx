@@ -5,7 +5,13 @@ import styles from "./PensionModal.module.css";
  * 연금 데이터 추가/수정 모달
  * 국민연금, 퇴직연금, 개인연금 지원
  */
-function PensionModal({ isOpen, onClose, onSave, editData = null }) {
+function PensionModal({
+  isOpen,
+  onClose,
+  onSave,
+  editData = null,
+  profileData = null,
+}) {
   const [formData, setFormData] = useState({
     type: "", // national, retirement, personal
     title: "",
@@ -77,9 +83,27 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
   // 연금 타입 변경 시 기본값 설정
   const handleTypeChange = (newType) => {
     const currentYear = new Date().getFullYear();
-    const birthYear = 1994; // 기본값, 실제로는 프로필에서 가져와야 함
-    const age65Year = birthYear + 65 - 1;
-    const age90Year = birthYear + 90 - 1;
+
+    // 프로필 데이터에서 현재 나이 가져오기
+    let currentAge = 30; // 기본값
+    if (profileData && profileData.birthDate) {
+      const birthDate = new Date(profileData.birthDate);
+      const today = new Date();
+      currentAge = today.getFullYear() - birthDate.getFullYear();
+
+      // 생일이 아직 지나지 않았다면 나이에서 1 빼기
+      if (
+        today.getMonth() < birthDate.getMonth() ||
+        (today.getMonth() === birthDate.getMonth() &&
+          today.getDate() < birthDate.getDate())
+      ) {
+        currentAge--;
+      }
+    }
+
+    // 현재 나이를 기준으로 65세가 되는 년도 계산 (67세 기준에서 -2)
+    const age65Year = currentYear + (65 - currentAge - 2);
+    const age90Year = currentYear + (90 - currentAge - 2);
 
     let newFormData = { ...formData, type: newType };
 

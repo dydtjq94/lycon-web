@@ -244,7 +244,7 @@ function RechartsCashflowChart({
                               );
                             })}
 
-                          {/* 저축 항목들 */}
+                          {/* 저축/투자 항목들 */}
                           {savings
                             .filter(
                               (saving) =>
