@@ -122,6 +122,7 @@ function RechartsCashflowChart({
                       yearData.income +
                       (yearData.pension || 0) +
                       (yearData.rentalIncome || 0) +
+                      (yearData.realEstatePension || 0) +
                       (yearData.assetIncome || 0);
                     const totalExpense =
                       yearData.expense +
@@ -349,40 +350,93 @@ function RechartsCashflowChart({
                           {realEstates
                             .filter(
                               (realEstate) =>
+                                (realEstate.hasRentalIncome &&
+                                  data.year >=
+                                    realEstate.rentalIncomeStartYear &&
+                                  data.year <=
+                                    realEstate.rentalIncomeEndYear) ||
+                                (realEstate.convertToPension &&
+                                  data.year >= realEstate.pensionStartYear)
+                            )
+                            .map((realEstate, index) => {
+                              const items = [];
+
+                              // 임대수입이 있는 경우
+                              if (
                                 realEstate.hasRentalIncome &&
                                 data.year >= realEstate.rentalIncomeStartYear &&
                                 data.year <= realEstate.rentalIncomeEndYear
-                            )
-                            .map((realEstate, index) => {
-                              // detailedData에서 임대수입 가져오기
-                              const rentalIncome = yearData.rentalIncome || 0;
-                              const realEstateCount = realEstates.filter(
-                                (re) =>
-                                  re.hasRentalIncome &&
-                                  data.year >= re.rentalIncomeStartYear &&
-                                  data.year <= re.rentalIncomeEndYear
-                              ).length;
+                              ) {
+                                const rentalIncome = yearData.rentalIncome || 0;
+                                const rentalCount = realEstates.filter(
+                                  (re) =>
+                                    re.hasRentalIncome &&
+                                    data.year >= re.rentalIncomeStartYear &&
+                                    data.year <= re.rentalIncomeEndYear
+                                ).length;
 
-                              // 여러 부동산이 있을 경우 개별 금액 계산
-                              const individualAmount =
-                                realEstateCount > 0
-                                  ? rentalIncome / realEstateCount
-                                  : 0;
+                                const individualRentalAmount =
+                                  rentalCount > 0
+                                    ? rentalIncome / rentalCount
+                                    : 0;
 
-                              return (
-                                <div
-                                  key={`realEstate-${index}`}
-                                  className={styles.tooltipItem}
-                                >
-                                  <span className={styles.tooltipLabel}>
-                                    {realEstate.title}:
-                                  </span>
-                                  <span className={styles.tooltipValue}>
-                                    +{formatAmountForChart(individualAmount)}
-                                  </span>
-                                </div>
-                              );
-                            })}
+                                items.push(
+                                  <div
+                                    key={`rental-${index}`}
+                                    className={styles.tooltipItem}
+                                  >
+                                    <span className={styles.tooltipLabel}>
+                                      {realEstate.title} (임대수입):
+                                    </span>
+                                    <span className={styles.tooltipValue}>
+                                      +
+                                      {formatAmountForChart(
+                                        individualRentalAmount
+                                      )}
+                                    </span>
+                                  </div>
+                                );
+                              }
+
+                              // 주택연금이 있는 경우
+                              if (
+                                realEstate.convertToPension &&
+                                data.year >= realEstate.pensionStartYear
+                              ) {
+                                const pensionIncome =
+                                  yearData.realEstatePension || 0;
+                                const pensionCount = realEstates.filter(
+                                  (re) =>
+                                    re.convertToPension &&
+                                    data.year >= re.pensionStartYear
+                                ).length;
+
+                                const individualPensionAmount =
+                                  pensionCount > 0
+                                    ? pensionIncome / pensionCount
+                                    : 0;
+
+                                items.push(
+                                  <div
+                                    key={`pension-${index}`}
+                                    className={styles.tooltipItem}
+                                  >
+                                    <span className={styles.tooltipLabel}>
+                                      {realEstate.title} (주택연금):
+                                    </span>
+                                    <span className={styles.tooltipValue}>
+                                      +
+                                      {formatAmountForChart(
+                                        individualPensionAmount
+                                      )}
+                                    </span>
+                                  </div>
+                                );
+                              }
+
+                              return items;
+                            })
+                            .flat()}
 
                           {/* 자산 항목들 */}
                           {assets
