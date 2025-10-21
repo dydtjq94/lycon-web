@@ -213,11 +213,11 @@ function RechartsCashflowChart({
                       -{formatAmountForChart(item.savings)}
                     </span>
                   </div>
-                  {item.pensionIncome > 0 && (
+                  {item.pension > 0 && (
                     <div className={styles.breakdownItem}>
                       <span className={styles.label}>연금수령:</span>
                       <span className={styles.value}>
-                        +{formatAmountForChart(item.pensionIncome)}
+                        +{formatAmountForChart(item.pension)}
                       </span>
                     </div>
                   )}
