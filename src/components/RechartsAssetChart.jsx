@@ -94,17 +94,41 @@ function RechartsAssetChart({
     chartData.some((item) => item.현금 < 0)
   );
 
-  // 색상 팔레트 (부드럽고 예쁜 색상)
-  const colors = [
-    "#34d399", // 연한 초록색
-    "#60a5fa", // 연한 파란색
-    "#fbbf24", // 연한 노란색
-    "#f472b6", // 연한 핑크색
-    "#a78bfa", // 연한 보라색
-    "#34d399", // 연한 청록색
-    "#fbbf24", // 연한 주황색
-    "#fb7185", // 연한 로즈색
+  // 색상 팔레트 (푸른 계열 자산, 붉은 계열 부채)
+  const assetColors = [
+    "#3b82f6", // 파란색
+    "#06b6d4", // 청록색
+    "#8b5cf6", // 보라색
+    "#0ea5e9", // 하늘색
+    "#6366f1", // 인디고
+    "#14b8a6", // 에메랄드
+    "#0d9488", // 틸
+    "#0891b2", // 시안
   ];
+
+  const debtColors = [
+    "#ef4444", // 빨간색
+    "#f97316", // 주황색
+    "#dc2626", // 진한 빨간색
+    "#ea580c", // 진한 주황색
+    "#b91c1c", // 진한 빨간색
+    "#c2410c", // 진한 주황색
+  ];
+
+  const pensionColors = [
+    "#10b981", // 에메랄드
+    "#059669", // 진한 에메랄드
+    "#34d399", // 연한 에메랄드
+    "#6ee7b7", // 매우 연한 에메랄드
+    "#047857", // 진한 초록색
+    "#16a34a", // 초록색
+    "#22c55e", // 연한 초록색
+    "#4ade80", // 매우 연한 초록색
+  ];
+
+  // 현금 색상 (양수: 노란 계열, 음수: 갈색 계열)
+  const positiveCashColor = "#fbbf24"; // 노란색
+  const negativeCashColor = "#92400e"; // 갈색
 
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
@@ -291,11 +315,23 @@ function RechartsAssetChart({
               dataKey="현금"
               stackId="assets"
               name="현금"
-              fill="#000000"
+              fill={positiveCashColor}
             >
-              {chartData.map((entry, entryIndex) => (
-                <Cell key={`현금-cell-${entryIndex}`} fill="#000000" />
-              ))}
+              {chartData.map((entry, entryIndex) => {
+                // 현금 값에 따라 그라데이션 결정
+                const cashValue = entry.현금 || 0;
+                const gradientId =
+                  cashValue >= 0
+                    ? "positiveCashGradient"
+                    : "negativeCashGradient";
+
+                return (
+                  <Cell
+                    key={`현금-cell-${entryIndex}`}
+                    fill={`url(#${gradientId})`}
+                  />
+                );
+              })}
             </Bar>
 
             {/* 현금 자산 Bar (사용자가 추가한 현금 자산) */}
@@ -305,22 +341,126 @@ function RechartsAssetChart({
                 dataKey="현금 자산"
                 stackId="assets"
                 name="현금"
-                fill={colors[0]}
-              />
+                fill={positiveCashColor}
+              >
+                {chartData.map((entry, entryIndex) => {
+                  // 현금 자산 값에 따라 그라데이션 결정
+                  const cashAssetValue = entry["현금 자산"] || 0;
+                  const gradientId =
+                    cashAssetValue >= 0
+                      ? "positiveCashGradient"
+                      : "negativeCashGradient";
+
+                  return (
+                    <Cell
+                      key={`현금자산-cell-${entryIndex}`}
+                      fill={`url(#${gradientId})`}
+                    />
+                  );
+                })}
+              </Bar>
             )}
 
             {/* 다른 자산 항목 Bar들 */}
             {assetKeys
               .filter((key) => key !== "현금" && key !== "현금 자산")
-              .map((key, index) => (
-                <Bar
-                  key={`${key}-${index}`}
-                  dataKey={key}
-                  stackId="assets"
-                  fill={colors[index % colors.length]}
-                  name={key === "현금 자산" ? "현금" : key}
-                />
-              ))}
+              .map((key, index) => {
+                // 연금인지 확인
+                const isPension =
+                  key.includes("연금") ||
+                  key.includes("퇴직") ||
+                  key.includes("국민연금");
+
+                // 부채인지 확인 (이름과 실제 값 모두 확인)
+                const isDebtByName =
+                  key.includes("부채") ||
+                  key.includes("대출") ||
+                  key.includes("빚");
+                const isDebtByValue = chartData.some((item) => item[key] < 0);
+                const isDebt = isDebtByName || isDebtByValue;
+
+                // 그라데이션 ID 선택
+                let gradientId;
+                if (isPension) {
+                  const gradientIndex = (index % 2) + 1; // 1 또는 2
+                  gradientId = `pensionGradient${gradientIndex}`;
+                } else if (isDebt) {
+                  const gradientIndex = (index % 2) + 1; // 1 또는 2
+                  gradientId = `debtGradient${gradientIndex}`;
+                } else {
+                  const gradientIndex = (index % 3) + 1; // 1, 2, 또는 3
+                  gradientId = `assetGradient${gradientIndex}`;
+                }
+
+                return (
+                  <Bar
+                    key={`${key}-${index}`}
+                    dataKey={key}
+                    stackId="assets"
+                    fill={`url(#${gradientId})`}
+                    name={key === "현금 자산" ? "현금" : key}
+                  />
+                );
+              })}
+
+            {/* 그라데이션 정의 */}
+            <defs>
+              {/* 현금 그라데이션 (양수: 노란색, 음수: 갈색) */}
+              <linearGradient
+                id="positiveCashGradient"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor="#fde047" />
+                <stop offset="100%" stopColor="#fbbf24" />
+              </linearGradient>
+              <linearGradient
+                id="negativeCashGradient"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor="#d97706" />
+                <stop offset="100%" stopColor="#b45309" />
+              </linearGradient>
+
+              {/* 연금 그라데이션 */}
+              <linearGradient id="pensionGradient1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#6ee7b7" />
+                <stop offset="100%" stopColor="#10b981" />
+              </linearGradient>
+              <linearGradient id="pensionGradient2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#34d399" />
+                <stop offset="100%" stopColor="#059669" />
+              </linearGradient>
+
+              {/* 자산 그라데이션 */}
+              <linearGradient id="assetGradient1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#93c5fd" />
+                <stop offset="100%" stopColor="#3b82f6" />
+              </linearGradient>
+              <linearGradient id="assetGradient2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#67e8f9" />
+                <stop offset="100%" stopColor="#06b6d4" />
+              </linearGradient>
+              <linearGradient id="assetGradient3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#c4b5fd" />
+                <stop offset="100%" stopColor="#8b5cf6" />
+              </linearGradient>
+
+              {/* 부채 그라데이션 */}
+              <linearGradient id="debtGradient1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fca5a5" />
+                <stop offset="100%" stopColor="#ef4444" />
+              </linearGradient>
+              <linearGradient id="debtGradient2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fed7aa" />
+                <stop offset="100%" stopColor="#f97316" />
+              </linearGradient>
+            </defs>
 
             {/* 범례 */}
             <Legend

@@ -6,8 +6,6 @@ import styles from "./CalculatorModal.module.css";
  * 다양한 재무 계산기를 제공
  */
 function CalculatorModal({ isOpen, onClose, profileData = null }) {
-  const [activeCalculator, setActiveCalculator] = useState("goal");
-
   // 목표 금액 계산기 상태
   const [goalFormData, setGoalFormData] = useState({
     targetAmount: "",
@@ -112,7 +110,6 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
 
   // 모달 닫기
   const handleClose = () => {
-    setActiveCalculator("goal");
     setGoalFormData({
       targetAmount: "",
       years: "",
@@ -136,163 +133,131 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
         </div>
 
         <div className={styles.modalBody}>
-          {/* 계산기 탭 */}
-          <div className={styles.tabContainer}>
-            <button
-              className={`${styles.tab} ${
-                activeCalculator === "goal" ? styles.activeTab : ""
-              }`}
-              onClick={() => setActiveCalculator("goal")}
-            >
-              목표 금액 계산기
-            </button>
-            <button
-              className={`${styles.tab} ${
-                activeCalculator === "retirement" ? styles.activeTab : ""
-              }`}
-              onClick={() => setActiveCalculator("retirement")}
-            >
-              은퇴 자금 계산기
-            </button>
-          </div>
-
           {/* 목표 금액 계산기 */}
-          {activeCalculator === "goal" && (
-            <div className={styles.calculatorContent}>
-              <div className={styles.calculatorHeader}>
-                <div className={styles.titleContainer}>
-                  <h3 className={styles.calculatorTitle}>목표 금액 계산기</h3>
-                  <button
-                    className={styles.calculateButton}
-                    onClick={handleGoalCalculate}
-                  >
-                    계산하기
-                  </button>
-                </div>
-                <p className={styles.calculatorSubtitle}>
-                  목표 금액을 달성하기 위해 매월 얼마씩 저축해야 하는지
-                  계산해보세요
-                </p>
+          <div className={styles.calculatorContent}>
+            <div className={styles.calculatorHeader}>
+              <div className={styles.titleContainer}>
+                <h3 className={styles.calculatorTitle}>목표 금액 계산기</h3>
+                <button
+                  className={styles.calculateButton}
+                  onClick={handleGoalCalculate}
+                >
+                  계산하기
+                </button>
+              </div>
+              <p className={styles.calculatorSubtitle}>
+                목표 금액을 달성하기 위해 매월 얼마씩 저축해야 하는지
+                계산해보세요
+              </p>
+            </div>
+
+            <div className={styles.form}>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>목표 금액 (만원)</label>
+                <input
+                  type="text"
+                  value={goalFormData.targetAmount}
+                  onChange={(e) =>
+                    setGoalFormData({
+                      ...goalFormData,
+                      targetAmount: e.target.value,
+                    })
+                  }
+                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
+                  className={`${styles.input} ${
+                    goalErrors.targetAmount ? styles.error : ""
+                  }`}
+                  placeholder="예: 10000"
+                />
+                {goalErrors.targetAmount && (
+                  <span className={styles.errorText}>
+                    {goalErrors.targetAmount}
+                  </span>
+                )}
               </div>
 
-              <div className={styles.form}>
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>목표 금액 (만원)</label>
-                  <input
-                    type="text"
-                    value={goalFormData.targetAmount}
-                    onChange={(e) =>
-                      setGoalFormData({
-                        ...goalFormData,
-                        targetAmount: e.target.value,
-                      })
-                    }
-                    onKeyPress={handleKeyPress}
-                    onKeyDown={handleKeyDown}
-                    className={`${styles.input} ${
-                      goalErrors.targetAmount ? styles.error : ""
-                    }`}
-                    placeholder="예: 10000"
-                  />
-                  {goalErrors.targetAmount && (
-                    <span className={styles.errorText}>
-                      {goalErrors.targetAmount}
-                    </span>
-                  )}
-                </div>
-
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>모으는 기간 (년)</label>
-                  <input
-                    type="text"
-                    value={goalFormData.years}
-                    onChange={(e) =>
-                      setGoalFormData({
-                        ...goalFormData,
-                        years: e.target.value,
-                      })
-                    }
-                    onKeyPress={handleKeyPress}
-                    onKeyDown={handleKeyDown}
-                    className={`${styles.input} ${
-                      goalErrors.years ? styles.error : ""
-                    }`}
-                    placeholder="예: 20"
-                  />
-                  {goalErrors.years && (
-                    <span className={styles.errorText}>{goalErrors.years}</span>
-                  )}
-                </div>
-
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>연간 수익률 (%)</label>
-                  <input
-                    type="text"
-                    value={goalFormData.returnRate}
-                    onChange={(e) =>
-                      setGoalFormData({
-                        ...goalFormData,
-                        returnRate: e.target.value,
-                      })
-                    }
-                    onKeyPress={handleKeyPress}
-                    onKeyDown={handleKeyDown}
-                    className={`${styles.input} ${
-                      goalErrors.returnRate ? styles.error : ""
-                    }`}
-                    placeholder="예: 5.0"
-                  />
-                  {goalErrors.returnRate && (
-                    <span className={styles.errorText}>
-                      {goalErrors.returnRate}
-                    </span>
-                  )}
-                </div>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>모으는 기간 (년)</label>
+                <input
+                  type="text"
+                  value={goalFormData.years}
+                  onChange={(e) =>
+                    setGoalFormData({
+                      ...goalFormData,
+                      years: e.target.value,
+                    })
+                  }
+                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
+                  className={`${styles.input} ${
+                    goalErrors.years ? styles.error : ""
+                  }`}
+                  placeholder="예: 20"
+                />
+                {goalErrors.years && (
+                  <span className={styles.errorText}>{goalErrors.years}</span>
+                )}
               </div>
 
-              {goalResult && (
-                <div className={styles.result}>
-                  <h4 className={styles.resultTitle}>계산 결과</h4>
-                  <div className={styles.resultGrid}>
-                    <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>월 저축 금액</span>
-                      <span className={styles.resultValue}>
-                        {goalResult.monthlySaving.toLocaleString()}만원
-                      </span>
-                    </div>
-                    <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>총 저축 금액</span>
-                      <span className={styles.resultValue}>
-                        {goalResult.totalSaving.toLocaleString()}만원
-                      </span>
-                    </div>
-                    <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>투자 수익</span>
-                      <span className={styles.resultValue}>
-                        {goalResult.totalReturn.toLocaleString()}만원
-                      </span>
-                    </div>
-                    <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>기간</span>
-                      <span className={styles.resultValue}>
-                        {goalResult.years}년 ({goalResult.returnRate}% 수익률)
-                      </span>
-                    </div>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>연간 수익률 (%)</label>
+                <input
+                  type="text"
+                  value={goalFormData.returnRate}
+                  onChange={(e) =>
+                    setGoalFormData({
+                      ...goalFormData,
+                      returnRate: e.target.value,
+                    })
+                  }
+                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
+                  className={`${styles.input} ${
+                    goalErrors.returnRate ? styles.error : ""
+                  }`}
+                  placeholder="예: 5.0"
+                />
+                {goalErrors.returnRate && (
+                  <span className={styles.errorText}>
+                    {goalErrors.returnRate}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {goalResult && (
+              <div className={styles.result}>
+                <h4 className={styles.resultTitle}>계산 결과</h4>
+                <div className={styles.resultGrid}>
+                  <div className={styles.resultItem}>
+                    <span className={styles.resultLabel}>월 저축 금액</span>
+                    <span className={styles.resultValue}>
+                      {goalResult.monthlySaving.toLocaleString()}만원
+                    </span>
+                  </div>
+                  <div className={styles.resultItem}>
+                    <span className={styles.resultLabel}>총 저축 금액</span>
+                    <span className={styles.resultValue}>
+                      {goalResult.totalSaving.toLocaleString()}만원
+                    </span>
+                  </div>
+                  <div className={styles.resultItem}>
+                    <span className={styles.resultLabel}>투자 수익</span>
+                    <span className={styles.resultValue}>
+                      {goalResult.totalReturn.toLocaleString()}만원
+                    </span>
+                  </div>
+                  <div className={styles.resultItem}>
+                    <span className={styles.resultLabel}>기간</span>
+                    <span className={styles.resultValue}>
+                      {goalResult.years}년 ({goalResult.returnRate}% 수익률)
+                    </span>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* 은퇴 자금 계산기 (추후 구현) */}
-          {activeCalculator === "retirement" && (
-            <div className={styles.calculatorContent}>
-              <div className={styles.comingSoon}>
-                <h3 className={styles.comingSoonTitle}>은퇴 자금 계산기</h3>
-                <p className={styles.comingSoonText}>곧 출시될 예정입니다.</p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
