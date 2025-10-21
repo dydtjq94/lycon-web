@@ -4,13 +4,27 @@ import styles from "./SavingModal.module.css";
 /**
  * 저축/투자 데이터 추가/수정 모달
  */
-function SavingModal({ isOpen, onClose, onSave, editData = null }) {
+function SavingModal({
+  isOpen,
+  onClose,
+  onSave,
+  editData = null,
+  profileData = null,
+}) {
+  // 은퇴년도 계산 함수
+  const getRetirementYear = () => {
+    if (profileData && profileData.birthYear && profileData.retirementAge) {
+      return profileData.birthYear + profileData.retirementAge - 1; // 설정된 은퇴 나이
+    }
+    return new Date().getFullYear() + 10; // 기본값
+  };
+
   const [formData, setFormData] = useState({
     title: "",
     frequency: "monthly", // monthly, yearly, one_time
     amount: "",
     startYear: new Date().getFullYear(),
-    endYear: new Date().getFullYear() + 10,
+    endYear: getRetirementYear(),
     memo: "",
     interestRate: "3.0", // 이자율 3%
     yearlyGrowthRate: "0", // 년간 저축 상승률 0%
@@ -28,7 +42,7 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
             editData.originalFrequency || editData.frequency || "monthly",
           amount: editData.originalAmount || editData.amount || "",
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
-          endYear: parseInt(editData.endYear) || new Date().getFullYear() + 10,
+          endYear: parseInt(editData.endYear) || getRetirementYear(),
           memo: editData.memo || "",
           interestRate: editData.interestRate
             ? (editData.interestRate * 100).toString()
@@ -44,7 +58,7 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
           frequency: "monthly",
           amount: "",
           startYear: new Date().getFullYear(),
-          endYear: new Date().getFullYear() + 10,
+          endYear: getRetirementYear(),
           memo: "",
           interestRate: "3.0",
           yearlyGrowthRate: "0",

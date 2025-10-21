@@ -4,14 +4,29 @@ import styles from "./DebtModal.module.css";
 /**
  * 부채 데이터 추가/수정 모달
  */
-function DebtModal({ isOpen, onClose, onSave, editData = null }) {
+function DebtModal({
+  isOpen,
+  onClose,
+  onSave,
+  editData = null,
+  profileData = null,
+}) {
+  // 은퇴년도 계산 함수
+  const getRetirementYear = () => {
+    if (profileData && profileData.birthYear && profileData.retirementAge) {
+      return profileData.birthYear + profileData.retirementAge - 1; // 설정된 은퇴 나이
+    }
+    return new Date().getFullYear() + 5; // 기본값
+  };
+
   const [formData, setFormData] = useState({
     title: "",
-    debtType: "bullet", // bullet: 만기일시상환, equal: 원리금균등상환
+    debtType: "bullet", // bullet: 만기일시상환, equal: 원리금균등상환, principal: 원금균등상환, grace: 거치식상환
     debtAmount: "",
     startYear: new Date().getFullYear(),
-    endYear: new Date().getFullYear() + 5,
+    endYear: getRetirementYear(),
     interestRate: "5.0", // 이자율 5%
+    gracePeriod: 0, // 거치기간 (년)
     memo: "",
   });
 
@@ -26,10 +41,11 @@ function DebtModal({ isOpen, onClose, onSave, editData = null }) {
           debtType: editData.debtType || "bullet",
           debtAmount: editData.debtAmount || "",
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
-          endYear: parseInt(editData.endYear) || new Date().getFullYear() + 5,
+          endYear: parseInt(editData.endYear) || getRetirementYear(),
           interestRate: editData.interestRate
             ? (editData.interestRate * 100).toString()
             : "5.0",
+          gracePeriod: parseInt(editData.gracePeriod) || 0,
           memo: editData.memo || "",
         });
       } else {
@@ -39,8 +55,9 @@ function DebtModal({ isOpen, onClose, onSave, editData = null }) {
           debtType: "bullet",
           debtAmount: "",
           startYear: new Date().getFullYear(),
-          endYear: new Date().getFullYear() + 5,
+          endYear: getRetirementYear(),
           interestRate: "5.0",
+          gracePeriod: 0,
           memo: "",
         });
       }
@@ -100,6 +117,7 @@ function DebtModal({ isOpen, onClose, onSave, editData = null }) {
       startYear: parseInt(formData.startYear),
       endYear: parseInt(formData.endYear),
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
+      gracePeriod: parseInt(formData.gracePeriod),
     };
 
     onSave(debtData);
@@ -115,6 +133,7 @@ function DebtModal({ isOpen, onClose, onSave, editData = null }) {
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 5,
       interestRate: "5.0",
+      gracePeriod: 0,
       memo: "",
     });
     setErrors({});
@@ -171,12 +190,21 @@ function DebtModal({ isOpen, onClose, onSave, editData = null }) {
             >
               <option value="bullet">만기일시상환</option>
               <option value="equal">원리금균등상환</option>
+              <option value="principal">원금균등상환</option>
+              <option value="grace">거치식상환</option>
             </select>
             <div className={styles.helpText}>
               {formData.debtType === "bullet" ? (
                 <span>매달 이자만 납부하고 만기일에 원금을 한꺼번에 상환</span>
-              ) : (
+              ) : formData.debtType === "equal" ? (
                 <span>매달 원금과 이자를 합친 동일한 금액을 상환</span>
+              ) : formData.debtType === "principal" ? (
+                <span>
+                  매달 같은 금액의 원금을 상환하며, 남은 원금에 대한 이자가 점점
+                  줄어듦
+                </span>
+              ) : (
+                <span>일정 기간 동안 이자만 내다가, 이후 본격 상환 시작</span>
               )}
             </div>
           </div>
@@ -281,6 +309,31 @@ function DebtModal({ isOpen, onClose, onSave, editData = null }) {
               )}
             </div>
           </div>
+
+          {/* 거치기간 (거치식상환일 때만 표시) */}
+          {formData.debtType === "grace" && (
+            <div className={styles.field}>
+              <label htmlFor="gracePeriod" className={styles.label}>
+                거치기간 (년) *
+              </label>
+              <input
+                type="number"
+                id="gracePeriod"
+                value={formData.gracePeriod}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  setFormData({ ...formData, gracePeriod: value });
+                }}
+                className={styles.input}
+                min="0"
+                max="10"
+                placeholder="0"
+              />
+              <div className={styles.helpText}>
+                <span>이자만 납부하는 기간 (년 단위)</span>
+              </div>
+            </div>
+          )}
 
           {/* 메모 */}
           <div className={styles.field}>

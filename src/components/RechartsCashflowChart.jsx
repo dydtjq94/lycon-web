@@ -253,27 +253,54 @@ function RechartsCashflowChart({
                             )
                             .map((saving, index) => {
                               const yearsElapsed = data.year - saving.startYear;
-                              const yearlyAmount =
-                                saving.frequency === "monthly"
-                                  ? saving.amount * 12
-                                  : saving.amount;
-                              const adjustedAmount =
-                                yearlyAmount *
-                                Math.pow(1 + saving.growthRate, yearsElapsed);
+                              const yearlyGrowthRate =
+                                saving.yearlyGrowthRate || 0; // yearlyGrowthRate 사용
 
-                              return (
-                                <div
-                                  key={`saving-${index}`}
-                                  className={styles.tooltipItem}
-                                >
-                                  <span className={styles.tooltipLabel}>
-                                    {saving.title}:
-                                  </span>
-                                  <span className={styles.tooltipValue}>
-                                    -{formatAmountForChart(adjustedAmount)}
-                                  </span>
-                                </div>
-                              );
+                              if (saving.frequency === "one_time") {
+                                // 일회성 저축: 시작년도에만 표시
+                                if (data.year === saving.startYear) {
+                                  return (
+                                    <div
+                                      key={`saving-${index}`}
+                                      className={styles.tooltipItem}
+                                    >
+                                      <span className={styles.tooltipLabel}>
+                                        {saving.title}:
+                                      </span>
+                                      <span className={styles.tooltipValue}>
+                                        -{formatAmountForChart(saving.amount)}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              } else {
+                                // 월간/연간 저축
+                                const monthlyAmount =
+                                  saving.frequency === "monthly"
+                                    ? saving.amount
+                                    : saving.amount / 12;
+
+                                // 년간 저축 상승률 적용
+                                const adjustedMonthlyAmount =
+                                  monthlyAmount *
+                                  Math.pow(1 + yearlyGrowthRate, yearsElapsed);
+                                const yearlyAmount = adjustedMonthlyAmount * 12;
+
+                                return (
+                                  <div
+                                    key={`saving-${index}`}
+                                    className={styles.tooltipItem}
+                                  >
+                                    <span className={styles.tooltipLabel}>
+                                      {saving.title}:
+                                    </span>
+                                    <span className={styles.tooltipValue}>
+                                      -{formatAmountForChart(yearlyAmount)}
+                                    </span>
+                                  </div>
+                                );
+                              }
                             })}
                           {/* 연금 항목들 */}
                           {pensions

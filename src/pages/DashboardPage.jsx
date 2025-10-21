@@ -34,6 +34,7 @@ import DebtModal from "../components/DebtModal";
 import DebtList from "../components/DebtList";
 import ProfileEditModal from "../components/ProfileEditModal";
 import ProfileSummary from "../components/ProfileSummary";
+import CalculatorModal from "../components/CalculatorModal";
 import styles from "./DashboardPage.module.css";
 
 /**
@@ -74,6 +75,7 @@ function DashboardPage() {
   const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
   const [editingDebt, setEditingDebt] = useState(null);
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
+  const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
 
   // 프로필 데이터 로드
   useEffect(() => {
@@ -890,19 +892,22 @@ function DashboardPage() {
           <h1 className={styles.profileName}>
             {profileData.name}님의 은퇴 준비 현황
           </h1>
-          <div className={styles.profileDetails}>
-            <span className={styles.detailItem}>
-              <span className={styles.label}>현재 나이:</span>
-              <span className={styles.value}>
+          <div className={styles.ageInfo}>
+            <span className={styles.ageItem}>
+              <span className={styles.ageLabel}>현재 나이:</span>
+              <span className={styles.ageValue}>
                 {profileData.currentKoreanAge}세
               </span>
             </span>
-            <span className={styles.detailItem}>
-              <span className={styles.label}>은퇴 나이:</span>
-              <span className={styles.value}>
+            <span className={styles.ageSeparator}>|</span>
+            <span className={styles.ageItem}>
+              <span className={styles.ageLabel}>은퇴 나이:</span>
+              <span className={styles.ageValue}>
                 {profileData.retirementAge}세 ({profileData.retirementYear}년)
               </span>
             </span>
+          </div>
+          <div className={styles.profileDetails}>
             <span className={styles.detailItem}>
               <span className={styles.label}>현재 현금:</span>
               <span className={styles.value}>
@@ -931,6 +936,12 @@ function DashboardPage() {
           </div>
         </div>
         <div className={styles.profileActions}>
+          <button
+            className={styles.calculatorButton}
+            onClick={() => setIsCalculatorModalOpen(true)}
+          >
+            계산기
+          </button>
           <button className={styles.editButton} onClick={handleEditProfile}>
             프로필 수정
           </button>
@@ -1100,6 +1111,7 @@ function DashboardPage() {
         onClose={() => setIsSavingModalOpen(false)}
         onSave={handleSaveSaving}
         editData={editingSaving}
+        profileData={profileData}
       />
 
       <PensionModal
@@ -1140,6 +1152,14 @@ function DashboardPage() {
         onClose={() => setIsDebtModalOpen(false)}
         onSave={handleSaveDebt}
         editData={editingDebt}
+        profileData={profileData}
+      />
+
+      {/* 계산기 모달 */}
+      <CalculatorModal
+        isOpen={isCalculatorModalOpen}
+        onClose={() => setIsCalculatorModalOpen(false)}
+        profileData={profileData}
       />
     </div>
   );

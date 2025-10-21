@@ -12,12 +12,54 @@ function PensionModal({
   editData = null,
   profileData = null,
 }) {
+  // 기본값 계산 함수
+  const getDefaultYears = () => {
+    const currentYear = new Date().getFullYear();
+
+    // 프로필 데이터에서 현재 나이 가져오기
+    let currentAge = 30; // 기본값 (프로필 데이터가 없을 때만 사용)
+
+    if (profileData) {
+      // birthDate가 있는 경우
+      if (profileData.birthDate) {
+        const birthDate = new Date(profileData.birthDate);
+        const today = new Date();
+        currentAge = today.getFullYear() - birthDate.getFullYear();
+
+        // 생일이 아직 지나지 않았다면 나이에서 1 빼기
+        if (
+          today.getMonth() < birthDate.getMonth() ||
+          (today.getMonth() === birthDate.getMonth() &&
+            today.getDate() < birthDate.getDate())
+        ) {
+          currentAge--;
+        }
+      }
+      // currentKoreanAge가 있는 경우 (더 정확한 나이)
+      else if (profileData.currentKoreanAge) {
+        currentAge = parseInt(profileData.currentKoreanAge);
+      }
+      // birthYear가 있는 경우
+      else if (profileData.birthYear) {
+        currentAge = currentYear - parseInt(profileData.birthYear);
+      }
+    }
+
+    // 현재 나이를 기준으로 65세와 90세가 되는 년도 계산
+    const age65Year = currentYear + (65 - currentAge);
+    const age90Year = currentYear + (90 - currentAge);
+
+    return { age65Year, age90Year, currentAge };
+  };
+
+  const { age65Year, age90Year } = getDefaultYears();
+
   const [formData, setFormData] = useState({
     type: "", // national, retirement, personal
     title: "",
     monthlyAmount: "", // 월 수령 금액
-    startYear: new Date().getFullYear(),
-    endYear: new Date().getFullYear() + 20,
+    startYear: age65Year,
+    endYear: age90Year,
     inflationRate: 2.5, // 물가상승률 (국민연금용)
     // 퇴직연금/개인연금용 필드
     currentAmount: "", // 현재 보유액
@@ -26,8 +68,8 @@ function PensionModal({
     contributionStartYear: new Date().getFullYear(),
     contributionEndYear: new Date().getFullYear() + 10,
     returnRate: 5.0, // 투자 수익률
-    paymentStartYear: new Date().getFullYear() + 11, // 수령 시작년도
-    paymentEndYear: new Date().getFullYear() + 20, // 수령 종료년도
+    paymentStartYear: age65Year, // 수령 시작년도
+    paymentEndYear: age90Year, // 수령 종료년도
     memo: "",
   });
 
@@ -59,12 +101,13 @@ function PensionModal({
         });
       } else {
         // 새 데이터일 때 초기화
+        const { age65Year, age90Year } = getDefaultYears();
         setFormData({
           type: "",
           title: "",
           monthlyAmount: "",
-          startYear: new Date().getFullYear(),
-          endYear: new Date().getFullYear() + 20,
+          startYear: age65Year,
+          endYear: age90Year,
           inflationRate: 2.5,
           currentAmount: "",
           contributionAmount: "",
@@ -72,8 +115,8 @@ function PensionModal({
           contributionStartYear: new Date().getFullYear(),
           contributionEndYear: new Date().getFullYear() + 10,
           returnRate: 5.0,
-          paymentStartYear: new Date().getFullYear() + 11,
-          paymentEndYear: new Date().getFullYear() + 20,
+          paymentStartYear: age65Year,
+          paymentEndYear: age90Year,
           memo: "",
         });
       }
@@ -85,25 +128,37 @@ function PensionModal({
     const currentYear = new Date().getFullYear();
 
     // 프로필 데이터에서 현재 나이 가져오기
-    let currentAge = 30; // 기본값
-    if (profileData && profileData.birthDate) {
-      const birthDate = new Date(profileData.birthDate);
-      const today = new Date();
-      currentAge = today.getFullYear() - birthDate.getFullYear();
+    let currentAge = 30; // 기본값 (프로필 데이터가 없을 때만 사용)
 
-      // 생일이 아직 지나지 않았다면 나이에서 1 빼기
-      if (
-        today.getMonth() < birthDate.getMonth() ||
-        (today.getMonth() === birthDate.getMonth() &&
-          today.getDate() < birthDate.getDate())
-      ) {
-        currentAge--;
+    if (profileData) {
+      // birthDate가 있는 경우
+      if (profileData.birthDate) {
+        const birthDate = new Date(profileData.birthDate);
+        const today = new Date();
+        currentAge = today.getFullYear() - birthDate.getFullYear();
+
+        // 생일이 아직 지나지 않았다면 나이에서 1 빼기
+        if (
+          today.getMonth() < birthDate.getMonth() ||
+          (today.getMonth() === birthDate.getMonth() &&
+            today.getDate() < birthDate.getDate())
+        ) {
+          currentAge--;
+        }
+      }
+      // currentKoreanAge가 있는 경우 (더 정확한 나이)
+      else if (profileData.currentKoreanAge) {
+        currentAge = parseInt(profileData.currentKoreanAge);
+      }
+      // birthYear가 있는 경우
+      else if (profileData.birthYear) {
+        currentAge = currentYear - parseInt(profileData.birthYear);
       }
     }
 
-    // 현재 나이를 기준으로 65세가 되는 년도 계산 (67세 기준에서 -2)
-    const age65Year = currentYear + (65 - currentAge - 2);
-    const age90Year = currentYear + (90 - currentAge - 2);
+    // 현재 나이를 기준으로 65세와 90세가 되는 년도 계산
+    const age65Year = currentYear + (65 - currentAge);
+    const age90Year = currentYear + (90 - currentAge);
 
     let newFormData = { ...formData, type: newType };
 
@@ -220,20 +275,22 @@ function PensionModal({
 
   // 모달 닫기 핸들러
   const handleClose = () => {
+    const { age65Year, age90Year } = getDefaultYears();
     setFormData({
-      type: "national",
+      type: "",
       title: "",
       monthlyAmount: "",
-      startYear: new Date().getFullYear(),
-      endYear: new Date().getFullYear() + 20,
+      startYear: age65Year,
+      endYear: age90Year,
+      inflationRate: 2.5,
       currentAmount: "",
       contributionAmount: "",
       contributionFrequency: "monthly",
       contributionStartYear: new Date().getFullYear(),
       contributionEndYear: new Date().getFullYear() + 10,
       returnRate: 5.0,
-      paymentStartYear: new Date().getFullYear() + 11,
-      paymentEndYear: new Date().getFullYear() + 20,
+      paymentStartYear: age65Year,
+      paymentEndYear: age90Year,
       memo: "",
     });
     setErrors({});
