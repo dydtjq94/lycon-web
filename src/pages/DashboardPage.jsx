@@ -971,7 +971,6 @@ function DashboardPage() {
           {sidebarView === "categories" ? (
             // 카테고리 목록 뷰
             <>
-              <h3 className={styles.sidebarTitle}>재무 카테고리</h3>
               <div className={styles.categoryList}>
                 {categories.map((category) => (
                   <button
@@ -1058,7 +1057,6 @@ function DashboardPage() {
         <div className={styles.mainContent}>
           <div className={styles.chartSection}>
             <div className={styles.chartGrid}>
-              {/* 현금 흐름 시뮬레이션 */}
               <div className={styles.chartContainer}>
                 <RechartsCashflowChart
                   data={simulationData.cashflow}
@@ -1074,7 +1072,6 @@ function DashboardPage() {
                 />
               </div>
 
-              {/* 자산 시뮬레이션 */}
               <div className={styles.chartContainer}>
                 <RechartsAssetChart
                   data={simulationData.assets}

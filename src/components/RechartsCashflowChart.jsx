@@ -68,12 +68,8 @@ function RechartsCashflowChart({
 
   return (
     <div className={styles.chartContainer}>
-      <div className={styles.chartHeader}>
-        <h3 className={styles.chartTitle}>현금 흐름 시뮬레이션</h3>
-      </div>
-
       <div className={styles.chartWrapper}>
-        <ResponsiveContainer width="100%" height={400}>
+        <ResponsiveContainer width="100%" height={500}>
           <BarChart
             data={chartData}
             margin={{
