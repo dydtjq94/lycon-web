@@ -23,7 +23,6 @@
   margin: 0;
 }
 
-
 .chartWrapper {
   flex: 1;
   min-height: 400px;
@@ -49,13 +48,13 @@
     gap: 1rem;
     align-items: flex-start;
   }
-  
+
   .chartLegend {
     align-self: flex-end;
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .chartWrapper {
     min-height: 300px;
   }
@@ -69,4 +68,69 @@
 :global(.recharts-legend-item-text) {
   font-size: 0.875rem !important;
   color: #374151 !important;
+}
+
+/* 커스텀 툴팁 스타일 */
+.customTooltip {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  min-width: 200px;
+}
+
+.tooltipHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tooltipTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.tooltipTotal {
+  font-size: 14px;
+  font-weight: 600;
+  color: #059669;
+}
+
+.tooltipBreakdown {
+}
+
+.tooltipDivider {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 8px 0;
+}
+
+.tooltipDetails {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tooltipItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.tooltipLabel {
+  font-weight: 500;
+  color: #6b7280;
+  margin-right: 8px;
+}
+
+.tooltipValue {
+  font-weight: 600;
+  color: #111827;
+  text-align: right;
 }

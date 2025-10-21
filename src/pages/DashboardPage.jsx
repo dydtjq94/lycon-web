@@ -1048,6 +1048,13 @@ function DashboardPage() {
                   data={simulationData.cashflow}
                   retirementAge={profileData.retirementAge}
                   detailedData={simulationData.cashflowDetailed}
+                  incomes={incomes}
+                  expenses={expenses}
+                  savings={savings}
+                  pensions={pensions}
+                  realEstates={realEstates}
+                  assets={assets}
+                  debts={debts}
                 />
               </div>
 

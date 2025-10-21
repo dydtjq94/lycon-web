@@ -165,20 +165,83 @@ function RechartsAssetChart({
               fontSize={12}
             />
 
-            {/* 툴팁 */}
+            {/* 커스텀 툴팁 */}
             <Tooltip
-              formatter={(value, name) => [formatAmountForChart(value), name]}
-              labelFormatter={(label, payload) => {
-                if (payload && payload[0]) {
-                  return `${payload[0].payload.age}세 (${payload[0].payload.year}년)`;
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length > 0) {
+                  const data = payload[0].payload;
+
+                  // 자본 토탈 계산 (양수 자산들)
+                  let capitalTotal = 0;
+                  let debtTotal = 0;
+
+                  Object.keys(data).forEach((key) => {
+                    if (
+                      key !== "year" &&
+                      key !== "age" &&
+                      key !== "totalAmount" &&
+                      key !== "formattedAmount"
+                    ) {
+                      const value = data[key] || 0;
+                      if (value > 0) {
+                        capitalTotal += value;
+                      } else if (value < 0) {
+                        debtTotal += Math.abs(value);
+                      }
+                    }
+                  });
+
+                  // 총 자산 = 자본 토탈 - 부채 토탈
+                  const totalAssets = capitalTotal - debtTotal;
+
+                  return (
+                    <div className={styles.customTooltip}>
+                      <div className={styles.tooltipHeader}>
+                        <span className={styles.tooltipTitle}>
+                          {data.age}세 ({data.year}년)
+                        </span>
+                      </div>
+
+                      <div className={styles.tooltipBreakdown}>
+                        <div className={styles.tooltipItem}>
+                          <span className={styles.tooltipLabel}>총 자산:</span>
+                          <span className={styles.tooltipValue}>
+                            {formatAmountForChart(totalAssets)}
+                          </span>
+                        </div>
+                        <div className={styles.tooltipItem}>
+                          <span className={styles.tooltipLabel}>자본:</span>
+                          <span className={styles.tooltipValue}>
+                            +{formatAmountForChart(capitalTotal)}
+                          </span>
+                        </div>
+                        <div className={styles.tooltipItem}>
+                          <span className={styles.tooltipLabel}>부채:</span>
+                          <span className={styles.tooltipValue}>
+                            -{formatAmountForChart(debtTotal)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className={styles.tooltipDivider}></div>
+                      <div className={styles.tooltipDetails}>
+                        {payload.map((entry, index) => (
+                          <div key={index} className={styles.tooltipItem}>
+                            <span
+                              className={styles.tooltipLabel}
+                              style={{ color: entry.color }}
+                            >
+                              {entry.name}:
+                            </span>
+                            <span className={styles.tooltipValue}>
+                              {formatAmountForChart(entry.value)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
                 }
-                return `${label}세`;
-              }}
-              contentStyle={{
-                backgroundColor: "white",
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                return null;
               }}
             />
 

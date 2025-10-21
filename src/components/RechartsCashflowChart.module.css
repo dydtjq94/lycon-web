@@ -136,7 +136,8 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
+  padding: 12px;
+
   min-width: 200px;
 }
 
@@ -175,14 +176,20 @@
 .tooltipBreakdown {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+}
+
+.tooltipDivider {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 8px 0;
 }
 
 .tooltipItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.75rem;
+  font-size: 12px;
+  margin-bottom: 6px;
 }
 
 .tooltipLabel {
