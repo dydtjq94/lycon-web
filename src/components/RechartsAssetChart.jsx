@@ -127,8 +127,8 @@ function RechartsAssetChart({
   ];
 
   // 현금 색상 (양수: 노란 계열, 음수: 갈색 계열)
-  const positiveCashColor = "#fbbf24"; // 노란색
-  const negativeCashColor = "#92400e"; // 갈색
+  const positiveCashColor = "#10b981"; // 초록색
+  const negativeCashColor = "#374151"; // 검은색
 
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
@@ -247,19 +247,90 @@ function RechartsAssetChart({
                         </div>
                       </div>
                       <div className={styles.tooltipDetails}>
-                        {payload.map((entry, index) => (
-                          <div key={index} className={styles.tooltipItem}>
-                            <span
-                              className={styles.tooltipLabel}
-                              style={{ color: entry.color }}
-                            >
-                              {entry.name}:
-                            </span>
-                            <span className={styles.tooltipValue}>
-                              {formatAmountForChart(entry.value)}
-                            </span>
-                          </div>
-                        ))}
+                        {payload.map((entry, index) => {
+                          // 각 항목별 색상 결정
+                          const getItemColor = (name) => {
+                            // 현금 관련
+                            if (name === "현금") {
+                              return entry.value >= 0 ? "#10b981" : "#374151";
+                            }
+
+                            // 연금 관련 (노란 계열) - 10개
+                            if (
+                              name.includes("연금") ||
+                              name.includes("퇴직") ||
+                              name.includes("국민연금")
+                            ) {
+                              const pensionColors = [
+                                "#fbbf24",
+                                "#f59e0b",
+                                "#eab308",
+                                "#d97706",
+                                "#f59e0b",
+                                "#fbbf24",
+                                "#ca8a04",
+                                "#a16207",
+                                "#d97706",
+                                "#ca8a04",
+                              ];
+                              const colorIndex = index % pensionColors.length;
+                              return pensionColors[colorIndex];
+                            }
+
+                            // 부채 관련 (빨간/갈색 계열) - 10개
+                            if (
+                              name.includes("부채") ||
+                              name.includes("대출") ||
+                              name.includes("빚") ||
+                              entry.value < 0
+                            ) {
+                              const debtColors = [
+                                "#ef4444",
+                                "#f97316",
+                                "#dc2626",
+                                "#e53e3e",
+                                "#e11d48",
+                                "#f43f5e",
+                                "#92400e",
+                                "#78350f",
+                                "#d97706",
+                                "#b45309",
+                              ];
+                              const colorIndex = index % debtColors.length;
+                              return debtColors[colorIndex];
+                            }
+
+                            // 일반 자산 (파란 계열) - 10개
+                            const assetColors = [
+                              "#3b82f6",
+                              "#06b6d4",
+                              "#8b5cf6",
+                              "#6366f1",
+                              "#0ea5e9",
+                              "#2563eb",
+                              "#7c3aed",
+                              "#4f46e5",
+                              "#1d4ed8",
+                              "#0284c7",
+                            ];
+                            const colorIndex = index % assetColors.length;
+                            return assetColors[colorIndex];
+                          };
+
+                          return (
+                            <div key={index} className={styles.tooltipItem}>
+                              <span
+                                className={styles.tooltipLabel}
+                                style={{ color: getItemColor(entry.name) }}
+                              >
+                                {entry.name}:
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                {formatAmountForChart(entry.value)}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -272,13 +343,13 @@ function RechartsAssetChart({
             {retirementData && (
               <ReferenceLine
                 x={retirementAge}
-                stroke="#6b7280"
-                strokeWidth={2}
+                stroke="#9ca3af"
+                strokeWidth={1.5}
                 strokeDasharray="10 5"
                 label={{
                   value: "은퇴",
                   position: "top",
-                  style: { fill: "#6b7280" },
+                  style: { fill: "#9ca3af", fontSize: "12px" },
                 }}
               />
             )}
@@ -299,13 +370,13 @@ function RechartsAssetChart({
             {/* 목표 자산선 */}
             <ReferenceLine
               y={targetAssets}
-              stroke="#f59e0b"
-              strokeWidth={2}
+              stroke="#fbbf24"
+              strokeWidth={1.5}
               strokeDasharray="5 5"
               label={{
                 value: "목표 자산",
                 position: "right",
-                style: { fill: "#f59e0b" },
+                style: { fill: "#fbbf24", fontSize: "12px" },
               }}
             />
 
@@ -382,13 +453,13 @@ function RechartsAssetChart({
                 // 그라데이션 ID 선택
                 let gradientId;
                 if (isPension) {
-                  const gradientIndex = (index % 2) + 1; // 1 또는 2
+                  const gradientIndex = (index % 10) + 1; // 1~10
                   gradientId = `pensionGradient${gradientIndex}`;
                 } else if (isDebt) {
-                  const gradientIndex = (index % 2) + 1; // 1 또는 2
+                  const gradientIndex = (index % 10) + 1; // 1~10
                   gradientId = `debtGradient${gradientIndex}`;
                 } else {
-                  const gradientIndex = (index % 3) + 1; // 1, 2, 또는 3
+                  const gradientIndex = (index % 10) + 1; // 1~10
                   gradientId = `assetGradient${gradientIndex}`;
                 }
 
@@ -405,7 +476,7 @@ function RechartsAssetChart({
 
             {/* 그라데이션 정의 */}
             <defs>
-              {/* 현금 그라데이션 (양수: 노란색, 음수: 갈색) */}
+              {/* 현금 그라데이션 (양수: 초록색, 음수: 검은계열) */}
               <linearGradient
                 id="positiveCashGradient"
                 x1="0"
@@ -413,8 +484,8 @@ function RechartsAssetChart({
                 x2="0"
                 y2="1"
               >
-                <stop offset="0%" stopColor="#fde047" />
-                <stop offset="100%" stopColor="#fbbf24" />
+                <stop offset="0%" stopColor="#34d399" />
+                <stop offset="100%" stopColor="#10b981" />
               </linearGradient>
               <linearGradient
                 id="negativeCashGradient"
@@ -423,21 +494,59 @@ function RechartsAssetChart({
                 x2="0"
                 y2="1"
               >
-                <stop offset="0%" stopColor="#d97706" />
-                <stop offset="100%" stopColor="#b45309" />
+                <stop offset="0%" stopColor="#6b7280" />
+                <stop offset="100%" stopColor="#374151" />
               </linearGradient>
 
-              {/* 연금 그라데이션 */}
+              {/* 연금 그라데이션 (노란 계열) - 10개 */}
               <linearGradient id="pensionGradient1" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6ee7b7" />
-                <stop offset="100%" stopColor="#10b981" />
+                <stop offset="0%" stopColor="#fde047" />
+                <stop offset="100%" stopColor="#fbbf24" />
               </linearGradient>
               <linearGradient id="pensionGradient2" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#34d399" />
-                <stop offset="100%" stopColor="#059669" />
+                <stop offset="0%" stopColor="#fef3c7" />
+                <stop offset="100%" stopColor="#f59e0b" />
+              </linearGradient>
+              <linearGradient id="pensionGradient3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fef08a" />
+                <stop offset="100%" stopColor="#eab308" />
+              </linearGradient>
+              <linearGradient id="pensionGradient4" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fde68a" />
+                <stop offset="100%" stopColor="#d97706" />
+              </linearGradient>
+              <linearGradient id="pensionGradient5" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fcd34d" />
+                <stop offset="100%" stopColor="#f59e0b" />
+              </linearGradient>
+              <linearGradient id="pensionGradient6" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#f59e0b" />
+              </linearGradient>
+              <linearGradient id="pensionGradient7" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fef08a" />
+                <stop offset="100%" stopColor="#ca8a04" />
+              </linearGradient>
+              <linearGradient id="pensionGradient8" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fde68a" />
+                <stop offset="100%" stopColor="#a16207" />
+              </linearGradient>
+              <linearGradient id="pensionGradient9" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fef3c7" />
+                <stop offset="100%" stopColor="#d97706" />
+              </linearGradient>
+              <linearGradient
+                id="pensionGradient10"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor="#fde047" />
+                <stop offset="100%" stopColor="#ca8a04" />
               </linearGradient>
 
-              {/* 자산 그라데이션 */}
+              {/* 자산 그라데이션 (파란 계열) - 10개 */}
               <linearGradient id="assetGradient1" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#93c5fd" />
                 <stop offset="100%" stopColor="#3b82f6" />
@@ -450,8 +559,36 @@ function RechartsAssetChart({
                 <stop offset="0%" stopColor="#c4b5fd" />
                 <stop offset="100%" stopColor="#8b5cf6" />
               </linearGradient>
+              <linearGradient id="assetGradient4" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#a5b4fc" />
+                <stop offset="100%" stopColor="#6366f1" />
+              </linearGradient>
+              <linearGradient id="assetGradient5" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#7dd3fc" />
+                <stop offset="100%" stopColor="#0ea5e9" />
+              </linearGradient>
+              <linearGradient id="assetGradient6" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#bfdbfe" />
+                <stop offset="100%" stopColor="#2563eb" />
+              </linearGradient>
+              <linearGradient id="assetGradient7" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ddd6fe" />
+                <stop offset="100%" stopColor="#7c3aed" />
+              </linearGradient>
+              <linearGradient id="assetGradient8" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#e0e7ff" />
+                <stop offset="100%" stopColor="#4f46e5" />
+              </linearGradient>
+              <linearGradient id="assetGradient9" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#dbeafe" />
+                <stop offset="100%" stopColor="#1d4ed8" />
+              </linearGradient>
+              <linearGradient id="assetGradient10" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#e0f2fe" />
+                <stop offset="100%" stopColor="#0284c7" />
+              </linearGradient>
 
-              {/* 부채 그라데이션 */}
+              {/* 부채 그라데이션 (빨간/갈색 계열) - 10개 */}
               <linearGradient id="debtGradient1" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#fca5a5" />
                 <stop offset="100%" stopColor="#ef4444" />
@@ -459,6 +596,38 @@ function RechartsAssetChart({
               <linearGradient id="debtGradient2" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#fed7aa" />
                 <stop offset="100%" stopColor="#f97316" />
+              </linearGradient>
+              <linearGradient id="debtGradient3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fecaca" />
+                <stop offset="100%" stopColor="#dc2626" />
+              </linearGradient>
+              <linearGradient id="debtGradient4" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fed7d7" />
+                <stop offset="100%" stopColor="#e53e3e" />
+              </linearGradient>
+              <linearGradient id="debtGradient5" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fbb6ce" />
+                <stop offset="100%" stopColor="#e11d48" />
+              </linearGradient>
+              <linearGradient id="debtGradient6" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fda4af" />
+                <stop offset="100%" stopColor="#f43f5e" />
+              </linearGradient>
+              <linearGradient id="debtGradient7" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#d97706" />
+                <stop offset="100%" stopColor="#92400e" />
+              </linearGradient>
+              <linearGradient id="debtGradient8" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#a16207" />
+                <stop offset="100%" stopColor="#78350f" />
+              </linearGradient>
+              <linearGradient id="debtGradient9" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#d97706" />
+              </linearGradient>
+              <linearGradient id="debtGradient10" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#b45309" />
               </linearGradient>
             </defs>
 

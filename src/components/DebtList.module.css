@@ -9,36 +9,33 @@
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 16px;
+  padding: 1rem;
   cursor: pointer;
-  transition: all 0.2s;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.debtItem:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
+  margin-bottom: 0.75rem;
 }
 
 .debtInfo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.25rem;
 }
 
 .debtHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
 .debtTitle {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #111827;
   margin: 0;
   flex: 1;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .debtActions {
@@ -53,7 +50,6 @@
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 4px;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,26 +61,21 @@
   margin-right: -8px;
 }
 
-.deleteButton:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
-  color: #111827;
-}
-
 .debtAmount {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #dc2626; /* 빨간색으로 부채 표시 */
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #dc2626;
+  margin-bottom: 0.25rem;
 }
 
 .debtDetails {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .debtType {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: #6b7280;
   background: #f3f4f6;
@@ -95,19 +86,19 @@
 }
 
 .debtPeriod {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #6b7280;
-  line-height: 1.4;
+  font-weight: 500;
 }
 
 .debtMemo {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #6b7280;
+  font-style: italic;
   background: #f9fafb;
-  padding: 8px;
+  padding: 0.5rem;
   border-radius: 4px;
-  border-left: 3px solid #d1d5db;
-  margin-top: 4px;
+  margin-top: 0.5rem;
 }
 
 .emptyState {

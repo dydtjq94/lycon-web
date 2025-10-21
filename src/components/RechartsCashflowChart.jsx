@@ -488,13 +488,13 @@ function RechartsCashflowChart({
             {retirementData && (
               <ReferenceLine
                 x={retirementAge}
-                stroke="#6b7280"
-                strokeWidth={2}
+                stroke="#9ca3af"
+                strokeWidth={1.5}
                 strokeDasharray="10 5"
                 label={{
                   value: "은퇴",
                   position: "top",
-                  style: { fill: "#6b7280" },
+                  style: { fill: "#9ca3af", fontSize: "12px" },
                 }}
               />
             )}

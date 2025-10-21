@@ -18,13 +18,13 @@ function ProfileSummary({
 }) {
   // 모든 재무 항목을 하나의 배열로 합치기
   const allFinanceItems = [
-    ...(incomes || []).map((item) => ({ ...item, type: "income" })),
-    ...(expenses || []).map((item) => ({ ...item, type: "expense" })),
-    ...(savings || []).map((item) => ({ ...item, type: "saving" })),
-    ...(pensions || []).map((item) => ({ ...item, type: "pension" })),
-    ...(realEstates || []).map((item) => ({ ...item, type: "realEstate" })),
-    ...(assets || []).map((item) => ({ ...item, type: "asset" })),
-    ...(debts || []).map((item) => ({ ...item, type: "debt" })),
+    ...(incomes || []).map((item) => ({ ...item, category: "income" })),
+    ...(expenses || []).map((item) => ({ ...item, category: "expense" })),
+    ...(savings || []).map((item) => ({ ...item, category: "saving" })),
+    ...(pensions || []).map((item) => ({ ...item, category: "pension" })),
+    ...(realEstates || []).map((item) => ({ ...item, category: "realEstate" })),
+    ...(assets || []).map((item) => ({ ...item, category: "asset" })),
+    ...(debts || []).map((item) => ({ ...item, category: "debt" })),
   ];
 
   // 항목이 없을 때 표시
@@ -42,7 +42,7 @@ function ProfileSummary({
   // 카드 클릭 핸들러
   const handleCardClick = (item) => {
     if (onItemClick) {
-      onItemClick(item.type, item);
+      onItemClick(item.category, item);
     }
   };
 
@@ -50,7 +50,7 @@ function ProfileSummary({
   const handleDelete = (e, item) => {
     e.stopPropagation(); // 카드 클릭 이벤트 방지
     if (onDelete) {
-      onDelete(item.type, item.id);
+      onDelete(item.category, item.id);
     }
   };
 
@@ -59,7 +59,7 @@ function ProfileSummary({
       <div className={styles.scrollContainer}>
         {allFinanceItems.map((item) => (
           <div
-            key={`${item.type}-${item.id}`}
+            key={`${item.category}-${item.id}`}
             className={styles.financeCard}
             onClick={() => handleCardClick(item)}
             title={`${item.title} 수정하기`}

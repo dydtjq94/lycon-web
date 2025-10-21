@@ -43,7 +43,7 @@ const RealEstateList = ({ realEstates, onEdit, onDelete }) => {
               상승률: {(realEstate.growthRate * 100).toFixed(1)}%
             </div>
             <div className={styles.realEstatePeriod}>
-              보유 기간: {new Date().getFullYear()}년 - {realEstate.endYear}년
+              {new Date().getFullYear()}년 - {realEstate.endYear}년
             </div>
 
             {realEstate.hasRentalIncome && (
