@@ -107,6 +107,9 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       const updatedProfile = {
         ...profileData,
         ...formData,
+        currentCash: parseInt(formData.currentCash) || 0,
+        targetAssets: parseInt(formData.targetAssets) || 0,
+        retirementLivingExpenses: parseInt(formData.retirementLivingExpenses) || 0,
         currentKoreanAge: calculateKoreanAge(formData.birthYear),
         spouseKoreanAge: formData.hasSpouse ? calculateKoreanAge(formData.spouseBirthYear) : null,
         updatedAt: new Date().toISOString(),

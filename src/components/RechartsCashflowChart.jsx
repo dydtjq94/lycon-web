@@ -104,23 +104,67 @@ function RechartsCashflowChart({
               fontSize={12}
             />
 
-            {/* 툴팁 */}
+            {/* 커스텀 툴팁 */}
             <Tooltip
-              formatter={(value, name) => [
-                formatAmountForChart(value),
-                name === "amount" ? "현금 흐름" : name,
-              ]}
-              labelFormatter={(label, payload) => {
-                if (payload && payload[0]) {
-                  return `${payload[0].payload.age}세 (${payload[0].payload.year}년)`;
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length > 0) {
+                  const data = payload[0].payload;
+                  const yearData = detailedData.find(item => item.year === data.year);
+                  
+                  if (yearData) {
+                    return (
+                      <div className={styles.customTooltip}>
+                        <div className={styles.tooltipHeader}>
+                          <span className={styles.tooltipTitle}>
+                            {data.age}세 ({data.year}년)
+                          </span>
+                          <span className={`${styles.tooltipAmount} ${data.amount >= 0 ? styles.positive : styles.negative}`}>
+                            {data.amount >= 0 ? '+' : ''}{formatAmountForChart(data.amount)}
+                          </span>
+                        </div>
+                        <div className={styles.tooltipBreakdown}>
+                          <div className={styles.tooltipItem}>
+                            <span className={styles.tooltipLabel}>수입:</span>
+                            <span className={styles.tooltipValue}>+{formatAmountForChart(yearData.income)}</span>
+                          </div>
+                          <div className={styles.tooltipItem}>
+                            <span className={styles.tooltipLabel}>지출:</span>
+                            <span className={styles.tooltipValue}>-{formatAmountForChart(yearData.expense)}</span>
+                          </div>
+                          <div className={styles.tooltipItem}>
+                            <span className={styles.tooltipLabel}>저축:</span>
+                            <span className={styles.tooltipValue}>-{formatAmountForChart(yearData.savings)}</span>
+                          </div>
+                          {yearData.pension > 0 && (
+                            <div className={styles.tooltipItem}>
+                              <span className={styles.tooltipLabel}>연금수령:</span>
+                              <span className={styles.tooltipValue}>+{formatAmountForChart(yearData.pension)}</span>
+                            </div>
+                          )}
+                          {yearData.rentalIncome > 0 && (
+                            <div className={styles.tooltipItem}>
+                              <span className={styles.tooltipLabel}>임대수입:</span>
+                              <span className={styles.tooltipValue}>+{formatAmountForChart(yearData.rentalIncome)}</span>
+                            </div>
+                          )}
+                          {yearData.assetIncome > 0 && (
+                            <div className={styles.tooltipItem}>
+                              <span className={styles.tooltipLabel}>자산수익:</span>
+                              <span className={styles.tooltipValue}>+{formatAmountForChart(yearData.assetIncome)}</span>
+                            </div>
+                          )}
+                          {yearData.debtInterest > 0 && (
+                            <div className={styles.tooltipItem}>
+                              <span className={styles.tooltipLabel}>부채이자:</span>
+                              <span className={styles.tooltipValue}>-{formatAmountForChart(yearData.debtInterest)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
                 }
-                return `${label}세`;
-              }}
-              contentStyle={{
-                backgroundColor: "white",
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                return null;
               }}
             />
 
