@@ -526,7 +526,9 @@ export function calculateAssetSimulation(
     Object.keys(assetsByTitle).forEach((title) => {
       const asset = assetsByTitle[title];
       if (asset.isActive) {
-        assetItem[title] = asset.amount;
+        // "현금"이라는 이름은 시스템 예약어이므로 "현금 자산"으로 변경
+        const displayTitle = title === "현금" ? "현금 자산" : title;
+        assetItem[displayTitle] = asset.amount;
       }
     });
 

@@ -208,13 +208,13 @@ function ProfileCreatePage() {
 
     if (
       !formData.retirementLivingExpenses ||
-      formData.retirementLivingExpenses <= 0
+      formData.retirementLivingExpenses < 0
     ) {
       newErrors.retirementLivingExpenses =
         "은퇴 시점 예상 생활비를 입력해주세요.";
     }
 
-    if (!formData.targetAssets || formData.targetAssets <= 0) {
+    if (!formData.targetAssets || formData.targetAssets < 0) {
       newErrors.targetAssets = "목표 자산 규모를 입력해주세요.";
     }
 
@@ -277,13 +277,7 @@ function ProfileCreatePage() {
       // 가구 구성원 정보 정리
       const familyMembers = [];
 
-      if (formData.hasSpouse) {
-        familyMembers.push({
-          name: formData.spouseName,
-          birthYear: parseInt(formData.spouseBirthYear),
-          relationship: "spouse",
-        });
-      }
+      // 배우자는 별도로 관리하므로 가구 구성원에 추가하지 않음
 
       formData.familyMembers.forEach((member) => {
         if (member.name.trim() && member.birthYear) {
@@ -305,6 +299,9 @@ function ProfileCreatePage() {
         retirementLivingExpenses: parseInt(formData.retirementLivingExpenses),
         targetAssets: parseInt(formData.targetAssets),
         currentCash: parseInt(formData.currentCash) || 0, // 현재 현금 추가
+        hasSpouse: formData.hasSpouse,
+        spouseName: formData.spouseName || "",
+        spouseBirthYear: formData.spouseBirthYear || "",
         familyMembers,
         createdAt: new Date().toISOString(),
       };

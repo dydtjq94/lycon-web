@@ -194,3 +194,142 @@
     width: 100%;
   }
 }
+
+/* 가구 구성원 관리 스타일 */
+.familyMembersSection {
+  margin-top: 8px;
+}
+
+.familyMembersList {
+  margin-bottom: 16px;
+}
+
+.familyMemberItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.memberInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.memberName {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.memberDetails {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.removeMemberButton {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: background-color 0.2s;
+}
+
+.removeMemberButton:hover {
+  background: #dc2626;
+}
+
+.addMemberSection {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.addMemberInputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.addMemberInputs .input {
+  flex: 1;
+  min-width: 80px;
+}
+
+.select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  color: #374151;
+  min-width: 80px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.addMemberButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.addMemberButton:hover {
+  background: #2563eb;
+}
+
+.addMemberButton:active {
+  background: #1d4ed8;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .addMemberInputs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .addMemberInputs .input,
+  .select {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .addMemberButton {
+    width: 100%;
+  }
+
+  .familyMemberItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .removeMemberButton {
+    align-self: flex-end;
+  }
+}

@@ -110,7 +110,7 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
 
     if (formData.type === "national") {
       // 국민연금
-      if (!formData.monthlyAmount || formData.monthlyAmount <= 0) {
+      if (!formData.monthlyAmount || formData.monthlyAmount < 0) {
         newErrors.monthlyAmount = "월 수령 금액을 입력해주세요.";
       }
       if (formData.startYear > formData.endYear) {
@@ -121,14 +121,14 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
       if (formData.currentAmount && formData.currentAmount < 0) {
         newErrors.currentAmount = "현재 보유액은 0 이상이어야 합니다.";
       }
-      if (!formData.contributionAmount || formData.contributionAmount <= 0) {
+      if (!formData.contributionAmount || formData.contributionAmount < 0) {
         newErrors.contributionAmount = "적립 금액을 입력해주세요.";
       }
       if (formData.contributionStartYear > formData.contributionEndYear) {
         newErrors.contributionEndYear =
           "적립 종료년도는 시작년도보다 늦어야 합니다.";
       }
-      if (formData.paymentYears <= 0) {
+      if (formData.paymentYears < 0) {
         newErrors.paymentYears = "수령 년수를 입력해주세요.";
       }
       if (formData.returnRate < 0 || formData.returnRate > 100) {

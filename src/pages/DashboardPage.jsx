@@ -30,6 +30,7 @@ import RealEstateList from "../components/RealEstateList";
 import AssetModal from "../components/AssetModal";
 import AssetList from "../components/AssetList";
 import ProfileEditModal from "../components/ProfileEditModal";
+import ProfileSummary from "../components/ProfileSummary";
 import styles from "./DashboardPage.module.css";
 
 /**
@@ -66,6 +67,7 @@ function DashboardPage() {
   const [assets, setAssets] = useState([]);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState(null);
+  const [debts, setDebts] = useState([]);
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
 
   // 프로필 데이터 로드
@@ -684,6 +686,37 @@ function DashboardPage() {
     }
   };
 
+  // ProfileSummary에서 항목 클릭 시 해당 수정 모달 열기
+  const handleProfileSummaryItemClick = (type, item) => {
+    switch (type) {
+      case "income":
+        handleEditIncome(item);
+        break;
+      case "expense":
+        handleEditExpense(item);
+        break;
+      case "saving":
+        handleEditSaving(item);
+        break;
+      case "pension":
+        handleEditPension(item);
+        break;
+      case "realEstate":
+        handleEditRealEstate(item);
+        break;
+      case "asset":
+        handleEditAsset(item);
+        break;
+      case "debt":
+        // 부채는 아직 구현되지 않았으므로 추후 추가
+        console.log("부채 수정 기능은 추후 구현 예정입니다.");
+        break;
+      default:
+        console.log("알 수 없는 항목 타입:", type);
+        break;
+    }
+  };
+
   // 카테고리별 이름 매핑
   const getCategoryName = (categoryId) => {
     const categoryMap = {
@@ -760,7 +793,7 @@ function DashboardPage() {
             <span className={styles.detailItem}>
               <span className={styles.label}>은퇴 나이:</span>
               <span className={styles.value}>
-                {profileData.retirementAge}세
+                {profileData.retirementAge}세 ({profileData.retirementYear}년)
               </span>
             </span>
             <span className={styles.detailItem}>
@@ -778,9 +811,13 @@ function DashboardPage() {
             <span className={styles.detailItem}>
               <span className={styles.label}>가구 구성:</span>
               <span className={styles.value}>
-                {profileData.familyMembers
-                  ? profileData.familyMembers.length + 1
-                  : 1}
+                {(() => {
+                  let count = 1; // 본인
+                  if (profileData.hasSpouse) count += 1; // 배우자
+                  if (profileData.familyMembers)
+                    count += profileData.familyMembers.length; // 기타 가구 구성원
+                  return count;
+                })()}
                 명
               </span>
             </span>
@@ -795,6 +832,18 @@ function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* 재무 항목 요약 */}
+      <ProfileSummary
+        incomes={incomes}
+        expenses={expenses}
+        savings={savings}
+        pensions={pensions}
+        realEstates={realEstates}
+        assets={assets}
+        debts={debts}
+        onItemClick={handleProfileSummaryItemClick}
+      />
 
       {/* 메인 대시보드 */}
       <div className={styles.dashboardMain}>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { profileService } from "../services/firestoreService";
 import { calculateKoreanAge } from "../utils/koreanAge";
+import { formatAmount } from "../utils/format";
 import styles from "./ProfileListPage.module.css";
 
 /**
@@ -240,18 +241,21 @@ function ProfileListPage() {
                   <div className={styles.detailItem}>
                     <span className={styles.label}>목표 자산:</span>
                     <span className={styles.value}>
-                      {profile.targetAssets?.toLocaleString() ||
-                        profile.targetAmount?.toLocaleString() ||
-                        0}
-                      만원
+                      {formatAmount(
+                        profile.targetAssets || profile.targetAmount || 0
+                      )}
                     </span>
                   </div>
                   <div className={styles.detailItem}>
                     <span className={styles.label}>가구 구성:</span>
                     <span className={styles.value}>
-                      {profile.familyMembers
-                        ? profile.familyMembers.length + 1
-                        : 1}
+                      {(() => {
+                        let count = 1; // 본인
+                        if (profile.hasSpouse) count += 1; // 배우자
+                        if (profile.familyMembers)
+                          count += profile.familyMembers.length; // 기타 가구 구성원
+                        return count;
+                      })()}
                       명
                     </span>
                   </div>

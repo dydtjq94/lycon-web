@@ -44,15 +44,8 @@ function RechartsAssetChart({
     Object.keys(item).forEach((key) => {
       if (key !== "year" && key !== "age" && key !== "totalAmount") {
         if (key === "현금") {
-          // 현금을 자산/부채로 분리
-          const cashValue = item[key] || 0;
-          if (cashValue >= 0) {
-            processedItem["현금(자산)"] = cashValue;
-            processedItem["현금(부채)"] = 0;
-          } else {
-            processedItem["현금(자산)"] = 0;
-            processedItem["현금(부채)"] = cashValue; // 음수 그대로
-          }
+          // 현금은 그대로 표시 (양수/음수 자동 처리)
+          processedItem[key] = item[key] || 0;
         } else {
           // 다른 자산들은 그대로 표시
           processedItem[key] = item[key] || 0;
@@ -64,7 +57,7 @@ function RechartsAssetChart({
   });
 
   // 동적 자산 항목 추출 (기본 필드 제외)
-  const assetKeys =
+  const allKeys =
     chartData.length > 0
       ? Object.keys(chartData[0]).filter(
           (key) =>
@@ -75,16 +68,42 @@ function RechartsAssetChart({
         )
       : [];
 
-  // 색상 팔레트
+  // 현금을 맨 앞으로 이동하고, "현금 자산"을 "현금"으로 표시
+  const assetKeys = allKeys.sort((a, b) => {
+    if (a === "현금" || a === "현금 자산") return -1;
+    if (b === "현금" || b === "현금 자산") return 1;
+    return 0;
+  });
+
+  // 디버깅: chartData와 assetKeys 확인
+  console.log("chartData:", chartData);
+  console.log("assetKeys:", assetKeys);
+  console.log(
+    "첫 번째 chartData 항목의 키들:",
+    chartData.length > 0 ? Object.keys(chartData[0]) : []
+  );
+  console.log("현금이 포함되어 있나?", assetKeys.includes("현금"));
+
+  // 현금 값들 확인
+  console.log(
+    "현금 값들:",
+    chartData.map((item) => ({ year: item.year, 현금: item.현금 }))
+  );
+  console.log(
+    "음수 현금이 있나?",
+    chartData.some((item) => item.현금 < 0)
+  );
+
+  // 색상 팔레트 (부드럽고 예쁜 색상)
   const colors = [
-    "#3b82f6", // 파란색
-    "#10b981", // 초록색
-    "#8b5cf6", // 보라색
-    "#f59e0b", // 주황색
-    "#ef4444", // 빨간색
-    "#06b6d4", // 청록색
-    "#84cc16", // 라임색
-    "#f97316", // 오렌지색
+    "#34d399", // 연한 초록색
+    "#60a5fa", // 연한 파란색
+    "#fbbf24", // 연한 노란색
+    "#f472b6", // 연한 핑크색
+    "#a78bfa", // 연한 보라색
+    "#34d399", // 연한 청록색
+    "#fbbf24", // 연한 주황색
+    "#fb7185", // 연한 로즈색
   ];
 
   // 은퇴 시점 찾기
@@ -116,6 +135,7 @@ function RechartsAssetChart({
         <ResponsiveContainer width="100%" height={400}>
           <BarChart
             data={chartData}
+            stackOffset="sign"
             margin={{
               top: 20,
               right: 30,
@@ -203,43 +223,42 @@ function RechartsAssetChart({
               }}
             />
 
-            {/* 동적 자산 항목 Bar들 */}
-            {assetKeys.map((key, index) => {
-              if (key === "현금(자산)") {
-                // 현금(자산)은 초록색
-                return (
-                  <Bar
-                    key={`${key}-${index}`}
-                    dataKey={key}
-                    stackId="assets"
-                    fill="#10b981"
-                    name={key}
-                  />
-                );
-              } else if (key === "현금(부채)") {
-                // 현금(부채)는 옅은 보라색
-                return (
-                  <Bar
-                    key={`${key}-${index}`}
-                    dataKey={key}
-                    stackId="assets"
-                    fill="#a855f7"
-                    name={key}
-                  />
-                );
-              } else {
-                // 다른 자산들은 기본 색상 사용
-                return (
-                  <Bar
-                    key={`${key}-${index}`}
-                    dataKey={key}
-                    stackId="assets"
-                    fill={colors[index % colors.length]}
-                    name={key}
-                  />
-                );
-              }
-            })}
+            {/* 현금 Bar (별도 처리) - 같은 stackId 사용 */}
+            <Bar
+              key="현금"
+              dataKey="현금"
+              stackId="assets"
+              name="현금"
+              fill="#000000"
+            >
+              {chartData.map((entry, entryIndex) => (
+                <Cell key={`현금-cell-${entryIndex}`} fill="#000000" />
+              ))}
+            </Bar>
+
+            {/* 현금 자산 Bar (사용자가 추가한 현금 자산) */}
+            {assetKeys.includes("현금 자산") && (
+              <Bar
+                key="현금 자산"
+                dataKey="현금 자산"
+                stackId="assets"
+                name="현금"
+                fill={colors[0]}
+              />
+            )}
+
+            {/* 다른 자산 항목 Bar들 */}
+            {assetKeys
+              .filter((key) => key !== "현금" && key !== "현금 자산")
+              .map((key, index) => (
+                <Bar
+                  key={`${key}-${index}`}
+                  dataKey={key}
+                  stackId="assets"
+                  fill={colors[index % colors.length]}
+                  name={key === "현금 자산" ? "현금" : key}
+                />
+              ))}
 
             {/* 범례 */}
             <Legend

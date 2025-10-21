@@ -109,8 +109,10 @@ function RechartsCashflowChart({
               content={({ active, payload, label }) => {
                 if (active && payload && payload.length > 0) {
                   const data = payload[0].payload;
-                  const yearData = detailedData.find(item => item.year === data.year);
-                  
+                  const yearData = detailedData.find(
+                    (item) => item.year === data.year
+                  );
+
                   if (yearData) {
                     return (
                       <div className={styles.customTooltip}>
@@ -118,45 +120,74 @@ function RechartsCashflowChart({
                           <span className={styles.tooltipTitle}>
                             {data.age}세 ({data.year}년)
                           </span>
-                          <span className={`${styles.tooltipAmount} ${data.amount >= 0 ? styles.positive : styles.negative}`}>
-                            {data.amount >= 0 ? '+' : ''}{formatAmountForChart(data.amount)}
+                          <span
+                            className={`${styles.tooltipAmount} ${
+                              data.amount >= 0
+                                ? styles.positive
+                                : styles.negative
+                            }`}
+                          >
+                            {data.amount >= 0 ? "+" : ""}
+                            {formatAmountForChart(data.amount)}
                           </span>
                         </div>
                         <div className={styles.tooltipBreakdown}>
                           <div className={styles.tooltipItem}>
                             <span className={styles.tooltipLabel}>수입:</span>
-                            <span className={styles.tooltipValue}>+{formatAmountForChart(yearData.income)}</span>
+                            <span className={styles.tooltipValue}>
+                              +{formatAmountForChart(yearData.income)}
+                            </span>
                           </div>
                           <div className={styles.tooltipItem}>
                             <span className={styles.tooltipLabel}>지출:</span>
-                            <span className={styles.tooltipValue}>-{formatAmountForChart(yearData.expense)}</span>
+                            <span className={styles.tooltipValue}>
+                              -{formatAmountForChart(yearData.expense)}
+                            </span>
                           </div>
                           <div className={styles.tooltipItem}>
                             <span className={styles.tooltipLabel}>저축:</span>
-                            <span className={styles.tooltipValue}>-{formatAmountForChart(yearData.savings)}</span>
+                            <span className={styles.tooltipValue}>
+                              -{formatAmountForChart(yearData.savings)}
+                            </span>
                           </div>
                           {yearData.pension > 0 && (
                             <div className={styles.tooltipItem}>
-                              <span className={styles.tooltipLabel}>연금수령:</span>
-                              <span className={styles.tooltipValue}>+{formatAmountForChart(yearData.pension)}</span>
+                              <span className={styles.tooltipLabel}>
+                                연금수령:
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                +{formatAmountForChart(yearData.pension)}
+                              </span>
                             </div>
                           )}
                           {yearData.rentalIncome > 0 && (
                             <div className={styles.tooltipItem}>
-                              <span className={styles.tooltipLabel}>임대수입:</span>
-                              <span className={styles.tooltipValue}>+{formatAmountForChart(yearData.rentalIncome)}</span>
+                              <span className={styles.tooltipLabel}>
+                                임대수입:
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                +{formatAmountForChart(yearData.rentalIncome)}
+                              </span>
                             </div>
                           )}
                           {yearData.assetIncome > 0 && (
                             <div className={styles.tooltipItem}>
-                              <span className={styles.tooltipLabel}>자산수익:</span>
-                              <span className={styles.tooltipValue}>+{formatAmountForChart(yearData.assetIncome)}</span>
+                              <span className={styles.tooltipLabel}>
+                                자산수익:
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                +{formatAmountForChart(yearData.assetIncome)}
+                              </span>
                             </div>
                           )}
                           {yearData.debtInterest > 0 && (
                             <div className={styles.tooltipItem}>
-                              <span className={styles.tooltipLabel}>부채이자:</span>
-                              <span className={styles.tooltipValue}>-{formatAmountForChart(yearData.debtInterest)}</span>
+                              <span className={styles.tooltipLabel}>
+                                부채이자:
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                -{formatAmountForChart(yearData.debtInterest)}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -219,82 +250,6 @@ function RechartsCashflowChart({
           </BarChart>
         </ResponsiveContainer>
       </div>
-
-      {/* 년도별 상세 내역 */}
-      {detailedData && detailedData.length > 0 && (
-        <div className={styles.detailedSection}>
-          <h3 className={styles.detailedTitle}>년도별 현금 흐름 상세 내역</h3>
-          <div className={styles.detailedList}>
-            {detailedData.map((item, index) => (
-              <div key={index} className={styles.detailedItem}>
-                <div className={styles.yearHeader}>
-                  <span className={styles.year}>{item.year}년</span>
-                  <span
-                    className={`${styles.amount} ${
-                      item.netCashflow >= 0 ? styles.positive : styles.negative
-                    }`}
-                  >
-                    {item.netCashflow >= 0 ? "+" : ""}
-                    {formatAmountForChart(item.netCashflow)}
-                  </span>
-                </div>
-                <div className={styles.breakdown}>
-                  <div className={styles.breakdownItem}>
-                    <span className={styles.label}>수입:</span>
-                    <span className={styles.value}>
-                      +{formatAmountForChart(item.income)}
-                    </span>
-                  </div>
-                  <div className={styles.breakdownItem}>
-                    <span className={styles.label}>지출:</span>
-                    <span className={styles.value}>
-                      -{formatAmountForChart(item.expense)}
-                    </span>
-                  </div>
-                  <div className={styles.breakdownItem}>
-                    <span className={styles.label}>저축:</span>
-                    <span className={styles.value}>
-                      -{formatAmountForChart(item.savings)}
-                    </span>
-                  </div>
-                  {item.pension > 0 && (
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.label}>연금수령:</span>
-                      <span className={styles.value}>
-                        +{formatAmountForChart(item.pension)}
-                      </span>
-                    </div>
-                  )}
-                  {item.rentalIncome > 0 && (
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.label}>임대수입:</span>
-                      <span className={styles.value}>
-                        +{formatAmountForChart(item.rentalIncome)}
-                      </span>
-                    </div>
-                  )}
-                  {item.assetIncome > 0 && (
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.label}>자산수익:</span>
-                      <span className={styles.value}>
-                        +{formatAmountForChart(item.assetIncome)}
-                      </span>
-                    </div>
-                  )}
-                  {item.debtInterest > 0 && (
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.label}>부채이자:</span>
-                      <span className={styles.value}>
-                        -{formatAmountForChart(item.debtInterest)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

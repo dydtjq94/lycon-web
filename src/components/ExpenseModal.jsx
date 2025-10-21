@@ -12,7 +12,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
     startYear: new Date().getFullYear(),
     endYear: new Date().getFullYear() + 10,
     memo: "",
-    growthRate: "2.5", // 기본 상승률 2.5%
+    growthRate: "2.5", // % 단위로 기본값 설정
   });
 
   const [errors, setErrors] = useState({});
@@ -23,12 +23,15 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
       if (editData) {
         setFormData({
           title: editData.title || "",
-          frequency: editData.originalFrequency || editData.frequency || "monthly",
+          frequency:
+            editData.originalFrequency || editData.frequency || "monthly",
           amount: editData.originalAmount || editData.amount || "",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 10,
           memo: editData.memo || "",
-          growthRate: editData.growthRate ? (editData.growthRate * 100).toString() : "2.5",
+          growthRate: editData.growthRate
+            ? editData.growthRate.toString()
+            : "2.5",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -53,7 +56,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
       newErrors.title = "제목을 입력해주세요.";
     }
 
-    if (!formData.amount || formData.amount <= 0) {
+    if (!formData.amount || formData.amount < 0) {
       newErrors.amount = "금액을 입력해주세요.";
     }
 
@@ -67,7 +70,10 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
 
   // 숫자만 입력 허용
   const handleKeyPress = (e) => {
-    if (!/[0-9.]/.test(e.key) && !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)) {
+    if (
+      !/[0-9.]/.test(e.key) &&
+      !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)
+    ) {
       e.preventDefault();
     }
   };
@@ -75,7 +81,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
   // 폼 제출 핸들러
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -83,7 +89,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
     const expenseData = {
       ...formData,
       amount: parseInt(formData.amount),
-      growthRate: parseFloat(formData.growthRate) / 100, // 백분율을 소수로 변환
+      growthRate: parseFloat(formData.growthRate), // 백분율을 소수로 변환
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
     };
@@ -173,7 +179,9 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
                   setFormData({ ...formData, amount: e.target.value })
                 }
                 onKeyPress={handleKeyPress}
-                className={`${styles.input} ${errors.amount ? styles.error : ""}`}
+                className={`${styles.input} ${
+                  errors.amount ? styles.error : ""
+                }`}
                 placeholder="예: 300"
               />
               {errors.amount && (
@@ -213,7 +221,9 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
                   setFormData({ ...formData, endYear: e.target.value })
                 }
                 onKeyPress={handleKeyPress}
-                className={`${styles.input} ${errors.endYear ? styles.error : ""}`}
+                className={`${styles.input} ${
+                  errors.endYear ? styles.error : ""
+                }`}
                 placeholder="2035"
               />
               {errors.endYear && (
@@ -234,7 +244,7 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
               onChange={(e) => {
                 const value = e.target.value;
                 // 숫자와 소수점만 허용
-                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                if (value === "" || /^\d*\.?\d*$/.test(value)) {
                   setFormData({ ...formData, growthRate: value });
                 }
               }}
@@ -262,7 +272,11 @@ function ExpenseModal({ isOpen, onClose, onSave, editData = null }) {
           </div>
 
           <div className={styles.modalFooter}>
-            <button type="button" className={styles.cancelButton} onClick={handleClose}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={handleClose}
+            >
               취소
             </button>
             <button type="submit" className={styles.saveButton}>

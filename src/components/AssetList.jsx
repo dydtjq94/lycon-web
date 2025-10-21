@@ -28,7 +28,9 @@ function AssetList({ assets, onEdit, onDelete }) {
         >
           <div className={styles.assetInfo}>
             <div className={styles.assetHeader}>
-              <h4 className={styles.assetTitle}>{asset.title}</h4>
+              <h4 className={styles.assetTitle}>
+                {asset.title === "현금" ? "현금 자산" : asset.title}
+              </h4>
               <div className={styles.assetActions}>
                 <button
                   className={styles.deleteButton}

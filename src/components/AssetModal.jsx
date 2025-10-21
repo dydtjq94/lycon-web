@@ -27,18 +27,24 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
         setFormData({
           title: editData.title || "",
           currentValue: editData.currentValue || "",
-          growthRate: editData.growthRate ? (editData.growthRate * 100).toString() : "5",
+          growthRate: editData.growthRate
+            ? (editData.growthRate * 100).toString()
+            : "5",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || "",
           assetType: editData.assetType || "general",
-          incomeRate: editData.incomeRate ? (editData.incomeRate * 100).toString() : "3",
+          incomeRate: editData.incomeRate
+            ? (editData.incomeRate * 100).toString()
+            : "3",
           memo: editData.memo || "",
         });
       } else {
         // 새 데이터인 경우 기본값 설정
         const currentYear = new Date().getFullYear();
-        const deathYear = profileData ? profileData.birthYear + 90 - 1 : currentYear + 50;
-        
+        const deathYear = profileData
+          ? profileData.birthYear + 90 - 1
+          : currentYear + 50;
+
         setFormData({
           title: "",
           currentValue: "",
@@ -59,9 +65,11 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
 
     if (!formData.title.trim()) {
       newErrors.title = "자산명을 입력해주세요.";
+    } else if (formData.title.trim() === "현금") {
+      newErrors.title = "'현금'은 이미 추가된 자산입니다.";
     }
 
-    if (!formData.currentValue || parseFloat(formData.currentValue) <= 0) {
+    if (!formData.currentValue || parseFloat(formData.currentValue) < 0) {
       newErrors.currentValue = "현재 가치는 0보다 큰 값을 입력해주세요.";
     }
 
@@ -110,7 +118,10 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
       startYear: parseInt(formData.startYear),
       endYear: parseInt(formData.endYear),
       assetType: formData.assetType,
-      incomeRate: formData.assetType === "income" ? parseFloat(formData.incomeRate) / 100 : 0, // 수익형 자산일 때만 수익률 적용
+      incomeRate:
+        formData.assetType === "income"
+          ? parseFloat(formData.incomeRate) / 100
+          : 0, // 수익형 자산일 때만 수익률 적용
       memo: formData.memo.trim(),
     };
 
@@ -171,7 +182,9 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
                 setFormData({ ...formData, currentValue: e.target.value })
               }
               onKeyPress={handleKeyPress}
-              className={`${styles.input} ${errors.currentValue ? styles.error : ""}`}
+              className={`${styles.input} ${
+                errors.currentValue ? styles.error : ""
+              }`}
               placeholder="예: 1000"
             />
             {errors.currentValue && (
@@ -217,11 +230,13 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
               onChange={(e) => {
                 const value = e.target.value;
                 // 숫자와 소수점만 허용
-                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                if (value === "" || /^\d*\.?\d*$/.test(value)) {
                   setFormData({ ...formData, growthRate: value });
                 }
               }}
-              className={`${styles.input} ${errors.growthRate ? styles.error : ""}`}
+              className={`${styles.input} ${
+                errors.growthRate ? styles.error : ""
+              }`}
               placeholder="예: 5.0"
             />
             {errors.growthRate && (
@@ -238,11 +253,13 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
                 onChange={(e) => {
                   const value = e.target.value;
                   // 숫자와 소수점만 허용
-                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                  if (value === "" || /^\d*\.?\d*$/.test(value)) {
                     setFormData({ ...formData, incomeRate: value });
                   }
                 }}
-                className={`${styles.input} ${errors.incomeRate ? styles.error : ""}`}
+                className={`${styles.input} ${
+                  errors.incomeRate ? styles.error : ""
+                }`}
                 placeholder="예: 3.0 (이자/배당률)"
               />
               {errors.incomeRate && (
@@ -261,7 +278,9 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
                   setFormData({ ...formData, startYear: e.target.value })
                 }
                 onKeyPress={handleKeyPress}
-                className={`${styles.input} ${styles.yearInput} ${errors.startYear ? styles.error : ""}`}
+                className={`${styles.input} ${styles.yearInput} ${
+                  errors.startYear ? styles.error : ""
+                }`}
                 placeholder="시작 연도"
               />
               <span className={styles.yearSeparator}>~</span>
@@ -272,7 +291,9 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
                   setFormData({ ...formData, endYear: e.target.value })
                 }
                 onKeyPress={handleKeyPress}
-                className={`${styles.input} ${styles.yearInput} ${errors.endYear ? styles.error : ""}`}
+                className={`${styles.input} ${styles.yearInput} ${
+                  errors.endYear ? styles.error : ""
+                }`}
                 placeholder="종료 연도"
               />
             </div>

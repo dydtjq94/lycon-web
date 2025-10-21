@@ -12,7 +12,6 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
     name: "",
     birthYear: "",
     retirementAge: 55,
-    retirementLivingExpenses: "",
     targetAssets: "",
     currentCash: "",
     hasSpouse: false,
@@ -20,6 +19,11 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
     spouseBirthYear: "",
     familyMembers: [],
   });
+
+  // 가구 구성원 관리 상태
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberBirthYear, setNewMemberBirthYear] = useState("");
+  const [newMemberRelation, setNewMemberRelation] = useState("자녀");
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,7 +35,6 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         name: profileData.name || "",
         birthYear: profileData.birthYear || "",
         retirementAge: profileData.retirementAge || 55,
-        retirementLivingExpenses: profileData.retirementLivingExpenses || "",
         targetAssets: profileData.targetAssets || "",
         currentCash: profileData.currentCash || "",
         hasSpouse: profileData.hasSpouse || false,
@@ -50,16 +53,16 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       newErrors.name = "이름을 입력해주세요.";
     }
 
-    if (!formData.birthYear || formData.birthYear < 1900 || formData.birthYear > new Date().getFullYear()) {
+    if (
+      !formData.birthYear ||
+      formData.birthYear < 1900 ||
+      formData.birthYear > new Date().getFullYear()
+    ) {
       newErrors.birthYear = "올바른 출생년도를 입력해주세요.";
     }
 
     if (formData.retirementAge < 30 || formData.retirementAge > 80) {
       newErrors.retirementAge = "은퇴 나이는 30-80세 사이여야 합니다.";
-    }
-
-    if (formData.retirementLivingExpenses && formData.retirementLivingExpenses < 0) {
-      newErrors.retirementLivingExpenses = "은퇴 후 생활비는 0 이상이어야 합니다.";
     }
 
     if (formData.targetAssets && formData.targetAssets < 0) {
@@ -70,11 +73,16 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       newErrors.currentCash = "현재 현금은 0 이상이어야 합니다.";
     }
 
+    // 배우자가 있는 경우 검증
     if (formData.hasSpouse) {
       if (!formData.spouseName.trim()) {
         newErrors.spouseName = "배우자 이름을 입력해주세요.";
       }
-      if (!formData.spouseBirthYear || formData.spouseBirthYear < 1900 || formData.spouseBirthYear > new Date().getFullYear()) {
+      if (
+        !formData.spouseBirthYear ||
+        formData.spouseBirthYear < 1900 ||
+        formData.spouseBirthYear > new Date().getFullYear()
+      ) {
         newErrors.spouseBirthYear = "올바른 배우자 출생년도를 입력해주세요.";
       }
     }
@@ -93,6 +101,41 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
     }
   };
 
+  // 가구 구성원 추가
+  const handleAddFamilyMember = () => {
+    if (!newMemberName.trim() || !newMemberBirthYear) {
+      alert("이름과 출생년도를 모두 입력해주세요.");
+      return;
+    }
+
+    const newMember = {
+      id: Date.now(), // 임시 ID
+      name: newMemberName.trim(),
+      birthYear: parseInt(newMemberBirthYear),
+      relation: newMemberRelation,
+    };
+
+    setFormData({
+      ...formData,
+      familyMembers: [...formData.familyMembers, newMember],
+    });
+
+    // 입력 필드 초기화
+    setNewMemberName("");
+    setNewMemberBirthYear("");
+    setNewMemberRelation("자녀");
+  };
+
+  // 가구 구성원 삭제
+  const handleRemoveFamilyMember = (memberId) => {
+    setFormData({
+      ...formData,
+      familyMembers: formData.familyMembers.filter(
+        (member) => member.id !== memberId
+      ),
+    });
+  };
+
   // 폼 제출
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -109,13 +152,17 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         ...formData,
         currentCash: parseInt(formData.currentCash) || 0,
         targetAssets: parseInt(formData.targetAssets) || 0,
-        retirementLivingExpenses: parseInt(formData.retirementLivingExpenses) || 0,
         currentKoreanAge: calculateKoreanAge(formData.birthYear),
-        spouseKoreanAge: formData.hasSpouse ? calculateKoreanAge(formData.spouseBirthYear) : null,
+        spouseKoreanAge: formData.hasSpouse
+          ? calculateKoreanAge(formData.spouseBirthYear)
+          : null,
         updatedAt: new Date().toISOString(),
       };
 
-      await profileService.updateProfile(profileData.id || profileData.docId, updatedProfile);
+      await profileService.updateProfile(
+        profileData.id || profileData.docId,
+        updatedProfile
+      );
       onSave(updatedProfile);
       onClose();
     } catch (error) {
@@ -132,7 +179,6 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       name: "",
       birthYear: "",
       retirementAge: 55,
-      retirementLivingExpenses: "",
       targetAssets: "",
       currentCash: "",
       hasSpouse: false,
@@ -140,6 +186,9 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       spouseBirthYear: "",
       familyMembers: [],
     });
+    setNewMemberName("");
+    setNewMemberBirthYear("");
+    setNewMemberRelation("자녀");
     setErrors({});
     onClose();
   };
@@ -182,7 +231,9 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                 setFormData({ ...formData, birthYear: e.target.value })
               }
               onKeyPress={handleKeyPress}
-              className={`${styles.input} ${errors.birthYear ? styles.error : ""}`}
+              className={`${styles.input} ${
+                errors.birthYear ? styles.error : ""
+              }`}
               placeholder="예: 1990"
             />
             {errors.birthYear && (
@@ -196,10 +247,15 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
               type="text"
               value={formData.retirementAge}
               onChange={(e) =>
-                setFormData({ ...formData, retirementAge: parseInt(e.target.value) || 55 })
+                setFormData({
+                  ...formData,
+                  retirementAge: parseInt(e.target.value) || 55,
+                })
               }
               onKeyPress={handleKeyPress}
-              className={`${styles.input} ${errors.retirementAge ? styles.error : ""}`}
+              className={`${styles.input} ${
+                errors.retirementAge ? styles.error : ""
+              }`}
               placeholder="55"
             />
             {errors.retirementAge && (
@@ -216,28 +272,13 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                 setFormData({ ...formData, currentCash: e.target.value })
               }
               onKeyPress={handleKeyPress}
-              className={`${styles.input} ${errors.currentCash ? styles.error : ""}`}
+              className={`${styles.input} ${
+                errors.currentCash ? styles.error : ""
+              }`}
               placeholder="예: 1000"
             />
             {errors.currentCash && (
               <span className={styles.errorText}>{errors.currentCash}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>은퇴 후 생활비 (만원/월)</label>
-            <input
-              type="text"
-              value={formData.retirementLivingExpenses}
-              onChange={(e) =>
-                setFormData({ ...formData, retirementLivingExpenses: e.target.value })
-              }
-              onKeyPress={handleKeyPress}
-              className={`${styles.input} ${errors.retirementLivingExpenses ? styles.error : ""}`}
-              placeholder="예: 200"
-            />
-            {errors.retirementLivingExpenses && (
-              <span className={styles.errorText}>{errors.retirementLivingExpenses}</span>
             )}
           </div>
 
@@ -250,7 +291,9 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                 setFormData({ ...formData, targetAssets: e.target.value })
               }
               onKeyPress={handleKeyPress}
-              className={`${styles.input} ${errors.targetAssets ? styles.error : ""}`}
+              className={`${styles.input} ${
+                errors.targetAssets ? styles.error : ""
+              }`}
               placeholder="예: 10000"
             />
             {errors.targetAssets && (
@@ -263,9 +306,15 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
               <input
                 type="checkbox"
                 checked={formData.hasSpouse}
-                onChange={(e) =>
-                  setFormData({ ...formData, hasSpouse: e.target.checked })
-                }
+                onChange={(e) => {
+                  const hasSpouse = e.target.checked;
+                  setFormData({
+                    ...formData,
+                    hasSpouse,
+                    spouseName: hasSpouse ? formData.spouseName : "",
+                    spouseBirthYear: hasSpouse ? formData.spouseBirthYear : "",
+                  });
+                }}
                 className={styles.checkbox}
               />
               배우자가 있습니다
@@ -275,14 +324,19 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
           {formData.hasSpouse && (
             <>
               <div className={styles.field}>
-                <label className={styles.label}>배우자 이름</label>
+                <label className={styles.label}>배우자 이름 *</label>
                 <input
                   type="text"
                   value={formData.spouseName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, spouseName: e.target.value })
-                  }
-                  className={`${styles.input} ${errors.spouseName ? styles.error : ""}`}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      spouseName: e.target.value,
+                    });
+                  }}
+                  className={`${styles.input} ${
+                    errors.spouseName ? styles.error : ""
+                  }`}
                   placeholder="배우자 이름을 입력하세요"
                 />
                 {errors.spouseName && (
@@ -291,23 +345,98 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
               </div>
 
               <div className={styles.field}>
-                <label className={styles.label}>배우자 출생년도</label>
+                <label className={styles.label}>배우자 출생년도 *</label>
                 <input
                   type="text"
                   value={formData.spouseBirthYear}
-                  onChange={(e) =>
-                    setFormData({ ...formData, spouseBirthYear: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      spouseBirthYear: e.target.value,
+                    });
+                  }}
                   onKeyPress={handleKeyPress}
-                  className={`${styles.input} ${errors.spouseBirthYear ? styles.error : ""}`}
+                  className={`${styles.input} ${
+                    errors.spouseBirthYear ? styles.error : ""
+                  }`}
                   placeholder="예: 1992"
                 />
                 {errors.spouseBirthYear && (
-                  <span className={styles.errorText}>{errors.spouseBirthYear}</span>
+                  <span className={styles.errorText}>
+                    {errors.spouseBirthYear}
+                  </span>
                 )}
               </div>
             </>
           )}
+
+          {/* 가구 구성원 관리 */}
+          <div className={styles.field}>
+            <label className={styles.label}>가구 구성원</label>
+            <div className={styles.familyMembersSection}>
+              {/* 기존 가구 구성원 목록 */}
+              {formData.familyMembers.length > 0 && (
+                <div className={styles.familyMembersList}>
+                  {formData.familyMembers.map((member) => (
+                    <div key={member.id} className={styles.familyMemberItem}>
+                      <div className={styles.memberInfo}>
+                        <span className={styles.memberName}>{member.name}</span>
+                        <span className={styles.memberDetails}>
+                          ({member.relation}, {member.birthYear}년생)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFamilyMember(member.id)}
+                        className={styles.removeMemberButton}
+                        title="삭제"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 새 가구 구성원 추가 */}
+              <div className={styles.addMemberSection}>
+                <div className={styles.addMemberInputs}>
+                  <input
+                    type="text"
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                    className={styles.input}
+                    placeholder="이름"
+                  />
+                  <input
+                    type="text"
+                    value={newMemberBirthYear}
+                    onChange={(e) => setNewMemberBirthYear(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className={styles.input}
+                    placeholder="출생년도"
+                  />
+                  <select
+                    value={newMemberRelation}
+                    onChange={(e) => setNewMemberRelation(e.target.value)}
+                    className={styles.select}
+                  >
+                    <option value="자녀">자녀</option>
+                    <option value="부모">부모</option>
+                    <option value="형제자매">형제자매</option>
+                    <option value="기타">기타</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddFamilyMember}
+                    className={styles.addMemberButton}
+                  >
+                    추가
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className={styles.buttonGroup}>
             <button
