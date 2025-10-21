@@ -204,13 +204,13 @@ function RechartsAssetChart({
 
                       <div className={styles.tooltipBreakdown}>
                         <div className={styles.tooltipItem}>
-                          <span className={styles.tooltipLabel}>총 자산:</span>
+                          <span className={styles.tooltipLabel}>순자산:</span>
                           <span className={styles.tooltipValue}>
                             {formatAmountForChart(totalAssets)}
                           </span>
                         </div>
                         <div className={styles.tooltipItem}>
-                          <span className={styles.tooltipLabel}>자본:</span>
+                          <span className={styles.tooltipLabel}>자산:</span>
                           <span className={styles.tooltipValue}>
                             +{formatAmountForChart(capitalTotal)}
                           </span>
@@ -222,7 +222,6 @@ function RechartsAssetChart({
                           </span>
                         </div>
                       </div>
-                      <div className={styles.tooltipDivider}></div>
                       <div className={styles.tooltipDetails}>
                         {payload.map((entry, index) => (
                           <div key={index} className={styles.tooltipItem}>

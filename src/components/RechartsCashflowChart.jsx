@@ -176,7 +176,6 @@ function RechartsCashflowChart({
                             </span>
                           </div>
                         </div>
-                        <div className={styles.tooltipDivider}></div>
                         <div className={styles.tooltipDetails}>
                           {/* 수입 항목들 */}
                           {incomes

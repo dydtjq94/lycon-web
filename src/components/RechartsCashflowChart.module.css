@@ -176,6 +176,9 @@
 .tooltipBreakdown {
   display: flex;
   flex-direction: column;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .tooltipDivider {
