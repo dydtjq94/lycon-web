@@ -71,21 +71,67 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 부채 이자 지출 계산
+    // 부채 이자 및 원금 상환 계산
     let totalDebtInterest = 0;
+    let totalDebtPrincipal = 0;
+
     debts.forEach((debt) => {
       if (year >= debt.startYear && year <= debt.endYear) {
-        // 부채 이자율을 연간 지출로 계산
-        const yearlyInterest = (debt.debtAmount * debt.interestRate) / 100;
-        totalDebtInterest += yearlyInterest;
+        const yearsElapsed = year - debt.startYear;
+        const totalYears = debt.endYear - debt.startYear + 1;
+        const interestRate = debt.interestRate; // 이미 소수로 저장됨
+
+        if (debt.debtType === "bullet") {
+          // 만기일시상환: 매년 이자만 지불, 만기일에 원금 상환
+          if (year < debt.endYear) {
+            // 만기 전: 이자만 지불
+            const yearlyInterest = debt.debtAmount * interestRate;
+            totalDebtInterest += yearlyInterest;
+          } else if (year === debt.endYear) {
+            // 만기년도: 이자 + 원금 상환
+            const yearlyInterest = debt.debtAmount * interestRate;
+            totalDebtInterest += yearlyInterest;
+            totalDebtPrincipal += debt.debtAmount;
+          }
+        } else if (debt.debtType === "equal") {
+          // 원리금균등상환: 매년 동일한 금액 상환
+          // PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
+          const principal = debt.debtAmount;
+          const r = interestRate;
+          const n = totalYears;
+
+          if (n > 0 && r > 0) {
+            const pmt =
+              (principal * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
+            const yearlyPayment = pmt;
+
+            // 이자 부분 계산: 남은 원금 * 이자율
+            let remainingPrincipal = principal;
+            for (let i = 0; i < yearsElapsed; i++) {
+              const interestPayment = remainingPrincipal * r;
+              const principalPayment = yearlyPayment - interestPayment;
+              remainingPrincipal -= principalPayment;
+            }
+
+            const interestPayment = remainingPrincipal * r;
+            const principalPayment = yearlyPayment - interestPayment;
+
+            totalDebtInterest += interestPayment;
+            totalDebtPrincipal += principalPayment;
+          } else if (r === 0) {
+            // 이자율이 0%인 경우: 원금을 균등 분할
+            const yearlyPayment = principal / n;
+            totalDebtPrincipal += yearlyPayment;
+          }
+        }
       }
     });
 
-    // 저축 계산 (현금흐름에서는 월간 저축 상승률만 적용, 이자율 적용 안함)
+    // 저축 계산 (현금흐름에서는 년간 저축 상승률만 적용, 이자율 적용 안함)
     savings.forEach((saving) => {
       if (year >= saving.startYear && year <= saving.endYear) {
         const yearsElapsed = year - saving.startYear;
-        const monthlyGrowthRate = (saving.monthlyGrowthRate || 0) / 100;
+        const yearlyGrowthRate = saving.yearlyGrowthRate || 0; // 이미 소수로 저장됨
 
         if (saving.frequency === "one_time") {
           // 일회성 저축: 시작년도에만 현금흐름에 반영
@@ -97,9 +143,9 @@ export function calculateCashflowSimulation(
           const monthlyAmount =
             saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
 
-          // 월간 저축 상승률 적용
+          // 년간 저축 상승률 적용 (월간 금액에 년간 상승률을 적용)
           const adjustedMonthlyAmount =
-            monthlyAmount * Math.pow(1 + monthlyGrowthRate, yearsElapsed);
+            monthlyAmount * Math.pow(1 + yearlyGrowthRate, yearsElapsed);
           const yearlyAmount = adjustedMonthlyAmount * 12;
 
           totalSavings += yearlyAmount;
@@ -122,8 +168,8 @@ export function calculateCashflowSimulation(
         }
       } else {
         // 퇴직연금/개인연금: 적립 기간과 수령 기간 모두 현금흐름에 반영
-        const paymentStartYear = pension.contributionEndYear + 1;
-        const paymentEndYear = paymentStartYear + pension.paymentYears - 1;
+        const paymentStartYear = pension.paymentStartYear;
+        const paymentEndYear = pension.paymentEndYear;
 
         if (
           year >= pension.contributionStartYear &&
@@ -158,7 +204,8 @@ export function calculateCashflowSimulation(
           }
 
           // 월 수령액 계산 (총 적립액 ÷ 수령 년수 ÷ 12)
-          const monthlyPayment = totalAccumulated / pension.paymentYears / 12;
+          const paymentYears = paymentEndYear - paymentStartYear + 1;
+          const monthlyPayment = totalAccumulated / paymentYears / 12;
           totalPension += monthlyPayment * 12; // 플러스로 추가
         }
       }
@@ -201,7 +248,7 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 + 자산수익 - 부채이자 (각 년도별 순현금흐름)
+    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 + 자산수익 - 부채이자 - 부채원금상환 (각 년도별 순현금흐름)
     const netCashflow =
       totalIncome -
       totalExpense -
@@ -210,7 +257,8 @@ export function calculateCashflowSimulation(
       totalRentalIncome +
       totalRealEstatePension +
       totalAssetIncome -
-      totalDebtInterest;
+      totalDebtInterest -
+      totalDebtPrincipal;
 
     cashflowData.push({
       year,
@@ -224,6 +272,7 @@ export function calculateCashflowSimulation(
       realEstatePension: totalRealEstatePension,
       assetIncome: totalAssetIncome,
       debtInterest: totalDebtInterest,
+      debtPrincipal: totalDebtPrincipal,
     });
   }
 
@@ -241,7 +290,8 @@ export function calculateAssetSimulation(
   pensions = [],
   realEstates = [],
   assets = [],
-  cashflowData = []
+  cashflowData = [],
+  debts = []
 ) {
   // 현재는 더미 데이터 반환
   const currentYear = new Date().getFullYear();
@@ -254,20 +304,40 @@ export function calculateAssetSimulation(
   // 현재 현금 (프로필에서 가져옴)
   let currentCash = profileData.currentCash || 0;
 
-  // 저축별 누적 자산 (제목별로 분리)
-  const savingsByTitle = {};
-  savings.forEach((saving) => {
-    savingsByTitle[saving.title] = {
-      amount: 0,
-      startYear: saving.startYear,
-      endYear: saving.endYear,
-      interestRate: saving.interestRate || 3.0, // 이자율
-      monthlyGrowthRate: saving.monthlyGrowthRate || 0, // 월간 저축 상승률
-      frequency: saving.frequency,
-      originalAmount: saving.amount,
-      isActive: true, // 활성 상태 추가
-    };
-  });
+  // 저축별 누적 자산 (ID별로 분리)
+  const savingsById = {};
+
+  // 저축 데이터가 없어도 자산과 부채만으로 시뮬레이션 생성 가능
+  if (savings && Array.isArray(savings) && savings.length > 0) {
+    savings.forEach((saving, index) => {
+      if (!saving.id) {
+        console.error("저축에 ID가 없습니다:", saving);
+        return;
+      }
+
+      // 년도 데이터 타입 확인 및 변환
+      const startYear =
+        typeof saving.startYear === "string"
+          ? parseInt(saving.startYear)
+          : saving.startYear;
+      const endYear =
+        typeof saving.endYear === "string"
+          ? parseInt(saving.endYear)
+          : saving.endYear;
+
+      savingsById[saving.id] = {
+        amount: 0,
+        startYear: startYear,
+        endYear: endYear,
+        interestRate: saving.interestRate || 0.03, // 이자율 (소수로 저장됨)
+        yearlyGrowthRate: saving.yearlyGrowthRate || 0, // 년간 저축 상승률
+        frequency: saving.frequency,
+        originalAmount: saving.amount,
+        title: saving.title, // 제목도 저장
+        isActive: true, // 활성 상태 추가
+      };
+    });
+  }
 
   // 연금별 누적 자산 (제목별로 분리)
   const pensionsByTitle = {};
@@ -278,8 +348,8 @@ export function calculateAssetSimulation(
         amount: pension.currentAmount || 0, // 현재 보유액으로 시작
         contributionStartYear: pension.contributionStartYear,
         contributionEndYear: pension.contributionEndYear,
-        paymentStartYear: pension.contributionEndYear + 1,
-        paymentEndYear: pension.contributionEndYear + pension.paymentYears,
+        paymentStartYear: pension.paymentStartYear,
+        paymentEndYear: pension.paymentEndYear,
         returnRate: pension.returnRate || 5.0,
         contributionAmount: pension.contributionAmount,
         contributionFrequency: pension.contributionFrequency,
@@ -296,7 +366,7 @@ export function calculateAssetSimulation(
       amount: realEstate.currentValue, // 현재 가치로 시작
       startYear: currentYear,
       endYear: realEstate.endYear,
-      growthRate: realEstate.growthRate || 2.5,
+      growthRate: realEstate.growthRate || 0.025, // 이미 소수로 저장됨
       convertToPension: realEstate.convertToPension || false,
       pensionStartYear: realEstate.pensionStartYear,
       monthlyPensionAmount: realEstate.monthlyPensionAmount,
@@ -311,9 +381,23 @@ export function calculateAssetSimulation(
       amount: asset.currentValue, // 현재 가치로 시작
       startYear: asset.startYear,
       endYear: asset.endYear,
-      growthRate: asset.growthRate || 0,
+      growthRate: asset.growthRate || 0, // 이미 소수로 저장됨
       assetType: asset.assetType || "general", // "general" 또는 "income"
       incomeRate: asset.incomeRate || 0, // 수익형 자산의 수익률
+      isActive: true,
+    };
+  });
+
+  // 부채별 자산 (제목별로 분리) - 음수로 표시
+  const debtsByTitle = {};
+  debts.forEach((debt) => {
+    debtsByTitle[debt.title] = {
+      amount: -debt.debtAmount, // 부채는 음수로 표시
+      startYear: debt.startYear,
+      endYear: debt.endYear,
+      debtType: debt.debtType, // "bullet" 또는 "equal"
+      interestRate: debt.interestRate,
+      originalAmount: debt.debtAmount,
       isActive: true,
     };
   });
@@ -329,17 +413,28 @@ export function calculateAssetSimulation(
     // 현금 흐름을 현재 현금에 적용
     currentCash += netCashflow;
 
-    // 해당 연도의 저축 계산 (제목별로)
-    Object.keys(savingsByTitle).forEach((title) => {
-      const saving = savingsByTitle[title];
+    // 해당 연도의 저축 계산 (ID별로)
+    Object.keys(savingsById).forEach((id) => {
+      const saving = savingsById[id];
 
-      if (!saving.isActive) return; // 비활성 저축은 건너뛰기
+      if (!saving.isActive) {
+        return; // 비활성 저축은 건너뛰기
+      }
+
+      // endYear + 1년에 저축을 현금으로 전환
+      if (year === saving.endYear + 1) {
+        currentCash += saving.amount;
+        // 저축을 비활성화 (자산 차트에서 제거됨)
+        saving.isActive = false;
+        saving.amount = 0; // 전환 후 금액 초기화
+        return; // 전환 후 더 이상 처리하지 않음
+      }
 
       if (year >= saving.startYear && year <= saving.endYear) {
-        // 저축 기간 중
+        // 저축 기간 중 (endYear 포함)
         const yearsElapsed = year - saving.startYear;
-        const interestRate = saving.interestRate / 100;
-        const monthlyGrowthRate = saving.monthlyGrowthRate / 100;
+        const interestRate = saving.interestRate; // 이미 소수로 저장됨
+        const yearlyGrowthRate = saving.yearlyGrowthRate; // 이미 소수로 저장됨
 
         if (saving.frequency === "one_time") {
           // 일회성 저축 (정기예금 등)
@@ -356,18 +451,17 @@ export function calculateAssetSimulation(
               ? saving.originalAmount
               : saving.originalAmount / 12;
 
-          // 월간 저축 상승률 적용
+          // 년간 저축 상승률 적용
           const adjustedMonthlyAmount =
-            monthlyAmount * Math.pow(1 + monthlyGrowthRate, yearsElapsed);
+            monthlyAmount * Math.pow(1 + yearlyGrowthRate, yearsElapsed);
           const yearlyAmount = adjustedMonthlyAmount * 12;
 
           // 작년 자산에 이자율 적용 + 올해 저축 추가
           saving.amount = saving.amount * (1 + interestRate) + yearlyAmount;
         }
-      } else if (year === saving.endYear + 1) {
-        // 저축 만료 시 현금으로 이동
-        currentCash += saving.amount;
-        saving.isActive = false; // 저축 비활성화 (차트에서 제거됨)
+      } else if (year > saving.endYear + 1) {
+        // endYear + 1 이후: 이미 비활성화된 저축은 건너뛰기
+        return;
       }
     });
 
@@ -430,7 +524,7 @@ export function calculateAssetSimulation(
           const isPensionActive =
             realEstate.convertToPension && year >= realEstate.pensionStartYear;
           if (!isPensionActive) {
-            const growthRate = realEstate.growthRate / 100;
+            const growthRate = realEstate.growthRate; // 이미 소수로 저장됨
             realEstate.amount = realEstate.amount * (1 + growthRate);
           }
         }
@@ -489,6 +583,69 @@ export function calculateAssetSimulation(
       }
     });
 
+    // 부채 계산 (제목별로) - 음수로 표시
+    Object.keys(debtsByTitle).forEach((title) => {
+      const debt = debtsByTitle[title];
+
+      if (year >= debt.startYear && year <= debt.endYear && debt.isActive) {
+        const yearsElapsed = year - debt.startYear;
+        const totalYears = debt.endYear - debt.startYear + 1;
+        const interestRate = debt.interestRate;
+
+        if (debt.debtType === "bullet") {
+          // 만기일시상환: 만기년도까지 원금 유지, 만기년도에 상환
+          if (year < debt.endYear) {
+            // 만기 전: 원금 유지 (음수로 표시)
+            debt.amount = -debt.originalAmount;
+          } else if (year === debt.endYear) {
+            // 만기년도: 원금 상환으로 부채 제거
+            debt.amount = 0;
+            debt.isActive = false;
+          }
+        } else if (debt.debtType === "equal") {
+          // 원리금균등상환: 매년 원금 상환
+          if (totalYears > 0 && interestRate > 0) {
+            // PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
+            const pmt =
+              (debt.originalAmount *
+                (interestRate * Math.pow(1 + interestRate, totalYears))) /
+              (Math.pow(1 + interestRate, totalYears) - 1);
+
+            // 남은 원금 계산
+            let remainingPrincipal = debt.originalAmount;
+            for (let i = 0; i <= yearsElapsed; i++) {
+              if (i > 0) {
+                const interestPayment = remainingPrincipal * interestRate;
+                const principalPayment = pmt - interestPayment;
+                remainingPrincipal -= principalPayment;
+              }
+            }
+
+            debt.amount = -remainingPrincipal;
+
+            if (year === debt.endYear) {
+              // 마지막 해: 부채 완전 상환
+              debt.amount = 0;
+              debt.isActive = false;
+            }
+          } else if (interestRate === 0) {
+            // 이자율이 0%인 경우: 원금을 균등 분할
+            const yearlyPrincipalPayment = debt.originalAmount / totalYears;
+            const paidPrincipal = yearlyPrincipalPayment * (yearsElapsed + 1);
+            debt.amount = -(debt.originalAmount - paidPrincipal);
+
+            if (year === debt.endYear) {
+              debt.amount = 0;
+              debt.isActive = false;
+            }
+          }
+        }
+      } else if (year > debt.endYear) {
+        // 부채 기간 종료 후: 비활성화
+        debt.isActive = false;
+      }
+    });
+
     // 자산 데이터 구성
     const assetItem = {
       year,
@@ -498,12 +655,22 @@ export function calculateAssetSimulation(
     // 현금을 그대로 표시 (양수면 자산, 음수면 부채)
     assetItem.현금 = currentCash;
 
-    // 활성 저축별 자산 추가
-    Object.keys(savingsByTitle).forEach((title) => {
-      const saving = savingsByTitle[title];
+    // 활성 저축별 자산 추가 (같은 제목의 저축은 합계 계산)
+    const savingsByTitle = {};
+    Object.keys(savingsById).forEach((id) => {
+      const saving = savingsById[id];
       if (saving.isActive) {
-        assetItem[title] = saving.amount;
+        if (savingsByTitle[saving.title]) {
+          savingsByTitle[saving.title] += saving.amount;
+        } else {
+          savingsByTitle[saving.title] = saving.amount;
+        }
       }
+    });
+
+    // 합계된 저축을 자산 아이템에 추가
+    Object.keys(savingsByTitle).forEach((title) => {
+      assetItem[title] = savingsByTitle[title];
     });
 
     // 활성 연금별 자산 추가
@@ -529,6 +696,14 @@ export function calculateAssetSimulation(
         // "현금"이라는 이름은 시스템 예약어이므로 "현금 자산"으로 변경
         const displayTitle = title === "현금" ? "현금 자산" : title;
         assetItem[displayTitle] = asset.amount;
+      }
+    });
+
+    // 활성 부채별 자산 추가 (음수로 표시)
+    Object.keys(debtsByTitle).forEach((title) => {
+      const debt = debtsByTitle[title];
+      if (debt.isActive) {
+        assetItem[title] = debt.amount; // 이미 음수로 저장됨
       }
     });
 
@@ -559,10 +734,12 @@ export function calculateDebtSimulation(profileData, debts = []) {
   const debtsByTitle = {};
   debts.forEach((debt) => {
     debtsByTitle[debt.title] = {
-      amount: debt.debtAmount, // 부채 금액 (음수로 표시)
+      amount: debt.debtAmount, // 부채 금액
       startYear: debt.startYear,
       endYear: debt.endYear,
-      interestRate: debt.interestRate || 0,
+      debtType: debt.debtType, // "bullet" 또는 "equal"
+      interestRate: debt.interestRate || 0, // 이미 소수로 저장됨
+      originalAmount: debt.debtAmount,
       isActive: true,
     };
   });
@@ -577,14 +754,61 @@ export function calculateDebtSimulation(profileData, debts = []) {
     Object.keys(debtsByTitle).forEach((title) => {
       const debt = debtsByTitle[title];
 
-      if (debt.isActive) {
-        if (year >= debt.startYear && year <= debt.endYear) {
-          // 부채 기간 중 - 부채 금액을 음수로 표시
-          debtItem[title] = -debt.amount;
-        } else if (year === debt.endYear + 1) {
-          // 상환년도 다음 해 - 부채 제거
-          debt.isActive = false;
+      if (debt.isActive && year >= debt.startYear && year <= debt.endYear) {
+        const yearsElapsed = year - debt.startYear;
+        const totalYears = debt.endYear - debt.startYear + 1;
+        const interestRate = debt.interestRate;
+
+        if (debt.debtType === "bullet") {
+          // 만기일시상환: 만기년도까지 원금 유지, 만기년도에 상환
+          if (year < debt.endYear) {
+            debtItem[title] = -debt.originalAmount; // 음수로 표시
+          } else if (year === debt.endYear) {
+            // 만기년도: 원금 상환으로 부채 제거
+            debtItem[title] = 0;
+            debt.isActive = false;
+          }
+        } else if (debt.debtType === "equal") {
+          // 원리금균등상환: 매년 원금 상환
+          if (totalYears > 0 && interestRate > 0) {
+            // PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
+            const pmt =
+              (debt.originalAmount *
+                (interestRate * Math.pow(1 + interestRate, totalYears))) /
+              (Math.pow(1 + interestRate, totalYears) - 1);
+
+            // 남은 원금 계산
+            let remainingPrincipal = debt.originalAmount;
+            for (let i = 0; i <= yearsElapsed; i++) {
+              if (i > 0) {
+                const interestPayment = remainingPrincipal * interestRate;
+                const principalPayment = pmt - interestPayment;
+                remainingPrincipal -= principalPayment;
+              }
+            }
+
+            debtItem[title] = -remainingPrincipal; // 음수로 표시
+
+            if (year === debt.endYear) {
+              // 마지막 해: 부채 완전 상환
+              debtItem[title] = 0;
+              debt.isActive = false;
+            }
+          } else if (interestRate === 0) {
+            // 이자율이 0%인 경우: 원금을 균등 분할
+            const yearlyPrincipalPayment = debt.originalAmount / totalYears;
+            const paidPrincipal = yearlyPrincipalPayment * (yearsElapsed + 1);
+            debtItem[title] = -(debt.originalAmount - paidPrincipal); // 음수로 표시
+
+            if (year === debt.endYear) {
+              debtItem[title] = 0;
+              debt.isActive = false;
+            }
+          }
         }
+      } else if (year > debt.endYear) {
+        // 부채 기간 종료 후: 비활성화
+        debt.isActive = false;
       }
     });
 

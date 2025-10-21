@@ -42,22 +42,26 @@
 .deleteButton {
   background: none;
   border: none;
-  font-size: 20px;
-  color: #6b7280;
+  font-size: 0.75rem;
   cursor: pointer;
-  padding: 4px;
+  padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s;
-  width: 28px;
-  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #374151;
+  font-weight: bold;
+  margin-bottom: 4px;
+  margin-right: -8px;
 }
 
 .deleteButton:hover {
   background-color: #f3f4f6;
-  color: #ef4444;
+  border-color: #9ca3af;
+  color: #111827;
 }
 
 .realEstateContent {

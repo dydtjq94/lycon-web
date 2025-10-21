@@ -4,13 +4,27 @@ import styles from "./IncomeModal.module.css";
 /**
  * 수입 데이터 추가/수정 모달
  */
-function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
+function IncomeModal({
+  isOpen,
+  onClose,
+  onSave,
+  editData = null,
+  profileData = null,
+}) {
+  // 은퇴년도 계산
+  const getRetirementYear = () => {
+    if (profileData && profileData.birthYear && profileData.retirementAge) {
+      return profileData.birthYear + profileData.retirementAge - 1; // 설정된 은퇴 나이
+    }
+    return new Date().getFullYear() + 10; // 기본값
+  };
+
   const [formData, setFormData] = useState({
     title: "",
     frequency: "monthly", // monthly, yearly
     amount: "",
     startYear: new Date().getFullYear(),
-    endYear: new Date().getFullYear() + 10,
+    endYear: getRetirementYear(),
     memo: "",
     growthRate: "2.5", // 기본 상승률 2.5%
   });
@@ -27,9 +41,11 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
             editData.originalFrequency || editData.frequency || "monthly",
           amount: editData.originalAmount || editData.amount || "",
           startYear: editData.startYear || new Date().getFullYear(),
-          endYear: editData.endYear || new Date().getFullYear() + 10,
+          endYear: editData.endYear || getRetirementYear(),
           memo: editData.memo || "",
-          growthRate: editData.growthRate ? editData.growthRate.toString() : "2.5",
+          growthRate: editData.growthRate
+            ? editData.growthRate.toString()
+            : "2.5",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -38,7 +54,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
           frequency: "monthly",
           amount: "",
           startYear: new Date().getFullYear(),
-          endYear: new Date().getFullYear() + 10,
+          endYear: getRetirementYear(),
           memo: "",
           growthRate: "2.5",
         });
@@ -54,7 +70,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
       newErrors.title = "수입 항목명을 입력해주세요.";
     }
 
-    if (!formData.amount || formData.amount <= 0) {
+    if (!formData.amount || formData.amount < 0) {
       newErrors.amount = "금액을 입력해주세요.";
     }
 
@@ -247,7 +263,7 @@ function IncomeModal({ isOpen, onClose, onSave, editData = null }) {
               onChange={(e) => {
                 const value = e.target.value;
                 // 숫자와 소수점만 허용
-                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                if (value === "" || /^\d*\.?\d*$/.test(value)) {
                   setFormData({
                     ...formData,
                     growthRate: value,

@@ -14,6 +14,7 @@ function ProfileSummary({
   assets = [],
   debts = [],
   onItemClick,
+  onDelete,
 }) {
   // 모든 재무 항목을 하나의 배열로 합치기
   const allFinanceItems = [
@@ -45,6 +46,14 @@ function ProfileSummary({
     }
   };
 
+  // 삭제 핸들러
+  const handleDelete = (e, item) => {
+    e.stopPropagation(); // 카드 클릭 이벤트 방지
+    if (onDelete) {
+      onDelete(item.type, item.id);
+    }
+  };
+
   return (
     <div className={styles.profileSummary}>
       <div className={styles.scrollContainer}>
@@ -58,6 +67,13 @@ function ProfileSummary({
             <div className={styles.cardContent}>
               <span className={styles.itemTitle}>{item.title}</span>
             </div>
+            <button
+              className={styles.deleteButton}
+              onClick={(e) => handleDelete(e, item)}
+              title="삭제"
+            >
+              ×
+            </button>
           </div>
         ))}
       </div>

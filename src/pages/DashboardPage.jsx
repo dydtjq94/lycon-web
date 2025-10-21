@@ -14,6 +14,7 @@ import {
   pensionService,
   realEstateService,
   assetService,
+  debtService,
 } from "../services/firestoreService";
 import RechartsCashflowChart from "../components/RechartsCashflowChart";
 import RechartsAssetChart from "../components/RechartsAssetChart";
@@ -29,6 +30,8 @@ import RealEstateModal from "../components/RealEstateModal";
 import RealEstateList from "../components/RealEstateList";
 import AssetModal from "../components/AssetModal";
 import AssetList from "../components/AssetList";
+import DebtModal from "../components/DebtModal";
+import DebtList from "../components/DebtList";
 import ProfileEditModal from "../components/ProfileEditModal";
 import ProfileSummary from "../components/ProfileSummary";
 import styles from "./DashboardPage.module.css";
@@ -68,6 +71,8 @@ function DashboardPage() {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState(null);
   const [debts, setDebts] = useState([]);
+  const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
+  const [editingDebt, setEditingDebt] = useState(null);
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
 
   // 프로필 데이터 로드
@@ -232,6 +237,26 @@ function DashboardPage() {
     loadAssets();
   }, [profileId]);
 
+  // 부채 데이터 로드
+  useEffect(() => {
+    const loadDebts = async () => {
+      if (!profileId) return;
+
+      try {
+        const debtData = await debtService.getDebts(profileId);
+        // 생성 순서대로 정렬 (createdAt 기준)
+        const sortedDebts = debtData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+        setDebts(sortedDebts);
+      } catch (error) {
+        console.error("부채 데이터 로드 오류:", error);
+      }
+    };
+
+    loadDebts();
+  }, [profileId]);
+
   // 시뮬레이션 데이터 생성
   const generateSimulationData = useCallback(
     (profileData) => {
@@ -247,6 +272,7 @@ function DashboardPage() {
 
       // 디버깅을 위한 로그
       console.log("현재 나이:", startAge, "은퇴 나이:", retirementAge);
+      console.log("저축 데이터 (DashboardPage):", savings);
 
       // 현재 나이와 은퇴 나이의 차이를 계산해서 은퇴 년도 구하기
       const yearsToRetirement = retirementAge - startAge;
@@ -277,7 +303,8 @@ function DashboardPage() {
         savings, // 저축 데이터 사용
         pensions, // 연금 데이터 사용
         realEstates, // 부동산 데이터 사용
-        assets // 자산 시뮬레이션 데이터 전달
+        assets, // 자산 데이터 사용
+        debts // 부채 데이터 사용
       );
 
       // 자산 시뮬레이션 데이터 계산 (현금 흐름 데이터 포함)
@@ -289,7 +316,8 @@ function DashboardPage() {
         pensions, // 연금 데이터 사용
         realEstates, // 부동산 데이터 사용
         assets, // 자산 데이터 사용
-        cashflow // 현금 흐름 데이터 전달
+        cashflow, // 현금 흐름 데이터 전달
+        debts // 부채 데이터 사용
       );
 
       setSimulationData({
@@ -298,7 +326,7 @@ function DashboardPage() {
         assets: assetSimulation,
       });
     },
-    [incomes, expenses, savings, pensions, realEstates, assets]
+    [incomes, expenses, savings, pensions, realEstates, assets, debts]
   );
 
   // 수입 데이터가 변경될 때마다 시뮬레이션 재계산
@@ -313,6 +341,7 @@ function DashboardPage() {
     pensions,
     realEstates,
     assets,
+    debts,
     profileData,
     generateSimulationData,
   ]);
@@ -656,6 +685,51 @@ function DashboardPage() {
     }
   };
 
+  // 부채 핸들러들
+  const handleAddDebt = () => {
+    setEditingDebt(null);
+    setIsDebtModalOpen(true);
+  };
+
+  const handleEditDebt = (debt) => {
+    setEditingDebt(debt);
+    setIsDebtModalOpen(true);
+  };
+
+  const handleSaveDebt = async (debtData) => {
+    try {
+      if (editingDebt) {
+        // 수정
+        await debtService.updateDebt(profileId, editingDebt.id, debtData);
+        setDebts(
+          debts.map((debt) =>
+            debt.id === editingDebt.id ? { ...debt, ...debtData } : debt
+          )
+        );
+        setEditingDebt(null);
+      } else {
+        // 추가
+        const newDebt = await debtService.createDebt(profileId, debtData);
+        setDebts([...debts, newDebt]);
+      }
+
+      setIsDebtModalOpen(false);
+    } catch (error) {
+      console.error("부채 데이터 저장 오류:", error);
+    }
+  };
+
+  const handleDeleteDebt = async (debtId) => {
+    if (!window.confirm("이 부채 데이터를 삭제하시겠습니까?")) return;
+
+    try {
+      await debtService.deleteDebt(profileId, debtId);
+      setDebts(debts.filter((debt) => debt.id !== debtId));
+    } catch (error) {
+      console.error("부채 데이터 삭제 오류:", error);
+    }
+  };
+
   // 카테고리별 추가 핸들러
   const handleAddData = () => {
     switch (selectedCategory) {
@@ -678,8 +752,7 @@ function DashboardPage() {
         handleAddAsset();
         break;
       case "debt":
-        // TODO: 부채 추가 기능
-        alert("부채 추가 기능은 준비 중입니다.");
+        handleAddDebt();
         break;
       default:
         break;
@@ -708,8 +781,37 @@ function DashboardPage() {
         handleEditAsset(item);
         break;
       case "debt":
-        // 부채는 아직 구현되지 않았으므로 추후 추가
-        console.log("부채 수정 기능은 추후 구현 예정입니다.");
+        handleEditDebt(item);
+        break;
+      default:
+        console.log("알 수 없는 항목 타입:", type);
+        break;
+    }
+  };
+
+  // ProfileSummary에서 항목 삭제 시 해당 삭제 핸들러 호출
+  const handleProfileSummaryDelete = (type, itemId) => {
+    switch (type) {
+      case "income":
+        handleDeleteIncome(itemId);
+        break;
+      case "expense":
+        handleDeleteExpense(itemId);
+        break;
+      case "saving":
+        handleDeleteSaving(itemId);
+        break;
+      case "pension":
+        handleDeletePension(itemId);
+        break;
+      case "realEstate":
+        handleDeleteRealEstate(itemId);
+        break;
+      case "asset":
+        handleDeleteAsset(itemId);
+        break;
+      case "debt":
+        handleDeleteDebt(itemId);
         break;
       default:
         console.log("알 수 없는 항목 타입:", type);
@@ -763,7 +865,7 @@ function DashboardPage() {
       count: realEstates.length,
     },
     { id: "assets", name: "자산", color: "#f59e0b", count: assets.length },
-    { id: "debt", name: "부채", color: "#6b7280", count: 0 },
+    { id: "debt", name: "부채", color: "#6b7280", count: debts.length },
   ];
 
   if (!profileData) {
@@ -843,6 +945,7 @@ function DashboardPage() {
         assets={assets}
         debts={debts}
         onItemClick={handleProfileSummaryItemClick}
+        onDelete={handleProfileSummaryDelete}
       />
 
       {/* 메인 대시보드 */}
@@ -919,6 +1022,12 @@ function DashboardPage() {
                     onEdit={handleEditAsset}
                     onDelete={handleDeleteAsset}
                   />
+                ) : selectedCategory === "debt" ? (
+                  <DebtList
+                    debts={debts}
+                    onEdit={handleEditDebt}
+                    onDelete={handleDeleteDebt}
+                  />
                 ) : (
                   <div className={styles.emptyList}>
                     <p>데이터가 없습니다.</p>
@@ -961,6 +1070,7 @@ function DashboardPage() {
         onClose={() => setIsIncomeModalOpen(false)}
         onSave={handleSaveIncome}
         editData={editingIncome}
+        profileData={profileData}
       />
 
       {/* 지출 모달 */}
@@ -969,6 +1079,7 @@ function DashboardPage() {
         onClose={() => setIsExpenseModalOpen(false)}
         onSave={handleSaveExpense}
         editData={editingExpense}
+        profileData={profileData}
       />
 
       {/* 저축 모달 */}
@@ -1008,6 +1119,14 @@ function DashboardPage() {
         onSave={handleSaveAsset}
         editData={editingAsset}
         profileData={profileData}
+      />
+
+      {/* 부채 모달 */}
+      <DebtModal
+        isOpen={isDebtModalOpen}
+        onClose={() => setIsDebtModalOpen(false)}
+        onSave={handleSaveDebt}
+        editData={editingDebt}
       />
     </div>
   );

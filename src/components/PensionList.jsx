@@ -107,8 +107,8 @@ function PensionList({ pensions, onEdit, onDelete }) {
                   적립: {pension.contributionStartYear}년 -{" "}
                   {pension.contributionEndYear}년
                   <br />
-                  수령: {pension.contributionEndYear + 1}년 -{" "}
-                  {pension.contributionEndYear + pension.paymentYears}년
+                  수령: {pension.paymentStartYear}년 - {pension.paymentEndYear}
+                  년
                   <br />
                   (수익률 {pension.returnRate}% 적용)
                 </div>

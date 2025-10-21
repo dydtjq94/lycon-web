@@ -20,7 +20,8 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
     contributionStartYear: new Date().getFullYear(),
     contributionEndYear: new Date().getFullYear() + 10,
     returnRate: 5.0, // 투자 수익률
-    paymentYears: 10, // 수령 년수
+    paymentStartYear: new Date().getFullYear() + 11, // 수령 시작년도
+    paymentEndYear: new Date().getFullYear() + 20, // 수령 종료년도
     memo: "",
   });
 
@@ -44,7 +45,10 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
           contributionEndYear:
             editData.contributionEndYear || new Date().getFullYear() + 10,
           returnRate: editData.returnRate || 5.0,
-          paymentYears: editData.paymentYears || 10,
+          paymentStartYear:
+            editData.paymentStartYear || new Date().getFullYear() + 11,
+          paymentEndYear:
+            editData.paymentEndYear || new Date().getFullYear() + 20,
           memo: editData.memo || "",
         });
       } else {
@@ -62,7 +66,8 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
           contributionStartYear: new Date().getFullYear(),
           contributionEndYear: new Date().getFullYear() + 10,
           returnRate: 5.0,
-          paymentYears: 10,
+          paymentStartYear: new Date().getFullYear() + 11,
+          paymentEndYear: new Date().getFullYear() + 20,
           memo: "",
         });
       }
@@ -128,8 +133,13 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
         newErrors.contributionEndYear =
           "적립 종료년도는 시작년도보다 늦어야 합니다.";
       }
-      if (formData.paymentYears < 0) {
-        newErrors.paymentYears = "수령 년수를 입력해주세요.";
+      if (formData.paymentStartYear > formData.paymentEndYear) {
+        newErrors.paymentEndYear =
+          "수령 종료년도는 시작년도보다 늦어야 합니다.";
+      }
+      if (formData.contributionEndYear >= formData.paymentStartYear) {
+        newErrors.paymentStartYear =
+          "수령 시작년도는 적립 종료년도보다 늦어야 합니다.";
       }
       if (formData.returnRate < 0 || formData.returnRate > 100) {
         newErrors.returnRate = "투자 수익률은 0-100% 사이여야 합니다.";
@@ -174,8 +184,10 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
           : 0,
       returnRate:
         formData.type !== "national" ? parseFloat(formData.returnRate) : 0,
-      paymentYears:
-        formData.type !== "national" ? parseInt(formData.paymentYears) : 0,
+      paymentStartYear:
+        formData.type !== "national" ? parseInt(formData.paymentStartYear) : 0,
+      paymentEndYear:
+        formData.type !== "national" ? parseInt(formData.paymentEndYear) : 0,
     };
 
     onSave(pensionData);
@@ -196,7 +208,8 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
       contributionStartYear: new Date().getFullYear(),
       contributionEndYear: new Date().getFullYear() + 10,
       returnRate: 5.0,
-      paymentYears: 10,
+      paymentStartYear: new Date().getFullYear() + 11,
+      paymentEndYear: new Date().getFullYear() + 20,
       memo: "",
     });
     setErrors({});
@@ -513,25 +526,49 @@ function PensionModal({ isOpen, onClose, onSave, editData = null }) {
                     </div>
 
                     <div className={styles.field}>
-                      <label className={styles.label}>수령 년수</label>
+                      <label className={styles.label}>수령 시작년도</label>
                       <input
                         type="text"
-                        value={formData.paymentYears}
+                        value={formData.paymentStartYear}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            paymentYears: e.target.value,
+                            paymentStartYear: e.target.value,
                           })
                         }
                         onKeyPress={handleKeyPress}
                         className={`${styles.input} ${
-                          errors.paymentYears ? styles.error : ""
+                          errors.paymentStartYear ? styles.error : ""
                         }`}
-                        placeholder="10"
+                        placeholder="2041"
                       />
-                      {errors.paymentYears && (
+                      {errors.paymentStartYear && (
                         <span className={styles.errorText}>
-                          {errors.paymentYears}
+                          {errors.paymentStartYear}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>수령 종료년도</label>
+                      <input
+                        type="text"
+                        value={formData.paymentEndYear}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            paymentEndYear: e.target.value,
+                          })
+                        }
+                        onKeyPress={handleKeyPress}
+                        className={`${styles.input} ${
+                          errors.paymentEndYear ? styles.error : ""
+                        }`}
+                        placeholder="2050"
+                      />
+                      {errors.paymentEndYear && (
+                        <span className={styles.errorText}>
+                          {errors.paymentEndYear}
                         </span>
                       )}
                     </div>

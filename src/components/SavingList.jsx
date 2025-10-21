@@ -54,7 +54,10 @@ function SavingList({ savings, onEdit, onDelete }) {
             <div className={styles.savingPeriod}>
               {saving.startYear}년 - {saving.endYear}년
               <br />
-              (이자율 {saving.interestRate || 3.0}% 적용)
+              (이자율 {(saving.interestRate * 100).toFixed(1)}% 적용
+              {saving.yearlyGrowthRate > 0 &&
+                `, 년간 상승률 ${(saving.yearlyGrowthRate * 100).toFixed(1)}%`}
+              )
             </div>
 
             {saving.memo && (

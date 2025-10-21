@@ -1,0 +1,68 @@
+import React from "react";
+import { formatAmount } from "../utils/format";
+import styles from "./DebtList.module.css";
+
+/**
+ * 부채 데이터 목록 컴포넌트
+ */
+function DebtList({ debts, onEdit, onDelete }) {
+  if (!debts || debts.length === 0) {
+    return (
+      <div className={styles.emptyState}>
+        <p className={styles.emptyMessage}>부채 데이터가 없습니다.</p>
+        <p className={styles.emptySubMessage}>
+          + 추가 버튼을 눌러 부채를 추가해보세요.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.debtList}>
+      {debts.map((debt) => (
+        <div
+          key={debt.id}
+          className={styles.debtItem}
+          onClick={() => onEdit(debt)}
+        >
+          <div className={styles.debtInfo}>
+            <div className={styles.debtHeader}>
+              <h4 className={styles.debtTitle}>{debt.title}</h4>
+              <div className={styles.debtActions}>
+                <button
+                  className={styles.deleteButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(debt.id);
+                  }}
+                  title="삭제"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.debtAmount}>
+              {formatAmount(debt.debtAmount)}
+            </div>
+
+            <div className={styles.debtDetails}>
+              <div className={styles.debtType}>
+                {debt.debtType === "bullet" ? "만기일시상환" : "원리금균등상환"}
+              </div>
+              <div className={styles.debtPeriod}>
+                {debt.startYear}년 - {debt.endYear}년
+                <br />
+                (이자율 {(debt.interestRate * 100).toFixed(1)}% 적용)
+              </div>
+            </div>
+
+            {debt.memo && <div className={styles.debtMemo}>{debt.memo}</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default DebtList;

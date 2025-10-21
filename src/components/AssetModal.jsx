@@ -27,15 +27,17 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
         setFormData({
           title: editData.title || "",
           currentValue: editData.currentValue || "",
-          growthRate: editData.growthRate
-            ? (editData.growthRate * 100).toString()
-            : "5",
+          growthRate:
+            editData.growthRate !== undefined
+              ? (editData.growthRate * 100).toString()
+              : "5",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || "",
           assetType: editData.assetType || "general",
-          incomeRate: editData.incomeRate
-            ? (editData.incomeRate * 100).toString()
-            : "3",
+          incomeRate:
+            editData.incomeRate !== undefined
+              ? (editData.incomeRate * 100).toString()
+              : "3",
           memo: editData.memo || "",
         });
       } else {
@@ -74,7 +76,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
     }
 
     const growthRateNum = parseFloat(formData.growthRate);
-    if (isNaN(growthRateNum) || growthRateNum < 0 || growthRateNum > 100) {
+    if (isNaN(growthRateNum) || growthRateNum < 0 || growthRateNum > 1000) {
       newErrors.growthRate = "상승률은 0-100% 사이의 유효한 숫자여야 합니다.";
     }
 
@@ -84,7 +86,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
 
     if (formData.assetType === "income") {
       const incomeRateNum = parseFloat(formData.incomeRate);
-      if (isNaN(incomeRateNum) || incomeRateNum < 0 || incomeRateNum > 100) {
+      if (isNaN(incomeRateNum) || incomeRateNum < 0 || incomeRateNum > 1000) {
         newErrors.incomeRate = "수익률은 0-100% 사이의 유효한 숫자여야 합니다.";
       }
     }

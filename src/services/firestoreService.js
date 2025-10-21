@@ -691,3 +691,93 @@ export const realEstateService = {
     }
   },
 };
+
+/**
+ * 부채 데이터 관련 서비스
+ */
+export const debtService = {
+  // 부채 데이터 생성
+  async createDebt(profileId, debtData) {
+    try {
+      console.log("부채 데이터 생성 시작:", debtData);
+      const docRef = await addDoc(
+        collection(db, "profiles", profileId, "debts"),
+        {
+          ...debtData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      );
+      console.log("부채 데이터 생성 성공:", docRef.id);
+      return { id: docRef.id, ...debtData };
+    } catch (error) {
+      console.error("부채 데이터 생성 오류:", error);
+      throw new Error(
+        "부채 데이터 생성 중 오류가 발생했습니다: " + error.message
+      );
+    }
+  },
+
+  // 프로필의 모든 부채 데이터 조회
+  async getDebts(profileId) {
+    try {
+      console.log("부채 데이터 조회 시작:", profileId);
+      const querySnapshot = await getDocs(
+        query(
+          collection(db, "profiles", profileId, "debts"),
+          orderBy("createdAt", "desc")
+        )
+      );
+      console.log("조회된 부채 데이터 수:", querySnapshot.docs.length);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("부채 데이터 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 부채 데이터 조회 (단일)
+  async getDebt(profileId, debtId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "debts", debtId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      } else {
+        throw new Error("부채 데이터를 찾을 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("부채 데이터 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 부채 데이터 업데이트
+  async updateDebt(profileId, debtId, updateData) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "debts", debtId);
+      await updateDoc(docRef, {
+        ...updateData,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("부채 데이터 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  // 부채 데이터 삭제
+  async deleteDebt(profileId, debtId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "debts", debtId);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("부채 데이터 삭제 오류:", error);
+      throw error;
+    }
+  },
+};

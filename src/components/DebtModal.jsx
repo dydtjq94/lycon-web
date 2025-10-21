@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from "react";
-import styles from "./SavingModal.module.css";
+import styles from "./DebtModal.module.css";
 
 /**
- * 저축 데이터 추가/수정 모달
+ * 부채 데이터 추가/수정 모달
  */
-function SavingModal({ isOpen, onClose, onSave, editData = null }) {
+function DebtModal({ isOpen, onClose, onSave, editData = null }) {
   const [formData, setFormData] = useState({
     title: "",
-    frequency: "monthly", // monthly, yearly, one_time
-    amount: "",
+    debtType: "bullet", // bullet: 만기일시상환, equal: 원리금균등상환
+    debtAmount: "",
     startYear: new Date().getFullYear(),
-    endYear: new Date().getFullYear() + 10,
+    endYear: new Date().getFullYear() + 5,
+    interestRate: "5.0", // 이자율 5%
     memo: "",
-    interestRate: "3.0", // 이자율 3%
-    yearlyGrowthRate: "0", // 년간 저축 상승률 0%
   });
 
   const [errors, setErrors] = useState({});
@@ -24,30 +23,25 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
       if (editData) {
         setFormData({
           title: editData.title || "",
-          frequency:
-            editData.originalFrequency || editData.frequency || "monthly",
-          amount: editData.originalAmount || editData.amount || "",
+          debtType: editData.debtType || "bullet",
+          debtAmount: editData.debtAmount || "",
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
-          endYear: parseInt(editData.endYear) || new Date().getFullYear() + 10,
-          memo: editData.memo || "",
+          endYear: parseInt(editData.endYear) || new Date().getFullYear() + 5,
           interestRate: editData.interestRate
             ? (editData.interestRate * 100).toString()
-            : "3.0",
-          yearlyGrowthRate: editData.yearlyGrowthRate
-            ? (editData.yearlyGrowthRate * 100).toString()
-            : "0",
+            : "5.0",
+          memo: editData.memo || "",
         });
       } else {
         // 새 데이터일 때 초기화
         setFormData({
           title: "",
-          frequency: "monthly",
-          amount: "",
+          debtType: "bullet",
+          debtAmount: "",
           startYear: new Date().getFullYear(),
-          endYear: new Date().getFullYear() + 10,
+          endYear: new Date().getFullYear() + 5,
+          interestRate: "5.0",
           memo: "",
-          interestRate: "3.0",
-          yearlyGrowthRate: "0",
         });
       }
     }
@@ -58,25 +52,34 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "저축 항목명을 입력해주세요.";
+      newErrors.title = "부채 항목명을 입력해주세요.";
     }
 
-    if (!formData.amount || formData.amount < 0) {
-      newErrors.amount = "저축 금액을 입력해주세요.";
+    if (!formData.debtAmount || formData.debtAmount < 0) {
+      newErrors.debtAmount = "대출 금액을 입력해주세요.";
     }
 
     if (formData.startYear > formData.endYear) {
       newErrors.endYear = "종료년도는 시작년도보다 늦어야 합니다.";
     }
 
+    const interestRateNum = parseFloat(formData.interestRate);
+    if (
+      isNaN(interestRateNum) ||
+      interestRateNum < 0 ||
+      interestRateNum > 100
+    ) {
+      newErrors.interestRate = "이자율은 0-100% 사이의 유효한 숫자여야 합니다.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // 숫자만 입력 허용
+  // 숫자와 마이너스 기호 입력 허용
   const handleKeyPress = (e) => {
     if (
-      !/[0-9.]/.test(e.key) &&
+      !/[0-9.-]/.test(e.key) &&
       !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)
     ) {
       e.preventDefault();
@@ -91,18 +94,15 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
       return;
     }
 
-    const savingData = {
+    const debtData = {
       ...formData,
-      amount: parseInt(formData.amount),
-      startYear: parseInt(formData.startYear), // 문자열을 숫자로 변환
-      endYear: parseInt(formData.endYear), // 문자열을 숫자로 변환
+      debtAmount: parseInt(formData.debtAmount),
+      startYear: parseInt(formData.startYear),
+      endYear: parseInt(formData.endYear),
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
-      yearlyGrowthRate: parseFloat(formData.yearlyGrowthRate) / 100, // 백분율을 소수로 변환
-      originalAmount: parseInt(formData.amount),
-      originalFrequency: formData.frequency,
     };
 
-    onSave(savingData);
+    onSave(debtData);
     onClose();
   };
 
@@ -110,13 +110,12 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
   const handleClose = () => {
     setFormData({
       title: "",
-      frequency: "monthly",
-      amount: "",
+      debtType: "bullet",
+      debtAmount: "",
       startYear: new Date().getFullYear(),
-      endYear: new Date().getFullYear() + 10,
+      endYear: new Date().getFullYear() + 5,
+      interestRate: "5.0",
       memo: "",
-      interestRate: "3.0",
-      yearlyGrowthRate: "0",
     });
     setErrors({});
     onClose();
@@ -129,7 +128,7 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>
-            {editData ? "저축 수정" : "저축 추가"}
+            {editData ? "부채 수정" : "부채 추가"}
           </h2>
           <button className={styles.closeButton} onClick={handleClose}>
             ×
@@ -137,10 +136,10 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          {/* 저축 항목명 */}
+          {/* 부채 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
-              저축 항목명 *
+              부채 항목명 *
             </label>
             <input
               type="text"
@@ -150,52 +149,85 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
                 setFormData({ ...formData, title: e.target.value })
               }
               className={`${styles.input} ${errors.title ? styles.error : ""}`}
-              placeholder="예: 정기예금, 적금, 주식투자"
+              placeholder="예: 주택담보대출, 자동차 할부, 신용대출"
             />
             {errors.title && (
               <span className={styles.errorText}>{errors.title}</span>
             )}
           </div>
 
-          {/* 빈도와 금액 */}
+          {/* 상환 방식 */}
+          <div className={styles.field}>
+            <label htmlFor="debtType" className={styles.label}>
+              상환 방식 *
+            </label>
+            <select
+              id="debtType"
+              value={formData.debtType}
+              onChange={(e) =>
+                setFormData({ ...formData, debtType: e.target.value })
+              }
+              className={styles.select}
+            >
+              <option value="bullet">만기일시상환</option>
+              <option value="equal">원리금균등상환</option>
+            </select>
+            <div className={styles.helpText}>
+              {formData.debtType === "bullet" ? (
+                <span>매달 이자만 납부하고 만기일에 원금을 한꺼번에 상환</span>
+              ) : (
+                <span>매달 원금과 이자를 합친 동일한 금액을 상환</span>
+              )}
+            </div>
+          </div>
+
+          {/* 대출 금액과 이자율 */}
           <div className={styles.row}>
             <div className={styles.field}>
-              <label htmlFor="frequency" className={styles.label}>
-                빈도 *
-              </label>
-              <select
-                id="frequency"
-                value={formData.frequency}
-                onChange={(e) =>
-                  setFormData({ ...formData, frequency: e.target.value })
-                }
-                className={styles.select}
-              >
-                <option value="monthly">월</option>
-                <option value="yearly">년</option>
-                <option value="one_time">일회성</option>
-              </select>
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="amount" className={styles.label}>
-                금액 (만원) *
+              <label htmlFor="debtAmount" className={styles.label}>
+                대출 금액 (만원) *
               </label>
               <input
                 type="text"
-                id="amount"
-                value={formData.amount}
+                id="debtAmount"
+                value={formData.debtAmount}
                 onChange={(e) =>
-                  setFormData({ ...formData, amount: e.target.value })
+                  setFormData({ ...formData, debtAmount: e.target.value })
                 }
                 onKeyPress={handleKeyPress}
                 className={`${styles.input} ${
-                  errors.amount ? styles.error : ""
+                  errors.debtAmount ? styles.error : ""
                 }`}
-                placeholder="예: 100"
+                placeholder="예: 30000"
               />
-              {errors.amount && (
-                <span className={styles.errorText}>{errors.amount}</span>
+              {errors.debtAmount && (
+                <span className={styles.errorText}>{errors.debtAmount}</span>
+              )}
+            </div>
+
+            <div className={styles.field}>
+              <label htmlFor="interestRate" className={styles.label}>
+                이자율 (%)
+              </label>
+              <input
+                type="text"
+                id="interestRate"
+                value={formData.interestRate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // 숫자와 소수점만 허용
+                  if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                    setFormData({ ...formData, interestRate: value });
+                  }
+                }}
+                onKeyPress={handleKeyPress}
+                className={`${styles.input} ${
+                  errors.interestRate ? styles.error : ""
+                }`}
+                placeholder="5.0"
+              />
+              {errors.interestRate && (
+                <span className={styles.errorText}>{errors.interestRate}</span>
               )}
             </div>
           </div>
@@ -242,62 +274,12 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
                 className={`${styles.input} ${
                   errors.endYear ? styles.error : ""
                 }`}
-                placeholder="2035"
+                placeholder="2030"
               />
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}
             </div>
-          </div>
-
-          {/* 이자율과 년간 저축 상승률 */}
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label htmlFor="interestRate" className={styles.label}>
-                이자율 (%)
-              </label>
-              <input
-                type="text"
-                id="interestRate"
-                value={formData.interestRate}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // 숫자와 소수점만 허용
-                  if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                    setFormData({ ...formData, interestRate: value });
-                  }
-                }}
-                onKeyPress={handleKeyPress}
-                className={styles.input}
-                placeholder="3.0"
-              />
-            </div>
-
-            {formData.frequency !== "one_time" && (
-              <div className={styles.field}>
-                <label htmlFor="yearlyGrowthRate" className={styles.label}>
-                  년간 저축 상승률 (%)
-                </label>
-                <input
-                  type="text"
-                  id="yearlyGrowthRate"
-                  value={formData.yearlyGrowthRate}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // 숫자와 소수점만 허용
-                    if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                      setFormData({
-                        ...formData,
-                        yearlyGrowthRate: value,
-                      });
-                    }
-                  }}
-                  onKeyPress={handleKeyPress}
-                  className={styles.input}
-                  placeholder="0"
-                />
-              </div>
-            )}
           </div>
 
           {/* 메모 */}
@@ -335,4 +317,4 @@ function SavingModal({ isOpen, onClose, onSave, editData = null }) {
   );
 }
 
-export default SavingModal;
+export default DebtModal;

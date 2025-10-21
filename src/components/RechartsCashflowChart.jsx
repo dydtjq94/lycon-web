@@ -190,6 +190,16 @@ function RechartsCashflowChart({
                               </span>
                             </div>
                           )}
+                          {yearData.debtPrincipal > 0 && (
+                            <div className={styles.tooltipItem}>
+                              <span className={styles.tooltipLabel}>
+                                부채원금상환:
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                -{formatAmountForChart(yearData.debtPrincipal)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
