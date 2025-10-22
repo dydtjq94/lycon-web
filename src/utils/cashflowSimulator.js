@@ -142,38 +142,33 @@ export function calculateCashflowSimulation(
           totalDebtInterest += interestPayment;
           totalDebtPrincipal += principalPayment;
         } else if (debt.debtType === "grace") {
-          // 거치식상환: 거치기간 동안 이자만 지불, 이후 원리금균등상환
+          // 거치식상환: 거치기간 동안 이자만 지불, 이후 원금 균등상환 + 남은 원금의 이자
           const principal = debt.debtAmount;
           const r = interestRate;
-          const gracePeriod = debt.gracePeriod || 0;
-          const repaymentYears = totalYears - gracePeriod;
+          const gracePeriod = parseInt(debt.gracePeriod) || 0;
+          const graceEndYear = debt.startYear + gracePeriod - 1; // 거치기간 마지막 년도
+          const repaymentYears = debt.endYear - graceEndYear; // 상환기간 = 종료년도 - 거치기간종료년도
 
-          if (year < debt.startYear + gracePeriod) {
-            // 거치기간: 이자만 지불
+          if (year <= graceEndYear) {
+            // 거치기간: 이자만 지불 (거치기간 마지막 년도까지 포함)
             const yearlyInterest = principal * r;
             totalDebtInterest += yearlyInterest;
-          } else {
-            // 상환기간: 원리금균등상환
-            if (repaymentYears > 0 && r > 0) {
-              const pmt =
-                (principal * (r * Math.pow(1 + r, repaymentYears))) /
-                (Math.pow(1 + r, repaymentYears) - 1);
-              const yearlyPayment = pmt;
+          } else if (year > graceEndYear && year <= debt.endYear) {
+            // 상환기간: 원금을 균등하게 상환 + 남은 원금의 이자
+            const yearlyPrincipalPayment = principal / repaymentYears;
+            const repaymentYearsElapsed = year - graceEndYear; // 상환 시작 후 경과년수 (1부터 시작)
 
-              // 이자 부분 계산: 남은 원금 * 이자율
-              let remainingPrincipal = principal;
-              for (let i = 0; i < yearsElapsed - gracePeriod; i++) {
-                const interestPayment = remainingPrincipal * r;
-                const principalPayment = yearlyPayment - interestPayment;
-                remainingPrincipal -= principalPayment;
-              }
+            // 현재 년도의 남은 원금 계산 (이전 해까지 갚은 금액 제외)
+            const paidPrincipal =
+              yearlyPrincipalPayment * (repaymentYearsElapsed - 1);
+            const remainingPrincipal = principal - paidPrincipal;
 
-              const interestPayment = remainingPrincipal * r;
-              const principalPayment = yearlyPayment - interestPayment;
+            // 현재 년도의 이자와 원금
+            const interestPayment = remainingPrincipal * r;
+            const principalPayment = yearlyPrincipalPayment;
 
-              totalDebtInterest += interestPayment;
-              totalDebtPrincipal += principalPayment;
-            }
+            totalDebtInterest += interestPayment;
+            totalDebtPrincipal += principalPayment;
           }
         }
       }
@@ -181,7 +176,7 @@ export function calculateCashflowSimulation(
 
     // 저축 계산 (현금흐름에서는 년간 저축 상승률만 적용, 이자율 적용 안함)
     let totalSavingMaturity = 0; // 저축 만료 수입 (별도 변수)
-    
+
     savings.forEach((saving) => {
       if (year >= saving.startYear && year <= saving.endYear) {
         const yearsElapsed = year - saving.startYear;
@@ -511,9 +506,10 @@ export function calculateAssetSimulation(
       amount: -debt.debtAmount, // 부채는 음수로 표시
       startYear: debt.startYear,
       endYear: debt.endYear,
-      debtType: debt.debtType, // "bullet" 또는 "equal"
+      debtType: debt.debtType, // "bullet", "equal", "principal", "grace"
       interestRate: debt.interestRate,
       originalAmount: debt.debtAmount,
+      gracePeriod: debt.gracePeriod, // 거치기간 추가 (거치식 상환에 필요)
       isActive: true,
     };
   });
@@ -543,7 +539,7 @@ export function calculateAssetSimulation(
         if (yearCashflow && yearCashflow.savingMaturity) {
           currentCash += yearCashflow.savingMaturity;
         }
-        
+
         // 저축을 비활성화 (자산 차트에서 제거됨)
         saving.isActive = false;
         saving.amount = 0; // 전환 후 금액 초기화
@@ -757,6 +753,80 @@ export function calculateAssetSimulation(
               debt.isActive = false;
             }
           }
+        } else if (debt.debtType === "principal") {
+          // 원금균등상환: 매년 동일한 원금 상환
+          const yearlyPrincipalPayment = debt.originalAmount / totalYears;
+          const paidPrincipal = yearlyPrincipalPayment * (yearsElapsed + 1);
+          debt.amount = -(debt.originalAmount - paidPrincipal);
+
+          if (year === debt.endYear) {
+            // 마지막 해: 부채 완전 상환
+            debt.amount = 0;
+            debt.isActive = false;
+          }
+        } else if (debt.debtType === "grace") {
+          // 거치식상환: 거치기간 동안 원금 유지, 이후 원금을 균등하게 상환
+          const gracePeriod = parseInt(debt.gracePeriod, 10) || 0;
+          const graceEndYear = debt.startYear + gracePeriod - 1; // 거치기간 마지막 년도
+          const repaymentYears = debt.endYear - graceEndYear; // 상환기간 = 종료년도 - 거치기간종료년도
+
+          // 디버깅 로그 (첫 해에만 출력)
+          if (year === debt.startYear) {
+            console.log(`\n[자산 시뮬레이션 - 거치식 부채]`);
+            console.log(
+              `  debt.gracePeriod: ${
+                debt.gracePeriod
+              } (타입: ${typeof debt.gracePeriod})`
+            );
+            console.log(
+              `  gracePeriod (파싱): ${gracePeriod} (타입: ${typeof gracePeriod})`
+            );
+            console.log(
+              `  debt.startYear: ${
+                debt.startYear
+              } (타입: ${typeof debt.startYear})`
+            );
+            console.log(
+              `  debt.endYear: ${debt.endYear} (타입: ${typeof debt.endYear})`
+            );
+            console.log(
+              `  graceEndYear: ${graceEndYear} (타입: ${typeof graceEndYear})`
+            );
+            console.log(`  repaymentYears: ${repaymentYears}`);
+          }
+
+          if (year <= graceEndYear) {
+            // 거치기간 동안은 원금 유지 (이자만 지불)
+            debt.amount = -debt.originalAmount;
+
+            // 디버깅 로그
+            console.log(
+              `  ${year}년: 거치기간 (year ${year} <= graceEndYear ${graceEndYear}) -> 원금 유지`
+            );
+          } else if (year > graceEndYear && year <= debt.endYear) {
+            // 상환기간: 원금을 상환년수로 균등 분할하여 상환
+            const yearlyPrincipalPayment = debt.originalAmount / repaymentYears;
+            const repaymentYearsElapsed = year - graceEndYear; // 상환 시작 후 경과년수
+            const paidPrincipal =
+              yearlyPrincipalPayment * repaymentYearsElapsed;
+            debt.amount = -(debt.originalAmount - paidPrincipal);
+
+            // 디버깅 로그
+            console.log(
+              `  ${year}년: 상환기간 (경과 ${repaymentYearsElapsed}년) -> 상환 ${paidPrincipal.toFixed(
+                0
+              )}, 남은 부채: ${debt.amount.toFixed(0)}`
+            );
+
+            if (year === debt.endYear) {
+              // 마지막 해: 부채 완전 상환
+              debt.amount = 0;
+              debt.isActive = false;
+            }
+          } else if (year > debt.endYear) {
+            // 부채 기간 종료 후: 비활성화
+            debt.isActive = false;
+          }
         }
       } else if (year > debt.endYear) {
         // 부채 기간 종료 후: 비활성화
@@ -855,9 +925,10 @@ export function calculateDebtSimulation(profileData, debts = []) {
       amount: debt.debtAmount, // 부채 금액
       startYear: debt.startYear,
       endYear: debt.endYear,
-      debtType: debt.debtType, // "bullet" 또는 "equal"
+      debtType: debt.debtType, // "bullet", "equal", "principal", "grace"
       interestRate: debt.interestRate || 0, // 이미 소수로 저장됨
       originalAmount: debt.debtAmount,
+      gracePeriod: debt.gracePeriod, // 거치기간 추가 (거치식 상환에 필요)
       isActive: true,
     };
   });
@@ -935,58 +1006,35 @@ export function calculateDebtSimulation(profileData, debts = []) {
             debt.isActive = false;
           }
         } else if (debt.debtType === "grace") {
-          // 거치식상환: 거치기간 동안 원금 유지, 이후 원리금균등상환
-          const gracePeriod = debt.gracePeriod || 0;
-          const repaymentYears = totalYears - gracePeriod;
+          // 거치식상환: 거치기간 동안 원금 유지, 이후 원금을 균등하게 상환
+          const gracePeriod = parseInt(debt.gracePeriod) || 0;
+          const graceEndYear = debt.startYear + gracePeriod - 1; // 거치기간 마지막 년도
+          const repaymentYears = debt.endYear - graceEndYear; // 상환기간 = 종료년도 - 거치기간종료년도
 
-          if (year < debt.startYear + gracePeriod) {
-            // 거치기간: 원금 유지
+          if (year <= graceEndYear) {
+            // 거치기간: 원금 유지 (이자만 지불, 거치기간 마지막 년도까지 포함)
             debtItem[title] = -debt.originalAmount; // 음수로 표시
-          } else {
-            // 상환기간: 원리금균등상환
-            if (repaymentYears > 0 && interestRate > 0) {
-              // PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
-              const pmt =
-                (debt.originalAmount *
-                  (interestRate * Math.pow(1 + interestRate, repaymentYears))) /
-                (Math.pow(1 + interestRate, repaymentYears) - 1);
+          } else if (year > graceEndYear && year <= debt.endYear) {
+            // 상환기간: 원금을 상환년수로 균등 분할하여 상환
+            const yearlyPrincipalPayment = debt.originalAmount / repaymentYears;
+            const repaymentYearsElapsed = year - graceEndYear; // 상환 시작 후 경과년수
+            const paidPrincipal =
+              yearlyPrincipalPayment * repaymentYearsElapsed;
+            debtItem[title] = -(debt.originalAmount - paidPrincipal); // 음수로 표시
 
-              // 남은 원금 계산 (거치기간 이후부터)
-              let remainingPrincipal = debt.originalAmount;
-              const repaymentYearsElapsed = yearsElapsed - gracePeriod;
-              for (let i = 0; i <= repaymentYearsElapsed; i++) {
-                if (i > 0) {
-                  const interestPayment = remainingPrincipal * interestRate;
-                  const principalPayment = pmt - interestPayment;
-                  remainingPrincipal -= principalPayment;
-                }
-              }
-
-              debtItem[title] = -remainingPrincipal; // 음수로 표시
-
-              if (year === debt.endYear) {
-                // 마지막 해: 부채 완전 상환
-                debtItem[title] = 0;
-                debt.isActive = false;
-              }
-            } else if (interestRate === 0) {
-              // 이자율이 0%인 경우: 원금을 균등 분할
-              const yearlyPrincipalPayment =
-                debt.originalAmount / repaymentYears;
-              const paidPrincipal =
-                yearlyPrincipalPayment * (repaymentYearsElapsed + 1);
-              debtItem[title] = -(debt.originalAmount - paidPrincipal); // 음수로 표시
-
-              if (year === debt.endYear) {
-                debtItem[title] = 0;
-                debt.isActive = false;
-              }
+            if (year === debt.endYear) {
+              // 마지막 해: 부채 완전 상환
+              debtItem[title] = 0;
+              debt.isActive = false;
             }
+          } else if (year > debt.endYear) {
+            // 부채 기간 종료 후: 비활성화
+            debt.isActive = false;
           }
+        } else if (year > debt.endYear) {
+          // 부채 기간 종료 후: 비활성화
+          debt.isActive = false;
         }
-      } else if (year > debt.endYear) {
-        // 부채 기간 종료 후: 비활성화
-        debt.isActive = false;
       }
     });
 

@@ -48,7 +48,20 @@ function DebtList({ debts, onEdit, onDelete }) {
 
             <div className={styles.debtDetails}>
               <div className={styles.debtType}>
-                {debt.debtType === "bullet" ? "만기일시상환" : "원리금균등상환"}
+                {debt.debtType === "bullet"
+                  ? "만기일시상환"
+                  : debt.debtType === "equal"
+                  ? "원리금균등상환"
+                  : debt.debtType === "principal"
+                  ? "원금균등상환"
+                  : debt.debtType === "grace"
+                  ? "거치식상환"
+                  : "알 수 없음"}
+                {debt.debtType === "grace" && debt.gracePeriod > 0 && (
+                  <span className={styles.gracePeriod}>
+                    (거치기간: {debt.gracePeriod}년)
+                  </span>
+                )}
               </div>
               <div className={styles.debtPeriod}>
                 {debt.startYear}년 - {debt.endYear}년

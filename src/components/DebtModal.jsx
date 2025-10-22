@@ -27,7 +27,7 @@ function DebtModal({
     startYear: new Date().getFullYear(),
     endYear: getRetirementYear(),
     interestRate: "5.0", // 이자율 5%
-    gracePeriod: 0, // 거치기간 (년)
+    gracePeriod: 5, // 거치기간 (년) - 기본값 5년
     memo: "",
   });
 
@@ -37,16 +37,23 @@ function DebtModal({
   useEffect(() => {
     if (isOpen) {
       if (editData) {
+        // gracePeriod는 명확하게 number로 변환 (0도 유효한 값이므로 || 0 대신 삼항연산자 사용)
+        const parsedGracePeriod =
+          editData.gracePeriod !== undefined && editData.gracePeriod !== null
+            ? parseInt(editData.gracePeriod, 10)
+            : 0;
+
         setFormData({
           title: editData.title || "",
           debtType: editData.debtType || "bullet",
           debtAmount: editData.debtAmount || "",
-          startYear: parseInt(editData.startYear) || new Date().getFullYear(),
-          endYear: parseInt(editData.endYear) || getRetirementYear(),
+          startYear:
+            parseInt(editData.startYear, 10) || new Date().getFullYear(),
+          endYear: parseInt(editData.endYear, 10) || getRetirementYear(),
           interestRate: editData.interestRate
             ? (editData.interestRate * 100).toString()
             : "5.0",
-          gracePeriod: parseInt(editData.gracePeriod) || 0,
+          gracePeriod: parsedGracePeriod,
           memo: editData.memo || "",
         });
       } else {
@@ -58,7 +65,7 @@ function DebtModal({
           startYear: new Date().getFullYear(),
           endYear: getRetirementYear(),
           interestRate: "5.0",
-          gracePeriod: 0,
+          gracePeriod: 5, // 거치식 상환의 기본값을 5년으로 설정
           memo: "",
         });
       }
@@ -114,11 +121,11 @@ function DebtModal({
 
     const debtData = {
       ...formData,
-      debtAmount: parseInt(formData.debtAmount),
-      startYear: parseInt(formData.startYear),
-      endYear: parseInt(formData.endYear),
+      debtAmount: parseInt(formData.debtAmount, 10),
+      startYear: parseInt(formData.startYear, 10),
+      endYear: parseInt(formData.endYear, 10),
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
-      gracePeriod: parseInt(formData.gracePeriod),
+      gracePeriod: parseInt(formData.gracePeriod, 10), // 10진수로 명확하게 변환
     };
 
     onSave(debtData);
@@ -184,9 +191,16 @@ function DebtModal({
             <select
               id="debtType"
               value={formData.debtType}
-              onChange={(e) =>
-                setFormData({ ...formData, debtType: e.target.value })
-              }
+              onChange={(e) => {
+                const newDebtType = e.target.value;
+                setFormData({
+                  ...formData,
+                  debtType: newDebtType,
+                  // 거치식 상환을 선택했을 때 기본 거치기간을 5년으로 설정
+                  gracePeriod:
+                    newDebtType === "grace" ? 5 : formData.gracePeriod,
+                });
+              }}
               className={styles.select}
             >
               <option value="bullet">만기일시상환</option>
@@ -323,20 +337,25 @@ function DebtModal({
                 거치기간 (년) *
               </label>
               <input
-                type="number"
+                type="text"
                 id="gracePeriod"
                 value={formData.gracePeriod}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value) || 0;
-                  setFormData({ ...formData, gracePeriod: value });
+                  const value = e.target.value;
+                  // 숫자만 허용하고 빈 문자열이면 0으로 설정
+                  if (value === "" || /^\d+$/.test(value)) {
+                    const numValue = value === "" ? 0 : parseInt(value, 10);
+                    // 0~50년 사이로 제한 (실용적인 범위)
+                    if (numValue >= 0 && numValue <= 50) {
+                      setFormData({ ...formData, gracePeriod: numValue });
+                    }
+                  }
                 }}
                 className={styles.input}
-                min="0"
-                max="10"
-                placeholder="0"
+                placeholder="5"
               />
               <div className={styles.helpText}>
-                <span>이자만 납부하는 기간 (년 단위)</span>
+                <span>이자만 납부하는 기간 (년 단위, 0~50년)</span>
               </div>
             </div>
           )}
