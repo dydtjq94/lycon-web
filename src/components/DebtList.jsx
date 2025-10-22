@@ -59,7 +59,7 @@ function DebtList({ debts, onEdit, onDelete }) {
                   : "알 수 없음"}
                 {debt.debtType === "grace" && debt.gracePeriod > 0 && (
                   <span className={styles.gracePeriod}>
-                    (거치기간: {debt.gracePeriod}년)
+                    (거치 {debt.gracePeriod}년)
                   </span>
                 )}
               </div>
