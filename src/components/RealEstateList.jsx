@@ -40,7 +40,7 @@ const RealEstateList = ({ realEstates, onEdit, onDelete }) => {
               현재 가치: {formatAmount(realEstate.currentValue)}
             </div>
             <div className={styles.realEstateRate}>
-              상승률: {(realEstate.growthRate * 100).toFixed(1)}%
+              상승률: {realEstate.growthRate.toFixed(1)}%
             </div>
             <div className={styles.realEstatePeriod}>
               {new Date().getFullYear()}년 - {realEstate.endYear}년

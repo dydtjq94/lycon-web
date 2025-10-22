@@ -34,7 +34,7 @@ const RealEstateModal = ({
           title: editData.title || "",
           currentValue: editData.currentValue || "",
           growthRate: editData.growthRate
-            ? (editData.growthRate * 100).toString()
+            ? editData.growthRate.toString()
             : "2.5",
           endYear: editData.endYear || "",
           hasRentalIncome: editData.hasRentalIncome || false,
@@ -148,7 +148,7 @@ const RealEstateModal = ({
     const realEstateData = {
       title: formData.title.trim(),
       currentValue: parseInt(formData.currentValue),
-      growthRate: parseFloat(formData.growthRate) / 100, // 백분율을 소수로 변환
+      growthRate: parseFloat(formData.growthRate), // 백분율 그대로 저장
       endYear: parseInt(formData.endYear),
       hasRentalIncome: formData.hasRentalIncome,
       monthlyRentalIncome: formData.hasRentalIncome

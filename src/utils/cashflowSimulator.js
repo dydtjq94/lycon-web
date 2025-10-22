@@ -418,7 +418,7 @@ export function calculateAssetSimulation(
       amount: realEstate.currentValue, // 현재 가치로 시작
       startYear: currentYear,
       endYear: realEstate.endYear,
-      growthRate: realEstate.growthRate || 0.025, // 이미 소수로 저장됨
+      growthRate: realEstate.growthRate || 2.5, // 백분율 그대로 사용
       convertToPension: realEstate.convertToPension || false,
       pensionStartYear: realEstate.pensionStartYear,
       monthlyPensionAmount: realEstate.monthlyPensionAmount,
@@ -576,7 +576,7 @@ export function calculateAssetSimulation(
           const isPensionActive =
             realEstate.convertToPension && year >= realEstate.pensionStartYear;
           if (!isPensionActive) {
-            const growthRate = realEstate.growthRate; // 이미 소수로 저장됨
+            const growthRate = realEstate.growthRate / 100; // 백분율을 소수로 변환
             realEstate.amount = realEstate.amount * (1 + growthRate);
           }
         }

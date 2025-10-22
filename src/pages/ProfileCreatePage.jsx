@@ -5,6 +5,8 @@ import {
   profileService,
   incomeService,
   expenseService,
+  pensionService,
+  realEstateService,
 } from "../services/firestoreService";
 import { formatAmountForChart } from "../utils/format";
 import styles from "./ProfileCreatePage.module.css";
@@ -43,31 +45,37 @@ function ProfileCreatePage() {
     const defaultIncomes = [
       {
         title: "근로소득",
-        amount: 0,
+        amount: 450, // 월 450만원
+        originalAmount: 450, // 원본 금액 (리스트 표시용)
         frequency: "monthly",
+        originalFrequency: "monthly", // 원본 빈도 (리스트 표시용)
         startYear: currentYear,
         endYear: retirementYear,
-        growthRate: 3.0, // 임금상승률 기본값
+        growthRate: 3.0, // 임금상승률 3%
         memo: "임금상승률 적용",
         category: "income",
       },
       {
         title: "사업소득",
         amount: 0,
+        originalAmount: 0, // 원본 금액 (리스트 표시용)
         frequency: "monthly",
+        originalFrequency: "monthly", // 원본 빈도 (리스트 표시용)
         startYear: currentYear,
         endYear: deathYear,
-        growthRate: 2.5, // 물가상승률 기본값
+        growthRate: 2.5, // 물가상승률 2.5%
         memo: "물가상승률 적용",
         category: "income",
       },
       {
         title: "임대소득",
         amount: 0,
+        originalAmount: 0, // 원본 금액 (리스트 표시용)
         frequency: "monthly",
+        originalFrequency: "monthly", // 원본 빈도 (리스트 표시용)
         startYear: currentYear,
         endYear: deathYear,
-        growthRate: 2.5, // 물가상승률 기본값
+        growthRate: 2.5, // 물가상승률 2.5%
         memo: "물가상승률 적용",
         category: "income",
       },
@@ -81,6 +89,48 @@ function ProfileCreatePage() {
         console.error(`기본 수입 데이터 생성 오류 (${income.title}):`, error);
       }
     }
+  };
+
+  // 기본 국민연금 데이터 생성 함수
+  const createDefaultPension = async (profileId, birthYear) => {
+    const currentYear = new Date().getFullYear();
+    const age65Year = birthYear + 65 - 1; // 65세가 되는 년도
+    const age90Year = birthYear + 90 - 1; // 90세가 되는 년도
+
+    const nationalPension = {
+      title: "국민연금",
+      type: "national",
+      monthlyAmount: 103, // 월 수령액 103만원
+      startYear: age65Year,
+      endYear: age90Year,
+      inflationRate: 2.5, // 물가상승률 2.5%
+      memo: "기본 국민연금",
+    };
+
+    await pensionService.createPension(profileId, nationalPension);
+  };
+
+  // 기본 부동산 데이터 생성 함수
+  const createDefaultRealEstate = async (profileId) => {
+    const currentYear = new Date().getFullYear();
+
+    const defaultRealEstate = {
+      title: "자택",
+      currentValue: 50000, // 5억원 (만원 단위)
+      growthRate: 2.5, // 상승률 2.5%
+      startYear: currentYear,
+      endYear: 2099, // 보유 연도 2099년까지
+      hasRentalIncome: false,
+      monthlyRentalIncome: null,
+      rentalIncomeStartYear: null,
+      rentalIncomeEndYear: null,
+      convertToPension: false,
+      pensionStartYear: null,
+      monthlyPensionAmount: null,
+      memo: "기본 부동산 자산",
+    };
+
+    await realEstateService.createRealEstate(profileId, defaultRealEstate);
   };
 
   // 기본 지출 데이터 생성 함수
@@ -100,11 +150,11 @@ function ProfileCreatePage() {
     const defaultExpenses = [
       {
         title: "은퇴 전 생활비",
-        amount: 0, // 사용자가 입력할 수 있도록 0으로 설정
+        amount: Math.round((retirementLivingExpenses || 0) * 1.4), // 은퇴 후 생활비의 1.4배
         frequency: "monthly",
         startYear: currentYear,
         endYear: retirementYear,
-        growthRate: 2.5, // 물가상승률 기본값
+        growthRate: 2.5, // 물가상승률 2.5%
         memo: "물가상승률 적용",
         category: "expense",
       },
@@ -114,7 +164,7 @@ function ProfileCreatePage() {
         frequency: "monthly",
         startYear: retirementYear + 1, // 은퇴 다음 년도부터
         endYear: deathYear,
-        growthRate: 2.5, // 물가상승률 기본값
+        growthRate: 2.5, // 물가상승률 2.5%
         memo: "물가상승률 적용",
         category: "expense",
       },
@@ -337,6 +387,24 @@ function ProfileCreatePage() {
       } catch (error) {
         console.error("기본 지출 데이터 생성 오류:", error);
         // 기본 지출 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
+      }
+
+      // 기본 국민연금 데이터 생성
+      try {
+        await createDefaultPension(createdProfile.id, birthYear);
+        console.log("기본 국민연금 데이터 생성 완료");
+      } catch (error) {
+        console.error("기본 국민연금 데이터 생성 오류:", error);
+        // 기본 국민연금 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
+      }
+
+      // 기본 부동산 데이터 생성
+      try {
+        await createDefaultRealEstate(createdProfile.id);
+        console.log("기본 부동산 데이터 생성 완료");
+      } catch (error) {
+        console.error("기본 부동산 데이터 생성 오류:", error);
+        // 기본 부동산 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
       }
 
       // 대시보드로 이동

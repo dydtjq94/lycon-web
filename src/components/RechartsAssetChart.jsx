@@ -31,6 +31,26 @@ function RechartsAssetChart({
     );
   }
 
+  // 현금이 마이너스로 변하는 시점 감지
+  const findCashNegativeTransition = () => {
+    for (let i = 0; i < data.length - 1; i++) {
+      const currentCash = data[i]["현금"] || 0;
+      const nextCash = data[i + 1]["현금"] || 0;
+
+      // 양수에서 음수로 변하는 시점 감지
+      if (currentCash >= 0 && nextCash < 0) {
+        return {
+          year: data[i + 1].year,
+          age: data[i + 1].age,
+          cashAmount: nextCash,
+        };
+      }
+    }
+    return null;
+  };
+
+  const cashNegativeTransition = findCashNegativeTransition();
+
   // 차트 데이터 포맷팅 및 동적 자산 항목 추출
   const chartData = data.map((item) => {
     const processedItem = {
@@ -220,6 +240,12 @@ function RechartsAssetChart({
                         <span className={styles.tooltipTitle}>
                           {data.age}세 ({data.year}년)
                         </span>
+                        {cashNegativeTransition &&
+                          data.age === cashNegativeTransition.age && (
+                            <div className={styles.cashWarning}>
+                              ⚠️ 현금 위험 시점
+                            </div>
+                          )}
                       </div>
 
                       <div className={styles.tooltipBreakdown}>
@@ -375,6 +401,25 @@ function RechartsAssetChart({
                 style: { fill: "#fbbf24", fontSize: "12px" },
               }}
             />
+
+            {/* 현금 위험 시점 표시 */}
+            {cashNegativeTransition && (
+              <ReferenceLine
+                x={cashNegativeTransition.age}
+                stroke="#ef4444"
+                strokeWidth={2}
+                strokeDasharray="8 4"
+                label={{
+                  value: "현금 위험",
+                  position: "top",
+                  style: {
+                    fill: "#ef4444",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                  },
+                }}
+              />
+            )}
 
             {/* 현금 Bar (별도 처리) - 같은 stackId 사용 */}
             <Bar
