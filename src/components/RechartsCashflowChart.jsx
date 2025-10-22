@@ -117,15 +117,90 @@ function RechartsCashflowChart({
                   );
 
                   if (yearData) {
+                    // 연금 항목들 계산 (개별 표시용)
+                    let totalPensionIncome = 0;
+                    let totalPensionExpense = 0;
+
+                    pensions.forEach((pension) => {
+                      if (pension.type === "national") {
+                        // 국민연금: 수령 기간 동안 수입
+                        if (
+                          data.year >= pension.startYear &&
+                          data.year <= pension.endYear
+                        ) {
+                          const yearsElapsed = data.year - pension.startYear;
+                          const inflationRate =
+                            (pension.inflationRate || 2.5) / 100;
+                          const adjustedAmount =
+                            pension.monthlyAmount *
+                            12 *
+                            Math.pow(1 + inflationRate, yearsElapsed);
+                          totalPensionIncome += adjustedAmount;
+                        }
+                      } else {
+                        // 개인연금/퇴직연금
+                        if (
+                          data.year >= pension.contributionStartYear &&
+                          data.year <= pension.contributionEndYear
+                        ) {
+                          // 적립 기간: 지출
+                          const monthlyAmount =
+                            pension.contributionFrequency === "monthly"
+                              ? pension.contributionAmount
+                              : pension.contributionAmount / 12;
+                          totalPensionExpense += monthlyAmount * 12;
+                        } else if (
+                          data.year >= pension.paymentStartYear &&
+                          data.year <= pension.paymentEndYear
+                        ) {
+                          // 수령 기간: 수입
+                          const monthlyAmount =
+                            pension.contributionFrequency === "monthly"
+                              ? pension.contributionAmount
+                              : pension.contributionAmount / 12;
+                          const yearlyContribution = monthlyAmount * 12;
+                          const returnRate = pension.returnRate / 100;
+
+                          // 현재 보유액을 포함한 총 적립액 계산
+                          let totalAccumulated = pension.currentAmount || 0;
+                          for (
+                            let i = 0;
+                            i <
+                            pension.contributionEndYear -
+                              pension.contributionStartYear +
+                              1;
+                            i++
+                          ) {
+                            totalAccumulated =
+                              totalAccumulated * (1 + returnRate) +
+                              yearlyContribution;
+                          }
+
+                          // 월 수령액 계산
+                          const paymentYears =
+                            pension.paymentEndYear -
+                            pension.paymentStartYear +
+                            1;
+                          const monthlyPayment =
+                            totalAccumulated / paymentYears / 12;
+                          totalPensionIncome += monthlyPayment * 12;
+                        }
+                      }
+                    });
+
                     // 총 수입과 총 지출 계산
                     const totalIncome =
                       yearData.income +
-                      (yearData.pension || 0) +
+                      totalPensionIncome +
                       (yearData.rentalIncome || 0) +
                       (yearData.realEstatePension || 0) +
-                      (yearData.assetIncome || 0);
+                      (yearData.assetIncome || 0) +
+                      (yearData.realEstateSale || 0) +
+                      (yearData.assetSale || 0) +
+                      (yearData.savingMaturity || 0);
                     const totalExpense =
                       yearData.expense +
+                      totalPensionExpense +
                       (yearData.savings || 0) +
                       (yearData.debtInterest || 0) +
                       (yearData.debtPrincipal || 0);
@@ -206,7 +281,6 @@ function RechartsCashflowChart({
                                 </div>
                               );
                             })}
-
                           {/* 지출 항목들 */}
                           {expenses
                             .filter(
@@ -240,7 +314,94 @@ function RechartsCashflowChart({
                                 </div>
                               );
                             })}
+                          {/* 연금 항목들 - 각 연금별로 하나씩만 표시 */}
+                          {pensions
+                            .map((pension, index) => {
+                              let displayAmount = 0;
+                              let displayLabel = pension.title;
+                              let shouldShow = false;
 
+                              if (pension.type === "national") {
+                                // 국민연금: 수령 기간 동안만 표시
+                                if (
+                                  data.year >= pension.startYear &&
+                                  data.year <= pension.endYear
+                                ) {
+                                  const yearsElapsed =
+                                    data.year - pension.startYear;
+                                  const inflationRate =
+                                    (pension.inflationRate || 2.5) / 100;
+                                  const adjustedAmount =
+                                    pension.monthlyAmount *
+                                    12 *
+                                    Math.pow(1 + inflationRate, yearsElapsed);
+                                  displayAmount = adjustedAmount;
+                                  displayLabel = "국민연금";
+                                  shouldShow = true;
+                                }
+                              } else {
+                                // 개인연금/퇴직연금: 수령 기간에만 표시 (적립 기간은 표시하지 않음)
+                                if (
+                                  data.year >= pension.paymentStartYear &&
+                                  data.year <= pension.paymentEndYear
+                                ) {
+                                  // 수령 기간: 수령액 표시 (플러스)
+                                  const monthlyAmount =
+                                    pension.contributionFrequency === "monthly"
+                                      ? pension.contributionAmount
+                                      : pension.contributionAmount / 12;
+                                  const yearlyContribution = monthlyAmount * 12;
+                                  const returnRate = pension.returnRate / 100;
+
+                                  // 현재 보유액을 포함한 총 적립액 계산
+                                  let totalAccumulated =
+                                    pension.currentAmount || 0;
+                                  for (
+                                    let i = 0;
+                                    i <
+                                    pension.contributionEndYear -
+                                      pension.contributionStartYear +
+                                      1;
+                                    i++
+                                  ) {
+                                    totalAccumulated =
+                                      totalAccumulated * (1 + returnRate) +
+                                      yearlyContribution;
+                                  }
+
+                                  // 월 수령액 계산
+                                  const paymentYears =
+                                    pension.paymentEndYear -
+                                    pension.paymentStartYear +
+                                    1;
+                                  const monthlyPayment =
+                                    totalAccumulated / paymentYears / 12;
+                                  displayAmount = monthlyPayment * 12;
+                                  displayLabel = `${pension.title} (수령)`;
+                                  shouldShow = true;
+                                }
+                              }
+
+                              // 표시할 항목만 반환
+                              if (!shouldShow) return null;
+
+                              return (
+                                <div
+                                  key={`pension-${index}`}
+                                  className={styles.tooltipItem}
+                                >
+                                  <span className={styles.tooltipLabel}>
+                                    {displayLabel}:
+                                  </span>
+                                  <span className={styles.tooltipValue}>
+                                    {displayAmount >= 0 ? "+" : ""}
+                                    {formatAmountForChart(displayAmount)}
+                                  </span>
+                                </div>
+                              );
+                            })
+                            .filter(Boolean)}{" "}
+                          {/* null 값 제거 */}
                           {/* 저축/투자 항목들 */}
                           {savings
                             .filter(
@@ -299,53 +460,6 @@ function RechartsCashflowChart({
                                 );
                               }
                             })}
-                          {/* 연금 항목들 */}
-                          {pensions
-                            .filter((pension) => {
-                              if (pension.type === "national") {
-                                return (
-                                  data.year >= pension.startYear &&
-                                  data.year <= pension.endYear
-                                );
-                              } else {
-                                return (
-                                  data.year >= pension.paymentStartYear &&
-                                  data.year <= pension.paymentEndYear
-                                );
-                              }
-                            })
-                            .map((pension, index) => {
-                              let yearlyAmount = 0;
-                              if (pension.type === "national") {
-                                const yearsElapsed =
-                                  data.year - pension.startYear;
-                                const inflationRate =
-                                  pension.inflationRate / 100;
-                                yearlyAmount =
-                                  pension.monthlyAmount *
-                                  12 *
-                                  Math.pow(1 + inflationRate, yearsElapsed);
-                              } else {
-                                // 퇴직연금/개인연금의 경우 detailedData에서 가져오기
-                                const pensionData = yearData.pension || 0;
-                                yearlyAmount = pensionData;
-                              }
-
-                              return (
-                                <div
-                                  key={`pension-${index}`}
-                                  className={styles.tooltipItem}
-                                >
-                                  <span className={styles.tooltipLabel}>
-                                    {pension.title}:
-                                  </span>
-                                  <span className={styles.tooltipValue}>
-                                    +{formatAmountForChart(yearlyAmount)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-
                           {/* 부동산 항목들 */}
                           {realEstates
                             .filter(
@@ -437,7 +551,6 @@ function RechartsCashflowChart({
                               return items;
                             })
                             .flat()}
-
                           {/* 자산 항목들 */}
                           {assets
                             .filter(
@@ -476,7 +589,6 @@ function RechartsCashflowChart({
                                 </div>
                               );
                             })}
-
                           {/* 부채 항목들 */}
                           {debts
                             .filter(
@@ -517,6 +629,45 @@ function RechartsCashflowChart({
                                 </div>
                               );
                             })}
+                          {/* 부동산 매각 수입 */}
+                          {yearData.realEstateSale > 0 && (
+                            <div className={styles.tooltipItem}>
+                              <span className={styles.tooltipLabel}>
+                                부동산 매각:
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                +{formatAmountForChart(yearData.realEstateSale)}
+                              </span>
+                            </div>
+                          )}
+                          {/* 자산 매각 수입 */}
+                          {yearData.assetSale > 0 && (
+                            <div className={styles.tooltipItem}>
+                              <span className={styles.tooltipLabel}>
+                                자산 매각:
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                +{formatAmountForChart(yearData.assetSale)}
+                              </span>
+                            </div>
+                          )}
+                          {/* 저축 만료 수입 */}
+                          {yearData.savingMaturity > 0 && (
+                            <div className={styles.tooltipItem}>
+                              <span className={styles.tooltipLabel}>
+                                {savings
+                                  .filter(
+                                    (saving) => data.year === saving.endYear + 1
+                                  )
+                                  .map((saving) => saving.title)
+                                  .join(", ")}{" "}
+                                (만료):
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                +{formatAmountForChart(yearData.savingMaturity)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

@@ -180,6 +180,81 @@ export const profileService = {
       throw error;
     }
   },
+
+  // 하위 컬렉션의 모든 문서 삭제 헬퍼 함수
+  async deleteSubcollection(profileId, subcollectionName) {
+    try {
+      const subcollectionRef = collection(
+        db,
+        "profiles",
+        profileId,
+        subcollectionName
+      );
+      const snapshot = await getDocs(subcollectionRef);
+
+      if (snapshot.empty) {
+        console.log(`${subcollectionName} 하위 컬렉션이 비어있습니다.`);
+        return 0;
+      }
+
+      const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+
+      console.log(
+        `${subcollectionName} 하위 컬렉션 삭제 완료:`,
+        snapshot.docs.length,
+        "개"
+      );
+      return snapshot.docs.length;
+    } catch (error) {
+      console.error(`${subcollectionName} 하위 컬렉션 삭제 오류:`, error);
+      throw error;
+    }
+  },
+
+  // 프로필과 모든 관련 데이터 완전 삭제 (하위 컬렉션 포함)
+  async deleteProfileWithAllData(profileId) {
+    try {
+      console.log("프로필 및 모든 관련 데이터 삭제 시작:", profileId);
+
+      // 하위 컬렉션들 삭제
+      const subcollections = [
+        "incomes",
+        "expenses",
+        "savings",
+        "pensions",
+        "realEstates",
+        "assets",
+        "debts",
+      ];
+
+      let totalDeleted = 0;
+      for (const subcollectionName of subcollections) {
+        try {
+          const deletedCount = await this.deleteSubcollection(
+            profileId,
+            subcollectionName
+          );
+          totalDeleted += deletedCount;
+        } catch (error) {
+          console.warn(`${subcollectionName} 하위 컬렉션 삭제 실패:`, error);
+          // 개별 하위 컬렉션 삭제 실패해도 계속 진행
+        }
+      }
+
+      // 마지막으로 프로필 문서 삭제
+      const profileRef = doc(db, "profiles", profileId);
+      await deleteDoc(profileRef);
+      console.log("프로필 문서 삭제 완료:", profileId);
+
+      console.log(
+        `프로필 및 모든 관련 데이터 삭제 완료: ${totalDeleted}개 문서 삭제됨`
+      );
+    } catch (error) {
+      console.error("프로필 및 관련 데이터 삭제 오류:", error);
+      throw error;
+    }
+  },
 };
 
 /**

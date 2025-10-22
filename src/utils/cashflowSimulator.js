@@ -180,6 +180,8 @@ export function calculateCashflowSimulation(
     });
 
     // 저축 계산 (현금흐름에서는 년간 저축 상승률만 적용, 이자율 적용 안함)
+    let totalSavingMaturity = 0; // 저축 만료 수입 (별도 변수)
+    
     savings.forEach((saving) => {
       if (year >= saving.startYear && year <= saving.endYear) {
         const yearsElapsed = year - saving.startYear;
@@ -202,6 +204,39 @@ export function calculateCashflowSimulation(
 
           totalSavings += yearlyAmount;
         }
+      } else if (year === saving.endYear + 1) {
+        // 저축 만료 다음 해: 만료된 저축 금액을 현금흐름에 추가
+        // 이자율을 적용한 최종 금액 계산
+        const yearsElapsed = saving.endYear - saving.startYear;
+        const interestRate = saving.interestRate || 0;
+        const yearlyGrowthRate = saving.yearlyGrowthRate || 0;
+
+        let finalAmount = 0;
+
+        if (saving.frequency === "one_time") {
+          // 일회성 저축: 원금에 이자율 적용
+          finalAmount =
+            saving.amount * Math.pow(1 + interestRate, yearsElapsed);
+        } else {
+          // 월간/연간 저축: 복리 계산
+          const monthlyAmount =
+            saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
+
+          for (let i = 0; i <= yearsElapsed; i++) {
+            const adjustedMonthlyAmount =
+              monthlyAmount * Math.pow(1 + yearlyGrowthRate, i);
+            const yearlyAmount = adjustedMonthlyAmount * 12;
+
+            if (i === 0) {
+              finalAmount = yearlyAmount;
+            } else {
+              finalAmount = finalAmount * (1 + interestRate) + yearlyAmount;
+            }
+          }
+        }
+
+        // 저축 만료 수입에 추가 (현금흐름에서 플러스로 처리)
+        totalSavingMaturity += finalAmount;
       }
     });
 
@@ -266,6 +301,7 @@ export function calculateCashflowSimulation(
     // 부동산 관련 계산
     let totalRentalIncome = 0; // 임대 수입
     let totalRealEstatePension = 0; // 주택연금 수령액
+    let totalRealEstateSale = 0; // 부동산 매각 수입
 
     realEstates.forEach((realEstate) => {
       // 임대 수입 계산
@@ -281,10 +317,22 @@ export function calculateCashflowSimulation(
       if (realEstate.convertToPension && year >= realEstate.pensionStartYear) {
         totalRealEstatePension += realEstate.monthlyPensionAmount * 12;
       }
+
+      // 부동산 매각 수입 계산 (만료 다음 해)
+      if (year === realEstate.endYear + 1) {
+        // 부동산 가치에 상승률을 적용한 최종 가치 계산
+        const yearsElapsed = realEstate.endYear - realEstate.startYear;
+        const growthRate = (realEstate.growthRate || 0) / 100;
+        const finalValue =
+          realEstate.currentValue * Math.pow(1 + growthRate, yearsElapsed);
+        totalRealEstateSale += finalValue;
+      }
     });
 
     // 자산 수익 계산 (수익형 자산의 이자/배당)
     let totalAssetIncome = 0;
+    let totalAssetSale = 0; // 자산 매각 수입
+
     assets.forEach((asset) => {
       if (
         asset.assetType === "income" &&
@@ -298,9 +346,19 @@ export function calculateCashflowSimulation(
           asset.currentValue * Math.pow(1 + asset.growthRate, yearsElapsed);
         totalAssetIncome += currentAssetValue * asset.incomeRate;
       }
+
+      // 자산 매각 수입 계산 (만료 다음 해)
+      if (year === asset.endYear + 1) {
+        // 자산 가치에 상승률을 적용한 최종 가치 계산
+        const yearsElapsed = asset.endYear - asset.startYear;
+        const growthRate = asset.growthRate || 0;
+        const finalValue =
+          asset.currentValue * Math.pow(1 + growthRate, yearsElapsed);
+        totalAssetSale += finalValue;
+      }
     });
 
-    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 + 자산수익 - 부채이자 - 부채원금상환 (각 년도별 순현금흐름)
+    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 - 부채이자 - 부채원금상환 (각 년도별 순현금흐름)
     const netCashflow =
       totalIncome -
       totalExpense -
@@ -308,7 +366,10 @@ export function calculateCashflowSimulation(
       totalPension +
       totalRentalIncome +
       totalRealEstatePension +
-      totalAssetIncome -
+      totalAssetIncome +
+      totalRealEstateSale +
+      totalAssetSale +
+      totalSavingMaturity -
       totalDebtInterest -
       totalDebtPrincipal;
 
@@ -323,6 +384,9 @@ export function calculateCashflowSimulation(
       rentalIncome: totalRentalIncome,
       realEstatePension: totalRealEstatePension,
       assetIncome: totalAssetIncome,
+      realEstateSale: totalRealEstateSale,
+      assetSale: totalAssetSale,
+      savingMaturity: totalSavingMaturity,
       debtInterest: totalDebtInterest,
       debtPrincipal: totalDebtPrincipal,
     });
@@ -473,9 +537,13 @@ export function calculateAssetSimulation(
         return; // 비활성 저축은 건너뛰기
       }
 
-      // endYear + 1년에 저축을 현금으로 전환
+      // endYear + 1년에 저축을 현금으로 전환 (현금흐름 시뮬레이션에서만 처리)
       if (year === saving.endYear + 1) {
-        currentCash += saving.amount;
+        // 현금흐름 시뮬레이션에서 계산된 저축 만료 금액을 현금에 추가
+        if (yearCashflow && yearCashflow.savingMaturity) {
+          currentCash += yearCashflow.savingMaturity;
+        }
+        
         // 저축을 비활성화 (자산 차트에서 제거됨)
         saving.isActive = false;
         saving.amount = 0; // 전환 후 금액 초기화
@@ -598,9 +666,8 @@ export function calculateAssetSimulation(
           }
         }
       } else if (year === realEstate.endYear + 1) {
-        // 보유 종료 다음 해: 부동산 자산을 현금으로 변환
+        // 보유 종료 다음 해: 부동산 자산을 비활성화 (현금흐름 시뮬레이션에서만 처리)
         if (realEstate.isActive && realEstate.amount > 0) {
-          currentCash += realEstate.amount;
           realEstate.amount = 0;
         }
         realEstate.isActive = false;
@@ -623,9 +690,8 @@ export function calculateAssetSimulation(
           asset.amount *= 1 + asset.growthRate;
         }
       } else if (year === asset.endYear + 1) {
-        // 보유 종료 다음 해: 자산을 현금으로 변환
+        // 보유 종료 다음 해: 자산을 비활성화 (현금흐름 시뮬레이션에서만 처리)
         if (asset.isActive && asset.amount > 0) {
-          currentCash += asset.amount;
           asset.amount = 0;
         }
         asset.isActive = false;
@@ -934,4 +1000,79 @@ export function calculateDebtSimulation(profileData, debts = []) {
   }
 
   return debtData;
+}
+
+/**
+ * AI 봇을 위한 시뮬레이션 데이터 추출
+ * 현금흐름과 자산 시뮬레이션 데이터를 AI가 분석하기 쉬운 형태로 변환
+ */
+export function extractAIAnalysisData(
+  profileData,
+  incomes = [],
+  expenses = [],
+  savings = [],
+  pensions = [],
+  realEstates = [],
+  assets = [],
+  debts = []
+) {
+  // 현금흐름 시뮬레이션 계산
+  const cashflowData = calculateCashflowSimulation(
+    profileData,
+    incomes,
+    expenses,
+    savings,
+    pensions,
+    realEstates,
+    assets,
+    debts
+  );
+
+  // 자산 시뮬레이션 계산
+  const assetData = calculateAssetSimulation(
+    profileData,
+    incomes,
+    expenses,
+    savings,
+    pensions,
+    realEstates,
+    assets,
+    cashflowData,
+    debts
+  );
+
+  // AI 분석용 데이터 구성 (원시 데이터만)
+  const aiAnalysisData = {
+    // 기본 정보
+    profile: {
+      name: profileData.name,
+      currentAge: profileData.currentKoreanAge,
+      retirementAge: profileData.retirementAge,
+      retirementYear: profileData.retirementYear,
+      currentCash: profileData.currentCash || 0,
+      targetAssets: profileData.targetAssets,
+    },
+
+    // 시뮬레이션 데이터 (최대 20년간)
+    simulation: {
+      cashflow: cashflowData.slice(0, 20), // 최대 20년간
+      assets: assetData.slice(0, 20), // 최대 20년간
+    },
+
+    // 원시 데이터
+    rawData: {
+      incomes,
+      expenses,
+      savings,
+      pensions,
+      realEstates,
+      assets,
+      debts,
+    },
+
+    // 데이터 생성 시간
+    generatedAt: new Date().toISOString(),
+  };
+
+  return aiAnalysisData;
 }

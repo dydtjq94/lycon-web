@@ -5,6 +5,7 @@ import { formatAmount } from "../utils/format";
 import {
   calculateCashflowSimulation,
   calculateAssetSimulation,
+  extractAIAnalysisData,
 } from "../utils/cashflowSimulator";
 import {
   profileService,
@@ -76,6 +77,7 @@ function DashboardPage() {
   const [editingDebt, setEditingDebt] = useState(null);
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   // 프로필 데이터 로드
   useEffect(() => {
@@ -821,6 +823,97 @@ function DashboardPage() {
     }
   };
 
+  // AI 분석 데이터 생성 핸들러
+  const handleGenerateAIAnalysis = async () => {
+    if (!profileData) return;
+
+    setIsGeneratingAI(true);
+    try {
+      const analysisData = extractAIAnalysisData(
+        profileData,
+        incomes,
+        expenses,
+        savings,
+        pensions,
+        realEstates,
+        assets,
+        debts
+      );
+
+      // AI 분석용 프롬프트와 데이터를 함께 구성
+      const promptText = `당신은 20년 경력의 전문 재무 상담사입니다. 제공된 재무 데이터를 분석하여 상세한 재무 상담과 구체적인 액션 플랜을 제시해주세요.
+
+## 분석 요청사항
+
+### 1. 현금흐름 분석
+- 현재부터 은퇴까지의 현금흐름 패턴 분석
+- 현금흐름이 마이너스가 되는 시점과 원인 파악
+- 은퇴 후 현금흐름의 지속 가능성 평가
+- 비상금 확보 필요 시점과 금액 제안
+
+### 2. 자산 구조 분석
+- 현재 자산 구성의 적절성 평가
+- 목표 자산 달성 가능성과 시점 예측
+- 자산 배분의 리스크 분석
+- 부채 구조의 적정성 검토
+
+### 3. 위험 요소 식별
+- 재무적 위험 요소들을 우선순위별로 정리
+- 각 위험 요소의 발생 시점과 영향도 분석
+- 위험 완화를 위한 구체적 방안 제시
+
+### 4. 구체적 액션 플랜
+다음과 같은 구체적인 액션을 제시해주세요:
+
+#### 즉시 실행 (1개월 내)
+- 구체적인 금액과 함께 실행할 수 있는 행동들
+- 예: "매월 50만원 추가 저축", "기존 대출 100만원 조기상환"
+
+#### 단기 계획 (1년 내)
+- 구체적인 목표와 달성 방법
+- 예: "비상금 1000만원 확보", "투자 포트폴리오 재조정"
+
+#### 중장기 계획 (3-5년)
+- 구체적인 목표와 실행 전략
+- 예: "부동산 투자 2억원", "연금 보험 가입"
+
+### 5. 시나리오별 대응 방안
+- 최악의 시나리오 (경기침체, 실직 등)
+- 최선의 시나리오 (예상보다 높은 수익)
+- 각 시나리오별 대응 전략
+
+### 6. 구체적 수치 제시
+- 모든 제안에 구체적인 금액과 시점 명시
+- 예상 수익률과 리스크 수준 제시
+- ROI(투자수익률) 계산 포함
+
+## 출력 형식
+1. **현재 상황 요약** (3-4줄)
+2. **핵심 문제점 3가지** (우선순위별)
+3. **즉시 실행 액션** (구체적 금액과 방법)
+4. **단기 계획** (1년 내 목표와 방법)
+5. **중장기 전략** (3-5년 계획)
+6. **위험 관리 방안**
+7. **예상 결과** (구체적 수치로)
+
+모든 제안은 한국의 금융 환경과 세제를 고려하여 현실적이고 실행 가능한 수준으로 제시해주세요.
+
+## 재무 데이터
+${JSON.stringify(analysisData, null, 2)}`;
+
+      // 클립보드에 프롬프트와 데이터를 함께 복사
+      await navigator.clipboard.writeText(promptText);
+      alert(
+        "AI 분석용 프롬프트와 데이터가 클립보드에 복사되었습니다!\nChatGPT에 붙여넣기하여 AI 조언을 받아보세요."
+      );
+    } catch (error) {
+      console.error("AI 분석 데이터 생성 오류:", error);
+      alert("AI 분석 데이터 생성 중 오류가 발생했습니다.");
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   // 카테고리별 이름 매핑
   const getCategoryName = (categoryId) => {
     const categoryMap = {
@@ -936,6 +1029,13 @@ function DashboardPage() {
           </div>
         </div>
         <div className={styles.profileActions}>
+          <button
+            className={styles.aiButton}
+            onClick={handleGenerateAIAnalysis}
+            disabled={isGeneratingAI}
+          >
+            {isGeneratingAI ? "AI 분석 중..." : "AI 분석 데이터 추출"}
+          </button>
           <button
             className={styles.calculatorButton}
             onClick={() => setIsCalculatorModalOpen(true)}
