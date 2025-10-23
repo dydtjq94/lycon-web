@@ -522,8 +522,9 @@ export function calculateAssetSimulation(
     const yearCashflow = cashflowData.find((cf) => cf.year === year);
     const netCashflow = yearCashflow ? yearCashflow.amount : 0;
 
-    // 현금 흐름을 현재 현금에 적용
-    currentCash += netCashflow;
+    // 현금 흐름을 현재 현금에 적용 (부동소수점 오류 방지)
+    const previousCash = currentCash;
+    currentCash = Math.round((currentCash + netCashflow) * 100) / 100;
 
     // 해당 연도의 저축 계산 (ID별로)
     Object.keys(savingsById).forEach((id) => {
@@ -535,14 +536,13 @@ export function calculateAssetSimulation(
 
       // endYear + 1년에 저축을 현금으로 전환 (현금흐름 시뮬레이션에서만 처리)
       if (year === saving.endYear + 1) {
-        // 현금흐름 시뮬레이션에서 계산된 저축 만료 금액을 현금에 추가
-        if (yearCashflow && yearCashflow.savingMaturity) {
-          currentCash += yearCashflow.savingMaturity;
-        }
+        // 현금흐름 시뮬레이션에서 이미 계산된 저축 만료 금액이 netCashflow에 포함되어 있으므로
+        // 여기서 추가로 currentCash에 더하지 않음 (중복 방지)
 
-        // 저축을 비활성화 (자산 차트에서 제거됨)
+        // 저축을 즉시 비활성화 (자산 차트에서 제거됨)
         saving.isActive = false;
         saving.amount = 0; // 전환 후 금액 초기화
+
         return; // 전환 후 더 이상 처리하지 않음
       }
 
