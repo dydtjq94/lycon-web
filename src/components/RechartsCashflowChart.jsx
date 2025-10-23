@@ -249,74 +249,66 @@ function RechartsCashflowChart({
                           </div>
                         </div>
                         <div className={styles.tooltipDetails}>
-                          {/* 수입 항목들 */}
-                          {incomes
-                            .filter(
-                              (income) =>
-                                data.year >= income.startYear &&
-                                data.year <= income.endYear
-                            )
-                            .map((income, index) => {
-                              const yearsElapsed = data.year - income.startYear;
-                              const growthRate = income.growthRate / 100;
-                              const yearlyAmount =
-                                income.frequency === "monthly"
-                                  ? income.amount * 12
-                                  : income.amount;
-                              const adjustedAmount =
-                                yearlyAmount *
-                                Math.pow(1 + growthRate, yearsElapsed);
+                          {/* 모든 항목을 수집하고 +와 -로 분리하여 정렬 */}
+                          {(() => {
+                            const allItems = [];
 
-                              return (
-                                <div
-                                  key={`income-${index}`}
-                                  className={styles.tooltipItem}
-                                >
-                                  <span className={styles.tooltipLabel}>
-                                    {income.title}:
-                                  </span>
-                                  <span className={styles.tooltipValue}>
-                                    +{formatAmountForChart(adjustedAmount)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          {/* 지출 항목들 */}
-                          {expenses
-                            .filter(
-                              (expense) =>
-                                data.year >= expense.startYear &&
-                                data.year <= expense.endYear
-                            )
-                            .map((expense, index) => {
-                              const yearsElapsed =
-                                data.year - expense.startYear;
-                              const growthRate = expense.growthRate / 100;
-                              const yearlyAmount =
-                                expense.frequency === "monthly"
-                                  ? expense.amount * 12
-                                  : expense.amount;
-                              const adjustedAmount =
-                                yearlyAmount *
-                                Math.pow(1 + growthRate, yearsElapsed);
+                            // 수입 항목들
+                            incomes
+                              .filter(
+                                (income) =>
+                                  data.year >= income.startYear &&
+                                  data.year <= income.endYear
+                              )
+                              .forEach((income, index) => {
+                                const yearsElapsed =
+                                  data.year - income.startYear;
+                                const growthRate = income.growthRate / 100;
+                                const yearlyAmount =
+                                  income.frequency === "monthly"
+                                    ? income.amount * 12
+                                    : income.amount;
+                                const adjustedAmount =
+                                  yearlyAmount *
+                                  Math.pow(1 + growthRate, yearsElapsed);
 
-                              return (
-                                <div
-                                  key={`expense-${index}`}
-                                  className={styles.tooltipItem}
-                                >
-                                  <span className={styles.tooltipLabel}>
-                                    {expense.title}:
-                                  </span>
-                                  <span className={styles.tooltipValue}>
-                                    -{formatAmountForChart(adjustedAmount)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          {/* 연금 항목들 - 각 연금별로 하나씩만 표시 */}
-                          {pensions
-                            .map((pension, index) => {
+                                allItems.push({
+                                  key: `income-${index}`,
+                                  label: income.title,
+                                  value: adjustedAmount,
+                                  type: "positive",
+                                });
+                              });
+
+                            // 지출 항목들
+                            expenses
+                              .filter(
+                                (expense) =>
+                                  data.year >= expense.startYear &&
+                                  data.year <= expense.endYear
+                              )
+                              .forEach((expense, index) => {
+                                const yearsElapsed =
+                                  data.year - expense.startYear;
+                                const growthRate = expense.growthRate / 100;
+                                const yearlyAmount =
+                                  expense.frequency === "monthly"
+                                    ? expense.amount * 12
+                                    : expense.amount;
+                                const adjustedAmount =
+                                  yearlyAmount *
+                                  Math.pow(1 + growthRate, yearsElapsed);
+
+                                allItems.push({
+                                  key: `expense-${index}`,
+                                  label: expense.title,
+                                  value: adjustedAmount,
+                                  type: "negative",
+                                });
+                              });
+
+                            // 연금 항목들
+                            pensions.forEach((pension, index) => {
                               let displayAmount = 0;
                               let displayLabel = pension.title;
                               let shouldShow = false;
@@ -340,8 +332,22 @@ function RechartsCashflowChart({
                                   shouldShow = true;
                                 }
                               } else {
-                                // 개인연금/퇴직연금: 수령 기간에만 표시 (적립 기간은 표시하지 않음)
+                                // 개인연금/퇴직연금: 적립 기간과 수령 기간 모두 표시
                                 if (
+                                  data.year >= pension.contributionStartYear &&
+                                  data.year <= pension.contributionEndYear
+                                ) {
+                                  // 적립 기간: 적립액 표시 (마이너스)
+                                  const monthlyAmount =
+                                    pension.contributionFrequency === "monthly"
+                                      ? pension.contributionAmount
+                                      : pension.contributionAmount / 12;
+                                  const yearlyContribution = monthlyAmount * 12;
+
+                                  displayAmount = yearlyContribution; // 양수로 설정 (툴팁에서 - 붙임)
+                                  displayLabel = `${pension.title} (적립)`;
+                                  shouldShow = true;
+                                } else if (
                                   data.year >= pension.paymentStartYear &&
                                   data.year <= pension.paymentEndYear
                                 ) {
@@ -382,373 +388,254 @@ function RechartsCashflowChart({
                                 }
                               }
 
-                              // 표시할 항목만 반환
-                              if (!shouldShow) return null;
+                              if (shouldShow) {
+                                // 연금 적립은 항상 negative, 수령은 항상 positive
+                                const itemType = displayLabel.includes("(적립)")
+                                  ? "negative"
+                                  : "positive";
 
-                              return (
-                                <div
-                                  key={`pension-${index}`}
-                                  className={styles.tooltipItem}
-                                >
-                                  <span className={styles.tooltipLabel}>
-                                    {displayLabel}:
-                                  </span>
-                                  <span className={styles.tooltipValue}>
-                                    {displayAmount >= 0 ? "+" : ""}
-                                    {formatAmountForChart(displayAmount)}
-                                  </span>
-                                </div>
-                              );
-                            })
-                            .filter(Boolean)}{" "}
-                          {/* null 값 제거 */}
-                          {/* 저축/투자 항목들 */}
-                          {savings
-                            .filter(
-                              (saving) =>
-                                data.year >= saving.startYear &&
-                                data.year <= saving.endYear
-                            )
-                            .map((saving, index) => {
-                              const yearsElapsed = data.year - saving.startYear;
-                              const yearlyGrowthRate =
-                                saving.yearlyGrowthRate || 0; // yearlyGrowthRate 사용
-
-                              if (saving.frequency === "one_time") {
-                                // 일회성 저축: 시작년도에만 표시
-                                if (data.year === saving.startYear) {
-                                  return (
-                                    <div
-                                      key={`saving-${index}`}
-                                      className={styles.tooltipItem}
-                                    >
-                                      <span className={styles.tooltipLabel}>
-                                        {saving.title}:
-                                      </span>
-                                      <span className={styles.tooltipValue}>
-                                        -{formatAmountForChart(saving.amount)}
-                                      </span>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              } else {
-                                // 월간/연간 저축
-                                const monthlyAmount =
-                                  saving.frequency === "monthly"
-                                    ? saving.amount
-                                    : saving.amount / 12;
-
-                                // 년간 저축 상승률 적용
-                                const adjustedMonthlyAmount =
-                                  monthlyAmount *
-                                  Math.pow(1 + yearlyGrowthRate, yearsElapsed);
-                                const yearlyAmount = adjustedMonthlyAmount * 12;
-
-                                return (
-                                  <div
-                                    key={`saving-${index}`}
-                                    className={styles.tooltipItem}
-                                  >
-                                    <span className={styles.tooltipLabel}>
-                                      {saving.title}:
-                                    </span>
-                                    <span className={styles.tooltipValue}>
-                                      -{formatAmountForChart(yearlyAmount)}
-                                    </span>
-                                  </div>
-                                );
+                                allItems.push({
+                                  key: `pension-${index}`,
+                                  label: displayLabel,
+                                  value: Math.abs(displayAmount), // 절댓값으로 저장
+                                  type: itemType,
+                                });
                               }
-                            })}
-                          {/* 부동산 항목들 */}
-                          {realEstates
-                            .filter(
-                              (realEstate) =>
-                                (realEstate.hasRentalIncome &&
-                                  data.year >=
-                                    realEstate.rentalIncomeStartYear &&
-                                  data.year <=
-                                    realEstate.rentalIncomeEndYear) ||
-                                (realEstate.convertToPension &&
-                                  data.year >= realEstate.pensionStartYear)
-                            )
-                            .map((realEstate, index) => {
-                              const items = [];
+                            });
 
-                              // 임대수입이 있는 경우
-                              if (
-                                realEstate.hasRentalIncome &&
-                                data.year >= realEstate.rentalIncomeStartYear &&
-                                data.year <= realEstate.rentalIncomeEndYear
-                              ) {
-                                const rentalIncome = yearData.rentalIncome || 0;
-                                const rentalCount = realEstates.filter(
-                                  (re) =>
-                                    re.hasRentalIncome &&
-                                    data.year >= re.rentalIncomeStartYear &&
-                                    data.year <= re.rentalIncomeEndYear
-                                ).length;
+                            // 저축/투자 항목들
+                            savings
+                              .filter(
+                                (saving) =>
+                                  data.year >= saving.startYear &&
+                                  data.year <= saving.endYear
+                              )
+                              .forEach((saving, index) => {
+                                const yearsElapsed =
+                                  data.year - saving.startYear;
+                                const yearlyGrowthRate =
+                                  saving.yearlyGrowthRate || 0;
 
-                                const individualRentalAmount =
-                                  rentalCount > 0
-                                    ? rentalIncome / rentalCount
-                                    : 0;
-
-                                items.push(
-                                  <div
-                                    key={`rental-${index}`}
-                                    className={styles.tooltipItem}
-                                  >
-                                    <span className={styles.tooltipLabel}>
-                                      {realEstate.title} (임대수입):
-                                    </span>
-                                    <span className={styles.tooltipValue}>
-                                      +
-                                      {formatAmountForChart(
-                                        individualRentalAmount
-                                      )}
-                                    </span>
-                                  </div>
-                                );
-                              }
-
-                              // 주택연금이 있는 경우
-                              if (
-                                realEstate.convertToPension &&
-                                data.year >= realEstate.pensionStartYear
-                              ) {
-                                const pensionIncome =
-                                  yearData.realEstatePension || 0;
-                                const pensionCount = realEstates.filter(
-                                  (re) =>
-                                    re.convertToPension &&
-                                    data.year >= re.pensionStartYear
-                                ).length;
-
-                                const individualPensionAmount =
-                                  pensionCount > 0
-                                    ? pensionIncome / pensionCount
-                                    : 0;
-
-                                items.push(
-                                  <div
-                                    key={`pension-${index}`}
-                                    className={styles.tooltipItem}
-                                  >
-                                    <span className={styles.tooltipLabel}>
-                                      {realEstate.title} (주택연금):
-                                    </span>
-                                    <span className={styles.tooltipValue}>
-                                      +
-                                      {formatAmountForChart(
-                                        individualPensionAmount
-                                      )}
-                                    </span>
-                                  </div>
-                                );
-                              }
-
-                              return items;
-                            })
-                            .flat()}
-                          {/* 자산 항목들 */}
-                          {assets
-                            .filter(
-                              (asset) =>
-                                asset.assetType === "income" &&
-                                asset.incomeRate > 0 &&
-                                data.year >= asset.startYear &&
-                                data.year <= asset.endYear
-                            )
-                            .map((asset, index) => {
-                              // detailedData에서 자산수익 가져오기
-                              const assetIncome = yearData.assetIncome || 0;
-                              const assetCount = assets.filter(
-                                (a) =>
-                                  a.assetType === "income" &&
-                                  a.incomeRate > 0 &&
-                                  data.year >= a.startYear &&
-                                  data.year <= a.endYear
-                              ).length;
-
-                              // 여러 자산이 있을 경우 개별 금액 계산
-                              const individualAmount =
-                                assetCount > 0 ? assetIncome / assetCount : 0;
-
-                              return (
-                                <div
-                                  key={`asset-${index}`}
-                                  className={styles.tooltipItem}
-                                >
-                                  <span className={styles.tooltipLabel}>
-                                    {asset.title}:
-                                  </span>
-                                  <span className={styles.tooltipValue}>
-                                    +{formatAmountForChart(individualAmount)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          {/* 부채 항목들 - 개별 계산 */}
-                          {debts
-                            .filter(
-                              (debt) =>
-                                data.year >= debt.startYear &&
-                                data.year <= debt.endYear
-                            )
-                            .map((debt, index) => {
-                              // 각 부채별로 개별 계산
-                              const yearsElapsed = data.year - debt.startYear;
-                              const totalYears =
-                                debt.endYear - debt.startYear + 1;
-                              const interestRate = debt.interestRate;
-                              let yearlyInterest = 0;
-                              let yearlyPrincipal = 0;
-
-                              if (debt.debtType === "bullet") {
-                                // 만기일시상환: 만기년도까지 이자만 지불, 만기년도에 원금 상환
-                                if (data.year < debt.endYear) {
-                                  yearlyInterest =
-                                    debt.debtAmount * interestRate;
-                                } else if (data.year === debt.endYear) {
-                                  yearlyInterest =
-                                    debt.debtAmount * interestRate;
-                                  yearlyPrincipal = debt.debtAmount;
-                                }
-                              } else if (debt.debtType === "equal") {
-                                // 원리금균등상환: 매년 동일한 금액 상환
-                                if (totalYears > 0 && interestRate > 0) {
-                                  const pmt =
-                                    (debt.debtAmount *
-                                      (interestRate *
-                                        Math.pow(
-                                          1 + interestRate,
-                                          totalYears
-                                        ))) /
-                                    (Math.pow(1 + interestRate, totalYears) -
-                                      1);
-
-                                  // 남은 원금 계산
-                                  let remainingPrincipal = debt.debtAmount;
-                                  for (let i = 0; i < yearsElapsed; i++) {
-                                    const interestPayment =
-                                      remainingPrincipal * interestRate;
-                                    const principalPayment =
-                                      pmt - interestPayment;
-                                    remainingPrincipal -= principalPayment;
+                                if (saving.frequency === "one_time") {
+                                  // 일회성 저축: 시작년도에만 표시
+                                  if (data.year === saving.startYear) {
+                                    allItems.push({
+                                      key: `saving-${index}`,
+                                      label: saving.title,
+                                      value: saving.amount,
+                                      type: "negative",
+                                    });
                                   }
+                                } else {
+                                  // 월간/연간 저축
+                                  const monthlyAmount =
+                                    saving.frequency === "monthly"
+                                      ? saving.amount
+                                      : saving.amount / 12;
+                                  const adjustedMonthlyAmount =
+                                    monthlyAmount *
+                                    Math.pow(
+                                      1 + yearlyGrowthRate,
+                                      yearsElapsed
+                                    );
+                                  const yearlyAmount =
+                                    adjustedMonthlyAmount * 12;
 
-                                  yearlyInterest =
-                                    remainingPrincipal * interestRate;
-                                  yearlyPrincipal = pmt - yearlyInterest;
-                                } else if (interestRate === 0) {
-                                  yearlyPrincipal =
-                                    debt.debtAmount / totalYears;
+                                  allItems.push({
+                                    key: `saving-${index}`,
+                                    label: saving.title,
+                                    value: yearlyAmount,
+                                    type: "negative",
+                                  });
                                 }
-                              } else if (debt.debtType === "principal") {
-                                // 원금균등상환: 매년 동일한 원금 상환
-                                const yearlyPrincipalPayment =
-                                  debt.debtAmount / totalYears;
-                                const paidPrincipal =
-                                  yearlyPrincipalPayment * yearsElapsed;
-                                const remainingPrincipal =
-                                  debt.debtAmount - paidPrincipal;
+                              });
 
-                                yearlyInterest =
-                                  remainingPrincipal * interestRate;
-                                yearlyPrincipal = yearlyPrincipalPayment;
-                              } else if (debt.debtType === "grace") {
-                                // 거치식상환: 거치기간 동안 이자만 지불, 이후 원금 균등상환 + 남은 원금의 이자
-                                const gracePeriod = debt.gracePeriod || 0;
-                                const graceEndYear =
-                                  debt.startYear + gracePeriod - 1; // 거치기간 마지막 년도
-                                const repaymentYears =
-                                  debt.endYear - graceEndYear; // 상환기간
-
-                                if (data.year <= graceEndYear) {
-                                  // 거치기간: 이자만 지불 (거치기간 마지막 년도 포함)
-                                  yearlyInterest =
-                                    debt.debtAmount * interestRate;
-                                } else if (
-                                  data.year > graceEndYear &&
+                            // 부채 항목들
+                            debts
+                              .filter(
+                                (debt) =>
+                                  data.year >= debt.startYear &&
                                   data.year <= debt.endYear
-                                ) {
-                                  // 상환기간: 원금을 균등하게 상환 + 남은 원금의 이자
-                                  const yearlyPrincipalPayment =
-                                    debt.debtAmount / repaymentYears;
-                                  const repaymentYearsElapsed =
-                                    data.year - graceEndYear; // 상환 시작 후 경과년수 (1부터 시작)
+                              )
+                              .forEach((debt, index) => {
+                                const yearsElapsed = data.year - debt.startYear;
+                                const totalYears =
+                                  debt.endYear - debt.startYear + 1;
+                                const interestRate = debt.interestRate;
+                                let yearlyInterest = 0;
+                                let yearlyPrincipal = 0;
 
-                                  // 현재 년도의 남은 원금 계산 (이전 해까지 갚은 금액 제외)
+                                if (debt.debtType === "bullet") {
+                                  if (data.year < debt.endYear) {
+                                    yearlyInterest =
+                                      debt.debtAmount * interestRate;
+                                  } else if (data.year === debt.endYear) {
+                                    yearlyInterest =
+                                      debt.debtAmount * interestRate;
+                                    yearlyPrincipal = debt.debtAmount;
+                                  }
+                                } else if (debt.debtType === "equal") {
+                                  if (totalYears > 0 && interestRate > 0) {
+                                    const pmt =
+                                      (debt.debtAmount *
+                                        (interestRate *
+                                          Math.pow(
+                                            1 + interestRate,
+                                            totalYears
+                                          ))) /
+                                      (Math.pow(1 + interestRate, totalYears) -
+                                        1);
+                                    let remainingPrincipal = debt.debtAmount;
+                                    for (let i = 0; i < yearsElapsed; i++) {
+                                      const interestPayment =
+                                        remainingPrincipal * interestRate;
+                                      const principalPayment =
+                                        pmt - interestPayment;
+                                      remainingPrincipal -= principalPayment;
+                                    }
+                                    yearlyInterest =
+                                      remainingPrincipal * interestRate;
+                                    yearlyPrincipal = pmt - yearlyInterest;
+                                  } else if (interestRate === 0) {
+                                    yearlyPrincipal =
+                                      debt.debtAmount / totalYears;
+                                  }
+                                } else if (debt.debtType === "principal") {
+                                  const yearlyPrincipalPayment =
+                                    debt.debtAmount / totalYears;
                                   const paidPrincipal =
-                                    yearlyPrincipalPayment *
-                                    (repaymentYearsElapsed - 1);
+                                    yearlyPrincipalPayment * yearsElapsed;
                                   const remainingPrincipal =
                                     debt.debtAmount - paidPrincipal;
-
-                                  // 현재 년도의 이자와 원금
                                   yearlyInterest =
                                     remainingPrincipal * interestRate;
                                   yearlyPrincipal = yearlyPrincipalPayment;
+                                } else if (debt.debtType === "grace") {
+                                  const gracePeriod = debt.gracePeriod || 0;
+                                  const graceEndYear =
+                                    debt.startYear + gracePeriod - 1;
+                                  const repaymentYears =
+                                    debt.endYear - graceEndYear;
+
+                                  if (data.year <= graceEndYear) {
+                                    yearlyInterest =
+                                      debt.debtAmount * interestRate;
+                                  } else if (
+                                    data.year > graceEndYear &&
+                                    data.year <= debt.endYear
+                                  ) {
+                                    const yearlyPrincipalPayment =
+                                      debt.debtAmount / repaymentYears;
+                                    const repaymentYearsElapsed =
+                                      data.year - graceEndYear;
+                                    const paidPrincipal =
+                                      yearlyPrincipalPayment *
+                                      (repaymentYearsElapsed - 1);
+                                    const remainingPrincipal =
+                                      debt.debtAmount - paidPrincipal;
+                                    yearlyInterest =
+                                      remainingPrincipal * interestRate;
+                                    yearlyPrincipal = yearlyPrincipalPayment;
+                                  }
                                 }
-                              }
 
-                              const totalDebtPayment =
-                                yearlyInterest + yearlyPrincipal;
+                                const totalDebtPayment =
+                                  yearlyInterest + yearlyPrincipal;
+                                if (totalDebtPayment > 0) {
+                                  allItems.push({
+                                    key: `debt-${index}`,
+                                    label: debt.title,
+                                    value: totalDebtPayment,
+                                    type: "negative",
+                                  });
+                                }
+                              });
 
-                              return (
-                                <div
-                                  key={`debt-${index}`}
-                                  className={styles.tooltipItem}
-                                >
-                                  <span className={styles.tooltipLabel}>
-                                    {debt.title}:
-                                  </span>
-                                  <span className={styles.tooltipValue}>
-                                    -{formatAmountForChart(totalDebtPayment)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          {/* 부동산 매각 수입 */}
-                          {yearData.realEstateSale > 0 && (
-                            <div className={styles.tooltipItem}>
-                              <span className={styles.tooltipLabel}>
-                                부동산 매각:
-                              </span>
-                              <span className={styles.tooltipValue}>
-                                +{formatAmountForChart(yearData.realEstateSale)}
-                              </span>
-                            </div>
-                          )}
-                          {/* 자산 매각 수입 */}
-                          {yearData.assetSale > 0 && (
-                            <div className={styles.tooltipItem}>
-                              <span className={styles.tooltipLabel}>
-                                자산 매각:
-                              </span>
-                              <span className={styles.tooltipValue}>
-                                +{formatAmountForChart(yearData.assetSale)}
-                              </span>
-                            </div>
-                          )}
-                          {/* 저축 만료 수입 */}
-                          {yearData.savingMaturity > 0 && (
-                            <div className={styles.tooltipItem}>
-                              <span className={styles.tooltipLabel}>
-                                {savings
-                                  .filter(
-                                    (saving) => data.year === saving.endYear + 1
-                                  )
-                                  .map((saving) => saving.title)
-                                  .join(", ")}{" "}
-                                (만료):
-                              </span>
-                              <span className={styles.tooltipValue}>
-                                +{formatAmountForChart(yearData.savingMaturity)}
-                              </span>
-                            </div>
-                          )}
+                            // 부동산 수입
+                            if (yearData.realEstateSale > 0) {
+                              allItems.push({
+                                key: "realEstateSale",
+                                label: "부동산 매각",
+                                value: yearData.realEstateSale,
+                                type: "positive",
+                              });
+                            }
+
+                            // 자산 수입
+                            if (yearData.assetSale > 0) {
+                              allItems.push({
+                                key: "assetSale",
+                                label: "자산 매각",
+                                value: yearData.assetSale,
+                                type: "positive",
+                              });
+                            }
+
+                            // 저축 만료
+                            if (yearData.savingMaturity > 0) {
+                              allItems.push({
+                                key: "savingMaturity",
+                                label: "저축 만료",
+                                value: yearData.savingMaturity,
+                                type: "positive",
+                              });
+                            }
+
+                            // +와 -로 분리하여 정렬
+                            const positiveItems = allItems
+                              .filter((item) => item.type === "positive")
+                              .sort((a, b) => b.value - a.value); // 금액 내림차순
+
+                            const negativeItems = allItems
+                              .filter((item) => item.type === "negative")
+                              .sort((a, b) => b.value - a.value); // 금액 내림차순
+
+                            return (
+                              <>
+                                {/* 수입 항목들 (+ 표시) */}
+                                {positiveItems.map((item) => (
+                                  <div
+                                    key={item.key}
+                                    className={styles.tooltipItem}
+                                  >
+                                    <span
+                                      className={styles.tooltipLabel}
+                                      style={{ color: "#10b981" }}
+                                    >
+                                      {item.label}:
+                                    </span>
+                                    <span
+                                      className={styles.tooltipValue}
+                                      style={{ color: "#10b981" }}
+                                    >
+                                      +{formatAmountForChart(item.value)}
+                                    </span>
+                                  </div>
+                                ))}
+
+                                {/* 지출 항목들 (- 표시) */}
+                                {negativeItems.map((item) => (
+                                  <div
+                                    key={item.key}
+                                    className={styles.tooltipItem}
+                                  >
+                                    <span
+                                      className={styles.tooltipLabel}
+                                      style={{ color: "#ef4444" }}
+                                    >
+                                      {item.label}:
+                                    </span>
+                                    <span
+                                      className={styles.tooltipValue}
+                                      style={{ color: "#ef4444" }}
+                                    >
+                                      -{formatAmountForChart(item.value)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     );
