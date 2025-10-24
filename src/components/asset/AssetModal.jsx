@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { formatAmount, formatAmountForChart } from "../../utils/format";
+import { calculateKoreanAge } from "../../utils/koreanAge";
 import styles from "./AssetModal.module.css";
 
 /**
@@ -305,6 +306,18 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
                 placeholder="종료 연도"
               />
             </div>
+            {/* 년도별 나이 표시 */}
+            {formData.startYear && profileData && profileData.birthYear && (
+              <div className={styles.agePreview}>
+                {calculateKoreanAge(profileData.birthYear, formData.startYear)}
+                세
+                {formData.endYear &&
+                  ` ~ ${calculateKoreanAge(
+                    profileData.birthYear,
+                    formData.endYear
+                  )}세`}
+              </div>
+            )}
             {(errors.startYear || errors.endYear) && (
               <span className={styles.errorText}>
                 {errors.startYear || errors.endYear}

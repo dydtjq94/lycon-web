@@ -20,12 +20,12 @@
 
 .scrollContainer::-webkit-scrollbar-track {
   background: #f3f4f6;
-  border-radius: 2px;
+  border-radius: 0;
 }
 
 .scrollContainer::-webkit-scrollbar-thumb {
   background: #d1d5db;
-  border-radius: 2px;
+  border-radius: 0;
 }
 
 .scrollContainer::-webkit-scrollbar-thumb:hover {
@@ -38,7 +38,7 @@
   padding: 8px 12px;
   background: transparent;
   border: 1px solid #e3e3e3;
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
@@ -54,7 +54,7 @@
 }
 
 .financeCard:active {
-  border-color: #374151;
+  border-color: #f8f8f8;
   background: #f3f4f6;
 }
 
@@ -85,7 +85,7 @@
   border: none;
   font-size: 0.6rem;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 0;
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -102,7 +102,7 @@
 
 .deleteButton:hover {
   background-color: #f3f4f6;
-  color: #111827;
+  color: #d4af37;
 }
 
 /* 빈 상태 */
@@ -110,7 +110,7 @@
   text-align: center;
   padding: 40px 20px;
   background: #f9fafb;
-  border-radius: 12px;
+  border-radius: 0;
   border: 1px dashed #d1d5db;
 }
 
@@ -167,7 +167,7 @@
 
   .emptyState {
     background: #111827;
-    border-color: #374151;
+    border-color: #f8f8f8;
   }
 
   .emptyMessage {
@@ -183,7 +183,7 @@
   }
 
   .deleteButton:hover {
-    /* background-color: #374151; */
+    /* background-color: #f8f8f8; */
     color: #d1d5db;
   }
 }

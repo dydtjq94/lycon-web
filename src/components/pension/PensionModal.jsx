@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./PensionModal.module.css";
 import { formatAmountForChart } from "../../utils/format";
+import { calculateKoreanAge } from "../../utils/koreanAge";
 
 /**
  * 연금 데이터 추가/수정 모달
@@ -18,11 +19,19 @@ function PensionModal({
     const currentYear = new Date().getFullYear();
 
     // 프로필 데이터에서 현재 나이 가져오기
-    let currentAge = 30; // 기본값 (프로필 데이터가 없을 때만 사용)
+    let currentAge = 40; // 기본값 (프로필 데이터가 없을 때만 사용)
 
     if (profileData) {
+      // birthYear가 있는 경우 (만 나이로 계산)
+      if (profileData.birthYear) {
+        currentAge = currentYear - parseInt(profileData.birthYear);
+      }
+      // currentKoreanAge가 있는 경우 (이미 만 나이로 저장됨)
+      else if (profileData.currentKoreanAge) {
+        currentAge = parseInt(profileData.currentKoreanAge);
+      }
       // birthDate가 있는 경우
-      if (profileData.birthDate) {
+      else if (profileData.birthDate) {
         const birthDate = new Date(profileData.birthDate);
         const today = new Date();
         currentAge = today.getFullYear() - birthDate.getFullYear();
@@ -36,19 +45,16 @@ function PensionModal({
           currentAge--;
         }
       }
-      // currentKoreanAge가 있는 경우 (더 정확한 나이)
-      else if (profileData.currentKoreanAge) {
-        currentAge = parseInt(profileData.currentKoreanAge);
-      }
-      // birthYear가 있는 경우
-      else if (profileData.birthYear) {
-        currentAge = currentYear - parseInt(profileData.birthYear);
-      }
     }
 
-    // 현재 나이를 기준으로 65세와 90세가 되는 년도 계산
-    const age65Year = currentYear + (65 - currentAge);
-    const age90Year = currentYear + (90 - currentAge);
+    // 만 나이 기준으로 65세와 90세가 되는 년도 계산
+    // 출생년도 + 65 = 만 65세가 되는 년도
+    // 출생년도 + 90 = 만 90세가 되는 년도
+    const birthYear = profileData?.birthYear
+      ? parseInt(profileData.birthYear)
+      : currentYear - currentAge;
+    const age65Year = birthYear + 65; // 만 65세가 되는 년도
+    const age90Year = birthYear + 90; // 만 90세가 되는 년도
 
     return { age65Year, age90Year, currentAge };
   };
@@ -109,7 +115,7 @@ function PensionModal({
           monthlyAmount: "",
           startYear: age65Year,
           endYear: age90Year,
-          inflationRate: 2.5,
+          inflationRate: 2,
           currentAmount: "",
           contributionAmount: "",
           contributionFrequency: "monthly",
@@ -157,9 +163,20 @@ function PensionModal({
       }
     }
 
-    // 현재 나이를 기준으로 65세와 90세가 되는 년도 계산
-    const age65Year = currentYear + (65 - currentAge);
-    const age90Year = currentYear + (90 - currentAge);
+    // 출생년도 기준으로 나이 계산 (만 나이 기준)
+    const birthYear = profileData?.birthYear
+      ? parseInt(profileData.birthYear)
+      : currentYear - currentAge;
+
+    // 은퇴 나이 계산
+    const retirementAge = profileData?.retirementAge || 54;
+    const retirementYear = birthYear + retirementAge; // 은퇴 년도
+    const retirementYearPlus1 = retirementYear + 1; // 은퇴 년도 + 1
+    const paymentEndYear = retirementYearPlus1 + 9; // 은퇴 년도 + 1부터 10년간
+
+    // 국민연금용 (65세, 90세)
+    const age65Year = birthYear + 65;
+    const age90Year = birthYear + 90;
 
     let newFormData = { ...formData, type: newType };
 
@@ -172,9 +189,15 @@ function PensionModal({
         break;
       case "retirement":
         newFormData.title = "퇴직연금";
+        newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
+        newFormData.paymentStartYear = retirementYearPlus1; // 은퇴 나이 + 1부터 수령
+        newFormData.paymentEndYear = paymentEndYear; // 10년간 수령
         break;
       case "personal":
         newFormData.title = "개인연금";
+        newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
+        newFormData.paymentStartYear = retirementYearPlus1; // 은퇴 나이 + 1부터 수령
+        newFormData.paymentEndYear = paymentEndYear; // 10년간 수령
         break;
     }
 
@@ -429,6 +452,18 @@ function PensionModal({
                         className={styles.input}
                         placeholder="2025"
                       />
+                      {/* 수령 시작년도 나이 표시 */}
+                      {formData.startYear &&
+                        profileData &&
+                        profileData.birthYear && (
+                          <div className={styles.agePreview}>
+                            {calculateKoreanAge(
+                              profileData.birthYear,
+                              formData.startYear
+                            )}
+                            세
+                          </div>
+                        )}
                     </div>
 
                     <div className={styles.field}>
@@ -448,6 +483,18 @@ function PensionModal({
                         }`}
                         placeholder="2045"
                       />
+                      {/* 수령 종료년도 나이 표시 */}
+                      {formData.endYear &&
+                        profileData &&
+                        profileData.birthYear && (
+                          <div className={styles.agePreview}>
+                            {calculateKoreanAge(
+                              profileData.birthYear,
+                              formData.endYear
+                            )}
+                            세
+                          </div>
+                        )}
                       {errors.endYear && (
                         <span className={styles.errorText}>
                           {errors.endYear}
@@ -579,6 +626,18 @@ function PensionModal({
                         className={styles.input}
                         placeholder="2025"
                       />
+                      {/* 적립 시작년도 나이 표시 */}
+                      {formData.contributionStartYear &&
+                        profileData &&
+                        profileData.birthYear && (
+                          <div className={styles.agePreview}>
+                            {calculateKoreanAge(
+                              profileData.birthYear,
+                              formData.contributionStartYear
+                            )}
+                            세
+                          </div>
+                        )}
                     </div>
 
                     <div className={styles.field}>
@@ -598,6 +657,18 @@ function PensionModal({
                         }`}
                         placeholder="2035"
                       />
+                      {/* 적립 종료년도 나이 표시 */}
+                      {formData.contributionEndYear &&
+                        profileData &&
+                        profileData.birthYear && (
+                          <div className={styles.agePreview}>
+                            {calculateKoreanAge(
+                              profileData.birthYear,
+                              formData.contributionEndYear
+                            )}
+                            세
+                          </div>
+                        )}
                       {errors.contributionEndYear && (
                         <span className={styles.errorText}>
                           {errors.contributionEndYear}
@@ -648,6 +719,18 @@ function PensionModal({
                         }`}
                         placeholder="2041"
                       />
+                      {/* 수령 시작년도 나이 표시 */}
+                      {formData.paymentStartYear &&
+                        profileData &&
+                        profileData.birthYear && (
+                          <div className={styles.agePreview}>
+                            {calculateKoreanAge(
+                              profileData.birthYear,
+                              formData.paymentStartYear
+                            )}
+                            세
+                          </div>
+                        )}
                       {errors.paymentStartYear && (
                         <span className={styles.errorText}>
                           {errors.paymentStartYear}
@@ -672,6 +755,18 @@ function PensionModal({
                         }`}
                         placeholder="2050"
                       />
+                      {/* 수령 종료년도 나이 표시 */}
+                      {formData.paymentEndYear &&
+                        profileData &&
+                        profileData.birthYear && (
+                          <div className={styles.agePreview}>
+                            {calculateKoreanAge(
+                              profileData.birthYear,
+                              formData.paymentEndYear
+                            )}
+                            세
+                          </div>
+                        )}
                       {errors.paymentEndYear && (
                         <span className={styles.errorText}>
                           {errors.paymentEndYear}

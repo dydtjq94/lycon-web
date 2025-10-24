@@ -1,11 +1,12 @@
 /**
  * 현금흐름 시뮬레이션 계산 유틸리티
  */
+import { calculateKoreanAge } from "./koreanAge";
 
 /**
- * 수입 데이터를 기반으로 현금흐름 시뮬레이션을 계산합니다.
+ * 소득 데이터를 기반으로 현금흐름 시뮬레이션을 계산합니다.
  * @param {Object} profileData - 프로필 데이터
- * @param {Array} incomes - 수입 데이터 배열
+ * @param {Array} incomes - 소득 데이터 배열
  * @param {Array} expenses - 지출 데이터 배열 (추후 구현)
  * @param {Array} savings - 저축 데이터 배열 (추후 구현)
  * @param {Array} pensions - 연금 데이터 배열 (추후 구현)
@@ -22,7 +23,7 @@ export function calculateCashflowSimulation(
   debts = [] // 부채 데이터 추가
 ) {
   const currentYear = new Date().getFullYear();
-  const startAge = profileData.currentKoreanAge;
+  const startAge = calculateKoreanAge(profileData.birthYear, currentYear); // 만 나이로 실시간 계산
   const deathAge = 90;
   const simulationYears = deathAge - startAge + 1;
 
@@ -37,7 +38,7 @@ export function calculateCashflowSimulation(
     let totalSavings = 0;
     let totalPension = 0;
 
-    // 수입 계산
+    // 소득 계산
     incomes.forEach((income) => {
       if (year >= income.startYear && year <= income.endYear) {
         const yearsElapsed = year - income.startYear;
@@ -294,12 +295,12 @@ export function calculateCashflowSimulation(
     });
 
     // 부동산 관련 계산
-    let totalRentalIncome = 0; // 임대 수입
+    let totalRentalIncome = 0; // 임대 소득
     let totalRealEstatePension = 0; // 주택연금 수령액
     let totalRealEstateSale = 0; // 부동산 매각 수입
 
     realEstates.forEach((realEstate) => {
-      // 임대 수입 계산
+      // 임대 소득 계산
       if (
         realEstate.hasRentalIncome &&
         year >= realEstate.rentalIncomeStartYear &&
@@ -353,7 +354,7 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 현금흐름 = 수입 - 지출 - 저축 + 연금 + 임대수입 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 - 부채이자 - 부채원금상환 (각 년도별 순현금흐름)
+    // 현금흐름 = 소득 - 지출 - 저축 + 연금 + 임대소득 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 - 부채이자 - 부채원금상환 (각 년도별 순현금흐름)
     const netCashflow =
       totalIncome -
       totalExpense -
@@ -406,7 +407,7 @@ export function calculateAssetSimulation(
 ) {
   // 현재는 더미 데이터 반환
   const currentYear = new Date().getFullYear();
-  const startAge = profileData.currentKoreanAge;
+  const startAge = calculateKoreanAge(profileData.birthYear, currentYear); // 만 나이로 실시간 계산
   const deathAge = 90;
   const simulationYears = deathAge - startAge + 1;
 
@@ -912,7 +913,7 @@ export function calculateAssetSimulation(
  */
 export function calculateDebtSimulation(profileData, debts = []) {
   const currentYear = new Date().getFullYear();
-  const startAge = profileData.currentKoreanAge;
+  const startAge = calculateKoreanAge(profileData.birthYear, currentYear); // 만 나이로 실시간 계산
   const deathAge = 90;
   const simulationYears = deathAge - startAge + 1;
 
@@ -1094,9 +1095,9 @@ export function extractAIAnalysisData(
     // 기본 정보
     profile: {
       name: profileData.name,
-      currentAge: profileData.currentKoreanAge,
+      currentAge: calculateKoreanAge(profileData.birthYear), // 만 나이로 실시간 계산
       retirementAge: profileData.retirementAge,
-      retirementYear: profileData.retirementYear,
+      retirementYear: profileData.birthYear + profileData.retirementAge, // 만 나이 기준으로 계산
       currentCash: profileData.currentCash || 0,
       targetAssets: profileData.targetAssets,
     },

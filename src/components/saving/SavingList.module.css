@@ -57,7 +57,7 @@
   font-style: italic;
   background: #f9fafb;
   padding: 0.5rem;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-top: 0.5rem;
 }
 
@@ -73,7 +73,7 @@
   font-size: 0.75rem;
   cursor: pointer;
   padding: 0.25rem;
-  border-radius: 4px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,20 +87,18 @@
 
 .emptyState {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: 40px 20px;
   color: #6b7280;
 }
 
-.emptyMessage {
-  font-size: 1rem;
-  font-weight: 500;
-  margin: 0 0 0.5rem 0;
+.emptyState p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
 }
 
-.emptySubMessage {
-  font-size: 0.875rem;
-  margin: 0;
-  opacity: 0.8;
+.emptyState p:last-child {
+  font-size: 12px;
+  color: #9ca3af;
 }
 
 /* 반응형 디자인 */

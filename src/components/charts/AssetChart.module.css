@@ -19,7 +19,7 @@
 .chartTitle {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #111827;
+  color: #6b7280;
   margin: 0;
 }
 
@@ -40,7 +40,7 @@
 .legendColor {
   width: 12px;
   height: 12px;
-  border-radius: 2px;
+  border-radius: 12px;
 }
 
 .chartWrapper {
@@ -93,7 +93,7 @@
   text-align: center;
   background: white;
   padding: 0.25rem;
-  border-radius: 4px;
+  border-radius: 12px;
 }
 
 .retirementMarker {
@@ -120,7 +120,7 @@
   background: #6b7280;
   color: white;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 500;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -150,7 +150,7 @@
   background: #f59e0b;
   color: white;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 500;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

@@ -1,4 +1,4 @@
-/* 수입 모달 스타일 */
+/* 소득 모달 스타일 */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -110,6 +110,14 @@
 }
 
 .amountPreview {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-weight: 500;
+  margin-left: 12px;
+}
+
+.agePreview {
   font-size: 0.7rem;
   color: #6b7280;
   margin-top: 0.25rem;

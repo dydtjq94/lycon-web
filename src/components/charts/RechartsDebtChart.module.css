@@ -20,15 +20,15 @@
   color: #6b7280;
   font-size: 16px;
   background: #f9fafb;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 2px dashed #d1d5db;
 }
 
 /* 커스텀 툴팁 스타일 */
 .customTooltip {
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 2px solid #d4af37;
+  border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   padding: 12px;
   font-size: 12px;
@@ -43,7 +43,7 @@
 
 .tooltipTitle {
   font-weight: 600;
-  color: #111827;
+  color: #6b7280;
   font-size: 13px;
 }
 
@@ -65,7 +65,7 @@
 }
 
 .tooltipValue {
-  color: #111827;
+  color: #6b7280;
   font-weight: 600;
   text-align: right;
 }

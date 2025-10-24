@@ -27,16 +27,9 @@ function ProfileSummary({
     ...(debts || []).map((item) => ({ ...item, category: "debt" })),
   ];
 
-  // 항목이 없을 때 표시
+  // 항목이 없을 때는 아무것도 표시하지 않음
   if (allFinanceItems.length === 0) {
-    return (
-      <div className={styles.emptyState}>
-        <p className={styles.emptyMessage}>재무 항목이 없습니다.</p>
-        <p className={styles.emptySubMessage}>
-          + 추가 버튼을 눌러 재무 항목을 추가해보세요.
-        </p>
-      </div>
-    );
+    return null;
   }
 
   // 카드 클릭 핸들러

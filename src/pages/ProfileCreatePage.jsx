@@ -8,6 +8,7 @@ import {
   pensionService,
   realEstateService,
 } from "../services/firestoreService";
+import { simulationService } from "../services/simulationService";
 import { formatAmountForChart } from "../utils/format";
 import styles from "./ProfileCreatePage.module.css";
 
@@ -33,12 +34,17 @@ function ProfileCreatePage() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 기본 수입 데이터 생성 함수
-  const createDefaultIncomes = async (profileId, birthYear, retirementAge) => {
+  // 기본 소득 데이터 생성 함수
+  const createDefaultIncomes = async (
+    profileId,
+    simulationId,
+    birthYear,
+    retirementAge
+  ) => {
     const currentYear = new Date().getFullYear();
-    const currentAge = currentYear - birthYear + 1; // 현재 나이 계산
+    const currentAge = currentYear - birthYear; // 현재 만 나이 계산
     const yearsToRetirement = retirementAge - currentAge; // 은퇴까지 남은 년수
-    const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도
+    const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도 (예: 1994년생 55살 은퇴 = 2049년)
     const yearsToDeath = 90 - currentAge; // 죽을 때까지 남은 년수
     const deathYear = currentYear + yearsToDeath; // 죽을 년도
 
@@ -81,21 +87,21 @@ function ProfileCreatePage() {
       },
     ];
 
-    // 각 기본 수입 데이터를 Firebase에 저장
+    // 각 기본 소득 데이터를 Firebase에 저장
     for (const income of defaultIncomes) {
       try {
-        await incomeService.createIncome(profileId, income);
+        await incomeService.createIncome(profileId, simulationId, income);
       } catch (error) {
-        console.error(`기본 수입 데이터 생성 오류 (${income.title}):`, error);
+        console.error(`기본 소득 데이터 생성 오류 (${income.title}):`, error);
       }
     }
   };
 
   // 기본 국민연금 데이터 생성 함수
-  const createDefaultPension = async (profileId, birthYear) => {
+  const createDefaultPension = async (profileId, simulationId, birthYear) => {
     const currentYear = new Date().getFullYear();
-    const age65Year = birthYear + 65 - 1; // 65세가 되는 년도
-    const age90Year = birthYear + 90 - 1; // 90세가 되는 년도
+    const age65Year = birthYear + 65; // 만 65세가 되는 년도
+    const age90Year = birthYear + 90; // 만 90세가 되는 년도
 
     const nationalPension = {
       title: "국민연금",
@@ -107,11 +113,15 @@ function ProfileCreatePage() {
       memo: "기본 국민연금",
     };
 
-    await pensionService.createPension(profileId, nationalPension);
+    await pensionService.createPension(
+      profileId,
+      simulationId,
+      nationalPension
+    );
   };
 
   // 기본 부동산 데이터 생성 함수
-  const createDefaultRealEstate = async (profileId) => {
+  const createDefaultRealEstate = async (profileId, simulationId) => {
     const currentYear = new Date().getFullYear();
 
     const defaultRealEstate = {
@@ -130,20 +140,25 @@ function ProfileCreatePage() {
       memo: "기본 부동산 자산",
     };
 
-    await realEstateService.createRealEstate(profileId, defaultRealEstate);
+    await realEstateService.createRealEstate(
+      profileId,
+      simulationId,
+      defaultRealEstate
+    );
   };
 
   // 기본 지출 데이터 생성 함수
   const createDefaultExpenses = async (
     profileId,
+    simulationId,
     birthYear,
     retirementAge,
     retirementLivingExpenses
   ) => {
     const currentYear = new Date().getFullYear();
-    const currentAge = currentYear - birthYear + 1; // 현재 나이 계산
+    const currentAge = currentYear - birthYear; // 현재 만 나이 계산
     const yearsToRetirement = retirementAge - currentAge; // 은퇴까지 남은 년수
-    const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도
+    const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도 (예: 1994년생 55살 은퇴 = 2049년)
     const yearsToDeath = 90 - currentAge; // 죽을 때까지 남은 년수
     const deathYear = currentYear + yearsToDeath; // 죽을 년도
 
@@ -173,7 +188,7 @@ function ProfileCreatePage() {
     // 각 기본 지출 데이터를 Firebase에 저장
     for (const expense of defaultExpenses) {
       try {
-        await expenseService.createExpense(profileId, expense);
+        await expenseService.createExpense(profileId, simulationId, expense);
       } catch (error) {
         console.error(`기본 지출 데이터 생성 오류 (${expense.title}):`, error);
       }
@@ -362,23 +377,41 @@ function ProfileCreatePage() {
       const createdProfile = await profileService.createProfile(profileData);
       console.log("생성된 프로필:", createdProfile);
 
-      // 기본 수입 데이터 생성
+      // 기본 시뮬레이션("현재") 생성
+      let defaultSimulationId;
+      try {
+        defaultSimulationId = await simulationService.createSimulation(
+          createdProfile.id,
+          {
+            title: "현재",
+            isDefault: true,
+          }
+        );
+        console.log("기본 시뮬레이션 생성 완료:", defaultSimulationId);
+      } catch (error) {
+        console.error("기본 시뮬레이션 생성 오류:", error);
+        throw new Error("기본 시뮬레이션 생성에 실패했습니다.");
+      }
+
+      // 기본 소득 데이터 생성
       try {
         await createDefaultIncomes(
           createdProfile.id,
+          defaultSimulationId,
           birthYear,
           formData.retirementAge
         );
-        console.log("기본 수입 데이터 생성 완료");
+        console.log("기본 소득 데이터 생성 완료");
       } catch (error) {
-        console.error("기본 수입 데이터 생성 오류:", error);
-        // 기본 수입 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
+        console.error("기본 소득 데이터 생성 오류:", error);
+        // 기본 소득 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
       }
 
       // 기본 지출 데이터 생성
       try {
         await createDefaultExpenses(
           createdProfile.id,
+          defaultSimulationId,
           birthYear,
           formData.retirementAge,
           formData.retirementLivingExpenses
@@ -391,7 +424,11 @@ function ProfileCreatePage() {
 
       // 기본 국민연금 데이터 생성
       try {
-        await createDefaultPension(createdProfile.id, birthYear);
+        await createDefaultPension(
+          createdProfile.id,
+          defaultSimulationId,
+          birthYear
+        );
         console.log("기본 국민연금 데이터 생성 완료");
       } catch (error) {
         console.error("기본 국민연금 데이터 생성 오류:", error);
@@ -400,7 +437,7 @@ function ProfileCreatePage() {
 
       // 기본 부동산 데이터 생성
       try {
-        await createDefaultRealEstate(createdProfile.id);
+        await createDefaultRealEstate(createdProfile.id, defaultSimulationId);
         console.log("기본 부동산 데이터 생성 완료");
       } catch (error) {
         console.error("기본 부동산 데이터 생성 오류:", error);
@@ -465,7 +502,7 @@ function ProfileCreatePage() {
 
             <div className={styles.field}>
               <label htmlFor="birthYear" className={styles.label}>
-                출생년도 * (현재 한국 나이:{" "}
+                출생년도 * (현재 만 나이:{" "}
                 {formData.birthYear
                   ? calculateKoreanAge(parseInt(formData.birthYear))
                   : "?"}
@@ -498,8 +535,7 @@ function ProfileCreatePage() {
                 은퇴 목표 연령 * (은퇴년도:{" "}
                 {formData.birthYear && formData.retirementAge
                   ? parseInt(formData.birthYear) +
-                    parseInt(formData.retirementAge) -
-                    1
+                    parseInt(formData.retirementAge)
                   : "?"}
                 년)
               </label>
@@ -667,7 +703,7 @@ function ProfileCreatePage() {
 
                 <div className={styles.field}>
                   <label htmlFor="spouseBirthYear" className={styles.label}>
-                    배우자 출생년도 * (현재 한국 나이:{" "}
+                    배우자 출생년도 * (현재 만 나이:{" "}
                     {formData.spouseBirthYear
                       ? calculateKoreanAge(parseInt(formData.spouseBirthYear))
                       : "?"}
@@ -762,7 +798,7 @@ function ProfileCreatePage() {
 
                   <div className={styles.field}>
                     <label className={styles.label}>
-                      출생년도 (현재 한국 나이:{" "}
+                      출생년도 (현재 만 나이:{" "}
                       {member.birthYear
                         ? calculateKoreanAge(parseInt(member.birthYear))
                         : "?"}

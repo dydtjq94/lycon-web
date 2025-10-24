@@ -68,6 +68,7 @@ function RechartsCashflowChart({
 
   return (
     <div className={styles.chartContainer}>
+      <h3 className={styles.chartTitle}>가계 현금흐름</h3>
       <div className={styles.chartWrapper}>
         <ResponsiveContainer width="100%" height={500}>
           <BarChart

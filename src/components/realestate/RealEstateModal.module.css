@@ -48,7 +48,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 12px;
   transition: background-color 0.2s;
 }
 
@@ -76,7 +76,7 @@
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 14px;
   transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
@@ -96,7 +96,7 @@
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 14px;
   font-family: inherit;
   resize: vertical;
@@ -146,6 +146,14 @@
   margin-left: 12px;
 }
 
+.agePreview {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-weight: 500;
+  margin-left: 12px;
+}
+
 .buttonGroup {
   display: flex;
   gap: 12px;
@@ -158,7 +166,7 @@
 .cancelButton {
   padding: 10px 20px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 12px;
   background: white;
   color: #374151;
   font-size: 14px;
@@ -175,7 +183,7 @@
 .saveButton {
   padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   background: #3b82f6;
   color: white;
   font-size: 14px;

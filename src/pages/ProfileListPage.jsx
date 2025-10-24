@@ -59,7 +59,7 @@ function ProfileListPage() {
     }
   };
 
-  // 한국 나이 계산 (이미 calculateKoreanAge 함수를 import했으므로 제거)
+  // 만 나이 계산 (calculateKoreanAge 함수 사용)
 
   if (loading) {
     return (
@@ -107,15 +107,14 @@ function ProfileListPage() {
                   <div className={styles.detailItem}>
                     <span className={styles.label}>현재 나이:</span>
                     <span className={styles.value}>
-                      {profile.currentKoreanAge ||
-                        calculateKoreanAge(profile.birthYear)}
-                      세
+                      {calculateKoreanAge(profile.birthYear)}세
                     </span>
                   </div>
                   <div className={styles.detailItem}>
                     <span className={styles.label}>은퇴 나이:</span>
                     <span className={styles.value}>
-                      {profile.retirementAge}세 ({profile.retirementYear}년)
+                      {profile.retirementAge}세 (
+                      {profile.birthYear + profile.retirementAge}년)
                     </span>
                   </div>
                   <div className={styles.detailItem}>

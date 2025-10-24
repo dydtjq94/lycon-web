@@ -43,9 +43,7 @@ function PensionList({ pensions, onEdit, onDelete }) {
   if (pensions.length === 0) {
     return (
       <div className={styles.emptyState}>
-        <div className={styles.emptyIcon}>💰</div>
-        <div className={styles.emptyText}>등록된 연금이 없습니다</div>
-        <div className={styles.emptySubtext}>연금을 추가해보세요</div>
+        <p>등록된 연금이 없습니다.</p>
       </div>
     );
   }

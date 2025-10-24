@@ -17,10 +17,11 @@
 }
 
 .chartTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0 0 0.5rem 0;
+  text-align: left;
 }
 
 .chartWrapper {
@@ -63,10 +64,10 @@
 
 .detailedItem {
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  border: 2px solid #d4af37;
 }
 
 .yearHeader {
@@ -81,14 +82,14 @@
 .year {
   font-size: 1rem;
   font-weight: 600;
-  color: #374151;
+  color: #f8f8f8;
 }
 
 .amount {
   font-size: 1.125rem;
   font-weight: 700;
   padding: 0.25rem 0.75rem;
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 .amount.positive {
@@ -122,7 +123,7 @@
 
 .value {
   font-weight: 600;
-  color: #374151;
+  color: #f8f8f8;
 }
 
 /* 커스텀 툴팁 스타일 */
@@ -148,7 +149,7 @@
 .tooltipTitle {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: #111827;
 }
 
 .tooltipAmount {
@@ -197,7 +198,7 @@
 
 .tooltipValue {
   font-weight: 600;
-  color: #374151;
+  color: #111827;
 }
 
 /* 반응형 디자인 */

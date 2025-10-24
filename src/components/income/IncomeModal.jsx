@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import styles from "./IncomeModal.module.css";
 import { formatAmountForChart } from "../../utils/format";
+import { calculateKoreanAge } from "../../utils/koreanAge";
 
 /**
- * 수입 데이터 추가/수정 모달
+ * 소득 데이터 추가/수정 모달
  */
 function IncomeModal({
   isOpen,
@@ -12,12 +13,12 @@ function IncomeModal({
   editData = null,
   profileData = null,
 }) {
-  // 은퇴년도 계산
+  // 은퇴년도 계산 (만 나이 기준)
   const getRetirementYear = () => {
     if (profileData && profileData.birthYear && profileData.retirementAge) {
-      return profileData.birthYear + profileData.retirementAge - 1; // 설정된 은퇴 나이
+      return profileData.birthYear + profileData.retirementAge; // 설정된 은퇴 나이 (만 나이 기준)
     }
-    return new Date().getFullYear() + 10; // 기본값
+    return new Date().getFullYear() + 11; // 기본값
   };
 
   const [formData, setFormData] = useState({
@@ -26,8 +27,8 @@ function IncomeModal({
     amount: "",
     startYear: new Date().getFullYear(),
     endYear: getRetirementYear(),
-    memo: "",
-    growthRate: "2.5", // 기본 상승률 2.5%
+    memo: "10년 평균물가상승률 반영",
+    growthRate: "2.0", // 기본 상승률 2.0%
   });
 
   const [errors, setErrors] = useState({});
@@ -46,7 +47,7 @@ function IncomeModal({
           memo: editData.memo || "",
           growthRate: editData.growthRate
             ? editData.growthRate.toString()
-            : "2.5",
+            : "2.0",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -56,8 +57,8 @@ function IncomeModal({
           amount: "",
           startYear: new Date().getFullYear(),
           endYear: getRetirementYear(),
-          memo: "",
-          growthRate: "2.5",
+          memo: "10년 평균물가상승률 반영",
+          growthRate: "2.0",
         });
       }
     }
@@ -68,7 +69,7 @@ function IncomeModal({
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "수입 항목명을 입력해주세요.";
+      newErrors.title = "소득 항목명을 입력해주세요.";
     }
 
     if (!formData.amount || formData.amount < 0) {
@@ -116,8 +117,8 @@ function IncomeModal({
       amount: "",
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
-      memo: "",
-      growthRate: "2.5",
+      memo: "10년 평균물가상승률 반영",
+      growthRate: "2.0",
     });
     setErrors({});
     onClose();
@@ -130,7 +131,7 @@ function IncomeModal({
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>
-            {editData ? "수입 수정" : "수입 추가"}
+            {editData ? "소득 수정" : "소득 추가"}
           </h2>
           <button className={styles.closeButton} onClick={handleClose}>
             ×
@@ -138,10 +139,10 @@ function IncomeModal({
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          {/* 수입 항목명 */}
+          {/* 소득 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
-              수입 항목명 *
+              소득 항목명 *
             </label>
             <input
               type="text"
@@ -162,7 +163,7 @@ function IncomeModal({
           <div className={styles.row}>
             <div className={styles.field}>
               <label htmlFor="frequency" className={styles.label}>
-                빈도 *
+                주기 *
               </label>
               <select
                 id="frequency"
@@ -228,6 +229,16 @@ function IncomeModal({
                   if (!/[0-9.]/.test(e.key)) e.preventDefault();
                 }}
               />
+              {/* 시작년도 나이 표시 */}
+              {formData.startYear && profileData && profileData.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(
+                    profileData.birthYear,
+                    formData.startYear
+                  )}
+                  세
+                </div>
+              )}
             </div>
 
             <div className={styles.field}>
@@ -251,6 +262,13 @@ function IncomeModal({
                   if (!/[0-9.]/.test(e.key)) e.preventDefault();
                 }}
               />
+              {/* 종료년도 나이 표시 */}
+              {formData.endYear && profileData && profileData.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(profileData.birthYear, formData.endYear)}
+                  세
+                </div>
+              )}
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}
@@ -279,7 +297,7 @@ function IncomeModal({
               className={`${styles.input} ${
                 errors.growthRate ? styles.error : ""
               }`}
-              placeholder="2.5"
+              placeholder="2.0"
             />
             {errors.growthRate && (
               <span className={styles.errorText}>{errors.growthRate}</span>

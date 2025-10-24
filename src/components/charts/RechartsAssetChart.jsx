@@ -171,6 +171,7 @@ function RechartsAssetChart({
 
   return (
     <div className={styles.chartContainer}>
+      <h3 className={styles.chartTitle}>가계 자산 규모</h3>
       <div className={styles.chartWrapper}>
         <ResponsiveContainer width="100%" height={500}>
           <BarChart
@@ -242,9 +243,7 @@ function RechartsAssetChart({
                         </span>
                         {cashNegativeTransition &&
                           data.age === cashNegativeTransition.age && (
-                            <div className={styles.cashWarning}>
-                              ⚠️ 현금 위험 시점
-                            </div>
+                            <div className={styles.cashWarning}>!현금 위험</div>
                           )}
                       </div>
 

@@ -3,16 +3,13 @@ import { formatAmount } from "../../utils/format";
 import styles from "./IncomeList.module.css";
 
 /**
- * 수입 데이터 목록 컴포넌트
+ * 소득 데이터 목록 컴포넌트
  */
 function IncomeList({ incomes, onEdit, onDelete }) {
   if (!incomes || incomes.length === 0) {
     return (
       <div className={styles.emptyState}>
-        <p className={styles.emptyMessage}>수입 데이터가 없습니다.</p>
-        <p className={styles.emptySubMessage}>
-          + 추가 버튼을 눌러 수입을 추가해보세요.
-        </p>
+        <p>등록된 소득이 없습니다.</p>
       </div>
     );
   }
@@ -20,8 +17,8 @@ function IncomeList({ incomes, onEdit, onDelete }) {
   return (
     <div className={styles.incomeList}>
       {incomes.map((income) => (
-        <div 
-          key={income.id} 
+        <div
+          key={income.id}
           className={styles.incomeItem}
           onClick={() => onEdit(income)}
         >

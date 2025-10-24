@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./ExpenseModal.module.css";
 import { formatAmountForChart } from "../../utils/format";
+import { calculateKoreanAge } from "../../utils/koreanAge";
 
 /**
  * 지출 데이터 추가/수정 모달
@@ -12,12 +13,12 @@ function ExpenseModal({
   editData = null,
   profileData = null,
 }) {
-  // 은퇴년도 계산
+  // 은퇴년도 계산 (55세까지)
   const getRetirementYear = () => {
     if (profileData && profileData.birthYear && profileData.retirementAge) {
-      return profileData.birthYear + profileData.retirementAge - 1; // 설정된 은퇴 나이
+      return profileData.birthYear + profileData.retirementAge; // 설정된 은퇴 나이 + 1년
     }
-    return new Date().getFullYear() + 10; // 기본값
+    return new Date().getFullYear() + 11; // 기본값 + 1년
   };
 
   const [formData, setFormData] = useState({
@@ -26,8 +27,8 @@ function ExpenseModal({
     amount: "",
     startYear: new Date().getFullYear(),
     endYear: getRetirementYear(),
-    memo: "",
-    growthRate: "2.5", // % 단위로 기본값 설정
+    memo: "10년 평균물가상승률 반영",
+    growthRate: "2.0", // % 단위로 기본값 설정
   });
 
   const [errors, setErrors] = useState({});
@@ -46,7 +47,7 @@ function ExpenseModal({
           memo: editData.memo || "",
           growthRate: editData.growthRate
             ? editData.growthRate.toString()
-            : "2.5",
+            : "2.0",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -56,8 +57,8 @@ function ExpenseModal({
           amount: "",
           startYear: new Date().getFullYear(),
           endYear: getRetirementYear(),
-          memo: "",
-          growthRate: "2.5",
+          memo: "10년 평균물가상승률 반영",
+          growthRate: "2.0",
         });
       }
     }
@@ -123,8 +124,8 @@ function ExpenseModal({
       amount: "",
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
-      memo: "",
-      growthRate: "2.5",
+      memo: "10년 평균물가상승률 반영",
+      growthRate: "2.0",
     });
     setErrors({});
     onClose();
@@ -169,7 +170,7 @@ function ExpenseModal({
           <div className={styles.row}>
             <div className={styles.field}>
               <label htmlFor="frequency" className={styles.label}>
-                빈도 *
+                주기 *
               </label>
               <select
                 id="frequency"
@@ -233,6 +234,16 @@ function ExpenseModal({
                 className={styles.input}
                 placeholder="2025"
               />
+              {/* 시작년도 나이 표시 */}
+              {formData.startYear && profileData && profileData.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(
+                    profileData.birthYear,
+                    formData.startYear
+                  )}
+                  세
+                </div>
+              )}
             </div>
 
             <div className={styles.field}>
@@ -256,6 +267,13 @@ function ExpenseModal({
                 }`}
                 placeholder="2035"
               />
+              {/* 종료년도 나이 표시 */}
+              {formData.endYear && profileData && profileData.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(profileData.birthYear, formData.endYear)}
+                  세
+                </div>
+              )}
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}
@@ -280,7 +298,7 @@ function ExpenseModal({
               }}
               onKeyPress={handleKeyPress}
               className={styles.input}
-              placeholder="2.5 (마이너스 가능: -1.0)"
+              placeholder="2.0 (마이너스 가능: -1.0)"
             />
           </div>
 

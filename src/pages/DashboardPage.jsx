@@ -17,6 +17,9 @@ import {
   assetService,
   debtService,
 } from "../services/firestoreService";
+import { simulationService } from "../services/simulationService";
+import { migrateProfileData } from "../utils/dataMigration";
+import SimulationTabs from "../components/simulation/SimulationTabs";
 import RechartsCashflowChart from "../components/charts/RechartsCashflowChart";
 import RechartsAssetChart from "../components/charts/RechartsAssetChart";
 import IncomeModal from "../components/income/IncomeModal";
@@ -54,6 +57,11 @@ function DashboardPage() {
     cashflow: [],
     assets: [],
   });
+
+  // 시뮬레이션 관련 state
+  const [simulations, setSimulations] = useState([]); // 모든 시뮬레이션 목록
+  const [activeSimulationId, setActiveSimulationId] = useState(null); // 현재 활성화된 시뮬레이션 ID
+
   const [incomes, setIncomes] = useState([]);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState(null);
@@ -119,33 +127,112 @@ function DashboardPage() {
     };
   }, [profileId, navigate]);
 
-  // 수입 데이터 로드
+  // 시뮬레이션 목록 로드 및 자동 마이그레이션
   useEffect(() => {
-    const loadIncomes = async () => {
+    const loadSimulations = async () => {
       if (!profileId) return;
 
       try {
-        const incomeData = await incomeService.getIncomes(profileId);
+        console.log("시뮬레이션 목록 조회 시작");
+        const simulationList = await simulationService.getSimulations(
+          profileId
+        );
+
+        if (simulationList.length === 0) {
+          console.log("시뮬레이션이 없습니다. 자동 마이그레이션 시작...");
+
+          // 기존 데이터를 새 구조로 자동 마이그레이션
+          const migrationResult = await migrateProfileData(profileId);
+
+          if (migrationResult.success) {
+            console.log("마이그레이션 성공:", migrationResult);
+
+            // 마이그레이션 후 시뮬레이션 다시 로드
+            const updatedSimulations = await simulationService.getSimulations(
+              profileId
+            );
+            setSimulations(updatedSimulations);
+
+            // 기본 시뮬레이션 활성화
+            const defaultSim = updatedSimulations.find(
+              (sim) => sim.isDefault === true
+            );
+            if (defaultSim) {
+              setActiveSimulationId(defaultSim.id);
+              console.log("기본 시뮬레이션 활성화:", defaultSim.id);
+            }
+          } else {
+            console.error("마이그레이션 실패:", migrationResult);
+            // 마이그레이션이 필요없는 경우(이미 완료된 경우)는 무시
+            if (migrationResult.simulationCount > 0) {
+              const updatedSimulations = await simulationService.getSimulations(
+                profileId
+              );
+              setSimulations(updatedSimulations);
+              const defaultSim = updatedSimulations.find(
+                (sim) => sim.isDefault === true
+              );
+              if (defaultSim) {
+                setActiveSimulationId(defaultSim.id);
+              }
+            }
+          }
+          return;
+        }
+
+        setSimulations(simulationList);
+
+        // 기본 시뮬레이션을 활성화
+        const defaultSim = simulationList.find((sim) => sim.isDefault === true);
+        if (defaultSim) {
+          setActiveSimulationId(defaultSim.id);
+          console.log("기본 시뮬레이션 활성화:", defaultSim.id);
+        } else {
+          // 기본 시뮬레이션이 없으면 첫 번째 시뮬레이션 활성화
+          setActiveSimulationId(simulationList[0].id);
+          console.log("첫 번째 시뮬레이션 활성화:", simulationList[0].id);
+        }
+      } catch (error) {
+        console.error("시뮬레이션 목록 조회 오류:", error);
+      }
+    };
+
+    loadSimulations();
+  }, [profileId]);
+
+  // 소득 데이터 로드
+  useEffect(() => {
+    const loadIncomes = async () => {
+      if (!profileId || !activeSimulationId) return;
+
+      try {
+        const incomeData = await incomeService.getIncomes(
+          profileId,
+          activeSimulationId
+        );
         // 생성 순서대로 정렬 (createdAt 기준)
         const sortedIncomes = incomeData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
         setIncomes(sortedIncomes);
       } catch (error) {
-        console.error("수입 데이터 로드 오류:", error);
+        console.error("소득 데이터 로드 오류:", error);
       }
     };
 
     loadIncomes();
-  }, [profileId]);
+  }, [profileId, activeSimulationId]);
 
   // 지출 데이터 로드
   useEffect(() => {
     const loadExpenses = async () => {
-      if (!profileId) return;
+      if (!profileId || !activeSimulationId) return;
 
       try {
-        const expenseData = await expenseService.getExpenses(profileId);
+        const expenseData = await expenseService.getExpenses(
+          profileId,
+          activeSimulationId
+        );
         // 생성 순서대로 정렬 (createdAt 기준)
         const sortedExpenses = expenseData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
@@ -157,15 +244,18 @@ function DashboardPage() {
     };
 
     loadExpenses();
-  }, [profileId]);
+  }, [profileId, activeSimulationId]);
 
   // 저축/투자 데이터 로드
   useEffect(() => {
     const loadSavings = async () => {
-      if (!profileId) return;
+      if (!profileId || !activeSimulationId) return;
 
       try {
-        const savingData = await savingsService.getSavings(profileId);
+        const savingData = await savingsService.getSavings(
+          profileId,
+          activeSimulationId
+        );
         // 생성 순서대로 정렬 (createdAt 기준)
         const sortedSavings = savingData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
@@ -177,15 +267,18 @@ function DashboardPage() {
     };
 
     loadSavings();
-  }, [profileId]);
+  }, [profileId, activeSimulationId]);
 
   // 연금 데이터 로드
   useEffect(() => {
     const loadPensions = async () => {
-      if (!profileId) return;
+      if (!profileId || !activeSimulationId) return;
 
       try {
-        const pensionData = await pensionService.getPensions(profileId);
+        const pensionData = await pensionService.getPensions(
+          profileId,
+          activeSimulationId
+        );
         // 생성 순서대로 정렬 (createdAt 기준)
         const sortedPensions = pensionData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
@@ -197,16 +290,17 @@ function DashboardPage() {
     };
 
     loadPensions();
-  }, [profileId]);
+  }, [profileId, activeSimulationId]);
 
   // 부동산 데이터 로드
   useEffect(() => {
     const loadRealEstates = async () => {
-      if (!profileId) return;
+      if (!profileId || !activeSimulationId) return;
 
       try {
         const realEstateData = await realEstateService.getRealEstates(
-          profileId
+          profileId,
+          activeSimulationId
         );
         // 생성 순서대로 정렬 (createdAt 기준)
         const sortedRealEstates = realEstateData.sort(
@@ -219,15 +313,18 @@ function DashboardPage() {
     };
 
     loadRealEstates();
-  }, [profileId]);
+  }, [profileId, activeSimulationId]);
 
   // 자산 데이터 로드
   useEffect(() => {
     const loadAssets = async () => {
-      if (!profileId) return;
+      if (!profileId || !activeSimulationId) return;
 
       try {
-        const assetsData = await assetService.getAssets(profileId);
+        const assetsData = await assetService.getAssets(
+          profileId,
+          activeSimulationId
+        );
         // 생성 순서대로 정렬 (createdAt 기준)
         const sortedAssets = assetsData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
@@ -239,15 +336,18 @@ function DashboardPage() {
     };
 
     loadAssets();
-  }, [profileId]);
+  }, [profileId, activeSimulationId]);
 
   // 부채 데이터 로드
   useEffect(() => {
     const loadDebts = async () => {
-      if (!profileId) return;
+      if (!profileId || !activeSimulationId) return;
 
       try {
-        const debtData = await debtService.getDebts(profileId);
+        const debtData = await debtService.getDebts(
+          profileId,
+          activeSimulationId
+        );
         // 생성 순서대로 정렬 (createdAt 기준)
         const sortedDebts = debtData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
@@ -259,7 +359,7 @@ function DashboardPage() {
     };
 
     loadDebts();
-  }, [profileId]);
+  }, [profileId, activeSimulationId]);
 
   // 시뮬레이션 데이터 생성
   const generateSimulationData = useCallback(
@@ -269,7 +369,7 @@ function DashboardPage() {
       }
 
       const currentYear = new Date().getFullYear();
-      const startAge = parseInt(profileData.currentKoreanAge);
+      const startAge = calculateKoreanAge(profileData.birthYear, currentYear); // 만 나이로 실시간 계산
       const retirementAge = parseInt(profileData.retirementAge);
       const deathAge = 90;
       const startYear = currentYear;
@@ -299,7 +399,7 @@ function DashboardPage() {
         years.push({ year, age });
       }
 
-      // 실제 수입 데이터를 기반으로 현금흐름 시뮬레이션 계산
+      // 실제 소득 데이터를 기반으로 현금흐름 시뮬레이션 계산
       const cashflow = calculateCashflowSimulation(
         profileData,
         incomes,
@@ -333,7 +433,7 @@ function DashboardPage() {
     [incomes, expenses, savings, pensions, realEstates, assets, debts]
   );
 
-  // 수입 데이터가 변경될 때마다 시뮬레이션 재계산
+  // 소득 데이터가 변경될 때마다 시뮬레이션 재계산
   useEffect(() => {
     if (profileData) {
       generateSimulationData(profileData);
@@ -378,7 +478,7 @@ function DashboardPage() {
     setSidebarView("categories");
   };
 
-  // 수입 데이터 핸들러들
+  // 소득 데이터 핸들러들
   const handleAddIncome = () => {
     setEditingIncome(null);
     setIsIncomeModalOpen(true);
@@ -395,6 +495,7 @@ function DashboardPage() {
         // 수정
         await incomeService.updateIncome(
           profileId,
+          activeSimulationId,
           editingIncome.id,
           incomeData
         );
@@ -409,23 +510,24 @@ function DashboardPage() {
         // 추가
         const newIncome = await incomeService.createIncome(
           profileId,
+          activeSimulationId,
           incomeData
         );
         setIncomes([...incomes, newIncome]);
       }
     } catch (error) {
-      console.error("수입 데이터 저장 오류:", error);
+      console.error("소득 데이터 저장 오류:", error);
     }
   };
 
   const handleDeleteIncome = async (incomeId) => {
-    if (!window.confirm("이 수입 데이터를 삭제하시겠습니까?")) return;
+    if (!window.confirm("이 소득 데이터를 삭제하시겠습니까?")) return;
 
     try {
-      await incomeService.deleteIncome(profileId, incomeId);
+      await incomeService.deleteIncome(profileId, activeSimulationId, incomeId);
       setIncomes(incomes.filter((income) => income.id !== incomeId));
     } catch (error) {
-      console.error("수입 데이터 삭제 오류:", error);
+      console.error("소득 데이터 삭제 오류:", error);
     }
   };
 
@@ -452,6 +554,7 @@ function DashboardPage() {
         // 수정
         await expenseService.updateExpense(
           profileId,
+          activeSimulationId,
           editingExpense.id,
           expenseData
         );
@@ -466,6 +569,7 @@ function DashboardPage() {
         // 추가
         const newExpense = await expenseService.createExpense(
           profileId,
+          activeSimulationId,
           expenseData
         );
         setExpenses([...expenses, newExpense]);
@@ -479,7 +583,11 @@ function DashboardPage() {
     if (!window.confirm("이 지출 데이터를 삭제하시겠습니까?")) return;
 
     try {
-      await expenseService.deleteExpense(profileId, expenseId);
+      await expenseService.deleteExpense(
+        profileId,
+        activeSimulationId,
+        expenseId
+      );
       setExpenses(expenses.filter((expense) => expense.id !== expenseId));
     } catch (error) {
       console.error("지출 데이터 삭제 오류:", error);
@@ -493,6 +601,7 @@ function DashboardPage() {
         // 수정
         await savingsService.updateSaving(
           profileId,
+          activeSimulationId,
           editingSaving.id,
           savingData
         );
@@ -508,6 +617,7 @@ function DashboardPage() {
         // 추가
         const newSaving = await savingsService.createSaving(
           profileId,
+          activeSimulationId,
           savingData
         );
         setSavings([...savings, newSaving]);
@@ -528,7 +638,11 @@ function DashboardPage() {
     if (!window.confirm("이 저축/투자 데이터를 삭제하시겠습니까?")) return;
 
     try {
-      await savingsService.deleteSaving(profileId, savingId);
+      await savingsService.deleteSaving(
+        profileId,
+        activeSimulationId,
+        savingId
+      );
       setSavings(savings.filter((saving) => saving.id !== savingId));
     } catch (error) {
       console.error("저축/투자 데이터 삭제 오류:", error);
@@ -552,6 +666,7 @@ function DashboardPage() {
         // 수정
         await pensionService.updatePension(
           profileId,
+          activeSimulationId,
           editingPension.id,
           pensionData
         );
@@ -566,6 +681,7 @@ function DashboardPage() {
         // 추가
         const pensionId = await pensionService.createPension(
           profileId,
+          activeSimulationId,
           pensionData
         );
         setPensions([...pensions, { id: pensionId, ...pensionData }]);
@@ -582,7 +698,11 @@ function DashboardPage() {
     if (!window.confirm("이 연금 데이터를 삭제하시겠습니까?")) return;
 
     try {
-      await pensionService.deletePension(profileId, pensionId);
+      await pensionService.deletePension(
+        profileId,
+        activeSimulationId,
+        pensionId
+      );
       setPensions(pensions.filter((pension) => pension.id !== pensionId));
     } catch (error) {
       console.error("연금 데이터 삭제 오류:", error);
@@ -606,6 +726,7 @@ function DashboardPage() {
         // 수정
         await realEstateService.updateRealEstate(
           profileId,
+          activeSimulationId,
           editingRealEstate.id,
           realEstateData
         );
@@ -620,6 +741,7 @@ function DashboardPage() {
         // 추가
         const newRealEstateId = await realEstateService.createRealEstate(
           profileId,
+          activeSimulationId,
           realEstateData
         );
         setRealEstates([
@@ -638,7 +760,11 @@ function DashboardPage() {
     if (!window.confirm("이 부동산 데이터를 삭제하시겠습니까?")) return;
 
     try {
-      await realEstateService.deleteRealEstate(profileId, realEstateId);
+      await realEstateService.deleteRealEstate(
+        profileId,
+        activeSimulationId,
+        realEstateId
+      );
       setRealEstates(
         realEstates.filter((realEstate) => realEstate.id !== realEstateId)
       );
@@ -661,14 +787,23 @@ function DashboardPage() {
   const handleSaveAsset = async (assetData) => {
     try {
       if (editingAsset) {
-        await assetService.updateAsset(profileId, editingAsset.id, assetData);
+        await assetService.updateAsset(
+          profileId,
+          activeSimulationId,
+          editingAsset.id,
+          assetData
+        );
         setAssets(
           assets.map((asset) =>
             asset.id === editingAsset.id ? { ...asset, ...assetData } : asset
           )
         );
       } else {
-        const newAssetId = await assetService.createAsset(profileId, assetData);
+        const newAssetId = await assetService.createAsset(
+          profileId,
+          activeSimulationId,
+          assetData
+        );
         setAssets([...assets, { id: newAssetId, ...assetData }]);
       }
 
@@ -682,7 +817,7 @@ function DashboardPage() {
     if (!window.confirm("이 자산 데이터를 삭제하시겠습니까?")) return;
 
     try {
-      await assetService.deleteAsset(profileId, assetId);
+      await assetService.deleteAsset(profileId, activeSimulationId, assetId);
       setAssets(assets.filter((asset) => asset.id !== assetId));
     } catch (error) {
       console.error("자산 데이터 삭제 오류:", error);
@@ -704,7 +839,12 @@ function DashboardPage() {
     try {
       if (editingDebt) {
         // 수정
-        await debtService.updateDebt(profileId, editingDebt.id, debtData);
+        await debtService.updateDebt(
+          profileId,
+          activeSimulationId,
+          editingDebt.id,
+          debtData
+        );
         setDebts(
           debts.map((debt) =>
             debt.id === editingDebt.id ? { ...debt, ...debtData } : debt
@@ -713,7 +853,11 @@ function DashboardPage() {
         setEditingDebt(null);
       } else {
         // 추가
-        const newDebt = await debtService.createDebt(profileId, debtData);
+        const newDebt = await debtService.createDebt(
+          profileId,
+          activeSimulationId,
+          debtData
+        );
         setDebts([...debts, newDebt]);
       }
 
@@ -727,7 +871,7 @@ function DashboardPage() {
     if (!window.confirm("이 부채 데이터를 삭제하시겠습니까?")) return;
 
     try {
-      await debtService.deleteDebt(profileId, debtId);
+      await debtService.deleteDebt(profileId, activeSimulationId, debtId);
       setDebts(debts.filter((debt) => debt.id !== debtId));
     } catch (error) {
       console.error("부채 데이터 삭제 오류:", error);
@@ -820,6 +964,137 @@ function DashboardPage() {
       default:
         console.log("알 수 없는 항목 타입:", type);
         break;
+    }
+  };
+
+  // 시뮬레이션 관련 핸들러들
+  const handleSimulationTabChange = (simulationId) => {
+    setActiveSimulationId(simulationId);
+    console.log("시뮬레이션 전환:", simulationId);
+  };
+
+  const handleAddSimulation = async () => {
+    try {
+      // 기본 시뮬레이션(현재) 찾기
+      const defaultSimulation = simulations.find(
+        (sim) => sim.isDefault === true
+      );
+      if (!defaultSimulation) {
+        alert("기본 시뮬레이션을 찾을 수 없습니다.");
+        return;
+      }
+
+      // 시뮬레이션 개수에 따라 자동으로 제목 생성 (시뮬레이션 2, 시뮬레이션 3, ...)
+      const simulationNumber = simulations.length;
+      const title = `시뮬레이션 ${simulationNumber}`;
+
+      // 기본 시뮬레이션의 데이터를 복사하여 새 시뮬레이션 생성
+      const newSimulationId = await simulationService.copySimulation(
+        profileId,
+        defaultSimulation.id,
+        title
+      );
+
+      console.log("새 시뮬레이션 생성 완료:", newSimulationId);
+
+      // 시뮬레이션 목록 다시 로드
+      const updatedSimulations = await simulationService.getSimulations(
+        profileId
+      );
+      setSimulations(updatedSimulations);
+
+      // 새로 생성한 시뮬레이션으로 전환
+      setActiveSimulationId(newSimulationId);
+    } catch (error) {
+      console.error("시뮬레이션 생성 오류:", error);
+      alert("시뮬레이션 생성 중 오류가 발생했습니다: " + error.message);
+    }
+  };
+
+  const handleCreateSimulation = async (title) => {
+    try {
+      setIsCreatingSimulation(true);
+
+      // 기본 시뮬레이션(현재) 찾기
+      const defaultSimulation = simulations.find(
+        (sim) => sim.isDefault === true
+      );
+      if (!defaultSimulation) {
+        alert("기본 시뮬레이션을 찾을 수 없습니다.");
+        return;
+      }
+
+      // 기본 시뮬레이션의 데이터를 복사하여 새 시뮬레이션 생성
+      const newSimulationId = await simulationService.copySimulation(
+        profileId,
+        defaultSimulation.id,
+        title
+      );
+
+      console.log("새 시뮬레이션 생성 완료:", newSimulationId);
+
+      // 시뮬레이션 목록 다시 로드
+      const updatedSimulations = await simulationService.getSimulations(
+        profileId
+      );
+      setSimulations(updatedSimulations);
+
+      // 새로 생성한 시뮬레이션으로 전환
+      setActiveSimulationId(newSimulationId);
+
+      alert(`"${title}" 시뮬레이션이 생성되었습니다!`);
+    } catch (error) {
+      console.error("시뮬레이션 생성 오류:", error);
+      alert("시뮬레이션 생성 중 오류가 발생했습니다: " + error.message);
+    }
+  };
+
+  const handleDeleteSimulation = async (simulationId) => {
+    try {
+      await simulationService.deleteSimulation(profileId, simulationId);
+
+      // 시뮬레이션 목록 다시 로드
+      const updatedSimulations = await simulationService.getSimulations(
+        profileId
+      );
+      setSimulations(updatedSimulations);
+
+      // 삭제한 시뮬레이션이 현재 활성화된 것이면 기본 시뮬레이션으로 전환
+      if (activeSimulationId === simulationId) {
+        const defaultSim = updatedSimulations.find(
+          (sim) => sim.isDefault === true
+        );
+        if (defaultSim) {
+          setActiveSimulationId(defaultSim.id);
+        } else if (updatedSimulations.length > 0) {
+          setActiveSimulationId(updatedSimulations[0].id);
+        }
+      }
+
+      alert("시뮬레이션이 삭제되었습니다.");
+    } catch (error) {
+      console.error("시뮬레이션 삭제 오류:", error);
+      alert(error.message || "시뮬레이션 삭제 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleRenameSimulation = async (simulationId, newTitle) => {
+    try {
+      await simulationService.updateSimulation(profileId, simulationId, {
+        title: newTitle,
+      });
+
+      // 시뮬레이션 목록 업데이트
+      setSimulations(
+        simulations.map((sim) =>
+          sim.id === simulationId ? { ...sim, title: newTitle } : sim
+        )
+      );
+
+      console.log("시뮬레이션 이름 변경 완료:", newTitle);
+    } catch (error) {
+      console.error("시뮬레이션 이름 변경 오류:", error);
+      alert("시뮬레이션 이름 변경 중 오류가 발생했습니다.");
     }
   };
 
@@ -917,7 +1192,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
   // 카테고리별 이름 매핑
   const getCategoryName = (categoryId) => {
     const categoryMap = {
-      income: "수입",
+      income: "소득",
       expense: "지출",
       savings: "저축/투자",
       pension: "연금",
@@ -928,11 +1203,11 @@ ${JSON.stringify(analysisData, null, 2)}`;
     return categoryMap[categoryId] || "데이터";
   };
 
-  // 로딩 상태 처리
-  if (loading) {
+  // 로딩 상태 처리 (프로필 또는 시뮬레이션 로드 중)
+  if (loading || !activeSimulationId) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>프로필을 불러오는 중...</div>
+        <div className={styles.loading}>데이터를 불러오는 중...</div>
       </div>
     );
   }
@@ -949,7 +1224,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
 
   // 카테고리 설정
   const categories = [
-    { id: "income", name: "수입", color: "#10b981", count: incomes.length },
+    { id: "income", name: "소득", color: "#10b981", count: incomes.length },
     { id: "expense", name: "지출", color: "#ef4444", count: expenses.length },
     {
       id: "savings",
@@ -982,51 +1257,35 @@ ${JSON.stringify(analysisData, null, 2)}`;
       {/* 상단 프로필 정보 */}
       <div className={styles.profileHeader}>
         <div className={styles.profileInfo}>
-          <h1 className={styles.profileName}>
-            {profileData.name}님의 은퇴 준비 현황
-          </h1>
-          <div className={styles.ageInfo}>
-            <span className={styles.ageItem}>
-              <span className={styles.ageLabel}>현재 나이:</span>
-              <span className={styles.ageValue}>
-                {profileData.currentKoreanAge}세
-              </span>
-            </span>
-            <span className={styles.ageSeparator}>|</span>
-            <span className={styles.ageItem}>
-              <span className={styles.ageLabel}>은퇴 나이:</span>
-              <span className={styles.ageValue}>
-                {profileData.retirementAge}세 ({profileData.retirementYear}년)
-              </span>
-            </span>
-          </div>
-          <div className={styles.profileDetails}>
-            <span className={styles.detailItem}>
-              <span className={styles.label}>현재 현금:</span>
-              <span className={styles.value}>
-                {formatAmount(profileData.currentCash)}
-              </span>
-            </span>
-            <span className={styles.detailItem}>
-              <span className={styles.label}>목표 자산:</span>
-              <span className={styles.value}>
-                {formatAmount(profileData.targetAssets)}
-              </span>
-            </span>
-            <span className={styles.detailItem}>
-              <span className={styles.label}>가구 구성:</span>
-              <span className={styles.value}>
-                {(() => {
-                  let count = 1; // 본인
-                  if (profileData.hasSpouse) count += 1; // 배우자
-                  if (profileData.familyMembers)
-                    count += profileData.familyMembers.length; // 기타 가구 구성원
-                  return count;
-                })()}
-                명
-              </span>
-            </span>
-          </div>
+          <h1 className={styles.profileName}>{profileData.name}님</h1>
+          <span className={styles.infoText}>
+            현재 {calculateKoreanAge(profileData.birthYear)}세
+          </span>
+          <span className={styles.infoDivider}>·</span>
+          <span className={styles.infoText}>
+            은퇴 {profileData.retirementAge}세 (
+            {profileData.birthYear + profileData.retirementAge}년)
+          </span>
+          <span className={styles.infoDivider}>·</span>
+          <span className={styles.infoText}>
+            현금 {formatAmount(profileData.currentCash)}
+          </span>
+          <span className={styles.infoDivider}>·</span>
+          <span className={styles.infoText}>
+            목표 {formatAmount(profileData.targetAssets)}
+          </span>
+          <span className={styles.infoDivider}>·</span>
+          <span className={styles.infoText}>
+            가구{" "}
+            {(() => {
+              let count = 1;
+              if (profileData.hasSpouse) count += 1;
+              if (profileData.familyMembers)
+                count += profileData.familyMembers.length;
+              return count;
+            })()}
+            명
+          </span>
         </div>
         <div className={styles.profileActions}>
           <button
@@ -1053,6 +1312,18 @@ ${JSON.stringify(analysisData, null, 2)}`;
           </button>
         </div>
       </div>
+
+      {/* 시뮬레이션 탭 */}
+      {simulations.length > 0 && activeSimulationId && (
+        <SimulationTabs
+          simulations={simulations}
+          activeSimulationId={activeSimulationId}
+          onTabChange={handleSimulationTabChange}
+          onAddSimulation={handleAddSimulation}
+          onDeleteSimulation={handleDeleteSimulation}
+          onRenameSimulation={handleRenameSimulation}
+        />
+      )}
 
       {/* 재무 항목 요약 */}
       <ProfileSummary
@@ -1187,7 +1458,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         </div>
       </div>
 
-      {/* 수입 모달 */}
+      {/* 소득 모달 */}
       <IncomeModal
         isOpen={isIncomeModalOpen}
         onClose={() => setIsIncomeModalOpen(false)}

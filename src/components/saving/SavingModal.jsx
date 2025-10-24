@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./SavingModal.module.css";
 import { formatAmountForChart } from "../../utils/format";
+import { calculateKoreanAge } from "../../utils/koreanAge";
 
 /**
  * 저축/투자 데이터 추가/수정 모달
@@ -12,12 +13,12 @@ function SavingModal({
   editData = null,
   profileData = null,
 }) {
-  // 은퇴년도 계산 함수
+  // 은퇴년도 계산 함수 (만 나이 기준)
   const getRetirementYear = () => {
     if (profileData && profileData.birthYear && profileData.retirementAge) {
-      return profileData.birthYear + profileData.retirementAge - 1; // 설정된 은퇴 나이
+      return profileData.birthYear + profileData.retirementAge; // 설정된 은퇴 나이 (만 나이 기준)
     }
-    return new Date().getFullYear() + 10; // 기본값
+    return new Date().getFullYear() + 11; // 기본값
   };
 
   const [formData, setFormData] = useState({
@@ -28,7 +29,7 @@ function SavingModal({
     endYear: getRetirementYear(),
     memo: "",
     interestRate: "3.0", // 이자율 3%
-    yearlyGrowthRate: "0", // 년간 저축 상승률 0%
+    yearlyGrowthRate: "0", // 연간 저축/투자금액 증가율 0%
   });
 
   const [errors, setErrors] = useState({});
@@ -172,11 +173,11 @@ function SavingModal({
             )}
           </div>
 
-          {/* 빈도와 금액 */}
+          {/* 주기와 금액 */}
           <div className={styles.row}>
             <div className={styles.field}>
               <label htmlFor="frequency" className={styles.label}>
-                빈도 *
+                주기 *
               </label>
               <select
                 id="frequency"
@@ -241,6 +242,16 @@ function SavingModal({
                 className={styles.input}
                 placeholder="2025"
               />
+              {/* 시작년도 나이 표시 */}
+              {formData.startYear && profileData && profileData.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(
+                    profileData.birthYear,
+                    formData.startYear
+                  )}
+                  세
+                </div>
+              )}
             </div>
 
             <div className={styles.field}>
@@ -264,13 +275,20 @@ function SavingModal({
                 }`}
                 placeholder="2035"
               />
+              {/* 종료년도 나이 표시 */}
+              {formData.endYear && profileData && profileData.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(profileData.birthYear, formData.endYear)}
+                  세
+                </div>
+              )}
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}
             </div>
           </div>
 
-          {/* 이자율과 년간 저축 상승률 */}
+          {/* 이자율과 연간 저축/투자금액 증가율 */}
           <div className={styles.row}>
             <div className={styles.field}>
               <label htmlFor="interestRate" className={styles.label}>
@@ -296,7 +314,7 @@ function SavingModal({
             {formData.frequency !== "one_time" && (
               <div className={styles.field}>
                 <label htmlFor="yearlyGrowthRate" className={styles.label}>
-                  년간 저축/투자 상승률 (%)
+                  연간 저축/투자금액 증가율 (%)
                 </label>
                 <input
                   type="text"

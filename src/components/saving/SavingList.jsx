@@ -9,10 +9,7 @@ function SavingList({ savings, onEdit, onDelete }) {
   if (!savings || savings.length === 0) {
     return (
       <div className={styles.emptyState}>
-        <p className={styles.emptyMessage}>저축/투자 데이터가 없습니다.</p>
-        <p className={styles.emptySubMessage}>
-          + 추가 버튼을 눌러 저축/투자를 추가해보세요.
-        </p>
+        <p>등록된 저축/투자가 없습니다.</p>
       </div>
     );
   }

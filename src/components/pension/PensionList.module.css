@@ -32,7 +32,7 @@
 .typeBadge {
   display: inline-block;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
   color: white;
@@ -55,7 +55,7 @@
   font-size: 0.75rem;
   cursor: pointer;
   padding: 0.25rem;
-  border-radius: 4px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -100,35 +100,24 @@
   font-style: italic;
   background: #f9fafb;
   padding: 0.5rem;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-top: 0.5rem;
 }
 
 /* 빈 상태 스타일 */
 .emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
   text-align: center;
-}
-
-.emptyIcon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.emptyText {
-  font-size: 18px;
-  font-weight: 500;
+  padding: 40px 20px;
   color: #6b7280;
-  margin-bottom: 8px;
 }
 
-.emptySubtext {
+.emptyState p {
+  margin: 0 0 8px 0;
   font-size: 14px;
+}
+
+.emptyState p:last-child {
+  font-size: 12px;
   color: #9ca3af;
 }
 

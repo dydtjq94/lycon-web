@@ -9,10 +9,7 @@ function DebtList({ debts, onEdit, onDelete }) {
   if (!debts || debts.length === 0) {
     return (
       <div className={styles.emptyState}>
-        <p className={styles.emptyMessage}>부채 데이터가 없습니다.</p>
-        <p className={styles.emptySubMessage}>
-          + 추가 버튼을 눌러 부채를 추가해보세요.
-        </p>
+        <p>등록된 부채가 없습니다.</p>
       </div>
     );
   }

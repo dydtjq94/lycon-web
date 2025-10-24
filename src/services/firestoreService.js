@@ -212,34 +212,64 @@ export const profileService = {
     }
   },
 
-  // 프로필과 모든 관련 데이터 완전 삭제 (하위 컬렉션 포함)
+  // 프로필과 모든 관련 데이터 완전 삭제 (시뮬레이션 포함)
   async deleteProfileWithAllData(profileId) {
     try {
       console.log("프로필 및 모든 관련 데이터 삭제 시작:", profileId);
 
-      // 하위 컬렉션들 삭제
-      const subcollections = [
-        "incomes",
-        "expenses",
-        "savings",
-        "pensions",
-        "realEstates",
-        "assets",
-        "debts",
-      ];
+      // 먼저 모든 시뮬레이션 조회
+      const simulationsRef = collection(
+        db,
+        "profiles",
+        profileId,
+        "simulations"
+      );
+      const simulationsSnapshot = await getDocs(simulationsRef);
 
       let totalDeleted = 0;
-      for (const subcollectionName of subcollections) {
-        try {
-          const deletedCount = await this.deleteSubcollection(
-            profileId,
-            subcollectionName
-          );
-          totalDeleted += deletedCount;
-        } catch (error) {
-          console.warn(`${subcollectionName} 하위 컬렉션 삭제 실패:`, error);
-          // 개별 하위 컬렉션 삭제 실패해도 계속 진행
+
+      // 각 시뮬레이션의 하위 컬렉션 삭제
+      for (const simDoc of simulationsSnapshot.docs) {
+        const simulationId = simDoc.id;
+        console.log(`시뮬레이션 ${simulationId} 데이터 삭제 중...`);
+
+        const subcollections = [
+          "incomes",
+          "expenses",
+          "savings",
+          "pensions",
+          "realEstates",
+          "assets",
+          "debts",
+        ];
+
+        for (const subcollectionName of subcollections) {
+          try {
+            const subcollectionRef = collection(
+              db,
+              "profiles",
+              profileId,
+              "simulations",
+              simulationId,
+              subcollectionName
+            );
+            const snapshot = await getDocs(subcollectionRef);
+
+            if (!snapshot.empty) {
+              const deletePromises = snapshot.docs.map((doc) =>
+                deleteDoc(doc.ref)
+              );
+              await Promise.all(deletePromises);
+              totalDeleted += snapshot.docs.length;
+            }
+          } catch (error) {
+            console.warn(`${subcollectionName} 하위 컬렉션 삭제 실패:`, error);
+          }
         }
+
+        // 시뮬레이션 문서 삭제
+        await deleteDoc(simDoc.ref);
+        console.log(`시뮬레이션 ${simulationId} 삭제 완료`);
       }
 
       // 마지막으로 프로필 문서 삭제
@@ -259,14 +289,22 @@ export const profileService = {
 
 /**
  * 수입 데이터 관련 서비스
+ * 모든 수입 데이터는 시뮬레이션 하위에 저장됩니다.
  */
 export const incomeService = {
   // 수입 데이터 생성
-  async createIncome(profileId, incomeData) {
+  async createIncome(profileId, simulationId, incomeData) {
     try {
       console.log("수입 데이터 생성 시작:", incomeData);
       const docRef = await addDoc(
-        collection(db, "profiles", profileId, "incomes"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "incomes"
+        ),
         {
           ...incomeData,
           createdAt: new Date().toISOString(),
@@ -284,12 +322,19 @@ export const incomeService = {
   },
 
   // 프로필의 모든 수입 데이터 조회
-  async getIncomes(profileId) {
+  async getIncomes(profileId, simulationId) {
     try {
-      console.log("수입 데이터 조회 시작:", profileId);
+      console.log("수입 데이터 조회 시작:", profileId, simulationId);
       const querySnapshot = await getDocs(
         query(
-          collection(db, "profiles", profileId, "incomes"),
+          collection(
+            db,
+            "profiles",
+            profileId,
+            "simulations",
+            simulationId,
+            "incomes"
+          ),
           orderBy("createdAt", "desc")
         )
       );
@@ -305,9 +350,17 @@ export const incomeService = {
   },
 
   // 수입 데이터 조회
-  async getIncome(profileId, incomeId) {
+  async getIncome(profileId, simulationId, incomeId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "incomes", incomeId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "incomes",
+        incomeId
+      );
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -322,9 +375,17 @@ export const incomeService = {
   },
 
   // 수입 데이터 업데이트
-  async updateIncome(profileId, incomeId, updateData) {
+  async updateIncome(profileId, simulationId, incomeId, updateData) {
     try {
-      const docRef = doc(db, "profiles", profileId, "incomes", incomeId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "incomes",
+        incomeId
+      );
       await updateDoc(docRef, {
         ...updateData,
         updatedAt: new Date().toISOString(),
@@ -336,9 +397,17 @@ export const incomeService = {
   },
 
   // 수입 데이터 삭제
-  async deleteIncome(profileId, incomeId) {
+  async deleteIncome(profileId, simulationId, incomeId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "incomes", incomeId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "incomes",
+        incomeId
+      );
       await deleteDoc(docRef);
     } catch (error) {
       console.error("수입 데이터 삭제 오류:", error);
@@ -350,10 +419,17 @@ export const incomeService = {
 // 지출 데이터 서비스
 export const expenseService = {
   // 지출 데이터 생성
-  async createExpense(profileId, expenseData) {
+  async createExpense(profileId, simulationId, expenseData) {
     try {
       const docRef = await addDoc(
-        collection(db, "profiles", profileId, "expenses"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "expenses"
+        ),
         {
           ...expenseData,
           createdAt: new Date().toISOString(),
@@ -368,10 +444,17 @@ export const expenseService = {
   },
 
   // 지출 데이터 목록 조회
-  async getExpenses(profileId) {
+  async getExpenses(profileId, simulationId) {
     try {
       const q = query(
-        collection(db, "profiles", profileId, "expenses"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "expenses"
+        ),
         orderBy("createdAt", "asc")
       );
       const querySnapshot = await getDocs(q);
@@ -386,9 +469,17 @@ export const expenseService = {
   },
 
   // 지출 데이터 조회
-  async getExpense(profileId, expenseId) {
+  async getExpense(profileId, simulationId, expenseId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "expenses", expenseId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "expenses",
+        expenseId
+      );
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() };
@@ -402,9 +493,17 @@ export const expenseService = {
   },
 
   // 지출 데이터 업데이트
-  async updateExpense(profileId, expenseId, updateData) {
+  async updateExpense(profileId, simulationId, expenseId, updateData) {
     try {
-      const docRef = doc(db, "profiles", profileId, "expenses", expenseId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "expenses",
+        expenseId
+      );
       await updateDoc(docRef, {
         ...updateData,
         updatedAt: new Date().toISOString(),
@@ -416,9 +515,17 @@ export const expenseService = {
   },
 
   // 지출 데이터 삭제
-  async deleteExpense(profileId, expenseId) {
+  async deleteExpense(profileId, simulationId, expenseId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "expenses", expenseId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "expenses",
+        expenseId
+      );
       await deleteDoc(docRef);
     } catch (error) {
       console.error("지출 데이터 삭제 오류:", error);
@@ -430,10 +537,17 @@ export const expenseService = {
 // 저축 데이터 서비스
 export const savingsService = {
   // 저축 데이터 생성
-  async createSaving(profileId, savingData) {
+  async createSaving(profileId, simulationId, savingData) {
     try {
       const docRef = await addDoc(
-        collection(db, "profiles", profileId, "savings"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "savings"
+        ),
         {
           ...savingData,
           createdAt: new Date().toISOString(),
@@ -448,10 +562,17 @@ export const savingsService = {
   },
 
   // 저축 데이터 조회 (전체)
-  async getSavings(profileId) {
+  async getSavings(profileId, simulationId) {
     try {
       const querySnapshot = await getDocs(
-        collection(db, "profiles", profileId, "savings")
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "savings"
+        )
       );
       return querySnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -464,9 +585,17 @@ export const savingsService = {
   },
 
   // 저축 데이터 조회 (단일)
-  async getSaving(profileId, savingId) {
+  async getSaving(profileId, simulationId, savingId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "savings", savingId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "savings",
+        savingId
+      );
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() };
@@ -480,9 +609,17 @@ export const savingsService = {
   },
 
   // 저축 데이터 업데이트
-  async updateSaving(profileId, savingId, updateData) {
+  async updateSaving(profileId, simulationId, savingId, updateData) {
     try {
-      const docRef = doc(db, "profiles", profileId, "savings", savingId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "savings",
+        savingId
+      );
       await updateDoc(docRef, {
         ...updateData,
         updatedAt: new Date().toISOString(),
@@ -494,9 +631,17 @@ export const savingsService = {
   },
 
   // 저축 데이터 삭제
-  async deleteSaving(profileId, savingId) {
+  async deleteSaving(profileId, simulationId, savingId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "savings", savingId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "savings",
+        savingId
+      );
       await deleteDoc(docRef);
     } catch (error) {
       console.error("저축 데이터 삭제 오류:", error);
@@ -510,10 +655,17 @@ export const savingsService = {
  */
 export const pensionService = {
   // 연금 데이터 생성
-  async createPension(profileId, pensionData) {
+  async createPension(profileId, simulationId, pensionData) {
     try {
       const docRef = await addDoc(
-        collection(db, "profiles", profileId, "pensions"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "pensions"
+        ),
         {
           ...pensionData,
           createdAt: new Date().toISOString(),
@@ -528,10 +680,17 @@ export const pensionService = {
   },
 
   // 연금 데이터 목록 조회
-  async getPensions(profileId) {
+  async getPensions(profileId, simulationId) {
     try {
       const q = query(
-        collection(db, "profiles", profileId, "pensions"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "pensions"
+        ),
         orderBy("createdAt", "asc")
       );
       const querySnapshot = await getDocs(q);
@@ -546,9 +705,17 @@ export const pensionService = {
   },
 
   // 연금 데이터 단건 조회
-  async getPension(profileId, pensionId) {
+  async getPension(profileId, simulationId, pensionId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "pensions", pensionId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "pensions",
+        pensionId
+      );
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() };
@@ -561,9 +728,17 @@ export const pensionService = {
   },
 
   // 연금 데이터 수정
-  async updatePension(profileId, pensionId, updateData) {
+  async updatePension(profileId, simulationId, pensionId, updateData) {
     try {
-      const docRef = doc(db, "profiles", profileId, "pensions", pensionId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "pensions",
+        pensionId
+      );
       await updateDoc(docRef, {
         ...updateData,
         updatedAt: new Date().toISOString(),
@@ -575,9 +750,17 @@ export const pensionService = {
   },
 
   // 연금 데이터 삭제
-  async deletePension(profileId, pensionId) {
+  async deletePension(profileId, simulationId, pensionId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "pensions", pensionId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "pensions",
+        pensionId
+      );
       await deleteDoc(docRef);
     } catch (error) {
       console.error("연금 데이터 삭제 오류:", error);
@@ -591,10 +774,17 @@ export const pensionService = {
  */
 export const assetService = {
   // 자산 데이터 생성
-  async createAsset(profileId, assetData) {
+  async createAsset(profileId, simulationId, assetData) {
     try {
       const docRef = await addDoc(
-        collection(db, "profiles", profileId, "assets"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "assets"
+        ),
         {
           ...assetData,
           createdAt: new Date().toISOString(),
@@ -609,11 +799,18 @@ export const assetService = {
   },
 
   // 자산 목록 조회
-  async getAssets(profileId) {
+  async getAssets(profileId, simulationId) {
     try {
       const querySnapshot = await getDocs(
         query(
-          collection(db, "profiles", profileId, "assets"),
+          collection(
+            db,
+            "profiles",
+            profileId,
+            "simulations",
+            simulationId,
+            "assets"
+          ),
           orderBy("createdAt", "desc")
         )
       );
@@ -628,9 +825,17 @@ export const assetService = {
   },
 
   // 자산 조회
-  async getAsset(profileId, assetId) {
+  async getAsset(profileId, simulationId, assetId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "assets", assetId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "assets",
+        assetId
+      );
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() };
@@ -644,9 +849,17 @@ export const assetService = {
   },
 
   // 자산 수정
-  async updateAsset(profileId, assetId, assetData) {
+  async updateAsset(profileId, simulationId, assetId, assetData) {
     try {
-      const docRef = doc(db, "profiles", profileId, "assets", assetId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "assets",
+        assetId
+      );
       await updateDoc(docRef, {
         ...assetData,
         updatedAt: new Date().toISOString(),
@@ -658,9 +871,17 @@ export const assetService = {
   },
 
   // 자산 삭제
-  async deleteAsset(profileId, assetId) {
+  async deleteAsset(profileId, simulationId, assetId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "assets", assetId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "assets",
+        assetId
+      );
       await deleteDoc(docRef);
     } catch (error) {
       console.error("자산 삭제 오류:", error);
@@ -672,10 +893,17 @@ export const assetService = {
 // 부동산 데이터 서비스
 export const realEstateService = {
   // 부동산 데이터 생성
-  async createRealEstate(profileId, realEstateData) {
+  async createRealEstate(profileId, simulationId, realEstateData) {
     try {
       const docRef = await addDoc(
-        collection(db, "profiles", profileId, "realEstates"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "realEstates"
+        ),
         {
           ...realEstateData,
           createdAt: new Date().toISOString(),
@@ -690,10 +918,17 @@ export const realEstateService = {
   },
 
   // 부동산 데이터 조회
-  async getRealEstates(profileId) {
+  async getRealEstates(profileId, simulationId) {
     try {
       const q = query(
-        collection(db, "profiles", profileId, "realEstates"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "realEstates"
+        ),
         orderBy("createdAt", "asc")
       );
       const querySnapshot = await getDocs(q);
@@ -708,12 +943,14 @@ export const realEstateService = {
   },
 
   // 부동산 데이터 단일 조회
-  async getRealEstate(profileId, realEstateId) {
+  async getRealEstate(profileId, simulationId, realEstateId) {
     try {
       const docRef = doc(
         db,
         "profiles",
         profileId,
+        "simulations",
+        simulationId,
         "realEstates",
         realEstateId
       );
@@ -730,12 +967,14 @@ export const realEstateService = {
   },
 
   // 부동산 데이터 업데이트
-  async updateRealEstate(profileId, realEstateId, updateData) {
+  async updateRealEstate(profileId, simulationId, realEstateId, updateData) {
     try {
       const docRef = doc(
         db,
         "profiles",
         profileId,
+        "simulations",
+        simulationId,
         "realEstates",
         realEstateId
       );
@@ -750,12 +989,14 @@ export const realEstateService = {
   },
 
   // 부동산 데이터 삭제
-  async deleteRealEstate(profileId, realEstateId) {
+  async deleteRealEstate(profileId, simulationId, realEstateId) {
     try {
       const docRef = doc(
         db,
         "profiles",
         profileId,
+        "simulations",
+        simulationId,
         "realEstates",
         realEstateId
       );
@@ -772,11 +1013,18 @@ export const realEstateService = {
  */
 export const debtService = {
   // 부채 데이터 생성
-  async createDebt(profileId, debtData) {
+  async createDebt(profileId, simulationId, debtData) {
     try {
       console.log("부채 데이터 생성 시작:", debtData);
       const docRef = await addDoc(
-        collection(db, "profiles", profileId, "debts"),
+        collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "debts"
+        ),
         {
           ...debtData,
           createdAt: new Date().toISOString(),
@@ -794,12 +1042,19 @@ export const debtService = {
   },
 
   // 프로필의 모든 부채 데이터 조회
-  async getDebts(profileId) {
+  async getDebts(profileId, simulationId) {
     try {
-      console.log("부채 데이터 조회 시작:", profileId);
+      console.log("부채 데이터 조회 시작:", profileId, simulationId);
       const querySnapshot = await getDocs(
         query(
-          collection(db, "profiles", profileId, "debts"),
+          collection(
+            db,
+            "profiles",
+            profileId,
+            "simulations",
+            simulationId,
+            "debts"
+          ),
           orderBy("createdAt", "desc")
         )
       );
@@ -815,9 +1070,17 @@ export const debtService = {
   },
 
   // 부채 데이터 조회 (단일)
-  async getDebt(profileId, debtId) {
+  async getDebt(profileId, simulationId, debtId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "debts", debtId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "debts",
+        debtId
+      );
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -832,9 +1095,17 @@ export const debtService = {
   },
 
   // 부채 데이터 업데이트
-  async updateDebt(profileId, debtId, updateData) {
+  async updateDebt(profileId, simulationId, debtId, updateData) {
     try {
-      const docRef = doc(db, "profiles", profileId, "debts", debtId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "debts",
+        debtId
+      );
       await updateDoc(docRef, {
         ...updateData,
         updatedAt: new Date().toISOString(),
@@ -846,9 +1117,17 @@ export const debtService = {
   },
 
   // 부채 데이터 삭제
-  async deleteDebt(profileId, debtId) {
+  async deleteDebt(profileId, simulationId, debtId) {
     try {
-      const docRef = doc(db, "profiles", profileId, "debts", debtId);
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId,
+        "debts",
+        debtId
+      );
       await deleteDoc(docRef);
     } catch (error) {
       console.error("부채 데이터 삭제 오류:", error);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./DebtModal.module.css";
 import { formatAmountForChart } from "../../utils/format";
+import { calculateKoreanAge } from "../../utils/koreanAge";
 
 /**
  * 부채 데이터 추가/수정 모달
@@ -301,6 +302,16 @@ function DebtModal({
                 className={styles.input}
                 placeholder="2025"
               />
+              {/* 시작년도 나이 표시 */}
+              {formData.startYear && profileData && profileData.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(
+                    profileData.birthYear,
+                    formData.startYear
+                  )}
+                  세
+                </div>
+              )}
             </div>
 
             <div className={styles.field}>
@@ -324,6 +335,13 @@ function DebtModal({
                 }`}
                 placeholder="2030"
               />
+              {/* 종료년도 나이 표시 */}
+              {formData.endYear && profileData && profileData.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(profileData.birthYear, formData.endYear)}
+                  세
+                </div>
+              )}
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}

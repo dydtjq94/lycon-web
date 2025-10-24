@@ -9,10 +9,7 @@ function ExpenseList({ expenses, onEdit, onDelete }) {
   if (!expenses || expenses.length === 0) {
     return (
       <div className={styles.emptyState}>
-        <p className={styles.emptyMessage}>지출 데이터가 없습니다.</p>
-        <p className={styles.emptySubMessage}>
-          + 추가 버튼을 눌러 지출을 추가해보세요.
-        </p>
+        <p>등록된 지출이 없습니다.</p>
       </div>
     );
   }
@@ -20,8 +17,8 @@ function ExpenseList({ expenses, onEdit, onDelete }) {
   return (
     <div className={styles.expenseList}>
       {expenses.map((expense) => (
-        <div 
-          key={expense.id} 
+        <div
+          key={expense.id}
           className={styles.expenseItem}
           onClick={() => onEdit(expense)}
         >
@@ -46,7 +43,7 @@ function ExpenseList({ expenses, onEdit, onDelete }) {
               {formatAmount(expense.amount)}/
               {expense.frequency === "monthly" ? "월" : "년"}
             </div>
-            
+
             <div className={styles.expensePeriod}>
               {expense.startYear}년 - {expense.endYear}년
               <br />

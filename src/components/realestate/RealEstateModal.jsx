@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./RealEstateModal.module.css";
 import { formatAmountForChart } from "../../utils/format";
+import { calculateKoreanAge } from "../../utils/koreanAge";
 
 const RealEstateModal = ({
   isOpen,
@@ -109,18 +110,18 @@ const RealEstateModal = ({
 
     if (formData.hasRentalIncome) {
       if (!formData.monthlyRentalIncome || formData.monthlyRentalIncome < 0) {
-        newErrors.monthlyRentalIncome = "월 임대 수입을 입력해주세요";
+        newErrors.monthlyRentalIncome = "월 임대 소득을 입력해주세요";
       }
 
       if (
         !formData.rentalIncomeStartYear ||
         formData.rentalIncomeStartYear < 0
       ) {
-        newErrors.rentalIncomeStartYear = "임대 수입 시작년도를 입력해주세요";
+        newErrors.rentalIncomeStartYear = "임대 소득 시작년도를 입력해주세요";
       }
 
       if (!formData.rentalIncomeEndYear || formData.rentalIncomeEndYear < 0) {
-        newErrors.rentalIncomeEndYear = "임대 수입 종료년도를 입력해주세요";
+        newErrors.rentalIncomeEndYear = "임대 소득 종료년도를 입력해주세요";
       }
     }
 
@@ -270,12 +271,18 @@ const RealEstateModal = ({
               }`}
               placeholder="예: 2083"
             />
+            {/* 보유 종료년도 나이 표시 */}
+            {formData.endYear && profileData && profileData.birthYear && (
+              <div className={styles.agePreview}>
+                {calculateKoreanAge(profileData.birthYear, formData.endYear)}세
+              </div>
+            )}
             {errors.endYear && (
               <span className={styles.errorText}>{errors.endYear}</span>
             )}
           </div>
 
-          {/* 임대 수입 여부 */}
+          {/* 임대 소득 여부 */}
           <div className={styles.field}>
             <label className={styles.checkboxLabel}>
               <input
@@ -289,15 +296,15 @@ const RealEstateModal = ({
                 }
                 className={styles.checkbox}
               />
-              <span className={styles.checkboxText}>임대 수입 있음</span>
+              <span className={styles.checkboxText}>임대 소득 있음</span>
             </label>
           </div>
 
-          {/* 임대 수입 관련 필드들 */}
+          {/* 임대 소득 관련 필드들 */}
           {formData.hasRentalIncome && (
             <>
               <div className={styles.field}>
-                <label className={styles.label}>월 임대 수입 (만원)</label>
+                <label className={styles.label}>월 임대 소득 (만원)</label>
                 <input
                   type="text"
                   value={formData.monthlyRentalIncome}
@@ -330,7 +337,7 @@ const RealEstateModal = ({
 
               <div className={styles.row}>
                 <div className={styles.field}>
-                  <label className={styles.label}>임대 수입 시작년도</label>
+                  <label className={styles.label}>임대 소득 시작년도</label>
                   <input
                     type="text"
                     value={formData.rentalIncomeStartYear}
@@ -346,6 +353,18 @@ const RealEstateModal = ({
                     }`}
                     placeholder="예: 2025"
                   />
+                  {/* 임대 소득 시작년도 나이 표시 */}
+                  {formData.rentalIncomeStartYear &&
+                    profileData &&
+                    profileData.birthYear && (
+                      <div className={styles.agePreview}>
+                        {calculateKoreanAge(
+                          profileData.birthYear,
+                          formData.rentalIncomeStartYear
+                        )}
+                        세
+                      </div>
+                    )}
                   {errors.rentalIncomeStartYear && (
                     <span className={styles.errorText}>
                       {errors.rentalIncomeStartYear}
@@ -354,7 +373,7 @@ const RealEstateModal = ({
                 </div>
 
                 <div className={styles.field}>
-                  <label className={styles.label}>임대 수입 종료년도</label>
+                  <label className={styles.label}>임대 소득 종료년도</label>
                   <input
                     type="text"
                     value={formData.rentalIncomeEndYear}
@@ -370,6 +389,18 @@ const RealEstateModal = ({
                     }`}
                     placeholder="예: 2083"
                   />
+                  {/* 임대 소득 종료년도 나이 표시 */}
+                  {formData.rentalIncomeEndYear &&
+                    profileData &&
+                    profileData.birthYear && (
+                      <div className={styles.agePreview}>
+                        {calculateKoreanAge(
+                          profileData.birthYear,
+                          formData.rentalIncomeEndYear
+                        )}
+                        세
+                      </div>
+                    )}
                   {errors.rentalIncomeEndYear && (
                     <span className={styles.errorText}>
                       {errors.rentalIncomeEndYear}
@@ -418,6 +449,18 @@ const RealEstateModal = ({
                   }`}
                   placeholder="예: 2040"
                 />
+                {/* 주택연금 시작년도 나이 표시 */}
+                {formData.pensionStartYear &&
+                  profileData &&
+                  profileData.birthYear && (
+                    <div className={styles.agePreview}>
+                      {calculateKoreanAge(
+                        profileData.birthYear,
+                        formData.pensionStartYear
+                      )}
+                      세
+                    </div>
+                  )}
                 {errors.pensionStartYear && (
                   <span className={styles.errorText}>
                     {errors.pensionStartYear}
