@@ -1,279 +1,262 @@
-/* 프로필 목록 페이지 스타일 - 심플한 블랙 & 화이트 */
+/* 프로필 목록 페이지 스타일 - 심플한 화이트 */
 .container {
   min-height: 100vh;
   background: #ffffff;
-  padding: 2rem;
 }
 
+/* 상단 헤더 */
 .header {
-  text-align: center;
-  margin-bottom: 3rem;
+  background: #f3f4f6;
   border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 2rem;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 }
 
 .title {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #111827;
-  margin-bottom: 0.5rem;
-}
-
-.subtitle {
-  font-size: 1.1rem;
-  color: #6b7280;
-  margin-bottom: 2rem;
+  margin: 0;
 }
 
 .createButton {
-  background: #111827;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.8125rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  border: none;
+  outline: none;
+  background: #111827;
+  color: white;
 }
 
 .createButton:hover {
   background: #374151;
 }
 
-.headerActions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
+.createButton:focus,
+.createButton:active {
+  outline: none;
 }
 
-.toggleButton {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* 프로필 리스트 */
+.profileList {
+  padding: 0;
 }
 
-.toggleButton:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
-}
-
-.toggleButton.active {
-  background: #111827;
-  color: white;
-  border-color: #111827;
-}
-
-.toggleButton.active:hover {
-  background: #374151;
-}
-
-.profileGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.profileCard {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-}
-
-.profileCard:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-}
-
-.profileInfo {
-  display: flex;
-}
-
-.profileName {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 1rem;
-}
-
-.profileDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.detailItem {
+.profileItem {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.detailItem:last-child {
-  border-bottom: none;
+.profileItem:hover {
+  background: #f9fafb;
 }
 
-.label {
-  font-weight: 500;
-  color: #6b7280;
-  font-size: 0.9rem;
+.profileInfo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.value {
+.profileName {
+  font-size: 1.125rem;
   font-weight: 600;
   color: #111827;
-  font-size: 0.9rem;
+  margin: 0;
+  white-space: nowrap;
+  margin-right: 12px;
 }
 
+.infoText {
+  font-weight: 500;
+  font-size: 14px;
+  color: #6b7280;
+  white-space: nowrap;
+  margin-right: 0;
+  margin-top: 6px;
+}
+
+.infoDivider {
+  font-size: 14px;
+  color: #d1d5db;
+  margin: 0 6px;
+}
+
+/* 프로필 액션 */
 .profileActions {
   display: flex;
-  gap: 0.75rem;
-}
-
-.selectButton {
-  flex: 1;
-  background: #111827;
-  color: white;
-  border: none;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.selectButton:hover {
-  background: #374151;
+  gap: 0.25rem;
+  align-items: center;
 }
 
 .deleteButton {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 0.75rem 1rem;
+  padding: 0.375rem 0.75rem;
   border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 0.8125rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  color: #6b7280;
+  white-space: nowrap;
 }
 
 .deleteButton:hover {
-  background: #dc2626;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
-.emptyState {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 4rem 2rem;
-  color: #6b7280;
+.deleteButton:focus,
+.deleteButton:active {
+  outline: none;
 }
 
-.emptyState h3 {
+/* 프로필 추가 아이템 */
+.addProfileItem {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.addProfileItem:hover {
+  background: #f9fafb;
+}
+
+.addProfileContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.addIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   font-size: 1.5rem;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 0.5rem;
+  color: #6b7280;
+  font-weight: 300;
 }
 
-.loading,
-.error {
-  text-align: center;
-  padding: 4rem 2rem;
-  font-size: 1.1rem;
+.addText {
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* 로딩 및 에러 상태 */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 1.2rem;
   color: #6b7280;
 }
 
 .error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 1.2rem;
   color: #ef4444;
 }
 
-/* 모바일 반응형 */
-@media (max-width: 640px) {
-  .container {
+/* 빈 상태 */
+.emptyState {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #6b7280;
+}
+
+.emptyState p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .header {
     padding: 1rem;
+    flex-wrap: wrap;
   }
 
   .title {
-    font-size: 2rem;
+    font-size: 1rem;
   }
 
-  .profileGrid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  .createButton {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
   }
 
-  .profileCard {
-    padding: 1rem;
+  .profileItem {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .profileInfo {
+    gap: 0.5rem;
+  }
+
+  .profileName {
+    font-size: 1rem;
+    margin-right: 8px;
+  }
+
+  .infoText {
+    font-size: 12px;
+  }
+
+  .infoDivider {
+    font-size: 12px;
   }
 
   .profileActions {
-    flex-direction: column;
+    width: 100%;
+    justify-content: flex-end;
   }
-}
 
-/* 삭제된 프로필 스타일 */
-.deletedCard {
-  opacity: 0.7;
-  border: 1px solid #fca5a5;
-  background: #fef2f2;
-}
+  .deleteButton {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
 
-.deletedBadge {
-  display: inline-block;
-  background: #ef4444;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
+  .addProfileItem {
+    padding: 0.75rem 1rem;
+  }
 
-.restoreButton {
-  background: #10b981;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-right: 0.5rem;
-}
+  .addIcon {
+    width: 28px;
+    height: 28px;
+    font-size: 1.25rem;
+  }
 
-.restoreButton:hover {
-  background: #059669;
-}
-
-.permanentDeleteButton {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.permanentDeleteButton:hover {
-  background: #dc2626;
+  .addText {
+    font-size: 0.875rem;
+  }
 }

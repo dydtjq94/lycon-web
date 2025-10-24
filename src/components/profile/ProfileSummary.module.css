@@ -2,6 +2,11 @@
 .profileSummary {
   margin: 0 0 12px 0;
   padding: 0 16px;
+  display: flex;
+  align-items: center;
+  /* 레이아웃 시프트 방지를 위한 고정 높이 */
+  height: 60px;
+  background: transparent;
 }
 
 .scrollContainer {
@@ -9,6 +14,7 @@
   gap: 8px;
   overflow-x: auto;
   padding: 4px 0;
+  background: transparent;
   /* 스크롤바 스타일링 */
   scrollbar-width: thin;
   scrollbar-color: #d1d5db #f3f4f6;
@@ -30,6 +36,38 @@
 
 .scrollContainer::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
+}
+
+/* 로딩 플레이스홀더 */
+.loadingPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 20px;
+  min-width: 120px;
+  height: 48px;
+  background: transparent;
+  /* 로딩 상태에서도 충분한 공간 확보 */
+  flex-shrink: 0;
+}
+
+/* 로딩 스피너 애니메이션 */
+.loadingSpinner {
+  width: 2px;
+  height: 2px;
+  border: 2px solid #f3f4f6;
+  border-top: 2px solid #6b7280;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 재무 항목 카드 */
@@ -74,6 +112,7 @@
   word-break: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -131,6 +170,15 @@
   .profileSummary {
     margin: 12px 0;
     padding: 0 12px;
+    /* 모바일에서도 동일한 높이 유지 */
+    height: 80px;
+    min-height: 80px;
+  }
+
+  .loadingPlaceholder {
+    min-width: 200px;
+    padding: 12px 16px;
+    height: 44px;
   }
 
   .financeCard {
@@ -140,49 +188,5 @@
 
   .itemTitle {
     font-size: 11px;
-  }
-}
-
-/* 다크모드 대응 (선택사항) */
-@media (prefers-color-scheme: dark) {
-  .financeCard {
-    background: transparent;
-    border-color: #e3e3e3;
-  }
-
-  .financeCard:hover {
-    border-color: #9ca3af;
-    /* background: #1f2937; */
-  }
-
-  .financeCard:active {
-    border-color: #d1d5db;
-    background: #374151;
-  }
-
-  .itemTitle {
-    color: #9ca3af;
-  }
-
-  .emptyState {
-    background: #111827;
-    border-color: #f8f8f8;
-  }
-
-  .emptyMessage {
-    color: #d1d5db;
-  }
-
-  .emptySubMessage {
-    color: #9ca3af;
-  }
-
-  .deleteButton {
-    color: #9ca3af;
-  }
-
-  .deleteButton:hover {
-    /* background-color: #f8f8f8; */
-    color: #d1d5db;
   }
 }

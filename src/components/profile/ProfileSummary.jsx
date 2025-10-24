@@ -15,6 +15,7 @@ function ProfileSummary({
   debts = [],
   onItemClick,
   onDelete,
+  isLoading = false,
 }) {
   // 모든 재무 항목을 하나의 배열로 합치기
   const allFinanceItems = [
@@ -27,9 +28,17 @@ function ProfileSummary({
     ...(debts || []).map((item) => ({ ...item, category: "debt" })),
   ];
 
-  // 항목이 없을 때는 아무것도 표시하지 않음
-  if (allFinanceItems.length === 0) {
-    return null;
+  // 로딩 중이거나 항목이 없을 때는 로딩 상태 표시
+  if (isLoading || allFinanceItems.length === 0) {
+    return (
+      <div className={styles.profileSummary}>
+        <div className={styles.scrollContainer}>
+          <div className={styles.loadingPlaceholder}>
+            <div className={styles.loadingSpinner}></div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // 카드 클릭 핸들러

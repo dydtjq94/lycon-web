@@ -47,11 +47,13 @@
 /* 상단 프로필 헤더 */
 .profileHeader {
   background: #f3f4f6;
-  padding: 8px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .backIconButton {
@@ -86,16 +88,18 @@
   flex: 1;
   display: flex;
   align-items: center;
+  gap: 8px;
+
   flex-wrap: wrap;
 }
 
 .profileName {
-  font-size: 1.125rem;
+  font-size: 20px;
   font-weight: 600;
   color: #111827;
   margin: 0;
   white-space: nowrap;
-  margin-right: 20px;
+  margin-right: 12px;
   cursor: pointer;
   transition: color 0.2s ease;
 }
@@ -105,16 +109,18 @@
 }
 
 .infoText {
-  font-size: 0.8125rem;
+  font-weight: 500;
+  font-size: 14px;
   color: #6b7280;
   white-space: nowrap;
-  margin-right: 8px;
-  margin-top: 4px;
+  margin-right: 0;
+  margin-top: 6px;
 }
 
 .infoDivider {
-  font-size: 0.8125rem;
+  font-size: 14px;
   color: #d1d5db;
+  margin: 0 6px;
 }
 
 .profileActions {
@@ -602,11 +608,11 @@
   }
 
   .infoText {
-    font-size: 0.75rem;
+    font-size: 12px;
   }
 
   .infoDivider {
-    font-size: 0.75rem;
+    font-size: 12px;
   }
 
   .profileActions {

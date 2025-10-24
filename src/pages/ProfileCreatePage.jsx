@@ -459,14 +459,14 @@ function ProfileCreatePage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Lycon Planning</h1>
-        <p className={styles.subtitle}>새로운 내담자 프로필을 생성하세요</p>
         <button
-          className={styles.backButton}
+          className={styles.backIconButton}
           onClick={() => navigate("/consult")}
+          title="목록으로"
         >
-          ← 목록으로 돌아가기
+          ←
         </button>
+        <h1 className={styles.title}>새 프로필 생성</h1>
       </div>
 
       <div className={styles.formContainer}>
@@ -478,183 +478,188 @@ function ProfileCreatePage() {
           {/* 기본 정보 섹션 */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>기본 정보</h3>
-
-            <div className={styles.field}>
-              <label htmlFor="name" className={styles.label}>
-                이름 *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className={`${styles.input} ${
-                  errors.name ? styles.inputError : ""
-                }`}
-                placeholder="홍길동"
-                disabled={isSubmitting}
-              />
-              {errors.name && (
-                <span className={styles.errorText}>{errors.name}</span>
-              )}
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="birthYear" className={styles.label}>
-                출생년도 * (현재 만 나이:{" "}
-                {formData.birthYear
-                  ? calculateKoreanAge(parseInt(formData.birthYear))
-                  : "?"}
-                세)
-              </label>
-              <input
-                type="text"
-                id="birthYear"
-                name="birthYear"
-                value={formData.birthYear}
-                onChange={handleChange}
-                className={`${styles.input} ${
-                  errors.birthYear ? styles.inputError : ""
-                }`}
-                placeholder="1990"
-                disabled={isSubmitting}
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-              />
-              {errors.birthYear && (
-                <span className={styles.errorText}>{errors.birthYear}</span>
-              )}
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="retirementAge" className={styles.label}>
-                은퇴 목표 연령 * (은퇴년도:{" "}
-                {formData.birthYear && formData.retirementAge
-                  ? parseInt(formData.birthYear) +
-                    parseInt(formData.retirementAge)
-                  : "?"}
-                년)
-              </label>
-              <input
-                type="text"
-                id="retirementAge"
-                name="retirementAge"
-                value={formData.retirementAge}
-                onChange={handleChange}
-                className={`${styles.input} ${
-                  errors.retirementAge ? styles.inputError : ""
-                }`}
-                placeholder="65"
-                disabled={isSubmitting}
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-              />
-              {errors.retirementAge && (
-                <span className={styles.errorText}>{errors.retirementAge}</span>
-              )}
-            </div>
-
-            <div className={styles.field}>
-              <label
-                htmlFor="retirementLivingExpenses"
-                className={styles.label}
-              >
-                은퇴 시점 예상 생활비 (만원/월) *
-              </label>
-              <input
-                type="text"
-                id="retirementLivingExpenses"
-                name="retirementLivingExpenses"
-                value={formData.retirementLivingExpenses}
-                onChange={handleChange}
-                className={`${styles.input} ${
-                  errors.retirementLivingExpenses ? styles.inputError : ""
-                }`}
-                placeholder="300"
-                disabled={isSubmitting}
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-              />
-              {errors.retirementLivingExpenses && (
-                <span className={styles.errorText}>
-                  {errors.retirementLivingExpenses}
-                </span>
-              )}
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="targetAssets" className={styles.label}>
-                은퇴 시점 목표 자산 규모 (만원) *
-              </label>
-              <input
-                type="text"
-                id="targetAssets"
-                name="targetAssets"
-                value={formData.targetAssets}
-                onChange={handleChange}
-                className={`${styles.input} ${
-                  errors.targetAssets ? styles.inputError : ""
-                }`}
-                placeholder="50000"
-                disabled={isSubmitting}
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-              />
-              {formData.targetAssets &&
-                !isNaN(parseInt(formData.targetAssets)) && (
-                  <div className={styles.amountPreview}>
-                    {formatAmountForChart(parseInt(formData.targetAssets))}
-                  </div>
+            <div className={styles.fieldGrid}>
+              <div className={styles.field}>
+                <label htmlFor="name" className={styles.label}>
+                  이름 *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={`${styles.input} ${
+                    errors.name ? styles.inputError : ""
+                  }`}
+                  placeholder="홍길동"
+                  disabled={isSubmitting}
+                />
+                {errors.name && (
+                  <span className={styles.errorText}>{errors.name}</span>
                 )}
-              {errors.targetAssets && (
-                <span className={styles.errorText}>{errors.targetAssets}</span>
-              )}
-            </div>
+              </div>
 
-            {/* 현재 현금 */}
-            <div className={styles.field}>
-              <label htmlFor="currentCash" className={styles.label}>
-                현재 현금 (만원)
-              </label>
-              <input
-                type="text"
-                id="currentCash"
-                name="currentCash"
-                value={formData.currentCash}
-                onChange={handleChange}
-                className={`${styles.input} ${
-                  errors.currentCash ? styles.inputError : ""
-                }`}
-                placeholder="1000"
-                disabled={isSubmitting}
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-              />
-              {formData.currentCash &&
-                !isNaN(parseInt(formData.currentCash)) && (
-                  <div className={styles.amountPreview}>
-                    {formatAmountForChart(parseInt(formData.currentCash))}
-                  </div>
+              <div className={styles.field}>
+                <label htmlFor="birthYear" className={styles.label}>
+                  출생년도 * (현재 만 나이:{" "}
+                  {formData.birthYear
+                    ? calculateKoreanAge(parseInt(formData.birthYear))
+                    : "?"}
+                  세)
+                </label>
+                <input
+                  type="text"
+                  id="birthYear"
+                  name="birthYear"
+                  value={formData.birthYear}
+                  onChange={handleChange}
+                  className={`${styles.input} ${
+                    errors.birthYear ? styles.inputError : ""
+                  }`}
+                  placeholder="1990"
+                  disabled={isSubmitting}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+                {errors.birthYear && (
+                  <span className={styles.errorText}>{errors.birthYear}</span>
                 )}
-              {errors.currentCash && (
-                <span className={styles.errorText}>{errors.currentCash}</span>
-              )}
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="retirementAge" className={styles.label}>
+                  은퇴 목표 연령 * (은퇴년도:{" "}
+                  {formData.birthYear && formData.retirementAge
+                    ? parseInt(formData.birthYear) +
+                      parseInt(formData.retirementAge)
+                    : "?"}
+                  년)
+                </label>
+                <input
+                  type="text"
+                  id="retirementAge"
+                  name="retirementAge"
+                  value={formData.retirementAge}
+                  onChange={handleChange}
+                  className={`${styles.input} ${
+                    errors.retirementAge ? styles.inputError : ""
+                  }`}
+                  placeholder="65"
+                  disabled={isSubmitting}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+                {errors.retirementAge && (
+                  <span className={styles.errorText}>
+                    {errors.retirementAge}
+                  </span>
+                )}
+              </div>
+
+              <div className={styles.field}>
+                <label
+                  htmlFor="retirementLivingExpenses"
+                  className={styles.label}
+                >
+                  은퇴 시점 예상 생활비 (만원/월) *
+                </label>
+                <input
+                  type="text"
+                  id="retirementLivingExpenses"
+                  name="retirementLivingExpenses"
+                  value={formData.retirementLivingExpenses}
+                  onChange={handleChange}
+                  className={`${styles.input} ${
+                    errors.retirementLivingExpenses ? styles.inputError : ""
+                  }`}
+                  placeholder="300"
+                  disabled={isSubmitting}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+                {errors.retirementLivingExpenses && (
+                  <span className={styles.errorText}>
+                    {errors.retirementLivingExpenses}
+                  </span>
+                )}
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="targetAssets" className={styles.label}>
+                  은퇴 시점 목표 자산 규모 (만원) *
+                </label>
+                <input
+                  type="text"
+                  id="targetAssets"
+                  name="targetAssets"
+                  value={formData.targetAssets}
+                  onChange={handleChange}
+                  className={`${styles.input} ${
+                    errors.targetAssets ? styles.inputError : ""
+                  }`}
+                  placeholder="50000"
+                  disabled={isSubmitting}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+                {formData.targetAssets &&
+                  !isNaN(parseInt(formData.targetAssets)) && (
+                    <div className={styles.amountPreview}>
+                      {formatAmountForChart(parseInt(formData.targetAssets))}
+                    </div>
+                  )}
+                {errors.targetAssets && (
+                  <span className={styles.errorText}>
+                    {errors.targetAssets}
+                  </span>
+                )}
+              </div>
+
+              {/* 현재 현금 */}
+              <div className={styles.field}>
+                <label htmlFor="currentCash" className={styles.label}>
+                  현재 현금 (만원)
+                </label>
+                <input
+                  type="text"
+                  id="currentCash"
+                  name="currentCash"
+                  value={formData.currentCash}
+                  onChange={handleChange}
+                  className={`${styles.input} ${
+                    errors.currentCash ? styles.inputError : ""
+                  }`}
+                  placeholder="1000"
+                  disabled={isSubmitting}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+                {formData.currentCash &&
+                  !isNaN(parseInt(formData.currentCash)) && (
+                    <div className={styles.amountPreview}>
+                      {formatAmountForChart(parseInt(formData.currentCash))}
+                    </div>
+                  )}
+                {errors.currentCash && (
+                  <span className={styles.errorText}>{errors.currentCash}</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -663,7 +668,7 @@ function ProfileCreatePage() {
             <h3 className={styles.sectionTitle}>가구 구성</h3>
 
             {/* 배우자 정보 */}
-            <div className={styles.field}>
+            <div className={`${styles.field} ${styles.fieldFullWidth}`}>
               <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
@@ -678,59 +683,61 @@ function ProfileCreatePage() {
 
             {formData.hasSpouse && (
               <div className={styles.spouseSection}>
-                <div className={styles.field}>
-                  <label htmlFor="spouseName" className={styles.label}>
-                    배우자 이름 *
-                  </label>
-                  <input
-                    type="text"
-                    id="spouseName"
-                    name="spouseName"
-                    value={formData.spouseName}
-                    onChange={handleSpouseChange}
-                    className={`${styles.input} ${
-                      errors.spouseName ? styles.inputError : ""
-                    }`}
-                    placeholder="김영희"
-                    disabled={isSubmitting}
-                  />
-                  {errors.spouseName && (
-                    <span className={styles.errorText}>
-                      {errors.spouseName}
-                    </span>
-                  )}
-                </div>
+                <div className={styles.fieldGrid}>
+                  <div className={styles.field}>
+                    <label htmlFor="spouseName" className={styles.label}>
+                      배우자 이름 *
+                    </label>
+                    <input
+                      type="text"
+                      id="spouseName"
+                      name="spouseName"
+                      value={formData.spouseName}
+                      onChange={handleSpouseChange}
+                      className={`${styles.input} ${
+                        errors.spouseName ? styles.inputError : ""
+                      }`}
+                      placeholder="김영희"
+                      disabled={isSubmitting}
+                    />
+                    {errors.spouseName && (
+                      <span className={styles.errorText}>
+                        {errors.spouseName}
+                      </span>
+                    )}
+                  </div>
 
-                <div className={styles.field}>
-                  <label htmlFor="spouseBirthYear" className={styles.label}>
-                    배우자 출생년도 * (현재 만 나이:{" "}
-                    {formData.spouseBirthYear
-                      ? calculateKoreanAge(parseInt(formData.spouseBirthYear))
-                      : "?"}
-                    세)
-                  </label>
-                  <input
-                    type="text"
-                    id="spouseBirthYear"
-                    name="spouseBirthYear"
-                    value={formData.spouseBirthYear}
-                    onChange={handleSpouseChange}
-                    className={`${styles.input} ${
-                      errors.spouseBirthYear ? styles.inputError : ""
-                    }`}
-                    placeholder="1992"
-                    disabled={isSubmitting}
-                    onKeyPress={(e) => {
-                      if (!/[0-9]/.test(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
-                  />
-                  {errors.spouseBirthYear && (
-                    <span className={styles.errorText}>
-                      {errors.spouseBirthYear}
-                    </span>
-                  )}
+                  <div className={styles.field}>
+                    <label htmlFor="spouseBirthYear" className={styles.label}>
+                      배우자 출생년도 * (현재 만 나이:{" "}
+                      {formData.spouseBirthYear
+                        ? calculateKoreanAge(parseInt(formData.spouseBirthYear))
+                        : "?"}
+                      세)
+                    </label>
+                    <input
+                      type="text"
+                      id="spouseBirthYear"
+                      name="spouseBirthYear"
+                      value={formData.spouseBirthYear}
+                      onChange={handleSpouseChange}
+                      className={`${styles.input} ${
+                        errors.spouseBirthYear ? styles.inputError : ""
+                      }`}
+                      placeholder="1992"
+                      disabled={isSubmitting}
+                      onKeyPress={(e) => {
+                        if (!/[0-9]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                    />
+                    {errors.spouseBirthYear && (
+                      <span className={styles.errorText}>
+                        {errors.spouseBirthYear}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -751,87 +758,93 @@ function ProfileCreatePage() {
 
               {formData.familyMembers.map((member, index) => (
                 <div key={index} className={styles.familyMemberItem}>
-                  <div className={styles.field}>
-                    <label className={styles.label}>
-                      가구원 {index + 1} 이름
-                    </label>
-                    <input
-                      type="text"
-                      value={member.name}
-                      onChange={(e) =>
-                        handleFamilyMemberChange(index, "name", e.target.value)
-                      }
-                      className={`${styles.input} ${
-                        errors[`member${index}Name`] ? styles.inputError : ""
-                      }`}
-                      placeholder="홍철수"
-                      disabled={isSubmitting}
-                    />
-                    {errors[`member${index}Name`] && (
-                      <span className={styles.errorText}>
-                        {errors[`member${index}Name`]}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label className={styles.label}>관계</label>
-                    <select
-                      value={member.relationship}
-                      onChange={(e) =>
-                        handleFamilyMemberChange(
-                          index,
-                          "relationship",
-                          e.target.value
-                        )
-                      }
-                      className={`${styles.input} ${styles.select}`}
-                      disabled={isSubmitting}
-                    >
-                      <option value="부모">부모</option>
-                      <option value="자녀">자녀</option>
-                      <option value="형제자매">형제자매</option>
-                      <option value="조부모">조부모</option>
-                      <option value="기타">기타</option>
-                    </select>
-                  </div>
-
-                  <div className={styles.field}>
-                    <label className={styles.label}>
-                      출생년도 (현재 만 나이:{" "}
-                      {member.birthYear
-                        ? calculateKoreanAge(parseInt(member.birthYear))
-                        : "?"}
-                      세)
-                    </label>
-                    <input
-                      type="text"
-                      value={member.birthYear}
-                      onChange={(e) =>
-                        handleFamilyMemberChange(
-                          index,
-                          "birthYear",
-                          e.target.value
-                        )
-                      }
-                      className={`${styles.input} ${
-                        errors[`member${index}BirthYear`]
-                          ? styles.inputError
-                          : ""
-                      }`}
-                      placeholder="2015"
-                      disabled={isSubmitting}
-                      onKeyPress={(e) => {
-                        if (!/[0-9]/.test(e.key)) {
-                          e.preventDefault();
+                  <div className={styles.fieldGrid}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>
+                        가구원 {index + 1} 이름
+                      </label>
+                      <input
+                        type="text"
+                        value={member.name}
+                        onChange={(e) =>
+                          handleFamilyMemberChange(
+                            index,
+                            "name",
+                            e.target.value
+                          )
                         }
-                      }}
-                    />
-                    {errors[`member${index}BirthYear`] && (
-                      <span className={styles.errorText}>
-                        {errors[`member${index}BirthYear`]}
-                      </span>
-                    )}
+                        className={`${styles.input} ${
+                          errors[`member${index}Name`] ? styles.inputError : ""
+                        }`}
+                        placeholder="홍철수"
+                        disabled={isSubmitting}
+                      />
+                      {errors[`member${index}Name`] && (
+                        <span className={styles.errorText}>
+                          {errors[`member${index}Name`]}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>관계</label>
+                      <select
+                        value={member.relationship}
+                        onChange={(e) =>
+                          handleFamilyMemberChange(
+                            index,
+                            "relationship",
+                            e.target.value
+                          )
+                        }
+                        className={`${styles.input} ${styles.select}`}
+                        disabled={isSubmitting}
+                      >
+                        <option value="부모">부모</option>
+                        <option value="자녀">자녀</option>
+                        <option value="형제자매">형제자매</option>
+                        <option value="조부모">조부모</option>
+                        <option value="기타">기타</option>
+                      </select>
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>
+                        출생년도 (현재 만 나이:{" "}
+                        {member.birthYear
+                          ? calculateKoreanAge(parseInt(member.birthYear))
+                          : "?"}
+                        세)
+                      </label>
+                      <input
+                        type="text"
+                        value={member.birthYear}
+                        onChange={(e) =>
+                          handleFamilyMemberChange(
+                            index,
+                            "birthYear",
+                            e.target.value
+                          )
+                        }
+                        className={`${styles.input} ${
+                          errors[`member${index}BirthYear`]
+                            ? styles.inputError
+                            : ""
+                        }`}
+                        placeholder="2015"
+                        disabled={isSubmitting}
+                        onKeyPress={(e) => {
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                      {errors[`member${index}BirthYear`] && (
+                        <span className={styles.errorText}>
+                          {errors[`member${index}BirthYear`]}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <button

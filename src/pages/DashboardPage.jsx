@@ -61,6 +61,7 @@ function DashboardPage() {
   // 시뮬레이션 관련 state
   const [simulations, setSimulations] = useState([]); // 모든 시뮬레이션 목록
   const [activeSimulationId, setActiveSimulationId] = useState(null); // 현재 활성화된 시뮬레이션 ID
+  const [isFinancialDataLoading, setIsFinancialDataLoading] = useState(true); // 재무 데이터 로딩 상태
 
   const [incomes, setIncomes] = useState([]);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
@@ -200,165 +201,84 @@ function DashboardPage() {
     loadSimulations();
   }, [profileId]);
 
-  // 소득 데이터 로드
+  // 모든 재무 데이터를 한 번에 병렬로 로드
   useEffect(() => {
-    const loadIncomes = async () => {
+    const loadAllFinancialData = async () => {
       if (!profileId || !activeSimulationId) return;
 
       try {
-        const incomeData = await incomeService.getIncomes(
-          profileId,
-          activeSimulationId
-        );
-        // 생성 순서대로 정렬 (createdAt 기준)
+        // 시뮬레이션 변경 시 이전 데이터 즉시 초기화
+        setIncomes([]);
+        setExpenses([]);
+        setSavings([]);
+        setPensions([]);
+        setRealEstates([]);
+        setAssets([]);
+        setDebts([]);
+
+        setIsFinancialDataLoading(true); // 로딩 시작
+        console.log("모든 재무 데이터 로드 시작");
+
+        // Promise.all을 사용하여 모든 데이터를 동시에 가져오기
+        const [
+          incomeData,
+          expenseData,
+          savingData,
+          pensionData,
+          realEstateData,
+          assetsData,
+          debtData,
+        ] = await Promise.all([
+          incomeService.getIncomes(profileId, activeSimulationId),
+          expenseService.getExpenses(profileId, activeSimulationId),
+          savingsService.getSavings(profileId, activeSimulationId),
+          pensionService.getPensions(profileId, activeSimulationId),
+          realEstateService.getRealEstates(profileId, activeSimulationId),
+          assetService.getAssets(profileId, activeSimulationId),
+          debtService.getDebts(profileId, activeSimulationId),
+        ]);
+
+        // 모든 데이터를 생성 순서대로 정렬 (createdAt 기준)
         const sortedIncomes = incomeData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
-        setIncomes(sortedIncomes);
-      } catch (error) {
-        console.error("소득 데이터 로드 오류:", error);
-      }
-    };
-
-    loadIncomes();
-  }, [profileId, activeSimulationId]);
-
-  // 지출 데이터 로드
-  useEffect(() => {
-    const loadExpenses = async () => {
-      if (!profileId || !activeSimulationId) return;
-
-      try {
-        const expenseData = await expenseService.getExpenses(
-          profileId,
-          activeSimulationId
-        );
-        // 생성 순서대로 정렬 (createdAt 기준)
         const sortedExpenses = expenseData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
-        setExpenses(sortedExpenses);
-      } catch (error) {
-        console.error("지출 데이터 로드 오류:", error);
-      }
-    };
-
-    loadExpenses();
-  }, [profileId, activeSimulationId]);
-
-  // 저축/투자 데이터 로드
-  useEffect(() => {
-    const loadSavings = async () => {
-      if (!profileId || !activeSimulationId) return;
-
-      try {
-        const savingData = await savingsService.getSavings(
-          profileId,
-          activeSimulationId
-        );
-        // 생성 순서대로 정렬 (createdAt 기준)
         const sortedSavings = savingData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
-        setSavings(sortedSavings);
-      } catch (error) {
-        console.error("저축/투자 데이터 로드 오류:", error);
-      }
-    };
-
-    loadSavings();
-  }, [profileId, activeSimulationId]);
-
-  // 연금 데이터 로드
-  useEffect(() => {
-    const loadPensions = async () => {
-      if (!profileId || !activeSimulationId) return;
-
-      try {
-        const pensionData = await pensionService.getPensions(
-          profileId,
-          activeSimulationId
-        );
-        // 생성 순서대로 정렬 (createdAt 기준)
         const sortedPensions = pensionData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
-        setPensions(sortedPensions);
-      } catch (error) {
-        console.error("연금 데이터 로드 오류:", error);
-      }
-    };
-
-    loadPensions();
-  }, [profileId, activeSimulationId]);
-
-  // 부동산 데이터 로드
-  useEffect(() => {
-    const loadRealEstates = async () => {
-      if (!profileId || !activeSimulationId) return;
-
-      try {
-        const realEstateData = await realEstateService.getRealEstates(
-          profileId,
-          activeSimulationId
-        );
-        // 생성 순서대로 정렬 (createdAt 기준)
         const sortedRealEstates = realEstateData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
-        setRealEstates(sortedRealEstates);
-      } catch (error) {
-        console.error("부동산 데이터 로드 오류:", error);
-      }
-    };
-
-    loadRealEstates();
-  }, [profileId, activeSimulationId]);
-
-  // 자산 데이터 로드
-  useEffect(() => {
-    const loadAssets = async () => {
-      if (!profileId || !activeSimulationId) return;
-
-      try {
-        const assetsData = await assetService.getAssets(
-          profileId,
-          activeSimulationId
-        );
-        // 생성 순서대로 정렬 (createdAt 기준)
         const sortedAssets = assetsData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
-        setAssets(sortedAssets);
-      } catch (error) {
-        console.error("자산 데이터 로드 오류:", error);
-      }
-    };
-
-    loadAssets();
-  }, [profileId, activeSimulationId]);
-
-  // 부채 데이터 로드
-  useEffect(() => {
-    const loadDebts = async () => {
-      if (!profileId || !activeSimulationId) return;
-
-      try {
-        const debtData = await debtService.getDebts(
-          profileId,
-          activeSimulationId
-        );
-        // 생성 순서대로 정렬 (createdAt 기준)
         const sortedDebts = debtData.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
+
+        // 모든 상태를 한 번에 업데이트
+        setIncomes(sortedIncomes);
+        setExpenses(sortedExpenses);
+        setSavings(sortedSavings);
+        setPensions(sortedPensions);
+        setRealEstates(sortedRealEstates);
+        setAssets(sortedAssets);
         setDebts(sortedDebts);
+
+        console.log("모든 재무 데이터 로드 완료");
+        setIsFinancialDataLoading(false); // 로딩 완료
       } catch (error) {
-        console.error("부채 데이터 로드 오류:", error);
+        console.error("재무 데이터 로드 오류:", error);
+        setIsFinancialDataLoading(false); // 오류 시에도 로딩 완료 처리
       }
     };
 
-    loadDebts();
+    loadAllFinancialData();
   }, [profileId, activeSimulationId]);
 
   // 시뮬레이션 데이터 생성
@@ -433,9 +353,9 @@ function DashboardPage() {
     [incomes, expenses, savings, pensions, realEstates, assets, debts]
   );
 
-  // 소득 데이터가 변경될 때마다 시뮬레이션 재계산
+  // 재무 데이터 로딩이 완료되고 데이터가 변경될 때마다 시뮬레이션 재계산
   useEffect(() => {
-    if (profileData) {
+    if (profileData && !isFinancialDataLoading) {
       generateSimulationData(profileData);
     }
   }, [
@@ -447,6 +367,7 @@ function DashboardPage() {
     assets,
     debts,
     profileData,
+    isFinancialDataLoading,
     generateSimulationData,
   ]);
 
@@ -1070,8 +991,6 @@ function DashboardPage() {
           setActiveSimulationId(updatedSimulations[0].id);
         }
       }
-
-      alert("시뮬레이션이 삭제되었습니다.");
     } catch (error) {
       console.error("시뮬레이션 삭제 오류:", error);
       alert(error.message || "시뮬레이션 삭제 중 오류가 발생했습니다.");
@@ -1287,20 +1206,20 @@ ${JSON.stringify(analysisData, null, 2)}`;
           <span className={styles.infoText}>
             현재 {calculateKoreanAge(profileData.birthYear)}세
           </span>
-          <span className={styles.infoDivider}>·</span>
+          <span className={styles.infoDivider}>|</span>
           <span className={styles.infoText}>
             은퇴 {profileData.retirementAge}세 (
             {profileData.birthYear + profileData.retirementAge}년)
           </span>
-          <span className={styles.infoDivider}>·</span>
+          <span className={styles.infoDivider}>|</span>
           <span className={styles.infoText}>
             현금 {formatAmount(profileData.currentCash)}
           </span>
-          <span className={styles.infoDivider}>·</span>
+          <span className={styles.infoDivider}>|</span>
           <span className={styles.infoText}>
             목표 {formatAmount(profileData.targetAssets)}
           </span>
-          <span className={styles.infoDivider}>·</span>
+          <span className={styles.infoDivider}>|</span>
           <span className={styles.infoText}>
             가구{" "}
             {(() => {
@@ -1344,7 +1263,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         />
       )}
 
-      {/* 재무 항목 요약 */}
+      {/* 재무 항목 요약 - 항상 렌더링하여 레이아웃 시프트 방지 */}
       <ProfileSummary
         incomes={incomes}
         expenses={expenses}
@@ -1355,6 +1274,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         debts={debts}
         onItemClick={handleProfileSummaryItemClick}
         onDelete={handleProfileSummaryDelete}
+        isLoading={isFinancialDataLoading}
       />
 
       {/* 메인 대시보드 */}
