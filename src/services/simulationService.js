@@ -303,7 +303,7 @@ export const simulationService = {
     subcollectionName
   ) {
     try {
-      // 원본 하위 컬렉션 데이터 조회
+      // 원본 하위 컬렉션 데이터 조회 (생성 시간 순으로 정렬)
       const sourceRef = collection(
         db,
         "profiles",
@@ -312,7 +312,9 @@ export const simulationService = {
         sourceSimulationId,
         subcollectionName
       );
-      const snapshot = await getDocs(sourceRef);
+      const snapshot = await getDocs(
+        query(sourceRef, orderBy("createdAt", "asc"))
+      );
 
       if (snapshot.empty) {
         console.log(`${subcollectionName}: 복사할 데이터 없음`);
@@ -335,11 +337,11 @@ export const simulationService = {
           )
         );
 
-        // id를 제외한 데이터 복사
+        // id를 제외한 데이터 복사 (createdAt은 원본 유지, updatedAt만 갱신)
         const data = sourceDoc.data();
         batch.set(targetRef, {
           ...data,
-          createdAt: new Date().toISOString(), // 새로운 생성 시간
+          // createdAt은 원본 그대로 유지하여 순서 보장
           updatedAt: new Date().toISOString(),
         });
         count++;
