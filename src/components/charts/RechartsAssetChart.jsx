@@ -253,7 +253,13 @@ function RechartsAssetChart({
                       <div className={styles.tooltipBreakdown}>
                         <div className={styles.tooltipItem}>
                           <span className={styles.tooltipLabel}>순자산:</span>
-                          <span className={styles.tooltipValue}>
+                          <span
+                            className={styles.tooltipValue}
+                            style={{
+                              color: totalAssets >= 0 ? "#059669" : "#dc2626",
+                            }}
+                          >
+                            {totalAssets >= 0 ? "+" : ""}
                             {formatAmountForChart(totalAssets)}
                           </span>
                         </div>
