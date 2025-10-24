@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { formatAmount, formatAmountForChart } from "../utils/format";
+import { formatAmount, formatAmountForChart } from "../../utils/format";
 import styles from "./AssetModal.module.css";
 
 /**

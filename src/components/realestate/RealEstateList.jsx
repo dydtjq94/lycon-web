@@ -1,5 +1,5 @@
 import React from "react";
-import { formatAmount } from "../utils/format";
+import { formatAmount } from "../../utils/format";
 import styles from "./RealEstateList.module.css";
 
 const RealEstateList = ({ realEstates, onEdit, onDelete }) => {

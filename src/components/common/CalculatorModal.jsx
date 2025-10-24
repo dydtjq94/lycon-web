@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./CalculatorModal.module.css";
-import { formatAmountForChart } from "../utils/format";
+import { formatAmountForChart } from "../../utils/format";
 
 /**
  * 계산기 모달 컴포넌트

@@ -11,7 +11,7 @@ import {
   Legend,
   Cell,
 } from "recharts";
-import { formatAmountForChart } from "../utils/format";
+import { formatAmountForChart } from "../../utils/format";
 import styles from "./RechartsAssetChart.module.css";
 
 /**

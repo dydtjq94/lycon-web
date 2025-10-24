@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./SavingModal.module.css";
-import { formatAmountForChart } from "../utils/format";
+import { formatAmountForChart } from "../../utils/format";
 
 /**
  * 저축/투자 데이터 추가/수정 모달

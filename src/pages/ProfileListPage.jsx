@@ -85,7 +85,7 @@ function ProfileListPage() {
         <div className={styles.headerActions}>
           <button
             className={styles.createButton}
-            onClick={() => navigate("/create")}
+            onClick={() => navigate("/consult/create")}
           >
             + 새 프로필 추가
           </button>
@@ -145,7 +145,7 @@ function ProfileListPage() {
               <div className={styles.profileActions}>
                 <button
                   className={styles.selectButton}
-                  onClick={() => navigate(`/dashboard/${profile.id}`)}
+                  onClick={() => navigate(`/consult/dashboard/${profile.id}`)}
                 >
                   상세 보기
                 </button>

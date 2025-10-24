@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./PensionModal.module.css";
-import { formatAmountForChart } from "../utils/format";
+import { formatAmountForChart } from "../../utils/format";
 
 /**
  * 연금 데이터 추가/수정 모달

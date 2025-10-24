@@ -10,7 +10,7 @@ import {
   ReferenceLine,
   Cell,
 } from "recharts";
-import { formatAmountForChart } from "../utils/format";
+import { formatAmountForChart } from "../../utils/format";
 import styles from "./RechartsCashflowChart.module.css";
 
 /**

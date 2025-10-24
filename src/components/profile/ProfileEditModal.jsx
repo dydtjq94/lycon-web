@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { calculateKoreanAge, getKoreanAgeInYear } from "../utils/koreanAge";
-import { profileService } from "../services/firestoreService";
-import { formatAmountForChart } from "../utils/format";
+import { calculateKoreanAge, getKoreanAgeInYear } from "../../utils/koreanAge";
+import { profileService } from "../../services/firestoreService";
+import { formatAmountForChart } from "../../utils/format";
 import styles from "./ProfileEditModal.module.css";
 
 /**

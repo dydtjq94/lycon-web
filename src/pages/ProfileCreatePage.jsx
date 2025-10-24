@@ -408,7 +408,7 @@ function ProfileCreatePage() {
       }
 
       // 대시보드로 이동
-      navigate(`/dashboard/${createdProfile.id}`);
+      navigate(`/consult/dashboard/${createdProfile.id}`);
     } catch (error) {
       console.error("프로필 생성 오류:", error);
       setErrors({
@@ -424,7 +424,10 @@ function ProfileCreatePage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Lycon Planning</h1>
         <p className={styles.subtitle}>새로운 내담자 프로필을 생성하세요</p>
-        <button className={styles.backButton} onClick={() => navigate("/")}>
+        <button
+          className={styles.backButton}
+          onClick={() => navigate("/consult")}
+        >
           ← 목록으로 돌아가기
         </button>
       </div>

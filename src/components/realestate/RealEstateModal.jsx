@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./RealEstateModal.module.css";
-import { formatAmountForChart } from "../utils/format";
+import { formatAmountForChart } from "../../utils/format";
 
 const RealEstateModal = ({
   isOpen,

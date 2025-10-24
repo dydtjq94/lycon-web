@@ -1,5 +1,5 @@
 import React from "react";
-import versionData from "../../version.json";
+import versionData from "../../../version.json";
 
 /**
  * 버전 표시 컴포넌트 (개발자용)

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import styles from "./ExpenseModal.module.css";
-import { formatAmountForChart } from "../utils/format";
+import styles from "./IncomeModal.module.css";
+import { formatAmountForChart } from "../../utils/format";
 
 /**
- * 지출 데이터 추가/수정 모달
+ * 수입 데이터 추가/수정 모달
  */
-function ExpenseModal({
+function IncomeModal({
   isOpen,
   onClose,
   onSave,
@@ -27,7 +27,7 @@ function ExpenseModal({
     startYear: new Date().getFullYear(),
     endYear: getRetirementYear(),
     memo: "",
-    growthRate: "2.5", // % 단위로 기본값 설정
+    growthRate: "2.5", // 기본 상승률 2.5%
   });
 
   const [errors, setErrors] = useState({});
@@ -41,8 +41,8 @@ function ExpenseModal({
           frequency:
             editData.originalFrequency || editData.frequency || "monthly",
           amount: editData.originalAmount || editData.amount || "",
-          startYear: parseInt(editData.startYear) || new Date().getFullYear(),
-          endYear: parseInt(editData.endYear) || getRetirementYear(),
+          startYear: editData.startYear || new Date().getFullYear(),
+          endYear: editData.endYear || getRetirementYear(),
           memo: editData.memo || "",
           growthRate: editData.growthRate
             ? editData.growthRate.toString()
@@ -68,7 +68,7 @@ function ExpenseModal({
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "제목을 입력해주세요.";
+      newErrors.title = "수입 항목명을 입력해주세요.";
     }
 
     if (!formData.amount || formData.amount < 0) {
@@ -79,21 +79,16 @@ function ExpenseModal({
       newErrors.endYear = "종료년도는 시작년도보다 늦어야 합니다.";
     }
 
+    const growthRateNum = parseFloat(formData.growthRate);
+    if (isNaN(growthRateNum) || growthRateNum < 0 || growthRateNum > 100) {
+      newErrors.growthRate = "상승률은 0-100% 사이의 유효한 숫자여야 합니다.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // 숫자와 마이너스 기호 입력 허용
-  const handleKeyPress = (e) => {
-    if (
-      !/[0-9.-]/.test(e.key) &&
-      !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)
-    ) {
-      e.preventDefault();
-    }
-  };
-
-  // 폼 제출 핸들러
+  // 폼 제출
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -101,21 +96,19 @@ function ExpenseModal({
       return;
     }
 
-    const expenseData = {
+    const incomeData = {
       ...formData,
       amount: parseInt(formData.amount),
-      startYear: parseInt(formData.startYear), // 문자열을 숫자로 변환
-      endYear: parseInt(formData.endYear), // 문자열을 숫자로 변환
-      growthRate: parseFloat(formData.growthRate), // 백분율 그대로 저장 (마이너스 값 포함)
+      growthRate: parseFloat(formData.growthRate),
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
     };
 
-    onSave(expenseData);
+    onSave(incomeData);
     onClose();
   };
 
-  // 모달 닫기 핸들러
+  // 모달이 닫힐 때 폼 초기화
   const handleClose = () => {
     setFormData({
       title: "",
@@ -137,7 +130,7 @@ function ExpenseModal({
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>
-            {editData ? "지출 수정" : "지출 추가"}
+            {editData ? "수입 수정" : "수입 추가"}
           </h2>
           <button className={styles.closeButton} onClick={handleClose}>
             ×
@@ -145,10 +138,10 @@ function ExpenseModal({
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          {/* 지출 항목명 */}
+          {/* 수입 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
-              지출 항목명 *
+              수입 항목명 *
             </label>
             <input
               type="text"
@@ -158,7 +151,7 @@ function ExpenseModal({
                 setFormData({ ...formData, title: e.target.value })
               }
               className={`${styles.input} ${errors.title ? styles.error : ""}`}
-              placeholder="예: 생활비, 교육비, 의료비"
+              placeholder="예: 근로소득, 사업소득, 임대소득"
             />
             {errors.title && (
               <span className={styles.errorText}>{errors.title}</span>
@@ -195,11 +188,13 @@ function ExpenseModal({
                 onChange={(e) =>
                   setFormData({ ...formData, amount: e.target.value })
                 }
-                onKeyPress={handleKeyPress}
                 className={`${styles.input} ${
                   errors.amount ? styles.error : ""
                 }`}
-                placeholder="예: 300"
+                placeholder="100"
+                onKeyPress={(e) => {
+                  if (!/[0-9.]/.test(e.key)) e.preventDefault();
+                }}
               />
               {formData.amount && !isNaN(parseInt(formData.amount)) && (
                 <div className={styles.amountPreview}>
@@ -212,7 +207,7 @@ function ExpenseModal({
             </div>
           </div>
 
-          {/* 기간 */}
+          {/* 시작년도와 종료년도 */}
           <div className={styles.row}>
             <div className={styles.field}>
               <label htmlFor="startYear" className={styles.label}>
@@ -222,16 +217,16 @@ function ExpenseModal({
                 type="text"
                 id="startYear"
                 value={formData.startYear}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // 숫자만 허용하고 4자리 제한
-                  if (value === "" || /^\d{0,4}$/.test(value)) {
-                    setFormData({ ...formData, startYear: value });
-                  }
-                }}
-                onKeyPress={handleKeyPress}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    startYear: parseInt(e.target.value) || 0,
+                  })
+                }
                 className={styles.input}
-                placeholder="2025"
+                onKeyPress={(e) => {
+                  if (!/[0-9.]/.test(e.key)) e.preventDefault();
+                }}
               />
             </div>
 
@@ -243,18 +238,18 @@ function ExpenseModal({
                 type="text"
                 id="endYear"
                 value={formData.endYear}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // 숫자만 허용하고 4자리 제한
-                  if (value === "" || /^\d{0,4}$/.test(value)) {
-                    setFormData({ ...formData, endYear: value });
-                  }
-                }}
-                onKeyPress={handleKeyPress}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    endYear: parseInt(e.target.value) || 0,
+                  })
+                }
                 className={`${styles.input} ${
                   errors.endYear ? styles.error : ""
                 }`}
-                placeholder="2035"
+                onKeyPress={(e) => {
+                  if (!/[0-9.]/.test(e.key)) e.preventDefault();
+                }}
               />
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
@@ -265,7 +260,7 @@ function ExpenseModal({
           {/* 상승률 */}
           <div className={styles.field}>
             <label htmlFor="growthRate" className={styles.label}>
-              상승률 (%)
+              연간 상승률 (%)
             </label>
             <input
               type="text"
@@ -273,15 +268,22 @@ function ExpenseModal({
               value={formData.growthRate}
               onChange={(e) => {
                 const value = e.target.value;
-                // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
-                if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
-                  setFormData({ ...formData, growthRate: value });
+                // 숫자와 소수점만 허용
+                if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                  setFormData({
+                    ...formData,
+                    growthRate: value,
+                  });
                 }
               }}
-              onKeyPress={handleKeyPress}
-              className={styles.input}
-              placeholder="2.5 (마이너스 가능: -1.0)"
+              className={`${styles.input} ${
+                errors.growthRate ? styles.error : ""
+              }`}
+              placeholder="2.5"
             />
+            {errors.growthRate && (
+              <span className={styles.errorText}>{errors.growthRate}</span>
+            )}
           </div>
 
           {/* 메모 */}
@@ -296,12 +298,13 @@ function ExpenseModal({
                 setFormData({ ...formData, memo: e.target.value })
               }
               className={styles.textarea}
-              rows="3"
-              placeholder="추가 설명이나 참고사항을 입력하세요"
+              placeholder="추가 설명이나 참고사항"
+              rows={3}
             />
           </div>
 
-          <div className={styles.modalFooter}>
+          {/* 버튼 */}
+          <div className={styles.buttonGroup}>
             <button
               type="button"
               className={styles.cancelButton}
@@ -319,4 +322,4 @@ function ExpenseModal({
   );
 }
 
-export default ExpenseModal;
+export default IncomeModal;

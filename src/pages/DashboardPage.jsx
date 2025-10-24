@@ -17,25 +17,25 @@ import {
   assetService,
   debtService,
 } from "../services/firestoreService";
-import RechartsCashflowChart from "../components/RechartsCashflowChart";
-import RechartsAssetChart from "../components/RechartsAssetChart";
-import IncomeModal from "../components/IncomeModal";
-import IncomeList from "../components/IncomeList";
-import ExpenseModal from "../components/ExpenseModal";
-import ExpenseList from "../components/ExpenseList";
-import SavingModal from "../components/SavingModal";
-import SavingList from "../components/SavingList";
-import PensionModal from "../components/PensionModal";
-import PensionList from "../components/PensionList";
-import RealEstateModal from "../components/RealEstateModal";
-import RealEstateList from "../components/RealEstateList";
-import AssetModal from "../components/AssetModal";
-import AssetList from "../components/AssetList";
-import DebtModal from "../components/DebtModal";
-import DebtList from "../components/DebtList";
-import ProfileEditModal from "../components/ProfileEditModal";
-import ProfileSummary from "../components/ProfileSummary";
-import CalculatorModal from "../components/CalculatorModal";
+import RechartsCashflowChart from "../components/charts/RechartsCashflowChart";
+import RechartsAssetChart from "../components/charts/RechartsAssetChart";
+import IncomeModal from "../components/income/IncomeModal";
+import IncomeList from "../components/income/IncomeList";
+import ExpenseModal from "../components/expense/ExpenseModal";
+import ExpenseList from "../components/expense/ExpenseList";
+import SavingModal from "../components/saving/SavingModal";
+import SavingList from "../components/saving/SavingList";
+import PensionModal from "../components/pension/PensionModal";
+import PensionList from "../components/pension/PensionList";
+import RealEstateModal from "../components/realestate/RealEstateModal";
+import RealEstateList from "../components/realestate/RealEstateList";
+import AssetModal from "../components/asset/AssetModal";
+import AssetList from "../components/asset/AssetList";
+import DebtModal from "../components/debt/DebtModal";
+import DebtList from "../components/debt/DebtList";
+import ProfileEditModal from "../components/profile/ProfileEditModal";
+import ProfileSummary from "../components/profile/ProfileSummary";
+import CalculatorModal from "../components/common/CalculatorModal";
 import styles from "./DashboardPage.module.css";
 
 /**
@@ -96,13 +96,13 @@ function DashboardPage() {
             setProfileData(profile);
             // generateSimulationData는 별도 useEffect에서 처리
           } else {
-            navigate("/");
+            navigate("/consult");
           }
         }
       } catch (error) {
         console.error("프로필 로드 오류:", error);
         if (isMounted) {
-          navigate("/");
+          navigate("/consult");
         }
       } finally {
         if (isMounted) {
@@ -942,7 +942,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
     return (
       <div className={styles.container}>
         <div className={styles.error}>프로필을 찾을 수 없습니다.</div>
-        <button onClick={() => navigate("/")}>목록으로 돌아가기</button>
+        <button onClick={() => navigate("/consult")}>목록으로 돌아가기</button>
       </div>
     );
   }
@@ -972,7 +972,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
     return (
       <div className={styles.container}>
         <div className={styles.error}>프로필을 찾을 수 없습니다.</div>
-        <button onClick={() => navigate("/")}>목록으로 돌아가기</button>
+        <button onClick={() => navigate("/consult")}>목록으로 돌아가기</button>
       </div>
     );
   }
@@ -1045,7 +1045,10 @@ ${JSON.stringify(analysisData, null, 2)}`;
           <button className={styles.editButton} onClick={handleEditProfile}>
             프로필 수정
           </button>
-          <button className={styles.backButton} onClick={() => navigate("/")}>
+          <button
+            className={styles.backButton}
+            onClick={() => navigate("/consult")}
+          >
             목록으로
           </button>
         </div>

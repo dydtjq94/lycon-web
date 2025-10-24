@@ -1,5 +1,5 @@
 import React from "react";
-import { formatAmountForChart } from "../utils/format";
+import { formatAmountForChart } from "../../utils/format";
 import styles from "./AssetChart.module.css";
 
 /**
