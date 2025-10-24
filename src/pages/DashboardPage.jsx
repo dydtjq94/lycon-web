@@ -1304,13 +1304,21 @@ ${JSON.stringify(analysisData, null, 2)}`;
             <>
               <div className={styles.listHeader}>
                 <button
-                  className={styles.backButton}
+                  className={styles.backIconButton}
                   onClick={handleBackToCategories}
+                  title="뒤로가기"
                 >
-                  ← 뒤로
+                  ←
                 </button>
-                <button className={styles.addButton} onClick={handleAddData}>
-                  + {getCategoryName(selectedCategory)} 추가
+                <h2 className={styles.listTitle}>
+                  {getCategoryName(selectedCategory)}
+                </h2>
+                <button
+                  className={styles.addIconButton}
+                  onClick={handleAddData}
+                  title="추가"
+                >
+                  +
                 </button>
               </div>
               <div className={styles.listContent}>

@@ -241,9 +241,12 @@ function RechartsAssetChart({
                         <span className={styles.tooltipTitle}>
                           {data.age}세 ({data.year}년)
                         </span>
+                        {data.age === retirementAge && (
+                          <div className={styles.retirementWarning}>은퇴</div>
+                        )}
                         {cashNegativeTransition &&
                           data.age === cashNegativeTransition.age && (
-                            <div className={styles.cashWarning}>!현금 위험</div>
+                            <div className={styles.cashWarning}>현금 위험</div>
                           )}
                       </div>
 

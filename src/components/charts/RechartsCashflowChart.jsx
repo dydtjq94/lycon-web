@@ -212,6 +212,9 @@ function RechartsCashflowChart({
                           <span className={styles.tooltipTitle}>
                             {data.age}세 ({data.year}년)
                           </span>
+                          {data.age === retirementAge && (
+                            <div className={styles.retirementWarning}>은퇴</div>
+                          )}
                         </div>
                         <div className={styles.tooltipBreakdown}>
                           <div className={styles.tooltipItem}>
@@ -582,6 +585,37 @@ function RechartsCashflowChart({
                                 type: "positive",
                               });
                             }
+
+                            // 자산 수익 (수익형 자산)
+                            assets
+                              .filter(
+                                (asset) =>
+                                  asset.assetType === "income" &&
+                                  asset.incomeRate > 0 &&
+                                  data.year >= asset.startYear &&
+                                  data.year <= asset.endYear
+                              )
+                              .forEach((asset, index) => {
+                                const yearsElapsed =
+                                  data.year - asset.startYear;
+                                const growthRate = asset.growthRate || 0;
+
+                                // 자산 가치 계산 (상승률 적용)
+                                const currentAssetValue =
+                                  asset.currentValue *
+                                  Math.pow(1 + growthRate, yearsElapsed);
+
+                                // 연간 수익 계산 (자산 가치 * 수익률)
+                                const annualIncome =
+                                  currentAssetValue * asset.incomeRate;
+
+                                allItems.push({
+                                  key: `asset-income-${index}`,
+                                  label: `${asset.title} (수익)`,
+                                  value: annualIncome,
+                                  type: "positive",
+                                });
+                              });
 
                             // 자산 수입
                             if (yearData.assetSale > 0) {
