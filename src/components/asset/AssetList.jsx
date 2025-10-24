@@ -55,6 +55,10 @@ function AssetList({ assets, onEdit, onDelete }) {
                 `, 수익률 ${(asset.incomeRate * 100).toFixed(1)}%`}
               )
             </div>
+
+            {asset.memo && (
+              <div className={styles.assetMemo}>{asset.memo}</div>
+            )}
           </div>
         </div>
       ))}

@@ -49,6 +49,10 @@ function IncomeList({ incomes, onEdit, onDelete }) {
               <br />
               (상승률 {income.growthRate}% 적용)
             </div>
+
+            {income.memo && (
+              <div className={styles.incomeMemo}>{income.memo}</div>
+            )}
           </div>
         </div>
       ))}

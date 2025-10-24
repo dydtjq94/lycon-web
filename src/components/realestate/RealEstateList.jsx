@@ -72,7 +72,6 @@ const RealEstateList = ({ realEstates, onEdit, onDelete }) => {
 
             {realEstate.memo && (
               <div className={styles.memo}>
-                <span className={styles.memoLabel}>메모:</span>
                 <span className={styles.memoText}>{realEstate.memo}</span>
               </div>
             )}

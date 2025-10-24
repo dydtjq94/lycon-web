@@ -76,6 +76,16 @@
   margin-right: -8px;
 }
 
+.expenseMemo {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
+  background: #f9fafb;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+}
+
 .emptyState {
   text-align: center;
   padding: 40px 20px;

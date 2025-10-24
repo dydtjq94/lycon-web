@@ -124,9 +124,13 @@
 }
 
 .memo {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
+  background: #f9fafb;
+  padding: 0.5rem;
+  border-radius: 4px;
   margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #e5e7eb;
 }
 
 .memoLabel {

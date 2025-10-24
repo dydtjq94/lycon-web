@@ -49,6 +49,10 @@ function ExpenseList({ expenses, onEdit, onDelete }) {
               <br />
               (상승률 {expense.growthRate}% 적용)
             </div>
+
+            {expense.memo && (
+              <div className={styles.expenseMemo}>{expense.memo}</div>
+            )}
           </div>
         </div>
       ))}
