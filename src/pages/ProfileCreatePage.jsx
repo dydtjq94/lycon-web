@@ -69,20 +69,8 @@ function ProfileCreatePage() {
         originalFrequency: "monthly", // 원본 빈도 (리스트 표시용)
         startYear: currentYear,
         endYear: deathYear,
-        growthRate: 2.5, // 물가상승률 2.5%
-        memo: "물가상승률 적용",
-        category: "income",
-      },
-      {
-        title: "임대소득",
-        amount: 0,
-        originalAmount: 0, // 원본 금액 (리스트 표시용)
-        frequency: "monthly",
-        originalFrequency: "monthly", // 원본 빈도 (리스트 표시용)
-        startYear: currentYear,
-        endYear: deathYear,
-        growthRate: 2.5, // 물가상승률 2.5%
-        memo: "물가상승률 적용",
+        growthRate: 3.0, // 소득 상승률 3%
+        memo: "소득 상승률 적용",
         category: "income",
       },
     ];
@@ -169,8 +157,8 @@ function ProfileCreatePage() {
         frequency: "monthly",
         startYear: currentYear,
         endYear: retirementYear,
-        growthRate: 2.5, // 물가상승률 2.5%
-        memo: "물가상승률 적용",
+        growthRate: 2.0, // 상승률 2%
+        memo: "상승률 2% 적용",
         category: "expense",
       },
       {
@@ -179,8 +167,8 @@ function ProfileCreatePage() {
         frequency: "monthly",
         startYear: retirementYear + 1, // 은퇴 다음 년도부터
         endYear: deathYear,
-        growthRate: 2.5, // 물가상승률 2.5%
-        memo: "물가상승률 적용",
+        growthRate: -2.0, // 상승률 -2%
+        memo: "상승률 -2% 적용",
         category: "expense",
       },
     ];

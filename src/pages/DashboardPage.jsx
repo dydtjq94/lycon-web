@@ -87,6 +87,7 @@ function DashboardPage() {
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // 사이드바 접기/펼치기 상태
 
   // 프로필 데이터 로드
   useEffect(() => {
@@ -1198,29 +1199,49 @@ ${JSON.stringify(analysisData, null, 2)}`;
         <div className={styles.profileInfo}>
           <h1
             className={styles.profileName}
-            onDoubleClick={handleEditProfile}
-            title="더블클릭하여 수정"
+            onClick={handleEditProfile}
+            title="클릭하여 수정"
           >
             {profileData.name}님
           </h1>
-          <span className={styles.infoText}>
+          <span
+            className={styles.infoText}
+            onClick={handleEditProfile}
+            title="클릭하여 수정"
+          >
             현재 {calculateKoreanAge(profileData.birthYear)}세
           </span>
           <span className={styles.infoDivider}>|</span>
-          <span className={styles.infoText}>
+          <span
+            className={styles.infoText}
+            onClick={handleEditProfile}
+            title="클릭하여 수정"
+          >
             은퇴 {profileData.retirementAge}세 (
             {profileData.birthYear + profileData.retirementAge}년)
           </span>
           <span className={styles.infoDivider}>|</span>
-          <span className={styles.infoText}>
+          <span
+            className={styles.infoText}
+            onClick={handleEditProfile}
+            title="클릭하여 수정"
+          >
             현금 {formatAmount(profileData.currentCash)}
           </span>
           <span className={styles.infoDivider}>|</span>
-          <span className={styles.infoText}>
+          <span
+            className={styles.infoText}
+            onClick={handleEditProfile}
+            title="클릭하여 수정"
+          >
             목표 {formatAmount(profileData.targetAssets)}
           </span>
           <span className={styles.infoDivider}>|</span>
-          <span className={styles.infoText}>
+          <span
+            className={styles.infoText}
+            onClick={handleEditProfile}
+            title="클릭하여 수정"
+          >
             가구{" "}
             {(() => {
               let count = 1;
@@ -1263,24 +1284,50 @@ ${JSON.stringify(analysisData, null, 2)}`;
         />
       )}
 
-      {/* 재무 항목 요약 - 항상 렌더링하여 레이아웃 시프트 방지 */}
-      <ProfileSummary
-        incomes={incomes}
-        expenses={expenses}
-        savings={savings}
-        pensions={pensions}
-        realEstates={realEstates}
-        assets={assets}
-        debts={debts}
-        onItemClick={handleProfileSummaryItemClick}
-        onDelete={handleProfileSummaryDelete}
-        isLoading={isFinancialDataLoading}
-      />
+      {/* 사이드바 토글 버튼 & 재무 항목 요약 */}
+      <div className={styles.summaryContainer}>
+        <button
+          className={`${styles.sidebarToggleButton} ${
+            isSidebarCollapsed ? styles.collapsed : ""
+          }`}
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          title={isSidebarCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+          </svg>
+        </button>
+        {/* 재무 항목 요약 - 항상 렌더링하여 레이아웃 시프트 방지 */}
+        <ProfileSummary
+          incomes={incomes}
+          expenses={expenses}
+          savings={savings}
+          pensions={pensions}
+          realEstates={realEstates}
+          assets={assets}
+          debts={debts}
+          onItemClick={handleProfileSummaryItemClick}
+          onDelete={handleProfileSummaryDelete}
+          isLoading={isFinancialDataLoading}
+        />
+      </div>
 
       {/* 메인 대시보드 */}
       <div className={styles.dashboardMain}>
         {/* 좌측 동적 사이드바 */}
-        <div className={styles.sidebar}>
+        <div
+          className={`${styles.sidebar} ${
+            isSidebarCollapsed ? styles.collapsed : ""
+          }`}
+        >
           {sidebarView === "categories" ? (
             // 카테고리 목록 뷰
             <>

@@ -114,6 +114,12 @@
   white-space: nowrap;
   margin-right: 0;
   margin-top: 6px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.infoText:hover {
+  color: #374151;
 }
 
 .infoDivider {
@@ -222,12 +228,63 @@
   min-height: 0;
 }
 
+/* 사이드바 토글 버튼 컨테이너 */
+.summaryContainer {
+  display: flex;
+  gap: 8px;
+}
+
+/* 사이드바 토글 버튼 */
+.sidebarToggleButton {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  margin-left: 16px;
+  outline: none;
+  width: 36px;
+  padding: 8px;
+}
+
+/* 사이드바가 열렸을 때 버튼 너비 확장 */
+.sidebarToggleButton:not(.collapsed) {
+  width: 200px;
+}
+
+.sidebarToggleButton:hover {
+  color: #374151;
+  outline: none;
+}
+
+.sidebarToggleButton:focus,
+.sidebarToggleButton:active {
+  outline: none;
+}
+
+.sidebarToggleButton svg {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
 /* 좌측 사이드바 */
 .sidebar {
   width: 240px;
   border-right: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  overflow: hidden;
   padding: 4px 8px;
   overflow-y: auto;
+}
+
+.sidebar.collapsed {
+  width: 0;
+  padding: 0;
+  border-right: none;
 }
 
 .sidebarTitle {
@@ -272,7 +329,6 @@
 .categoryButton.active {
   background: #111827;
   color: white;
-  border-color: #111827;
 }
 
 .categoryName {
