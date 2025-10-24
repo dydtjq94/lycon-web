@@ -23,6 +23,23 @@ function SimulationModal({ isOpen, onClose, onCreate, isCreating = false }) {
     }
   }, [isOpen]);
 
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   // 모달이 닫혀있으면 렌더링하지 않음
   if (!isOpen) return null;
 

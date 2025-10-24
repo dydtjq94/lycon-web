@@ -69,6 +69,23 @@ function SavingModal({
     }
   }, [isOpen, editData]);
 
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   // 폼 유효성 검사
   const validateForm = () => {
     const newErrors = {};

@@ -130,6 +130,23 @@ function PensionModal({
     }
   }, [isOpen, editData]);
 
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   // 연금 타입 변경 시 기본값 설정
   const handleTypeChange = (newType) => {
     const currentYear = new Date().getFullYear();

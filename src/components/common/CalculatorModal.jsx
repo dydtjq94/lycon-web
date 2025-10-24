@@ -31,6 +31,23 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
     }
   }, [profileData, isOpen]);
 
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   // 목표 금액 계산 함수
   const calculateGoalAmount = () => {
     const targetAmount = parseFloat(goalFormData.targetAmount);

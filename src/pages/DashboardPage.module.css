@@ -372,12 +372,19 @@
   height: 32px;
   border-radius: 4px;
   margin-bottom: 4px;
+  outline: none;
 }
 
 .categoryAddButton:hover {
   background: #f3f4f6;
   color: #374151;
   font-weight: 400;
+  outline: none;
+}
+
+.categoryAddButton:focus,
+.categoryAddButton:active {
+  outline: none;
 }
 
 /* 리스트 뷰 스타일 */
