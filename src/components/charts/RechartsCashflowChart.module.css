@@ -1,4 +1,18 @@
 /* Recharts 현금 흐름 차트 스타일 */
+
+/* Recharts 기본 포커스 스타일 제거 */
+:global(.recharts-surface) {
+  outline: none !important;
+}
+
+:global(.recharts-wrapper) {
+  outline: none !important;
+}
+
+:global(.recharts-surface:focus) {
+  outline: none !important;
+}
+
 .chartContainer {
   width: 100%;
   height: 100%;
@@ -152,8 +166,15 @@
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   padding: 12px;
-
   min-width: 200px;
+}
+
+/* 확대된 툴팁 스타일 */
+.customTooltip[data-zoomed="true"] {
+  padding: 20px 24px;
+  min-width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .tooltipHeader {
@@ -175,10 +196,20 @@
   margin-left: 8px;
 }
 
+.customTooltip[data-zoomed="true"] .retirementWarning {
+  padding: 4px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
 .tooltipTitle {
   font-size: 0.875rem;
   font-weight: 600;
   color: #111827;
+}
+
+.customTooltip[data-zoomed="true"] .tooltipTitle {
+  font-size: 1.25rem;
 }
 
 .tooltipAmount {
@@ -220,14 +251,27 @@
   margin-bottom: 6px;
 }
 
+.customTooltip[data-zoomed="true"] .tooltipItem {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
 .tooltipLabel {
   color: #6b7280;
   font-weight: 500;
 }
 
+.customTooltip[data-zoomed="true"] .tooltipLabel {
+  font-size: 16px;
+}
+
 .tooltipValue {
   font-weight: 600;
   color: #111827;
+}
+
+.customTooltip[data-zoomed="true"] .tooltipValue {
+  font-size: 16px;
 }
 
 /* 반응형 디자인 */

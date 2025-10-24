@@ -69,7 +69,7 @@ function RechartsCashflowChart({
   }
 
   // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
-  const renderChart = (height = 500) => (
+  const renderChart = (height = 500, isZoomedView = false) => (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
@@ -205,7 +205,10 @@ function RechartsCashflowChart({
                   (yearData.debtPrincipal || 0);
 
                 return (
-                  <div className={styles.customTooltip}>
+                  <div
+                    className={styles.customTooltip}
+                    data-zoomed={isZoomedView}
+                  >
                     <div className={styles.tooltipHeader}>
                       <span className={styles.tooltipTitle}>
                         {data.age}세 ({data.year}년)
@@ -763,7 +766,7 @@ function RechartsCashflowChart({
         title="가계 현금흐름"
       >
         <div style={{ width: "100%", height: "100%" }}>
-          {renderChart("100%")}
+          {renderChart("100%", true)}
         </div>
       </ChartZoomModal>
     </>

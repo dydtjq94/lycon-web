@@ -172,7 +172,7 @@ function RechartsAssetChart({
   const yDomain = [-maxAbsValue - padding, maxAbsValue + padding];
 
   // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
-  const renderChart = (height = 500) => (
+  const renderChart = (height = 500, isZoomedView = false) => (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
@@ -236,7 +236,10 @@ function RechartsAssetChart({
               const totalAssets = capitalTotal - debtTotal;
 
               return (
-                <div className={styles.customTooltip}>
+                <div
+                  className={styles.customTooltip}
+                  data-zoomed={isZoomedView}
+                >
                   <div className={styles.tooltipHeader}>
                     <span className={styles.tooltipTitle}>
                       {data.age}세 ({data.year}년)
@@ -705,7 +708,7 @@ function RechartsAssetChart({
         title="가계 자산 규모"
       >
         <div style={{ width: "100%", height: "100%" }}>
-          {renderChart("100%")}
+          {renderChart("100%", true)}
         </div>
       </ChartZoomModal>
     </>
