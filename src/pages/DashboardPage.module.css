@@ -249,11 +249,13 @@
   outline: none;
   width: 36px;
   padding: 8px;
+  border: none;
 }
 
 /* 사이드바가 열렸을 때 버튼 너비 확장 */
 .sidebarToggleButton:not(.collapsed) {
-  width: 200px;
+  width: 224px;
+  border-right: 1px solid #e5e7eb;
 }
 
 .sidebarToggleButton:hover {
