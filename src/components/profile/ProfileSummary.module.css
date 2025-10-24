@@ -1,6 +1,6 @@
 /* 프로필 하단 재무 항목 요약 스타일 */
 .profileSummary {
-  margin: 16px 0;
+  margin: 0 0 12px 0;
   padding: 0 16px;
 }
 
@@ -37,7 +37,7 @@
   width: auto;
   padding: 8px 12px;
   background: transparent;
-  border: 1px solid #e3e3e3;
+  border-bottom: 1px solid #e3e3e3;
   border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -50,7 +50,6 @@
 
 .financeCard:hover {
   border-color: #4b4f56;
-  background: #f9fafb;
 }
 
 .financeCard:active {

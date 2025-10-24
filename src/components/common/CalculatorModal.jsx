@@ -127,7 +127,7 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
     <div className={styles.modalOverlay} onClick={handleClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>재무 계산기</h2>
+          <h2 className={styles.modalTitle}>목표 계산기</h2>
           <button className={styles.closeButton} onClick={handleClose}>
             ×
           </button>

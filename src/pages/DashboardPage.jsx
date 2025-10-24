@@ -1256,8 +1256,21 @@ ${JSON.stringify(analysisData, null, 2)}`;
     <div className={styles.container}>
       {/* 상단 프로필 정보 */}
       <div className={styles.profileHeader}>
+        <button
+          className={styles.backIconButton}
+          onClick={() => navigate("/consult")}
+          title="목록으로"
+        >
+          ←
+        </button>
         <div className={styles.profileInfo}>
-          <h1 className={styles.profileName}>{profileData.name}님</h1>
+          <h1
+            className={styles.profileName}
+            onDoubleClick={handleEditProfile}
+            title="더블클릭하여 수정"
+          >
+            {profileData.name}님
+          </h1>
           <span className={styles.infoText}>
             현재 {calculateKoreanAge(profileData.birthYear)}세
           </span>
@@ -1289,26 +1302,19 @@ ${JSON.stringify(analysisData, null, 2)}`;
         </div>
         <div className={styles.profileActions}>
           <button
-            className={styles.aiButton}
+            className={styles.iconButton}
             onClick={handleGenerateAIAnalysis}
             disabled={isGeneratingAI}
           >
-            {isGeneratingAI ? "AI 분석 중..." : "AI 분석 데이터 추출"}
+            <span className={styles.buttonText}>
+              {isGeneratingAI ? "AI 분석 데이터" : "AI 분석 데이터 추출"}
+            </span>
           </button>
           <button
-            className={styles.calculatorButton}
+            className={styles.iconButton}
             onClick={() => setIsCalculatorModalOpen(true)}
           >
-            계산기
-          </button>
-          <button className={styles.editButton} onClick={handleEditProfile}>
-            프로필 수정
-          </button>
-          <button
-            className={styles.backButton}
-            onClick={() => navigate("/consult")}
-          >
-            목록으로
+            <span className={styles.buttonText}>목표 계산기</span>
           </button>
         </div>
       </div>

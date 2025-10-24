@@ -552,6 +552,27 @@ function RechartsCashflowChart({
                                 }
                               });
 
+                            // 주택 연금 수입
+                            if (yearData.realEstatePension > 0) {
+                              // 해당 연도에 주택 연금을 받는 부동산 찾기
+                              const realEstateWithPension = realEstates.find(
+                                (re) =>
+                                  re.convertToPension === true &&
+                                  data.year >= re.pensionStartYear
+                              );
+
+                              const label = realEstateWithPension
+                                ? `주택연금 (${realEstateWithPension.title})`
+                                : "주택연금";
+
+                              allItems.push({
+                                key: "realEstatePension",
+                                label: label,
+                                value: yearData.realEstatePension,
+                                type: "positive",
+                              });
+                            }
+
                             // 부동산 수입
                             if (yearData.realEstateSale > 0) {
                               allItems.push({
