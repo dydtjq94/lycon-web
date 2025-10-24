@@ -1104,6 +1104,14 @@ function DashboardPage() {
 
     setIsGeneratingAI(true);
     try {
+      // 현재 선택된 시뮬레이션 정보 추가
+      const currentSimulation = simulations.find(
+        (sim) => sim.id === activeSimulationId
+      );
+      const simulationTitle = currentSimulation
+        ? currentSimulation.title
+        : "알 수 없음";
+
       const analysisData = extractAIAnalysisData(
         profileData,
         incomes,
@@ -1115,8 +1123,13 @@ function DashboardPage() {
         debts
       );
 
+      // 시뮬레이션 정보 추가
+      analysisData.시뮬레이션 = simulationTitle;
+
       // AI 분석용 프롬프트와 데이터를 함께 구성
       const promptText = `당신은 20년 경력의 전문 재무 상담사입니다. 제공된 재무 데이터를 분석하여 상세한 재무 상담과 구체적인 액션 플랜을 제시해주세요.
+
+**분석 대상 시뮬레이션: ${simulationTitle}**
 
 ## 분석 요청사항
 
