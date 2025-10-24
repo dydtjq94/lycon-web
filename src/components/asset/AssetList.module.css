@@ -2,20 +2,20 @@
 .assetList {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  padding: 0;
 }
 
 .assetItem {
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  padding: 12px 4px 20px 4px;
+
+  border-bottom: 1px solid #e5e7eb;
   background: white;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.assetItem {
-  cursor: pointer;
+.assetItem:hover {
+  background: #f9fafb;
 }
 
 .assetInfo {

@@ -1293,7 +1293,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   >
                     <span className={styles.categoryName}>{category.name}</span>
                     <span className={styles.categoryCount}>
-                      ({category.count}개)
+                      {category.count}개
                     </span>
                   </button>
                 ))}

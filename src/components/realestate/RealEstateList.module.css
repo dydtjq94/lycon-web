@@ -1,17 +1,20 @@
 .realEstateList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  padding: 0;
 }
 
 .realEstateItem {
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 4px 20px 4px;
+
   cursor: pointer;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  margin-bottom: 0.75rem;
+  transition: background 0.15s ease;
+}
+
+.realEstateItem:hover {
+  background: #f9fafb;
 }
 
 .realEstateHeader {

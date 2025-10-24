@@ -47,7 +47,6 @@
 /* 상단 프로필 헤더 */
 .profileHeader {
   background: #f3f4f6;
-  border-bottom: 1px solid #e5e7eb;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
@@ -245,12 +244,15 @@
 }
 
 .categoryButton {
+  border: none;
   display: flex;
   align-items: center;
-  padding: 1rem;
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 16px;
+  padding-top: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
@@ -267,11 +269,6 @@
   outline: none;
 }
 
-.categoryButton:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
-}
-
 .categoryButton.active {
   background: #111827;
   color: white;
@@ -281,10 +278,12 @@
 .categoryName {
   flex: 1;
   text-align: left;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .categoryCount {
-  font-size: 0.8rem;
+  font-size: 12px;
   color: #6b7280;
   font-weight: 400;
 }
@@ -295,7 +294,6 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  padding: 0.5rem 0;
 }
 
 .listTitle {
