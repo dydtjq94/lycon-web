@@ -1333,16 +1333,30 @@ ${JSON.stringify(analysisData, null, 2)}`;
             <>
               <div className={styles.categoryList}>
                 {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    className={styles.categoryButton}
-                    onClick={() => handleCategoryClick(category.id)}
-                  >
-                    <span className={styles.categoryName}>{category.name}</span>
-                    <span className={styles.categoryCount}>
-                      {category.count}개
-                    </span>
-                  </button>
+                  <div key={category.id} className={styles.categoryItem}>
+                    <button
+                      className={styles.categoryButton}
+                      onClick={() => handleCategoryClick(category.id)}
+                    >
+                      <span className={styles.categoryName}>
+                        {category.name}
+                      </span>
+                      <span className={styles.categoryCount}>
+                        {category.count}개
+                      </span>
+                    </button>
+                    <button
+                      className={styles.categoryAddButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCategory(category.id);
+                        handleAddData();
+                      }}
+                      title={`${category.name} 추가`}
+                    >
+                      +
+                    </button>
+                  </div>
                 ))}
               </div>
             </>

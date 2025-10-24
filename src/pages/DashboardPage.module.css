@@ -253,8 +253,7 @@
 
 /* 사이드바가 열렸을 때 버튼 너비 확장 */
 .sidebarToggleButton:not(.collapsed) {
-  width: 224px;
-  border-right: 1px solid #e5e7eb;
+  margin-right: 180px;
 }
 
 .sidebarToggleButton:hover {
@@ -301,22 +300,30 @@
   gap: 0.5rem;
 }
 
+/* 카테고리 아이템 컨테이너 */
+.categoryItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
 .categoryButton {
   border: none;
   display: flex;
   align-items: center;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 16px;
-  padding-top: 12px;
+  background: transparent;
   padding-left: 8px;
   padding-right: 8px;
+  padding-bottom: 16px;
+  padding-top: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
   color: #374151;
   text-align: left;
   outline: none;
+  flex: 1;
 }
 
 .categoryButton:focus {
@@ -325,6 +332,10 @@
 
 .categoryButton:active {
   outline: none;
+}
+
+.categoryButton:hover {
+  color: #111827;
 }
 
 .categoryButton.active {
@@ -342,6 +353,30 @@
 .categoryCount {
   font-size: 12px;
   color: #6b7280;
+}
+
+/* 카테고리 추가 버튼 */
+.categoryAddButton {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 18px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.categoryAddButton:hover {
+  background: #f3f4f6;
+  color: #374151;
   font-weight: 400;
 }
 
