@@ -58,14 +58,13 @@ function PensionList({ pensions, onEdit, onDelete }) {
         >
           <div className={styles.pensionHeader}>
             <div className={styles.pensionTitle}>
-              <span
-                className={styles.typeBadge}
-                style={{ color: getTypeColor(pension.type) }}
-              >
-                {getTypeLabel(pension.type)}
-              </span>
               {pension.title && (
-                <span className={styles.pensionName}>{pension.title}</span>
+                <span
+                  className={styles.pensionName}
+                  style={{ color: getTypeColor(pension.type) }}
+                >
+                  {pension.title}
+                </span>
               )}
             </div>
             <button
