@@ -39,6 +39,78 @@ function RechartsCashflowChart({
     );
   }
 
+  // 소득 이벤트 추출 (시작/종료 이벤트)
+  const getIncomeEvents = () => {
+    const events = [];
+    if (incomes && incomes.length > 0) {
+      incomes.forEach((income) => {
+        // 시작 이벤트
+        events.push({
+          year: income.startYear,
+          age: income.startYear - (data[0]?.year - data[0]?.age),
+          type: "start",
+          category: "income",
+          title: `${income.title} 시작`,
+        });
+
+        // 종료 이벤트
+        if (income.endYear) {
+          events.push({
+            year: income.endYear,
+            age: income.endYear - (data[0]?.year - data[0]?.age),
+            type: "end",
+            category: "income",
+            title: `${income.title} 종료`,
+          });
+        }
+      });
+    }
+    return events;
+  };
+
+  const incomeEvents = getIncomeEvents();
+
+  // 지출 이벤트 추출 (시작/종료 이벤트)
+  const getExpenseEvents = () => {
+    const events = [];
+    if (expenses && expenses.length > 0) {
+      expenses.forEach((expense) => {
+        // 시작 이벤트
+        events.push({
+          year: expense.startYear,
+          age: expense.startYear - (data[0]?.year - data[0]?.age),
+          type: "start",
+          category: "expense",
+          title: `${expense.title} 시작`,
+        });
+
+        // 종료 이벤트
+        if (expense.endYear) {
+          events.push({
+            year: expense.endYear,
+            age: expense.endYear - (data[0]?.year - data[0]?.age),
+            type: "end",
+            category: "expense",
+            title: `${expense.title} 종료`,
+          });
+        }
+      });
+    }
+    return events;
+  };
+
+  const expenseEvents = getExpenseEvents();
+
+  // 이벤트를 년도별로 그룹화
+  const allEvents = [...incomeEvents, ...expenseEvents];
+  const eventsByYear = allEvents.reduce((acc, event) => {
+    if (!acc[event.year]) {
+      acc[event.year] = [];
+    }
+    acc[event.year].push(event);
+    return acc;
+  }, {});
+
   // 차트 데이터 포맷팅
   const chartData = data.map((item) => ({
     age: item.age,
@@ -51,6 +123,8 @@ function RechartsCashflowChart({
     realEstateSales: item.realEstateSales || [],
     debtInterests: item.debtInterests || [],
     debtPrincipals: item.debtPrincipals || [],
+    // 이벤트 정보 추가
+    events: eventsByYear[item.year] || [],
   }));
 
   // 은퇴 시점 찾기
@@ -668,6 +742,36 @@ function RechartsCashflowChart({
                         );
                       })()}
                     </div>
+
+                    {/* 이벤트 정보 표시 */}
+                    {eventsByYear[data.year] &&
+                      eventsByYear[data.year].length > 0 && (
+                        <div className={styles.tooltipEvents}>
+                          <div className={styles.tooltipDivider}></div>
+
+                          {eventsByYear[data.year].map((event, index) => (
+                            <div
+                              key={index}
+                              className={styles.tooltipEventItem}
+                            >
+                              <span
+                                className={styles.tooltipEventDot}
+                                style={{
+                                  backgroundColor:
+                                    event.category === "income"
+                                      ? "#10b981"
+                                      : "#ef4444",
+                                  width: "6px",
+                                  height: "6px",
+                                }}
+                              ></span>
+                              <span className={styles.tooltipEventText}>
+                                {event.title}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 );
               }
@@ -712,6 +816,42 @@ function RechartsCashflowChart({
             />
           ))}
         </Bar>
+
+        {/* 이벤트 마커를 표시하기 위한 투명한 레이어 */}
+        {allEvents.map((event, eventIndex) => {
+          const dataIndex = chartData.findIndex((d) => d.age === event.age);
+          if (dataIndex === -1) return null;
+
+          // 카테고리별 색상 결정
+          const eventColor =
+            event.category === "income" ? "#10b981" : "#ef4444";
+
+          // 같은 년도의 이벤트 인덱스 계산 (수직으로 쌓기 위해)
+          const eventsInSameYear = allEvents.filter((e) => e.age === event.age);
+          const eventVerticalIndex = eventsInSameYear.findIndex(
+            (e) => e.year === event.year && e.title === event.title
+          );
+          const offset = 25 + eventVerticalIndex * 7.5; // 각 이벤트마다 7.5px씩 아래로
+
+          return (
+            <ReferenceLine
+              key={`event-${eventIndex}`}
+              x={event.age}
+              stroke="transparent"
+              strokeWidth={0}
+              label={{
+                value: "●",
+                position: "bottom",
+                offset: offset,
+                style: {
+                  fill: eventColor,
+                  fontSize: "8px",
+                  fontWeight: "bold",
+                },
+              }}
+            />
+          );
+        })}
       </BarChart>
     </ResponsiveContainer>
   );

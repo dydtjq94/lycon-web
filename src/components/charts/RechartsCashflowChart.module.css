@@ -231,6 +231,7 @@
 .tooltipLabel {
   color: #6b7280;
   font-weight: 500;
+  font-size: 14px;
 }
 
 .customTooltip[data-zoomed="true"] .tooltipLabel {
@@ -244,6 +245,40 @@
 
 .customTooltip[data-zoomed="true"] .tooltipValue {
   font-size: 16px;
+}
+
+/* 이벤트 스타일 */
+.tooltipEvents {
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.tooltipEventHeader {
+  margin-bottom: 8px;
+}
+
+.tooltipEventItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.tooltipEventDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tooltipEventText {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.customTooltip[data-zoomed="true"] .tooltipEventText {
+  font-size: 14px;
 }
 
 /* 반응형 디자인 */

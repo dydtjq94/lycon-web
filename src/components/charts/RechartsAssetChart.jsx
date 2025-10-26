@@ -622,61 +622,55 @@ function RechartsAssetChart({
               />
             );
           })}
-
-        {/* 범례 */}
-        <Legend
-          verticalAlign="bottom"
-          height={36}
-          wrapperStyle={{ paddingTop: "20px" }}
-          payload={[]}
-          content={({ payload }) => {
-            // 현금을 제외한 항목들만 표시
-            const filteredPayload = payload.filter(
-              (item) => item.dataKey !== "현금" && item.dataKey !== "현금 자산"
-            );
-            return (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                  gap: "16px",
-                }}
-              >
-                {filteredPayload.map((entry, index) => (
-                  <div
-                    key={`item-${index}`}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "12px",
-                        height: "12px",
-                        backgroundColor: entry.color,
-                        borderRadius: "2px",
-                      }}
-                    />
-                    <span style={{ fontSize: "12px", color: "#374151" }}>
-                      {entry.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            );
-          }}
-        />
       </BarChart>
     </ResponsiveContainer>
   );
 
+  // 범례 데이터 추출
+  const getLegendData = () => {
+    const allKeys =
+      chartData.length > 0
+        ? Object.keys(chartData[0]).filter(
+            (key) =>
+              key !== "year" &&
+              key !== "age" &&
+              key !== "totalAmount" &&
+              key !== "formattedAmount"
+          )
+        : [];
+
+    const sampleData = chartData.length > 0 ? chartData[0] : {};
+    const assetKeys = categorizeAndSortKeys(allKeys, sampleData);
+
+    const filteredKeys = assetKeys.filter(
+      (key) => key !== "현금" && key !== "현금 자산"
+    );
+
+    return filteredKeys.map((key) => ({
+      value: key,
+      color: getAssetColor(key),
+    }));
+  };
+
+  const legendData = getLegendData();
+
   return (
     <>
       <div className={styles.chartContainer}>
-        <h3 className={styles.chartTitle}>가계 자산 규모</h3>
+        <div className={styles.chartHeader}>
+          <h3 className={styles.chartTitle}>가계 자산 규모</h3>
+          <div className={styles.chartLegend}>
+            {legendData.map((item, index) => (
+              <div key={index} className={styles.legendItem}>
+                <div
+                  className={styles.legendColor}
+                  style={{ backgroundColor: item.color }}
+                ></div>
+                <span className={styles.legendText}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
         <div className={styles.chartWrapper}>{renderChart()}</div>
       </div>
 
