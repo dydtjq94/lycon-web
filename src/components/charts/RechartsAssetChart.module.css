@@ -188,9 +188,13 @@
 }
 
 .tooltipValue {
-  font-weight: 600;
+  font-weight: 400;
   color: #111827;
   text-align: right;
+}
+
+.tooltipValueBold {
+  font-weight: 600;
 }
 
 .customTooltip[data-zoomed="true"] .tooltipValue {

@@ -379,7 +379,8 @@ function RechartsAssetChart({
       });
     });
 
-    // 툴팁과 동일한 순서로 결합
+    // 바 차트 렌더링 순서: 부채(위) → 자산 → 연금 → 현금(아래)
+    // 툴팁 순서는 나중에 reverse로 조정
     return [
       ...categories.현금,
       ...categories.연금,
@@ -632,7 +633,7 @@ function RechartsAssetChart({
                     <div className={styles.tooltipItem}>
                       <span className={styles.tooltipLabel}>순자산:</span>
                       <span
-                        className={styles.tooltipValue}
+                        className={`${styles.tooltipValue} ${styles.tooltipValueBold}`}
                         style={{
                           color: totalAssets >= 0 ? "#059669" : "#dc2626",
                         }}
@@ -885,11 +886,40 @@ function RechartsAssetChart({
           </Bar>
         )}
 
-        {/* 다른 자산 항목 Bar들 - 툴팁과 동일한 순서로 렌더링 (연금 → 자산 → 부채) */}
-        {assetKeys
-          .filter((key) => key !== "현금" && key !== "현금 자산")
-          .map((key, index) => {
-            // 고정된 색상 사용
+        {/* 다른 자산 항목 Bar들 - 렌더링 순서 조정 (부채 → 자산 → 연금 → 현금) */}
+        {(() => {
+          const pensionKeys = assetKeys.filter(
+            (key) =>
+              key !== "현금" &&
+              key !== "현금 자산" &&
+              (key.includes("연금") ||
+                key.includes("퇴직") ||
+                key.includes("국민연금"))
+          );
+          const debtKeys = assetKeys.filter(
+            (key) =>
+              key !== "현금" &&
+              key !== "현금 자산" &&
+              (key.includes("부채") ||
+                key.includes("대출") ||
+                key.includes("빚"))
+          );
+          const assetOnlyKeys = assetKeys.filter(
+            (key) =>
+              key !== "현금" &&
+              key !== "현금 자산" &&
+              !key.includes("연금") &&
+              !key.includes("퇴직") &&
+              !key.includes("국민연금") &&
+              !key.includes("부채") &&
+              !key.includes("대출") &&
+              !key.includes("빚")
+          );
+
+          // 렌더링 순서: 연금 → 자산 → 부채 (바 차트에서 위에서 아래로)
+          const orderedKeys = [...pensionKeys, ...assetOnlyKeys, ...debtKeys];
+
+          return orderedKeys.map((key, index) => {
             const assetColor = getAssetColor(key);
 
             return (
@@ -903,7 +933,8 @@ function RechartsAssetChart({
                 strokeWidth={1}
               />
             );
-          })}
+          });
+        })()}
 
         {/* 이벤트 마커 */}
         {allEvents.map((event, eventIndex) => {

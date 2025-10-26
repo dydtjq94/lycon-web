@@ -591,7 +591,7 @@ function RechartsCashflowChart({
                         <span
                           className={`${styles.tooltipValue} ${
                             data.amount >= 0 ? styles.positive : styles.negative
-                          }`}
+                          } ${styles.tooltipValueBold}`}
                           style={{
                             color: data.amount >= 0 ? "#059669" : "#dc2626",
                           }}
@@ -978,10 +978,7 @@ function RechartsCashflowChart({
                                 key={item.key}
                                 className={styles.tooltipItem}
                               >
-                                <span
-                                  className={styles.tooltipLabel}
-                                  style={{ color: "#10b981" }}
-                                >
+                                <span className={styles.tooltipLabel}>
                                   {item.label}:
                                 </span>
                                 <span
@@ -999,10 +996,7 @@ function RechartsCashflowChart({
                                 key={item.key}
                                 className={styles.tooltipItem}
                               >
-                                <span
-                                  className={styles.tooltipLabel}
-                                  style={{ color: "#ef4444" }}
-                                >
+                                <span className={styles.tooltipLabel}>
                                   {item.label}:
                                 </span>
                                 <span
