@@ -1700,6 +1700,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   targetAssets={profileData.targetAssets}
                   savings={savings}
                   pensions={pensions}
+                  realEstates={realEstates}
+                  assets={assets}
+                  debts={debts}
                 />
               </div>
             </div>

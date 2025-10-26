@@ -231,8 +231,8 @@
 
 /* 이벤트 스타일 */
 .tooltipEvents {
-  margin-top: 12px;
-  padding-top: 12px;
+  /* margin-top: 12px;
+  padding-top: 12px; */
 }
 
 .tooltipEventHeader {

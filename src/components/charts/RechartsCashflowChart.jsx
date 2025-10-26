@@ -194,12 +194,189 @@ function RechartsCashflowChart({
 
   const pensionEvents = getPensionEvents();
 
+  // 부동산 이벤트 추출 (구매, 임대소득 시작/종료, 주택연금 전환, 매각)
+  const getRealEstateEvents = () => {
+    const events = [];
+    if (realEstates && realEstates.length > 0) {
+      realEstates.forEach((realEstate) => {
+        // 부동산 구매 이벤트
+        if (realEstate.isPurchase) {
+          events.push({
+            year: realEstate.startYear,
+            age: realEstate.startYear - (data[0]?.year - data[0]?.age),
+            type: "purchase",
+            category: "realEstate",
+            title: `${realEstate.title} 구매`,
+          });
+        }
+
+        // 임대소득 시작/종료 이벤트
+        if (realEstate.hasRentalIncome) {
+          events.push({
+            year: realEstate.rentalIncomeStartYear,
+            age:
+              realEstate.rentalIncomeStartYear - (data[0]?.year - data[0]?.age),
+            type: "start",
+            category: "realEstate",
+            title: `${realEstate.title} 임대소득 시작`,
+          });
+
+          if (realEstate.rentalIncomeEndYear) {
+            events.push({
+              year: realEstate.rentalIncomeEndYear,
+              age:
+                realEstate.rentalIncomeEndYear - (data[0]?.year - data[0]?.age),
+              type: "end",
+              category: "realEstate",
+              title: `${realEstate.title} 임대소득 종료`,
+            });
+          }
+        }
+
+        // 주택연금 전환 이벤트
+        if (realEstate.convertToPension) {
+          events.push({
+            year: realEstate.pensionStartYear,
+            age: realEstate.pensionStartYear - (data[0]?.year - data[0]?.age),
+            type: "conversion",
+            category: "realEstate",
+            title: `${realEstate.title} 주택연금 전환`,
+          });
+        }
+
+        // 매각 이벤트 (보유 종료년도)
+        if (realEstate.endYear) {
+          events.push({
+            year: realEstate.endYear,
+            age: realEstate.endYear - (data[0]?.year - data[0]?.age),
+            type: "sale",
+            category: "realEstate",
+            title: `${realEstate.title} 매각`,
+          });
+        }
+      });
+    }
+    return events;
+  };
+
+  const realEstateEvents = getRealEstateEvents();
+
+  // 부채 이벤트 추출 (대출 시작, 상환 완료)
+  const getDebtEvents = () => {
+    const events = [];
+    if (debts && debts.length > 0) {
+      debts.forEach((debt) => {
+        // 대출 시작 이벤트
+        events.push({
+          year: debt.startYear,
+          age: debt.startYear - (data[0]?.year - data[0]?.age),
+          type: "start",
+          category: "debt",
+          title: `${debt.title} 대출 시작`,
+        });
+
+        // 상환 완료 이벤트 (부채 타입별 처리)
+        if (debt.debtType === "bullet") {
+          // 만기일시상환: endYear에 완전 상환
+          events.push({
+            year: debt.endYear,
+            age: debt.endYear - (data[0]?.year - data[0]?.age),
+            type: "repayment",
+            category: "debt",
+            title: `${debt.title} 만기 상환`,
+          });
+        } else if (debt.debtType === "equal") {
+          // 원리금균등상환: endYear에 상환 완료
+          events.push({
+            year: debt.endYear,
+            age: debt.endYear - (data[0]?.year - data[0]?.age),
+            type: "repayment",
+            category: "debt",
+            title: `${debt.title} 상환 완료`,
+          });
+        } else if (debt.debtType === "principal") {
+          // 원금균등상환: endYear에 상환 완료
+          events.push({
+            year: debt.endYear,
+            age: debt.endYear - (data[0]?.year - data[0]?.age),
+            type: "repayment",
+            category: "debt",
+            title: `${debt.title} 상환 완료`,
+          });
+        } else if (debt.debtType === "grace") {
+          // 거치식상환: 거치기간 후 원금 상환 시작
+          const principalStartYear = debt.startYear + debt.gracePeriod;
+          events.push({
+            year: principalStartYear,
+            age: principalStartYear - (data[0]?.year - data[0]?.age),
+            type: "principal_start",
+            category: "debt",
+            title: `${debt.title} 원금 상환 시작`,
+          });
+
+          // 원금 상환 완료
+          events.push({
+            year: debt.endYear,
+            age: debt.endYear - (data[0]?.year - data[0]?.age),
+            type: "repayment",
+            category: "debt",
+            title: `${debt.title} 상환 완료`,
+          });
+        }
+      });
+    }
+    return events;
+  };
+
+  // 자산 이벤트 추출 (수익형 자산 구매, 매각)
+  const getAssetEvents = () => {
+    const events = [];
+    if (assets && assets.length > 0) {
+      assets.forEach((asset) => {
+        // 수익형 자산만 이벤트 표시 - assetType 또는 type 필드 확인
+        if (asset.assetType === "income" || asset.type === "income") {
+          // 수익형 자산만 이벤트 표시
+          // 자산 구매 이벤트
+          if (asset.isPurchase) {
+            const purchaseEvent = {
+              year: asset.startYear,
+              age: asset.startYear - (data[0]?.year - data[0]?.age),
+              type: "purchase",
+              category: "asset",
+              title: `${asset.title} 구매`,
+            };
+            events.push(purchaseEvent);
+          }
+
+          // 자산 매각 이벤트 (종료년도 +1)
+          if (asset.endYear) {
+            const saleEvent = {
+              year: asset.endYear + 1,
+              age: asset.endYear + 1 - (data[0]?.year - data[0]?.age),
+              type: "sale",
+              category: "asset",
+              title: `${asset.title} 매각`,
+            };
+            events.push(saleEvent);
+          }
+        }
+      });
+    }
+    return events;
+  };
+
+  const assetEvents = getAssetEvents();
+  const debtEvents = getDebtEvents();
+
   // 이벤트를 년도별로 그룹화
   const allEvents = [
     ...incomeEvents,
     ...expenseEvents,
     ...savingEvents,
     ...pensionEvents,
+    ...realEstateEvents,
+    ...assetEvents,
+    ...debtEvents,
   ];
   const eventsByYear = allEvents.reduce((acc, event) => {
     if (!acc[event.year]) {
@@ -862,7 +1039,15 @@ function RechartsCashflowChart({
                                       ? "#ef4444"
                                       : event.category === "saving"
                                       ? "#3b82f6"
-                                      : "#fbbf24", // 연금은 노란색
+                                      : event.category === "pension"
+                                      ? "#fbbf24"
+                                      : event.category === "realEstate"
+                                      ? "#8b5cf6"
+                                      : event.category === "asset"
+                                      ? "#06b6d4"
+                                      : event.category === "debt"
+                                      ? "#6b7280"
+                                      : "#6b7280", // 기본값
                                   width: "6px",
                                   height: "6px",
                                 }}
@@ -932,7 +1117,15 @@ function RechartsCashflowChart({
               ? "#ef4444"
               : event.category === "saving"
               ? "#3b82f6"
-              : "#fbbf24"; // 연금은 노란색
+              : event.category === "pension"
+              ? "#fbbf24"
+              : event.category === "realEstate"
+              ? "#8b5cf6"
+              : event.category === "asset"
+              ? "#06b6d4"
+              : event.category === "debt"
+              ? "#6b7280"
+              : "#6b7280"; // 기본값
 
           // 같은 년도의 이벤트 인덱스 계산 (수직으로 쌓기 위해)
           const eventsInSameYear = allEvents.filter((e) => e.age === event.age);
