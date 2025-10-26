@@ -93,7 +93,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
     }
 
     if (!formData.currentValue || parseFloat(formData.currentValue) < 0) {
-      newErrors.currentValue = "현재 가치는 0보다 큰 값을 입력해주세요.";
+      newErrors.currentValue = "가치는 0보다 큰 값을 입력해주세요.";
     }
 
     const growthRateNum = parseFloat(formData.growthRate);
@@ -199,7 +199,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>현재 가치 (만원) *</label>
+            <label className={styles.label}>가치 (만원) *</label>
             <input
               type="text"
               value={formData.currentValue}
@@ -220,6 +220,26 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
               )}
             {errors.currentValue && (
               <span className={styles.errorText}>{errors.currentValue}</span>
+            )}
+          </div>
+          <div className={styles.field}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={formData.isPurchase}
+                onChange={(e) =>
+                  setFormData({ ...formData, isPurchase: e.target.checked })
+                }
+                className={styles.checkbox}
+              />
+              <span className={styles.checkboxText}>구매로 처리</span>
+            </label>
+            {formData.isPurchase && (
+              <div className={styles.purchaseNotice}>
+                💡 {formData.startYear}년에{" "}
+                {formatAmountForChart(parseInt(formData.currentValue) || 0)}의
+                현금이 차감됩니다.
+              </div>
             )}
           </div>
 
@@ -346,27 +366,6 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
               <span className={styles.errorText}>
                 {errors.startYear || errors.endYear}
               </span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={formData.isPurchase}
-                onChange={(e) =>
-                  setFormData({ ...formData, isPurchase: e.target.checked })
-                }
-                className={styles.checkbox}
-              />
-              <span className={styles.checkboxText}>구매로 처리</span>
-            </label>
-            {formData.isPurchase && (
-              <div className={styles.purchaseNotice}>
-                💡 {formData.startYear}년에{" "}
-                {formatAmountForChart(parseInt(formData.currentValue) || 0)}의
-                현금이 차감됩니다.
-              </div>
             )}
           </div>
 
