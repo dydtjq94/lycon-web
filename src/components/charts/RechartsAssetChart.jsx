@@ -147,12 +147,12 @@ function RechartsAssetChart({
 
   // 자산별 고정 색상 매핑
   const getAssetColor = (assetName, value = 0) => {
-    // 현금 관련 - 값이 음수이면 검은색
+    // 현금 관련 - 값이 음수이면 검은색, 양수는 초록 계열
     if (assetName === "현금" || assetName === "현금 자산") {
-      return value < 0 ? "#374151" : "#10b981"; // 음수: 검은색, 양수: 초록색
+      return value < 0 ? "#ef4444" : "#10b981"; // 음수: 검은색, 양수: 초록색
     }
 
-    // 연금 관련 (노란 계열)
+    // 연금 관련 (노란 계열) - 10가지 색상
     if (
       assetName.includes("연금") ||
       assetName.includes("퇴직") ||
@@ -163,14 +163,13 @@ function RechartsAssetChart({
         "#f59e0b",
         "#eab308",
         "#d97706",
-        "#f59e0b",
-        "#fbbf24",
         "#ca8a04",
         "#a16207",
-        "#d97706",
-        "#ca8a04",
+        "#92400e",
+        "#78350f",
+        "#713f12",
+        "#fcd34d",
       ];
-      // 자산 이름의 해시값으로 일관된 색상 선택
       const hash = assetName.split("").reduce((a, b) => {
         a = (a << 5) - a + b.charCodeAt(0);
         return a & a;
@@ -178,7 +177,7 @@ function RechartsAssetChart({
       return pensionColors[Math.abs(hash) % pensionColors.length];
     }
 
-    // 부채 관련 (빨간 계열)
+    // 부채 관련 (빨간 계열) - 10가지 색상
     if (
       assetName.includes("부채") ||
       assetName.includes("대출") ||
@@ -187,15 +186,15 @@ function RechartsAssetChart({
     ) {
       const debtColors = [
         "#ef4444",
-        "#f97316",
         "#dc2626",
         "#e53e3e",
-        "#e11d48",
+        "#f97316",
         "#f43f5e",
-        "#92400e",
-        "#78350f",
-        "#d97706",
-        "#b45309",
+        "#e11d48",
+        "#be123c",
+        "#9f1239",
+        "#991b1b",
+        "#7f1d1d",
       ];
       const hash = assetName.split("").reduce((a, b) => {
         a = (a << 5) - a + b.charCodeAt(0);
@@ -204,7 +203,59 @@ function RechartsAssetChart({
       return debtColors[Math.abs(hash) % debtColors.length];
     }
 
-    // 일반 자산 (파란 계열)
+    // 저축/투자 관련 (파랑 계열) - 10가지 색상
+    if (
+      assetName.includes("저축") ||
+      assetName.includes("투자") ||
+      assetName.includes("예금") ||
+      assetName.includes("적금")
+    ) {
+      const savingColors = [
+        "#3b82f6",
+        "#2563eb",
+        "#1d4ed8",
+        "#1e40af",
+        "#1e3a8a",
+        "#06b6d4",
+        "#0891b2",
+        "#0e7490",
+        "#155e75",
+        "#164e63",
+      ];
+      const hash = assetName.split("").reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return savingColors[Math.abs(hash) % savingColors.length];
+    }
+
+    // 부동산 관련 (보라 계열) - 10가지 색상
+    if (
+      assetName.includes("부동산") ||
+      assetName.includes("아파트") ||
+      assetName.includes("자택") ||
+      assetName.includes("임대")
+    ) {
+      const realEstateColors = [
+        "#8b5cf6",
+        "#7c3aed",
+        "#6d28d9",
+        "#5b21b6",
+        "#4c1d95",
+        "#a78bfa",
+        "#9261f5",
+        "#8162f0",
+        "#7153eb",
+        "#6043d6",
+      ];
+      const hash = assetName.split("").reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return realEstateColors[Math.abs(hash) % realEstateColors.length];
+    }
+
+    // 자산 관련 (청록 계열) - 10가지 색상
     const assetColors = [
       "#3b82f6",
       "#06b6d4",
@@ -214,8 +265,8 @@ function RechartsAssetChart({
       "#2563eb",
       "#7c3aed",
       "#4f46e5",
-      "#1d4ed8",
       "#0284c7",
+      "#0891b2",
     ];
     const hash = assetName.split("").reduce((a, b) => {
       a = (a << 5) - a + b.charCodeAt(0);
@@ -224,37 +275,7 @@ function RechartsAssetChart({
     return assetColors[Math.abs(hash) % assetColors.length];
   };
 
-  // 색상 팔레트 (푸른 계열 자산, 붉은 계열 부채)
-  const assetColors = [
-    "#3b82f6", // 파란색
-    "#06b6d4", // 청록색
-    "#8b5cf6", // 보라색
-    "#0ea5e9", // 하늘색
-    "#6366f1", // 인디고
-    "#14b8a6", // 에메랄드
-    "#0d9488", // 틸
-    "#0891b2", // 시안
-  ];
-
-  const debtColors = [
-    "#ef4444", // 빨간색
-    "#f97316", // 주황색
-    "#dc2626", // 진한 빨간색
-    "#ea580c", // 진한 주황색
-    "#b91c1c", // 진한 빨간색
-    "#c2410c", // 진한 주황색
-  ];
-
-  const pensionColors = [
-    "#10b981", // 에메랄드
-    "#059669", // 진한 에메랄드
-    "#34d399", // 연한 에메랄드
-    "#6ee7b7", // 매우 연한 에메랄드
-    "#047857", // 진한 초록색
-    "#16a34a", // 초록색
-    "#22c55e", // 연한 초록색
-    "#4ade80", // 매우 연한 초록색
-  ];
+  // 색상 팔레트 (사용하지 않는 변수 제거)
 
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
@@ -531,18 +552,41 @@ function RechartsAssetChart({
         )}
 
         {/* 현금 Bar (별도 처리) - 툴팁 순서 1순위 */}
-        <Bar key="현금" dataKey="현금" stackId="assets" name="현금">
+        <Bar
+          key="현금"
+          dataKey="현금"
+          stackId="assets"
+          name="현금"
+          fill="#10b981"
+          stroke="#ffffff"
+          strokeWidth={1}
+        >
           {chartData.map((entry, entryIndex) => {
             const cashValue = entry.현금 || 0;
             const cashColor = getAssetColor("현금", cashValue);
 
-            return <Cell key={`현금-cell-${entryIndex}`} fill={cashColor} />;
+            return (
+              <Cell
+                key={`현금-cell-${entryIndex}`}
+                fill={cashColor}
+                stroke="#ffffff"
+                strokeWidth={1}
+              />
+            );
           })}
         </Bar>
 
         {/* 현금 자산 Bar (사용자가 추가한 현금 자산) - 툴팁 순서 1순위 */}
         {assetKeys.includes("현금 자산") && (
-          <Bar key="현금 자산" dataKey="현금 자산" stackId="assets" name="현금">
+          <Bar
+            key="현금 자산"
+            dataKey="현금 자산"
+            stackId="assets"
+            name="현금"
+            fill="#10b981"
+            stroke="#ffffff"
+            strokeWidth={1}
+          >
             {chartData.map((entry, entryIndex) => {
               const cashAssetValue = entry["현금 자산"] || 0;
               const cashAssetColor = getAssetColor("현금 자산", cashAssetValue);
@@ -551,6 +595,8 @@ function RechartsAssetChart({
                 <Cell
                   key={`현금자산-cell-${entryIndex}`}
                   fill={cashAssetColor}
+                  stroke="#ffffff"
+                  strokeWidth={1}
                 />
               );
             })}
@@ -571,6 +617,8 @@ function RechartsAssetChart({
                 stackId="assets"
                 fill={assetColor}
                 name={key === "현금 자산" ? "현금" : key}
+                stroke="#ffffff"
+                strokeWidth={1}
               />
             );
           })}
@@ -580,6 +628,46 @@ function RechartsAssetChart({
           verticalAlign="bottom"
           height={36}
           wrapperStyle={{ paddingTop: "20px" }}
+          payload={[]}
+          content={({ payload }) => {
+            // 현금을 제외한 항목들만 표시
+            const filteredPayload = payload.filter(
+              (item) => item.dataKey !== "현금" && item.dataKey !== "현금 자산"
+            );
+            return (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                  gap: "16px",
+                }}
+              >
+                {filteredPayload.map((entry, index) => (
+                  <div
+                    key={`item-${index}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "12px",
+                        height: "12px",
+                        backgroundColor: entry.color,
+                        borderRadius: "2px",
+                      }}
+                    />
+                    <span style={{ fontSize: "12px", color: "#374151" }}>
+                      {entry.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          }}
         />
       </BarChart>
     </ResponsiveContainer>

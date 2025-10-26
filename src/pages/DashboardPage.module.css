@@ -303,7 +303,7 @@
   border-right: 1px solid #e5e7eb;
   transition: all 0.3s ease;
   overflow: hidden;
-  padding: 4px 8px;
+  padding: 4px 8px 4px 0px;
   overflow-y: auto;
 }
 
@@ -367,7 +367,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .categoryButton {
@@ -375,7 +374,7 @@
   display: flex;
   align-items: center;
   background: transparent;
-  padding-left: 8px;
+  padding-left: 24px;
   padding-right: 8px;
   padding-bottom: 16px;
   padding-top: 12px;
@@ -386,6 +385,7 @@
   text-align: left;
   outline: none;
   flex: 1;
+  position: relative;
 }
 
 .categoryButton:focus {
@@ -403,6 +403,58 @@
 .categoryButton.active {
   background: #111827;
   color: white;
+}
+
+/* 카테고리별 그라데이션 배경 */
+.categoryButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.1;
+  transition: opacity 0.2s ease;
+  z-index: -1;
+}
+
+.categoryButton:hover::before {
+  opacity: 0.2;
+}
+
+/* 소득 카테고리 (초록 그라데이션) */
+.categoryButton[data-category="income"]::before {
+  background: linear-gradient(to right, #10b981, #ffffff);
+}
+
+/* 지출 카테고리 (빨강 그라데이션) */
+.categoryButton[data-category="expense"]::before {
+  background: linear-gradient(to right, #ef4444, #ffffff);
+}
+
+/* 저축/투자 카테고리 (파랑 그라데이션) */
+.categoryButton[data-category="savings"]::before {
+  background: linear-gradient(to right, #3b82f6, #ffffff);
+}
+
+/* 연금 카테고리 (노랑 그라데이션) */
+.categoryButton[data-category="pension"]::before {
+  background: linear-gradient(to right, #fbbf24, #ffffff);
+}
+
+/* 부동산 카테고리 (보라 그라데이션) */
+.categoryButton[data-category="realEstate"]::before {
+  background: linear-gradient(to right, #8b5cf6, #ffffff);
+}
+
+/* 자산 카테고리 (청록 그라데이션) */
+.categoryButton[data-category="assets"]::before {
+  background: linear-gradient(to right, #06b6d4, #ffffff);
+}
+
+/* 부채 카테고리 (회색 그라데이션) */
+.categoryButton[data-category="debt"]::before {
+  background: linear-gradient(to right, #6b7280, #ffffff);
 }
 
 .categoryName {

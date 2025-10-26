@@ -1541,6 +1541,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                     <button
                       className={styles.categoryButton}
                       onClick={() => handleCategoryClick(category.id)}
+                      data-category={category.id}
                     >
                       <span className={styles.categoryName}>
                         {category.name}
