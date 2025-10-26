@@ -333,32 +333,29 @@ function RechartsCashflowChart({
     const events = [];
     if (assets && assets.length > 0) {
       assets.forEach((asset) => {
-        // 수익형 자산만 이벤트 표시 - assetType 또는 type 필드 확인
-        if (asset.assetType === "income" || asset.type === "income") {
-          // 수익형 자산만 이벤트 표시
-          // 자산 구매 이벤트
-          if (asset.isPurchase) {
-            const purchaseEvent = {
-              year: asset.startYear,
-              age: asset.startYear - (data[0]?.year - data[0]?.age),
-              type: "purchase",
-              category: "asset",
-              title: `${asset.title} 구매`,
-            };
-            events.push(purchaseEvent);
-          }
+        // 모든 자산 이벤트 표시
+        // 자산 구매 이벤트
+        if (asset.isPurchase) {
+          const purchaseEvent = {
+            year: asset.startYear,
+            age: asset.startYear - (data[0]?.year - data[0]?.age),
+            type: "purchase",
+            category: "asset",
+            title: `${asset.title} 구매`,
+          };
+          events.push(purchaseEvent);
+        }
 
-          // 자산 매각 이벤트 (종료년도 +1)
-          if (asset.endYear) {
-            const saleEvent = {
-              year: asset.endYear + 1,
-              age: asset.endYear + 1 - (data[0]?.year - data[0]?.age),
-              type: "sale",
-              category: "asset",
-              title: `${asset.title} 매각`,
-            };
-            events.push(saleEvent);
-          }
+        // 자산 매각 이벤트 (종료년도 +1)
+        if (asset.endYear) {
+          const saleEvent = {
+            year: asset.endYear + 1,
+            age: asset.endYear + 1 - (data[0]?.year - data[0]?.age),
+            type: "sale",
+            category: "asset",
+            title: `${asset.title} 매각`,
+          };
+          events.push(saleEvent);
         }
       });
     }

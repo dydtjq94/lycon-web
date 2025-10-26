@@ -254,27 +254,25 @@ function RechartsAssetChart({
     const events = [];
     if (assets && assets.length > 0) {
       assets.forEach((asset) => {
-        // 수익형 자산만 이벤트 표시
-        if (asset.assetType === "income") {
-          // 자산 보유 시작 이벤트
-          events.push({
-            year: asset.startYear,
-            age: asset.startYear - (data[0]?.year - data[0]?.age),
-            type: "start",
-            category: "asset",
-            title: `${asset.title} 보유 시작`,
-          });
+        // 모든 자산 이벤트 표시
+        // 자산 보유 시작 이벤트
+        events.push({
+          year: asset.startYear,
+          age: asset.startYear - (data[0]?.year - data[0]?.age),
+          type: "start",
+          category: "asset",
+          title: `${asset.title} 보유 시작`,
+        });
 
-          // 자산 매각 이벤트 (종료년도 +1)
-          if (asset.endYear) {
-            events.push({
-              year: asset.endYear + 1,
-              age: asset.endYear + 1 - (data[0]?.year - data[0]?.age),
-              type: "sale",
-              category: "asset",
-              title: `${asset.title} 매각`,
-            });
-          }
+        // 자산 매각 이벤트 (종료년도 +1)
+        if (asset.endYear) {
+          events.push({
+            year: asset.endYear + 1,
+            age: asset.endYear + 1 - (data[0]?.year - data[0]?.age),
+            type: "sale",
+            category: "asset",
+            title: `${asset.title} 매각`,
+          });
         }
       });
     }
@@ -292,6 +290,7 @@ function RechartsAssetChart({
     ...assetEvents,
     ...debtEvents,
   ];
+
   const eventsByYear = allEvents.reduce((acc, event) => {
     if (!acc[event.year]) {
       acc[event.year] = [];

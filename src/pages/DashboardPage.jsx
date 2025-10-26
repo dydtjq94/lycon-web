@@ -1879,17 +1879,10 @@ const ProfileMemoPanel = React.memo(function ProfileMemoPanel({
 
   return (
     <div className={styles.profileMemoSection}>
-      <label className={styles.profileMemoLabel} htmlFor="profileMemo">
-        프로필 메모
-      </label>
-      <textarea
-        id="profileMemo"
-        className={styles.profileMemoTextarea}
-        value={value}
-        onChange={handleChange}
-        placeholder="프로필 전반에 대한 메모를 기록하세요."
-      />
-      <div className={styles.profileMemoActions}>
+      <div className={styles.profileMemoHeader}>
+        <label className={styles.profileMemoLabel} htmlFor="profileMemo">
+          프로필 메모
+        </label>
         <button
           className={styles.profileMemoSaveButton}
           type="button"
@@ -1899,6 +1892,13 @@ const ProfileMemoPanel = React.memo(function ProfileMemoPanel({
           {isSaving ? "저장 중..." : "저장"}
         </button>
       </div>
+      <textarea
+        id="profileMemo"
+        className={styles.profileMemoTextarea}
+        value={value}
+        onChange={handleChange}
+        placeholder="프로필 전반에 대한 메모를 기록하세요."
+      />
     </div>
   );
 });

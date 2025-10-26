@@ -673,6 +673,12 @@
   gap: 0.75rem;
 }
 
+.profileMemoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .profileMemoLabel {
   font-size: 0.9rem;
   font-weight: 600;
@@ -694,11 +700,6 @@
   border-color: #6366f1;
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
   outline: none;
-}
-
-.profileMemoActions {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .profileMemoSaveButton {
