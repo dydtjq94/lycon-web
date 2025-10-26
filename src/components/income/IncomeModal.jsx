@@ -27,8 +27,8 @@ function IncomeModal({
     amount: "",
     startYear: new Date().getFullYear(),
     endYear: getRetirementYear(),
-    memo: "10년 평균물가상승률 반영",
-    growthRate: "2.0", // 기본 상승률 2.0%
+    memo: "2014년부터 2024년까지의 10년간 평균",
+    growthRate: "3.3", // 기본 상승률 3.3%
   });
 
   const [errors, setErrors] = useState({});
@@ -47,7 +47,7 @@ function IncomeModal({
           memo: editData.memo || "",
           growthRate: editData.growthRate
             ? editData.growthRate.toString()
-            : "2.0",
+            : "3.3",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -57,8 +57,8 @@ function IncomeModal({
           amount: "",
           startYear: new Date().getFullYear(),
           endYear: getRetirementYear(),
-          memo: "10년 평균물가상승률 반영",
-          growthRate: "2.0",
+          memo: "2014년부터 2024년까지의 10년간 평균",
+          growthRate: "3.3",
         });
       }
     }
@@ -134,8 +134,8 @@ function IncomeModal({
       amount: "",
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
-      memo: "10년 평균물가상승률 반영",
-      growthRate: "2.0",
+      memo: "2014년부터 2024년까지의 10년간 평균",
+      growthRate: "3.3",
     });
     setErrors({});
     onClose();
@@ -314,7 +314,7 @@ function IncomeModal({
               className={`${styles.input} ${
                 errors.growthRate ? styles.error : ""
               }`}
-              placeholder="2.0"
+              placeholder="3.3"
             />
             {errors.growthRate && (
               <span className={styles.errorText}>{errors.growthRate}</span>

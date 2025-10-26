@@ -13,7 +13,7 @@ const RealEstateModal = ({
   const [formData, setFormData] = useState({
     title: "",
     currentValue: "",
-    growthRate: "2.5",
+    growthRate: "2.4",
     startYear: new Date().getFullYear(),
     endYear: new Date().getFullYear() + 30, // 종료년도 추가
     holdingPeriod: "",
@@ -24,7 +24,7 @@ const RealEstateModal = ({
     convertToPension: false,
     pensionStartYear: "",
     monthlyPensionAmount: "",
-    memo: "",
+    memo: "(서울) 연평균 : 9.3%\n(디폴트) 10년간 전국 주택의 총 매매가 연평균 상승률 : 2.4%\n주택연금은 12억원 미만만 가능",
     isPurchase: false, // 구매 여부
   });
 
@@ -39,7 +39,7 @@ const RealEstateModal = ({
           currentValue: editData.currentValue || "",
           growthRate: editData.growthRate
             ? editData.growthRate.toString()
-            : "2.5",
+            : "2.4",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 30,
           holdingPeriod: editData.holdingPeriod || "",
@@ -57,7 +57,7 @@ const RealEstateModal = ({
         setFormData({
           title: "",
           currentValue: "",
-          growthRate: "2.5",
+          growthRate: "2.4",
           startYear: new Date().getFullYear(),
           endYear: new Date().getFullYear() + 30,
           holdingPeriod: "",
@@ -68,7 +68,7 @@ const RealEstateModal = ({
           convertToPension: false,
           pensionStartYear: "",
           monthlyPensionAmount: "",
-          memo: "",
+          memo: "(서울) 연평균 : 9.3%\n(디폴트) 10년간 전국 주택의 총 매매가 연평균 상승률 : 2.4%\n주택연금은 12억원 미만만 가능",
           isPurchase: false,
         });
       }
@@ -97,7 +97,7 @@ const RealEstateModal = ({
     setFormData({
       title: "",
       currentValue: "",
-      growthRate: "2.5",
+      growthRate: "2.4",
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 30,
       holdingPeriod: "",
@@ -108,7 +108,7 @@ const RealEstateModal = ({
       convertToPension: false,
       pensionStartYear: "",
       monthlyPensionAmount: "",
-      memo: "",
+      memo: "(서울) 연평균 : 9.3%\n(디폴트) 10년간 전국 주택의 총 매매가 연평균 상승률 : 2.4%\n주택연금은 12억원 미만만 가능",
       isPurchase: false,
     });
     setErrors({});
@@ -298,7 +298,7 @@ const RealEstateModal = ({
               className={`${styles.input} ${
                 errors.growthRate ? styles.error : ""
               }`}
-              placeholder="2.5"
+              placeholder="2.4"
             />
             {errors.growthRate && (
               <span className={styles.errorText}>{errors.growthRate}</span>

@@ -27,7 +27,7 @@ function DebtModal({
     debtAmount: "",
     startYear: new Date().getFullYear(),
     endYear: getRetirementYear(),
-    interestRate: "5.0", // 이자율 5%
+    interestRate: "3.5", // 이자율 3.5%
     gracePeriod: 5, // 거치기간 (년) - 기본값 5년
     memo: "",
   });
@@ -53,7 +53,7 @@ function DebtModal({
           endYear: parseInt(editData.endYear, 10) || getRetirementYear(),
           interestRate: editData.interestRate
             ? (editData.interestRate * 100).toString()
-            : "5.0",
+            : "3.5",
           gracePeriod: parsedGracePeriod,
           memo: editData.memo || "",
         });
@@ -65,7 +65,7 @@ function DebtModal({
           debtAmount: "",
           startYear: new Date().getFullYear(),
           endYear: getRetirementYear(),
-          interestRate: "5.0",
+          interestRate: "3.5",
           gracePeriod: 5, // 거치식 상환의 기본값을 5년으로 설정
           memo: "",
         });
@@ -158,7 +158,7 @@ function DebtModal({
       debtAmount: "",
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 5,
-      interestRate: "5.0",
+      interestRate: "3.5",
       gracePeriod: 0,
       memo: "",
     });
@@ -290,7 +290,7 @@ function DebtModal({
                 className={`${styles.input} ${
                   errors.interestRate ? styles.error : ""
                 }`}
-                placeholder="5.0"
+                placeholder="3.5"
               />
               {errors.interestRate && (
                 <span className={styles.errorText}>{errors.interestRate}</span>

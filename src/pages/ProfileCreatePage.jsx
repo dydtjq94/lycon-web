@@ -22,7 +22,7 @@ function ProfileCreatePage() {
     name: "",
     birthYear: "",
     retirementAge: 55,
-    retirementLivingExpenses: "",
+    currentLivingExpenses: "", // 은퇴 후 생활비 → 현재 생활비로 변경
     targetAssets: "",
     currentCash: "", // 현재 현금 추가
     hasSpouse: false,
@@ -57,8 +57,8 @@ function ProfileCreatePage() {
         originalFrequency: "monthly", // 원본 빈도 (리스트 표시용)
         startYear: currentYear,
         endYear: retirementYear,
-        growthRate: 3.0, // 임금상승률 3%
-        memo: "임금상승률 적용",
+        growthRate: 3.3, // 임금상승률 3%
+        memo: "2014년부터 2024년까지의 10년간 평균",
         category: "income",
       },
       {
@@ -69,8 +69,8 @@ function ProfileCreatePage() {
         originalFrequency: "monthly", // 원본 빈도 (리스트 표시용)
         startYear: currentYear,
         endYear: deathYear,
-        growthRate: 3.0, // 소득 상승률 3%
-        memo: "소득 상승률 적용",
+        growthRate: 3.3, // 소득 상승률 3%
+        memo: "2014년부터 2024년까지의 10년간 평균",
         category: "income",
       },
     ];
@@ -97,7 +97,7 @@ function ProfileCreatePage() {
       monthlyAmount: 103, // 월 수령액 103만원
       startYear: age65Year,
       endYear: age90Year,
-      inflationRate: 2.5, // 물가상승률 2.5%
+      inflationRate: 1.89, // 물가상승률 1.89%
       memo: "기본 국민연금",
     };
 
@@ -115,7 +115,7 @@ function ProfileCreatePage() {
     const defaultRealEstate = {
       title: "자택",
       currentValue: 50000, // 5억원 (만원 단위)
-      growthRate: 2.5, // 상승률 2.5%
+      growthRate: 2.4, // 상승률 2.5%
       startYear: currentYear,
       endYear: 2099, // 보유 연도 2099년까지
       hasRentalIncome: false,
@@ -125,7 +125,7 @@ function ProfileCreatePage() {
       convertToPension: false,
       pensionStartYear: null,
       monthlyPensionAmount: null,
-      memo: "기본 부동산 자산",
+      memo: "(서울) 연평균 : 9.3%\n(디폴트) 10년간 전국 주택의 총 매매가 연평균 상승률 : 2.4%\n주택연금은 12억원 미만만 가능",
     };
 
     await realEstateService.createRealEstate(
@@ -141,7 +141,7 @@ function ProfileCreatePage() {
     simulationId,
     birthYear,
     retirementAge,
-    retirementLivingExpenses
+    currentLivingExpenses
   ) => {
     const currentYear = new Date().getFullYear();
     const currentAge = currentYear - birthYear; // 현재 만 나이 계산
@@ -150,25 +150,37 @@ function ProfileCreatePage() {
     const yearsToDeath = 90 - currentAge; // 죽을 때까지 남은 년수
     const deathYear = currentYear + yearsToDeath; // 죽을 년도
 
+    // 물가상승률 1.89%를 적용하여 은퇴 시점 생활비 계산
+    const inflationRateToRetirement = 0.0189; // 물가상승률 1.89%
+    const retirementLivingExpensesAtRetirement = Math.round(
+      (currentLivingExpenses || 0) *
+        Math.pow(1 + inflationRateToRetirement, yearsToRetirement)
+    );
+
+    // 은퇴 후 생활비 = 은퇴 시점 생활비 * 0.7
+    const retirementLivingExpensesAfter = Math.round(
+      retirementLivingExpensesAtRetirement * 0.7
+    );
+
     const defaultExpenses = [
       {
         title: "은퇴 전 생활비",
-        amount: Math.round((retirementLivingExpenses || 0) * 1.4), // 은퇴 후 생활비의 1.4배
+        amount: currentLivingExpenses || 0, // 현재 생활비
         frequency: "monthly",
         startYear: currentYear,
         endYear: retirementYear,
-        growthRate: 2.0, // 상승률 2%
-        memo: "상승률 2% 적용",
+        growthRate: 1.89, // 물가상승률 1.89% 적용
+        memo: "물가상승률 1.89% 적용",
         category: "expense",
       },
       {
         title: "은퇴 후 생활비",
-        amount: retirementLivingExpenses || 0, // 프로필에서 입력한 은퇴 후 생활비 사용
+        amount: retirementLivingExpensesAfter, // 은퇴 시점 생활비 * 0.7
         frequency: "monthly",
         startYear: retirementYear + 1, // 은퇴 다음 년도부터
         endYear: deathYear,
-        growthRate: -2.0, // 상승률 -2%
-        memo: "상승률 -2% 적용",
+        growthRate: 1.0, // 기본 물가상승률 1% 적용
+        memo: "물가상승률 1% 적용",
         category: "expense",
       },
     ];
@@ -260,12 +272,8 @@ function ProfileCreatePage() {
       newErrors.retirementAge = "은퇴 나이는 30세에서 80세 사이여야 합니다.";
     }
 
-    if (
-      !formData.retirementLivingExpenses ||
-      formData.retirementLivingExpenses < 0
-    ) {
-      newErrors.retirementLivingExpenses =
-        "은퇴 시점 예상 생활비를 입력해주세요.";
+    if (!formData.currentLivingExpenses || formData.currentLivingExpenses < 0) {
+      newErrors.currentLivingExpenses = "현재 생활비를 입력해주세요.";
     }
 
     if (!formData.targetAssets || formData.targetAssets < 0) {
@@ -350,7 +358,7 @@ function ProfileCreatePage() {
         currentKoreanAge,
         retirementAge: parseInt(formData.retirementAge),
         retirementYear,
-        retirementLivingExpenses: parseInt(formData.retirementLivingExpenses),
+        currentLivingExpenses: parseInt(formData.currentLivingExpenses), // 현재 생활비로 변경
         targetAssets: parseInt(formData.targetAssets),
         currentCash: parseInt(formData.currentCash) || 0, // 현재 현금 추가
         hasSpouse: formData.hasSpouse,
@@ -402,7 +410,7 @@ function ProfileCreatePage() {
           defaultSimulationId,
           birthYear,
           formData.retirementAge,
-          formData.retirementLivingExpenses
+          formData.currentLivingExpenses
         );
         console.log("기본 지출 데이터 생성 완료");
       } catch (error) {
@@ -552,20 +560,17 @@ function ProfileCreatePage() {
               </div>
 
               <div className={styles.field}>
-                <label
-                  htmlFor="retirementLivingExpenses"
-                  className={styles.label}
-                >
-                  은퇴 시점 예상 생활비 (만원/월) *
+                <label htmlFor="currentLivingExpenses" className={styles.label}>
+                  현재 생활비 (만원/월) *
                 </label>
                 <input
                   type="text"
-                  id="retirementLivingExpenses"
-                  name="retirementLivingExpenses"
-                  value={formData.retirementLivingExpenses}
+                  id="currentLivingExpenses"
+                  name="currentLivingExpenses"
+                  value={formData.currentLivingExpenses}
                   onChange={handleChange}
                   className={`${styles.input} ${
-                    errors.retirementLivingExpenses ? styles.inputError : ""
+                    errors.currentLivingExpenses ? styles.inputError : ""
                   }`}
                   placeholder="300"
                   disabled={isSubmitting}
@@ -575,9 +580,9 @@ function ProfileCreatePage() {
                     }
                   }}
                 />
-                {errors.retirementLivingExpenses && (
+                {errors.currentLivingExpenses && (
                   <span className={styles.errorText}>
-                    {errors.retirementLivingExpenses}
+                    {errors.currentLivingExpenses}
                   </span>
                 )}
               </div>

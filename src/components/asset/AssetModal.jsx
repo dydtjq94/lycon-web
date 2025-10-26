@@ -11,12 +11,12 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
   const [formData, setFormData] = useState({
     title: "",
     currentValue: "",
-    growthRate: "5", // % 단위로 기본값 설정
+    growthRate: "2.86", // % 단위로 기본값 설정
     startYear: new Date().getFullYear(),
     endYear: "",
     assetType: "general", // "general" 또는 "income"
     incomeRate: "3", // % 단위로 기본값 설정
-    memo: "",
+    memo: "2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률",
     isPurchase: false, // 구매 여부
   });
 
@@ -32,7 +32,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
           growthRate:
             editData.growthRate !== undefined
               ? (editData.growthRate * 100).toString()
-              : "5",
+              : "2.86",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || "",
           assetType: editData.assetType || "general",
@@ -53,12 +53,12 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
         setFormData({
           title: "",
           currentValue: "",
-          growthRate: "5",
+          growthRate: "2.86",
           startYear: currentYear,
           endYear: deathYear,
           assetType: "general",
           incomeRate: "3",
-          memo: "",
+          memo: "2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률",
           isPurchase: false,
         });
       }
@@ -268,7 +268,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
               className={`${styles.input} ${
                 errors.growthRate ? styles.error : ""
               }`}
-              placeholder="예: 5.0"
+              placeholder="예: 2.86"
             />
             {errors.growthRate && (
               <span className={styles.errorText}>{errors.growthRate}</span>
@@ -277,7 +277,9 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
 
           {formData.assetType === "income" && (
             <div className={styles.field}>
-              <label className={styles.label}>연간 수익률 (%) *</label>
+              <label className={styles.label}>
+                연간 수익률(배당, 이자 등) (%) *
+              </label>
               <input
                 type="text"
                 value={formData.incomeRate}
@@ -291,7 +293,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
                 className={`${styles.input} ${
                   errors.incomeRate ? styles.error : ""
                 }`}
-                placeholder="예: 3.0 (이자/배당률)"
+                placeholder="예: 2.86"
               />
               {errors.incomeRate && (
                 <span className={styles.errorText}>{errors.incomeRate}</span>
@@ -348,7 +350,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>
+            <label className={styles.checkboxLabel}>
               <input
                 type="checkbox"
                 checked={formData.isPurchase}
@@ -357,7 +359,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
                 }
                 className={styles.checkbox}
               />
-              <span>구매로 처리 (첫 년도에 현금으로 차감)</span>
+              <span className={styles.checkboxText}>구매로 처리</span>
             </label>
             {formData.isPurchase && (
               <div className={styles.purchaseNotice}>

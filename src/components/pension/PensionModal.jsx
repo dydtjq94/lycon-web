@@ -67,14 +67,14 @@ function PensionModal({
     monthlyAmount: "", // 월 수령 금액
     startYear: age65Year,
     endYear: age90Year,
-    inflationRate: 2.5, // 물가상승률 (국민연금용)
+    inflationRate: 1.89, // 물가상승률 (국민연금용)
     // 퇴직연금/개인연금용 필드
     currentAmount: "", // 현재 보유액
     contributionAmount: "", // 월/년 적립 금액
     contributionFrequency: "monthly", // monthly, yearly
     contributionStartYear: new Date().getFullYear(),
     contributionEndYear: new Date().getFullYear() + 10,
-    returnRate: 5.0, // 투자 수익률
+    returnRate: 2.86, // 투자 수익률
     paymentStartYear: age65Year, // 수령 시작년도
     paymentEndYear: age90Year, // 수령 종료년도
     memo: "",
@@ -99,7 +99,7 @@ function PensionModal({
             editData.contributionStartYear || new Date().getFullYear(),
           contributionEndYear:
             editData.contributionEndYear || new Date().getFullYear() + 10,
-          returnRate: editData.returnRate || 5.0,
+          returnRate: editData.returnRate || 2.86,
           paymentStartYear:
             editData.paymentStartYear || new Date().getFullYear() + 11,
           paymentEndYear:
@@ -115,13 +115,13 @@ function PensionModal({
           monthlyAmount: "",
           startYear: age65Year,
           endYear: age90Year,
-          inflationRate: 2,
+          inflationRate: 1.89,
           currentAmount: "",
           contributionAmount: "",
           contributionFrequency: "monthly",
           contributionStartYear: new Date().getFullYear(),
           contributionEndYear: new Date().getFullYear() + 10,
-          returnRate: 5.0,
+          returnRate: 2.86,
           paymentStartYear: age65Year,
           paymentEndYear: age90Year,
           memo: "",
@@ -323,13 +323,13 @@ function PensionModal({
       monthlyAmount: "",
       startYear: age65Year,
       endYear: age90Year,
-      inflationRate: 2.5,
+      inflationRate: 1.89,
       currentAmount: "",
       contributionAmount: "",
       contributionFrequency: "monthly",
       contributionStartYear: new Date().getFullYear(),
       contributionEndYear: new Date().getFullYear() + 10,
-      returnRate: 5.0,
+      returnRate: 2.86,
       paymentStartYear: age65Year,
       paymentEndYear: age90Year,
       memo: "",
@@ -535,7 +535,7 @@ function PensionModal({
                       className={`${styles.input} ${
                         errors.inflationRate ? styles.error : ""
                       }`}
-                      placeholder="2.5"
+                      placeholder="1.89"
                     />
                     {errors.inflationRate && (
                       <span className={styles.errorText}>
@@ -710,7 +710,7 @@ function PensionModal({
                         className={`${styles.input} ${
                           errors.returnRate ? styles.error : ""
                         }`}
-                        placeholder="5.0"
+                        placeholder="2.86"
                       />
                       {errors.returnRate && (
                         <span className={styles.errorText}>

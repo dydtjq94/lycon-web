@@ -24,7 +24,9 @@ function SavingList({
       {savings.map((saving) => (
         <div
           key={saving.id}
-          className={`${styles.savingItem} ${isReadOnly ? styles.readOnly : ""}`}
+          className={`${styles.savingItem} ${
+            isReadOnly ? styles.readOnly : ""
+          }`}
           onClick={() => {
             if (!isReadOnly) {
               onEdit(saving);
@@ -62,7 +64,7 @@ function SavingList({
             <div className={styles.savingPeriod}>
               {saving.startYear}년 - {saving.endYear}년
               <br />
-              (이자율 {(saving.interestRate * 100).toFixed(1)}% 적용
+              (연평균 수익률 {(saving.interestRate * 100).toFixed(1)}% 적용
               {saving.yearlyGrowthRate > 0 &&
                 `, 년간 상승률 ${(saving.yearlyGrowthRate * 100).toFixed(1)}%`}
               )

@@ -27,9 +27,9 @@ function SavingModal({
     amount: "",
     startYear: new Date().getFullYear(),
     endYear: getRetirementYear(),
-    memo: "",
-    interestRate: "3.0", // 이자율 3%
-    yearlyGrowthRate: "0", // 연간 저축/투자금액 증가율 0%
+    memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
+    interestRate: "2.86", // 기본 수익률 2.86%
+    yearlyGrowthRate: "1.89", // 연간 저축/투자금액 증가율 1.89%
   });
 
   const [errors, setErrors] = useState({});
@@ -48,10 +48,10 @@ function SavingModal({
           memo: editData.memo || "",
           interestRate: editData.interestRate
             ? (editData.interestRate * 100).toString()
-            : "3.0",
+            : "2.86",
           yearlyGrowthRate: editData.yearlyGrowthRate
             ? (editData.yearlyGrowthRate * 100).toString()
-            : "0",
+            : "1.89",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -61,9 +61,9 @@ function SavingModal({
           amount: "",
           startYear: new Date().getFullYear(),
           endYear: getRetirementYear(),
-          memo: "",
-          interestRate: "3.0",
-          yearlyGrowthRate: "0",
+          memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
+          interestRate: "2.86",
+          yearlyGrowthRate: "1.89",
         });
       }
     }
@@ -147,9 +147,9 @@ function SavingModal({
       amount: "",
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
-      memo: "",
-      interestRate: "3.0",
-      yearlyGrowthRate: "0",
+      memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
+      interestRate: "2.86",
+      yearlyGrowthRate: "1.89",
     });
     setErrors({});
     onClose();
@@ -309,7 +309,7 @@ function SavingModal({
           <div className={styles.row}>
             <div className={styles.field}>
               <label htmlFor="interestRate" className={styles.label}>
-                이자율 (%)
+                연평균 수익률 (%)
               </label>
               <input
                 type="text"
@@ -324,7 +324,7 @@ function SavingModal({
                 }}
                 onKeyPress={handleKeyPress}
                 className={styles.input}
-                placeholder="3.0"
+                placeholder="2.86"
               />
             </div>
 
@@ -349,7 +349,7 @@ function SavingModal({
                   }}
                   onKeyPress={handleKeyPress}
                   className={styles.input}
-                  placeholder="0"
+                  placeholder="1.89"
                 />
               </div>
             )}
