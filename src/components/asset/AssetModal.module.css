@@ -179,6 +179,24 @@
   margin-left: 12px;
 }
 
+.checkbox {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.purchaseNotice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #0369a1;
+}
+
 .buttonGroup {
   display: flex;
   gap: 12px;

@@ -75,6 +75,8 @@ export function calculateCashflowSimulation(
     // 부채 이자 및 원금 상환 계산
     let totalDebtInterest = 0;
     let totalDebtPrincipal = 0;
+    const debtInterestDetails = [];
+    const debtPrincipalDetails = [];
 
     debts.forEach((debt) => {
       if (year >= debt.startYear && year <= debt.endYear) {
@@ -87,12 +89,30 @@ export function calculateCashflowSimulation(
           if (year < debt.endYear) {
             // 만기 전: 이자만 지불
             const yearlyInterest = debt.debtAmount * interestRate;
-            totalDebtInterest += yearlyInterest;
+            if (yearlyInterest > 0) {
+              totalDebtInterest += yearlyInterest;
+              debtInterestDetails.push({
+                title: debt.title,
+                amount: yearlyInterest,
+              });
+            }
           } else if (year === debt.endYear) {
             // 만기년도: 이자 + 원금 상환
             const yearlyInterest = debt.debtAmount * interestRate;
-            totalDebtInterest += yearlyInterest;
-            totalDebtPrincipal += debt.debtAmount;
+            if (yearlyInterest > 0) {
+              totalDebtInterest += yearlyInterest;
+              debtInterestDetails.push({
+                title: debt.title,
+                amount: yearlyInterest,
+              });
+            }
+            if (debt.debtAmount > 0) {
+              totalDebtPrincipal += debt.debtAmount;
+              debtPrincipalDetails.push({
+                title: debt.title,
+                amount: debt.debtAmount,
+              });
+            }
           }
         } else if (debt.debtType === "equal") {
           // 원리금균등상환: 매년 동일한 금액 상환
@@ -117,12 +137,30 @@ export function calculateCashflowSimulation(
             const interestPayment = remainingPrincipal * r;
             const principalPayment = yearlyPayment - interestPayment;
 
-            totalDebtInterest += interestPayment;
-            totalDebtPrincipal += principalPayment;
+            if (interestPayment > 0) {
+              totalDebtInterest += interestPayment;
+              debtInterestDetails.push({
+                title: debt.title,
+                amount: interestPayment,
+              });
+            }
+            if (principalPayment > 0) {
+              totalDebtPrincipal += principalPayment;
+              debtPrincipalDetails.push({
+                title: debt.title,
+                amount: principalPayment,
+              });
+            }
           } else if (r === 0) {
             // 이자율이 0%인 경우: 원금을 균등 분할
             const yearlyPayment = principal / n;
-            totalDebtPrincipal += yearlyPayment;
+            if (yearlyPayment > 0) {
+              totalDebtPrincipal += yearlyPayment;
+              debtPrincipalDetails.push({
+                title: debt.title,
+                amount: yearlyPayment,
+              });
+            }
           }
         } else if (debt.debtType === "principal") {
           // 원금균등상환: 매년 동일한 원금 상환, 이자는 남은 원금에 대해 계산
@@ -140,8 +178,20 @@ export function calculateCashflowSimulation(
           const interestPayment = remainingPrincipal * r;
           const principalPayment = yearlyPrincipalPayment;
 
-          totalDebtInterest += interestPayment;
-          totalDebtPrincipal += principalPayment;
+          if (interestPayment > 0) {
+            totalDebtInterest += interestPayment;
+            debtInterestDetails.push({
+              title: debt.title,
+              amount: interestPayment,
+            });
+          }
+          if (principalPayment > 0) {
+            totalDebtPrincipal += principalPayment;
+            debtPrincipalDetails.push({
+              title: debt.title,
+              amount: principalPayment,
+            });
+          }
         } else if (debt.debtType === "grace") {
           // 거치식상환: 거치기간 동안 이자만 지불, 이후 원금 균등상환 + 남은 원금의 이자
           const principal = debt.debtAmount;
@@ -153,7 +203,13 @@ export function calculateCashflowSimulation(
           if (year <= graceEndYear) {
             // 거치기간: 이자만 지불 (거치기간 마지막 년도까지 포함)
             const yearlyInterest = principal * r;
-            totalDebtInterest += yearlyInterest;
+            if (yearlyInterest > 0) {
+              totalDebtInterest += yearlyInterest;
+              debtInterestDetails.push({
+                title: debt.title,
+                amount: yearlyInterest,
+              });
+            }
           } else if (year > graceEndYear && year <= debt.endYear) {
             // 상환기간: 원금을 균등하게 상환 + 남은 원금의 이자
             const yearlyPrincipalPayment = principal / repaymentYears;
@@ -168,8 +224,20 @@ export function calculateCashflowSimulation(
             const interestPayment = remainingPrincipal * r;
             const principalPayment = yearlyPrincipalPayment;
 
-            totalDebtInterest += interestPayment;
-            totalDebtPrincipal += principalPayment;
+            if (interestPayment > 0) {
+              totalDebtInterest += interestPayment;
+              debtInterestDetails.push({
+                title: debt.title,
+                amount: interestPayment,
+              });
+            }
+            if (principalPayment > 0) {
+              totalDebtPrincipal += principalPayment;
+              debtPrincipalDetails.push({
+                title: debt.title,
+                amount: principalPayment,
+              });
+            }
           }
         }
       }
@@ -298,8 +366,20 @@ export function calculateCashflowSimulation(
     let totalRentalIncome = 0; // 임대 소득
     let totalRealEstatePension = 0; // 주택연금 수령액
     let totalRealEstateSale = 0; // 부동산 매각 수입
+    let totalRealEstatePurchase = 0; // 부동산 구매 비용
+    const realEstatePurchases = []; // 부동산 구매 상세 정보
+    const realEstateSales = []; // 부동산 매각 상세 정보
 
     realEstates.forEach((realEstate) => {
+      // 부동산 구매 비용 계산 (첫 년도에 현금으로 차감)
+      if (realEstate.isPurchase && year === realEstate.startYear) {
+        totalRealEstatePurchase += realEstate.currentValue;
+        realEstatePurchases.push({
+          title: realEstate.title,
+          amount: realEstate.currentValue,
+        });
+      }
+
       // 임대 소득 계산
       if (
         realEstate.hasRentalIncome &&
@@ -322,14 +402,30 @@ export function calculateCashflowSimulation(
         const finalValue =
           realEstate.currentValue * Math.pow(1 + growthRate, yearsElapsed);
         totalRealEstateSale += finalValue;
+        realEstateSales.push({
+          title: realEstate.title,
+          amount: finalValue,
+        });
       }
     });
 
     // 자산 수익 계산 (수익형 자산의 이자/배당)
     let totalAssetIncome = 0;
     let totalAssetSale = 0; // 자산 매각 수입
+    let totalAssetPurchase = 0; // 자산 구매 비용
+    const assetPurchases = []; // 자산 구매 상세 정보
+    const assetSales = []; // 자산 매각 상세 정보
 
     assets.forEach((asset) => {
+      // 자산 구매 비용 계산 (첫 년도에 현금으로 차감)
+      if (asset.isPurchase && year === asset.startYear) {
+        totalAssetPurchase += asset.currentValue;
+        assetPurchases.push({
+          title: asset.title,
+          amount: asset.currentValue,
+        });
+      }
+
       if (
         asset.assetType === "income" &&
         asset.incomeRate > 0 &&
@@ -351,10 +447,14 @@ export function calculateCashflowSimulation(
         const finalValue =
           asset.currentValue * Math.pow(1 + growthRate, yearsElapsed);
         totalAssetSale += finalValue;
+        assetSales.push({
+          title: asset.title,
+          amount: finalValue,
+        });
       }
     });
 
-    // 현금흐름 = 소득 - 지출 - 저축 + 연금 + 임대소득 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 - 부채이자 - 부채원금상환 (각 년도별 순현금흐름)
+    // 현금흐름 = 소득 - 지출 - 저축 + 연금 + 임대소득 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 - 부채이자 - 부채원금상환 - 자산구매 - 부동산구매 (각 년도별 순현금흐름)
     const netCashflow =
       totalIncome -
       totalExpense -
@@ -367,7 +467,9 @@ export function calculateCashflowSimulation(
       totalAssetSale +
       totalSavingMaturity -
       totalDebtInterest -
-      totalDebtPrincipal;
+      totalDebtPrincipal -
+      totalAssetPurchase -
+      totalRealEstatePurchase;
 
     cashflowData.push({
       year,
@@ -385,6 +487,13 @@ export function calculateCashflowSimulation(
       savingMaturity: totalSavingMaturity,
       debtInterest: totalDebtInterest,
       debtPrincipal: totalDebtPrincipal,
+      debtInterests: debtInterestDetails,
+      debtPrincipals: debtPrincipalDetails,
+      // 구매와 매각 상세 정보 추가
+      assetPurchases: assetPurchases,
+      realEstatePurchases: realEstatePurchases,
+      assetSales: assetSales,
+      realEstateSales: realEstateSales,
     });
   }
 

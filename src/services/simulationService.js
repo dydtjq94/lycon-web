@@ -42,6 +42,7 @@ export const simulationService = {
           title: simulationData.title || "새 시뮬레이션",
           isDefault: simulationData.isDefault || false,
           order: maxOrder + 1,
+          memo: simulationData.memo || "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }
@@ -248,10 +249,16 @@ export const simulationService = {
         newTitle,
       });
 
+      const sourceSimulation = await this.getSimulation(
+        profileId,
+        sourceSimulationId
+      );
+
       // 1. 새 시뮬레이션 생성
       const newSimulationId = await this.createSimulation(profileId, {
         title: newTitle,
         isDefault: false,
+        memo: sourceSimulation?.memo || "",
       });
 
       // 2. 원본 시뮬레이션의 모든 하위 컬렉션 데이터 복사

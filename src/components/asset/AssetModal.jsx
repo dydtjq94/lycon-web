@@ -17,6 +17,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
     assetType: "general", // "general" 또는 "income"
     incomeRate: "3", // % 단위로 기본값 설정
     memo: "",
+    isPurchase: false, // 구매 여부
   });
 
   const [errors, setErrors] = useState({});
@@ -40,6 +41,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
               ? (editData.incomeRate * 100).toString()
               : "3",
           memo: editData.memo || "",
+          isPurchase: editData.isPurchase || false,
         });
       } else {
         // 새 데이터인 경우 기본값 설정
@@ -57,6 +59,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
           assetType: "general",
           incomeRate: "3",
           memo: "",
+          isPurchase: false,
         });
       }
     }
@@ -143,6 +146,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
           ? parseFloat(formData.incomeRate) / 100
           : 0, // 수익형 자산일 때만 수익률 적용
       memo: formData.memo.trim(),
+      isPurchase: formData.isPurchase, // 구매 여부
     };
 
     onSave(assetData);
@@ -159,6 +163,7 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
       assetType: "general",
       incomeRate: "",
       memo: "",
+      isPurchase: false,
     });
     setErrors({});
     onClose();
@@ -339,6 +344,27 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
               <span className={styles.errorText}>
                 {errors.startYear || errors.endYear}
               </span>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>
+              <input
+                type="checkbox"
+                checked={formData.isPurchase}
+                onChange={(e) =>
+                  setFormData({ ...formData, isPurchase: e.target.checked })
+                }
+                className={styles.checkbox}
+              />
+              <span>구매로 처리 (첫 년도에 현금으로 차감)</span>
+            </label>
+            {formData.isPurchase && (
+              <div className={styles.purchaseNotice}>
+                💡 {formData.startYear}년에{" "}
+                {formatAmountForChart(parseInt(formData.currentValue) || 0)}의
+                현금이 차감됩니다.
+              </div>
             )}
           </div>
 

@@ -101,7 +101,7 @@ const RechartsDebtChart = ({ data = [] }) => {
             tickFormatter={(value) => `${value}`}
             stroke="#6b7280"
             fontSize={12}
-            label={{ value: "(세)", position: "insideBottom", offset: -5 }}
+            label={{ value: "", position: "insideBottom", offset: -5 }}
           />
 
           {/* Y축 - 금액 */}

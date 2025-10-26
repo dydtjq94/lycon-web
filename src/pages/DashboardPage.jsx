@@ -62,6 +62,8 @@ function DashboardPage() {
   const [simulations, setSimulations] = useState([]); // 모든 시뮬레이션 목록
   const [activeSimulationId, setActiveSimulationId] = useState(null); // 현재 활성화된 시뮬레이션 ID
   const [isFinancialDataLoading, setIsFinancialDataLoading] = useState(true); // 재무 데이터 로딩 상태
+  const [simulationMemo, setSimulationMemo] = useState("");
+  const [isMemoSaving, setIsMemoSaving] = useState(false);
 
   const [incomes, setIncomes] = useState([]);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
@@ -135,20 +137,15 @@ function DashboardPage() {
       if (!profileId) return;
 
       try {
-        console.log("시뮬레이션 목록 조회 시작");
         const simulationList = await simulationService.getSimulations(
           profileId
         );
 
         if (simulationList.length === 0) {
-          console.log("시뮬레이션이 없습니다. 자동 마이그레이션 시작...");
-
           // 기존 데이터를 새 구조로 자동 마이그레이션
           const migrationResult = await migrateProfileData(profileId);
 
           if (migrationResult.success) {
-            console.log("마이그레이션 성공:", migrationResult);
-
             // 마이그레이션 후 시뮬레이션 다시 로드
             const updatedSimulations = await simulationService.getSimulations(
               profileId
@@ -161,7 +158,6 @@ function DashboardPage() {
             );
             if (defaultSim) {
               setActiveSimulationId(defaultSim.id);
-              console.log("기본 시뮬레이션 활성화:", defaultSim.id);
             }
           } else {
             console.error("마이그레이션 실패:", migrationResult);
@@ -188,11 +184,9 @@ function DashboardPage() {
         const defaultSim = simulationList.find((sim) => sim.isDefault === true);
         if (defaultSim) {
           setActiveSimulationId(defaultSim.id);
-          console.log("기본 시뮬레이션 활성화:", defaultSim.id);
         } else {
           // 기본 시뮬레이션이 없으면 첫 번째 시뮬레이션 활성화
           setActiveSimulationId(simulationList[0].id);
-          console.log("첫 번째 시뮬레이션 활성화:", simulationList[0].id);
         }
       } catch (error) {
         console.error("시뮬레이션 목록 조회 오류:", error);
@@ -218,7 +212,6 @@ function DashboardPage() {
         setDebts([]);
 
         setIsFinancialDataLoading(true); // 로딩 시작
-        console.log("모든 재무 데이터 로드 시작");
 
         // Promise.all을 사용하여 모든 데이터를 동시에 가져오기
         const [
@@ -271,7 +264,6 @@ function DashboardPage() {
         setAssets(sortedAssets);
         setDebts(sortedDebts);
 
-        console.log("모든 재무 데이터 로드 완료");
         setIsFinancialDataLoading(false); // 로딩 완료
       } catch (error) {
         console.error("재무 데이터 로드 오류:", error);
@@ -281,6 +273,20 @@ function DashboardPage() {
 
     loadAllFinancialData();
   }, [profileId, activeSimulationId]);
+
+  // 시뮬레이션 메모 동기화
+  useEffect(() => {
+    if (!activeSimulationId) {
+      setSimulationMemo("");
+      return;
+    }
+
+    const currentSimulation = simulations.find(
+      (sim) => sim.id === activeSimulationId
+    );
+    const memoText = currentSimulation?.memo || "";
+    setSimulationMemo(memoText);
+  }, [activeSimulationId, simulations]);
 
   // 시뮬레이션 데이터 생성
   const generateSimulationData = useCallback(
@@ -295,10 +301,6 @@ function DashboardPage() {
       const deathAge = 90;
       const startYear = currentYear;
 
-      // 디버깅을 위한 로그
-      console.log("현재 나이:", startAge, "은퇴 나이:", retirementAge);
-      console.log("저축/투자 데이터 (DashboardPage):", savings);
-
       // 현재 나이와 은퇴 나이의 차이를 계산해서 은퇴 년도 구하기
       const yearsToRetirement = retirementAge - startAge;
       const retirementYear = currentYear + yearsToRetirement;
@@ -306,13 +308,6 @@ function DashboardPage() {
       // 현재 나이와 죽을 나이의 차이를 계산해서 죽을 년도 구하기
       const yearsToDeath = deathAge - startAge;
       const deathYear = currentYear + yearsToDeath;
-
-      console.log(
-        "은퇴까지 남은 년수:",
-        yearsToRetirement,
-        "은퇴 년도:",
-        retirementYear
-      );
 
       const years = [];
       for (let year = startYear; year <= deathYear; year++) {
@@ -854,7 +849,6 @@ function DashboardPage() {
         handleEditDebt(item);
         break;
       default:
-        console.log("알 수 없는 항목 타입:", type);
         break;
     }
   };
@@ -884,15 +878,42 @@ function DashboardPage() {
         handleDeleteDebt(itemId);
         break;
       default:
-        console.log("알 수 없는 항목 타입:", type);
         break;
     }
   };
 
   // 시뮬레이션 관련 핸들러들
+  const handleSaveSimulationMemo = useCallback(
+    async (nextMemo) => {
+      if (!profileId || !activeSimulationId) return;
+      if ((simulationMemo || "") === nextMemo) return;
+
+      try {
+        setIsMemoSaving(true);
+        await simulationService.updateSimulation(
+          profileId,
+          activeSimulationId,
+          {
+            memo: nextMemo,
+          }
+        );
+        setSimulationMemo(nextMemo);
+        setSimulations((prev) =>
+          prev.map((sim) =>
+            sim.id === activeSimulationId ? { ...sim, memo: nextMemo } : sim
+          )
+        );
+      } catch (error) {
+        console.error("시뮬레이션 메모 저장 오류:", error);
+      } finally {
+        setIsMemoSaving(false);
+      }
+    },
+    [profileId, activeSimulationId, simulationMemo]
+  );
+
   const handleSimulationTabChange = (simulationId) => {
     setActiveSimulationId(simulationId);
-    console.log("시뮬레이션 전환:", simulationId);
   };
 
   const handleAddSimulation = async () => {
@@ -916,8 +937,6 @@ function DashboardPage() {
         defaultSimulation.id,
         title
       );
-
-      console.log("새 시뮬레이션 생성 완료:", newSimulationId);
 
       // 시뮬레이션 목록 다시 로드
       const updatedSimulations = await simulationService.getSimulations(
@@ -952,8 +971,6 @@ function DashboardPage() {
         defaultSimulation.id,
         title
       );
-
-      console.log("새 시뮬레이션 생성 완료:", newSimulationId);
 
       // 시뮬레이션 목록 다시 로드
       const updatedSimulations = await simulationService.getSimulations(
@@ -1010,8 +1027,6 @@ function DashboardPage() {
           sim.id === simulationId ? { ...sim, title: newTitle } : sim
         )
       );
-
-      console.log("시뮬레이션 이름 변경 완료:", newTitle);
     } catch (error) {
       console.error("시뮬레이션 이름 변경 오류:", error);
       alert("시뮬레이션 이름 변경 중 오류가 발생했습니다.");
@@ -1330,7 +1345,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         >
           {sidebarView === "categories" ? (
             // 카테고리 목록 뷰
-            <>
+            <div className={`${styles.sidebarView} ${styles.categoriesView}`}>
               <div className={styles.categoryList}>
                 {categories.map((category) => (
                   <div key={category.id} className={styles.categoryItem}>
@@ -1350,7 +1365,32 @@ ${JSON.stringify(analysisData, null, 2)}`;
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedCategory(category.id);
-                        handleAddData();
+                        // 직접 해당 카테고리의 추가 함수 호출
+                        switch (category.id) {
+                          case "income":
+                            handleAddIncome();
+                            break;
+                          case "expense":
+                            handleAddExpense();
+                            break;
+                          case "savings":
+                            handleAddSaving();
+                            break;
+                          case "pension":
+                            handleAddPension();
+                            break;
+                          case "realEstate":
+                            handleAddRealEstate();
+                            break;
+                          case "assets":
+                            handleAddAsset();
+                            break;
+                          case "debt":
+                            handleAddDebt();
+                            break;
+                          default:
+                            break;
+                        }
                       }}
                       title={`${category.name} 추가`}
                     >
@@ -1359,10 +1399,10 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           ) : (
             // 리스트 뷰
-            <>
+            <div className={`${styles.sidebarView} ${styles.listView}`}>
               <div className={styles.listHeader}>
                 <button
                   className={styles.backIconButton}
@@ -1431,7 +1471,16 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   </div>
                 )}
               </div>
-            </>
+            </div>
+          )}
+
+          {sidebarView === "categories" && !isSidebarCollapsed && (
+            <SimulationMemoPanel
+              memo={simulationMemo}
+              onSave={handleSaveSimulationMemo}
+              isSaving={isMemoSaving}
+              isDisabled={!activeSimulationId}
+            />
           )}
         </div>
 
@@ -1545,3 +1594,52 @@ ${JSON.stringify(analysisData, null, 2)}`;
 }
 
 export default DashboardPage;
+
+const SimulationMemoPanel = React.memo(function SimulationMemoPanel({
+  memo,
+  onSave,
+  isSaving,
+  isDisabled,
+}) {
+  const [value, setValue] = useState(memo || "");
+  const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    setValue(memo || "");
+    setIsDirty(false);
+  }, [memo]);
+
+  const handleChange = (event) => {
+    const nextValue = event.target.value;
+    setValue(nextValue);
+    setIsDirty(nextValue !== (memo || ""));
+  };
+
+  const handleSave = () => {
+    if (isDisabled || !isDirty || isSaving) return;
+    onSave?.(value);
+  };
+
+  return (
+    <div className={styles.sidebarMemoSection}>
+      <div className={styles.memoHeader}>
+        <span className={styles.memoTitle}>시뮬레이션 메모</span>
+        <button
+          className={styles.memoSaveButton}
+          onClick={handleSave}
+          disabled={isDisabled || !isDirty || isSaving}
+          type="button"
+        >
+          {isSaving ? "저장 중..." : "저장"}
+        </button>
+      </div>
+      <textarea
+        className={styles.memoTextarea}
+        placeholder={isDisabled ? "메모를 작성하세요." : "메모를 작성하세요."}
+        value={value}
+        onChange={handleChange}
+        disabled={isDisabled}
+      />
+    </div>
+  );
+});

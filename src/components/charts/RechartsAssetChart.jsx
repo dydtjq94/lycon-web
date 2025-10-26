@@ -65,12 +65,14 @@ function RechartsAssetChart({
     // 자산 항목들을 처리
     Object.keys(item).forEach((key) => {
       if (key !== "year" && key !== "age" && key !== "totalAmount") {
+        const value = item[key] || 0;
+
         if (key === "현금") {
           // 현금은 그대로 표시 (양수/음수 자동 처리)
-          processedItem[key] = item[key] || 0;
+          processedItem[key] = value;
         } else {
           // 다른 자산들은 그대로 표시
-          processedItem[key] = item[key] || 0;
+          processedItem[key] = value;
         }
       }
     });
@@ -90,31 +92,137 @@ function RechartsAssetChart({
         )
       : [];
 
-  // 현금을 맨 앞으로 이동하고, "현금 자산"을 "현금"으로 표시
-  const assetKeys = allKeys.sort((a, b) => {
-    if (a === "현금" || a === "현금 자산") return -1;
-    if (b === "현금" || b === "현금 자산") return 1;
-    return 0;
-  });
+  // 툴팁과 동일한 카테고리별 정렬 로직 적용
+  const categorizeAndSortKeys = (keys, sampleData) => {
+    const categories = {
+      현금: [],
+      연금: [],
+      자산: [],
+      부채: [],
+    };
 
-  // 디버깅: chartData와 assetKeys 확인
-  console.log("chartData:", chartData);
-  console.log("assetKeys:", assetKeys);
-  console.log(
-    "첫 번째 chartData 항목의 키들:",
-    chartData.length > 0 ? Object.keys(chartData[0]) : []
-  );
-  console.log("현금이 포함되어 있나?", assetKeys.includes("현금"));
+    // 각 키를 카테고리별로 분류
+    keys.forEach((key) => {
+      if (key === "현금" || key === "현금 자산") {
+        categories.현금.push(key);
+      } else if (
+        key.includes("연금") ||
+        key.includes("퇴직") ||
+        key.includes("국민연금")
+      ) {
+        categories.연금.push(key);
+      } else if (
+        key.includes("부채") ||
+        key.includes("대출") ||
+        key.includes("빚") ||
+        (sampleData && sampleData[key] < 0)
+      ) {
+        categories.부채.push(key);
+      } else {
+        categories.자산.push(key);
+      }
+    });
 
-  // 현금 값들 확인
-  console.log(
-    "현금 값들:",
-    chartData.map((item) => ({ year: item.year, 현금: item.현금 }))
-  );
-  console.log(
-    "음수 현금이 있나?",
-    chartData.some((item) => item.현금 < 0)
-  );
+    // 각 카테고리 내에서 금액이 큰 순서대로 정렬 (바 차트에서 높은 금액이 위에 오도록)
+    Object.keys(categories).forEach((category) => {
+      categories[category].sort((a, b) => {
+        const valueA = sampleData ? Math.abs(sampleData[a] || 0) : 0;
+        const valueB = sampleData ? Math.abs(sampleData[b] || 0) : 0;
+        return valueB - valueA; // 큰 값이 먼저 (바 차트에서 위에)
+      });
+    });
+
+    // 툴팁과 동일한 순서로 결합
+    return [
+      ...categories.현금,
+      ...categories.연금,
+      ...categories.자산,
+      ...categories.부채,
+    ];
+  };
+
+  // 샘플 데이터로 정렬 (첫 번째 데이터 사용)
+  const sampleData = chartData.length > 0 ? chartData[0] : {};
+  const assetKeys = categorizeAndSortKeys(allKeys, sampleData);
+
+  // 자산별 고정 색상 매핑
+  const getAssetColor = (assetName, value = 0) => {
+    // 현금 관련 - 값이 음수이면 검은색
+    if (assetName === "현금" || assetName === "현금 자산") {
+      return value < 0 ? "#374151" : "#10b981"; // 음수: 검은색, 양수: 초록색
+    }
+
+    // 연금 관련 (노란 계열)
+    if (
+      assetName.includes("연금") ||
+      assetName.includes("퇴직") ||
+      assetName.includes("국민연금")
+    ) {
+      const pensionColors = [
+        "#fbbf24",
+        "#f59e0b",
+        "#eab308",
+        "#d97706",
+        "#f59e0b",
+        "#fbbf24",
+        "#ca8a04",
+        "#a16207",
+        "#d97706",
+        "#ca8a04",
+      ];
+      // 자산 이름의 해시값으로 일관된 색상 선택
+      const hash = assetName.split("").reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return pensionColors[Math.abs(hash) % pensionColors.length];
+    }
+
+    // 부채 관련 (빨간 계열)
+    if (
+      assetName.includes("부채") ||
+      assetName.includes("대출") ||
+      assetName.includes("빚") ||
+      (sampleData && sampleData[assetName] < 0)
+    ) {
+      const debtColors = [
+        "#ef4444",
+        "#f97316",
+        "#dc2626",
+        "#e53e3e",
+        "#e11d48",
+        "#f43f5e",
+        "#92400e",
+        "#78350f",
+        "#d97706",
+        "#b45309",
+      ];
+      const hash = assetName.split("").reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return debtColors[Math.abs(hash) % debtColors.length];
+    }
+
+    // 일반 자산 (파란 계열)
+    const assetColors = [
+      "#3b82f6",
+      "#06b6d4",
+      "#8b5cf6",
+      "#6366f1",
+      "#0ea5e9",
+      "#2563eb",
+      "#7c3aed",
+      "#4f46e5",
+      "#1d4ed8",
+      "#0284c7",
+    ];
+    const hash = assetName.split("").reduce((a, b) => {
+      a = (a << 5) - a + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return assetColors[Math.abs(hash) % assetColors.length];
+  };
 
   // 색상 팔레트 (푸른 계열 자산, 붉은 계열 부채)
   const assetColors = [
@@ -148,10 +256,6 @@ function RechartsAssetChart({
     "#4ade80", // 매우 연한 초록색
   ];
 
-  // 현금 색상 (양수: 노란 계열, 음수: 갈색 계열)
-  const positiveCashColor = "#10b981"; // 초록색
-  const negativeCashColor = "#374151"; // 검은색
-
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
 
@@ -169,6 +273,7 @@ function RechartsAssetChart({
   const minValue = Math.min(...allValues, 0);
   const maxAbsValue = Math.max(Math.abs(maxValue), Math.abs(minValue));
   const padding = maxAbsValue * 0.1;
+
   const yDomain = [-maxAbsValue - padding, maxAbsValue + padding];
 
   // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
@@ -183,6 +288,8 @@ function RechartsAssetChart({
           left: 40,
           bottom: 20,
         }}
+        onClick={() => !isZoomedView && setIsZoomed(true)}
+        style={{ cursor: !isZoomedView ? "pointer" : "default" }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
 
@@ -195,7 +302,7 @@ function RechartsAssetChart({
           tickFormatter={(value) => `${value}`}
           stroke="#6b7280"
           fontSize={12}
-          label={{ value: "(세)", position: "insideBottom", offset: -5 }}
+          label={{ value: "", position: "insideBottom", offset: -5 }}
         />
 
         {/* Y축 - 금액 */}
@@ -280,90 +387,81 @@ function RechartsAssetChart({
                     </div>
                   </div>
                   <div className={styles.tooltipDetails}>
-                    {payload.map((entry, index) => {
-                      // 각 항목별 색상 결정
-                      const getItemColor = (name) => {
-                        // 현금 관련
-                        if (name === "현금") {
-                          return entry.value >= 0 ? "#10b981" : "#374151";
-                        }
+                    {(() => {
+                      // 카테고리별로 분류하고 정렬
+                      const categorizeItems = (items) => {
+                        const categories = {
+                          현금: [],
+                          연금: [],
+                          자산: [],
+                          부채: [],
+                        };
 
-                        // 연금 관련 (노란 계열) - 10개
-                        if (
-                          name.includes("연금") ||
-                          name.includes("퇴직") ||
-                          name.includes("국민연금")
-                        ) {
-                          const pensionColors = [
-                            "#fbbf24",
-                            "#f59e0b",
-                            "#eab308",
-                            "#d97706",
-                            "#f59e0b",
-                            "#fbbf24",
-                            "#ca8a04",
-                            "#a16207",
-                            "#d97706",
-                            "#ca8a04",
-                          ];
-                          const colorIndex = index % pensionColors.length;
-                          return pensionColors[colorIndex];
-                        }
+                        items.forEach((entry) => {
+                          const name = entry.name;
+                          const value = entry.value;
 
-                        // 부채 관련 (빨간/갈색 계열) - 10개
-                        if (
-                          name.includes("부채") ||
-                          name.includes("대출") ||
-                          name.includes("빚") ||
-                          entry.value < 0
-                        ) {
-                          const debtColors = [
-                            "#ef4444",
-                            "#f97316",
-                            "#dc2626",
-                            "#e53e3e",
-                            "#e11d48",
-                            "#f43f5e",
-                            "#92400e",
-                            "#78350f",
-                            "#d97706",
-                            "#b45309",
-                          ];
-                          const colorIndex = index % debtColors.length;
-                          return debtColors[colorIndex];
-                        }
+                          if (name === "현금") {
+                            categories.현금.push(entry);
+                          } else if (
+                            name.includes("연금") ||
+                            name.includes("퇴직") ||
+                            name.includes("국민연금")
+                          ) {
+                            categories.연금.push(entry);
+                          } else if (
+                            name.includes("부채") ||
+                            name.includes("대출") ||
+                            name.includes("빚") ||
+                            value < 0
+                          ) {
+                            categories.부채.push(entry);
+                          } else {
+                            categories.자산.push(entry);
+                          }
+                        });
 
-                        // 일반 자산 (파란 계열) - 10개
-                        const assetColors = [
-                          "#3b82f6",
-                          "#06b6d4",
-                          "#8b5cf6",
-                          "#6366f1",
-                          "#0ea5e9",
-                          "#2563eb",
-                          "#7c3aed",
-                          "#4f46e5",
-                          "#1d4ed8",
-                          "#0284c7",
-                        ];
-                        const colorIndex = index % assetColors.length;
-                        return assetColors[colorIndex];
+                        // 각 카테고리 내에서 금액이 큰 순서대로 정렬 (바 차트와 동일한 순서)
+                        Object.keys(categories).forEach((category) => {
+                          categories[category].sort(
+                            (a, b) => Math.abs(b.value) - Math.abs(a.value)
+                          );
+                        });
+
+                        return categories;
                       };
 
-                      return (
-                        <div key={index} className={styles.tooltipItem}>
-                          <span
-                            className={styles.tooltipLabel}
-                            style={{ color: getItemColor(entry.name) }}
-                          >
-                            {entry.name}:
-                          </span>
-                          <span className={styles.tooltipValue}>
-                            {formatAmountForChart(entry.value)}
-                          </span>
-                        </div>
-                      );
-                    })}
+                      const categorizedItems = categorizeItems(payload);
+                      // 바 차트와 동일한 순서로 정렬 (아래부터 위로 쌓이는 순서)
+                      const sortedItems = [
+                        ...categorizedItems.자산.reverse(), // 바 차트에서 중간 - 순서 반대
+                        ...categorizedItems.연금.reverse(), // 바 차트에서 중간 - 순서 반대
+                        ...categorizedItems.현금.reverse(), // 바 차트에서 가장 아래 (툴팁에서 가장 위) - 순서 반대
+                        ...categorizedItems.부채, // 바 차트에서 가장 위 (툴팁에서 가장 아래) - 순서 유지
+                      ];
+
+                      return sortedItems.map((entry, index) => {
+                        // 바 차트와 동일한 색상 사용 - entry의 value도 함께 전달
+                        const itemColor = getAssetColor(
+                          entry.name,
+                          entry.value
+                        );
+
+                        return (
+                          <div key={index} className={styles.tooltipItem}>
+                            <span
+                              className={styles.tooltipLabel}
+                              style={{ color: itemColor }}
+                            >
+                              {entry.name}:
+                            </span>
+                            <span className={styles.tooltipValue}>
+                              {formatAmountForChart(entry.value)}
+                            </span>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               );
@@ -432,236 +530,50 @@ function RechartsAssetChart({
           />
         )}
 
-        {/* 현금 Bar (별도 처리) - 같은 stackId 사용 */}
-        <Bar
-          key="현금"
-          dataKey="현금"
-          stackId="assets"
-          name="현금"
-          fill={positiveCashColor}
-        >
+        {/* 현금 Bar (별도 처리) - 툴팁 순서 1순위 */}
+        <Bar key="현금" dataKey="현금" stackId="assets" name="현금">
           {chartData.map((entry, entryIndex) => {
-            // 현금 값에 따라 그라데이션 결정
             const cashValue = entry.현금 || 0;
-            const gradientId =
-              cashValue >= 0 ? "positiveCashGradient" : "negativeCashGradient";
+            const cashColor = getAssetColor("현금", cashValue);
 
-            return (
-              <Cell
-                key={`현금-cell-${entryIndex}`}
-                fill={`url(#${gradientId})`}
-              />
-            );
+            return <Cell key={`현금-cell-${entryIndex}`} fill={cashColor} />;
           })}
         </Bar>
 
-        {/* 현금 자산 Bar (사용자가 추가한 현금 자산) */}
+        {/* 현금 자산 Bar (사용자가 추가한 현금 자산) - 툴팁 순서 1순위 */}
         {assetKeys.includes("현금 자산") && (
-          <Bar
-            key="현금 자산"
-            dataKey="현금 자산"
-            stackId="assets"
-            name="현금"
-            fill={positiveCashColor}
-          >
+          <Bar key="현금 자산" dataKey="현금 자산" stackId="assets" name="현금">
             {chartData.map((entry, entryIndex) => {
-              // 현금 자산 값에 따라 그라데이션 결정
               const cashAssetValue = entry["현금 자산"] || 0;
-              const gradientId =
-                cashAssetValue >= 0
-                  ? "positiveCashGradient"
-                  : "negativeCashGradient";
+              const cashAssetColor = getAssetColor("현금 자산", cashAssetValue);
 
               return (
                 <Cell
                   key={`현금자산-cell-${entryIndex}`}
-                  fill={`url(#${gradientId})`}
+                  fill={cashAssetColor}
                 />
               );
             })}
           </Bar>
         )}
 
-        {/* 다른 자산 항목 Bar들 */}
+        {/* 다른 자산 항목 Bar들 - 툴팁과 동일한 순서로 렌더링 (연금 → 자산 → 부채) */}
         {assetKeys
           .filter((key) => key !== "현금" && key !== "현금 자산")
           .map((key, index) => {
-            // 연금인지 확인
-            const isPension =
-              key.includes("연금") ||
-              key.includes("퇴직") ||
-              key.includes("국민연금");
-
-            // 부채인지 확인 (이름과 실제 값 모두 확인)
-            const isDebtByName =
-              key.includes("부채") ||
-              key.includes("대출") ||
-              key.includes("빚");
-            const isDebtByValue = chartData.some((item) => item[key] < 0);
-            const isDebt = isDebtByName || isDebtByValue;
-
-            // 그라데이션 ID 선택
-            let gradientId;
-            if (isPension) {
-              const gradientIndex = (index % 10) + 1; // 1~10
-              gradientId = `pensionGradient${gradientIndex}`;
-            } else if (isDebt) {
-              const gradientIndex = (index % 10) + 1; // 1~10
-              gradientId = `debtGradient${gradientIndex}`;
-            } else {
-              const gradientIndex = (index % 10) + 1; // 1~10
-              gradientId = `assetGradient${gradientIndex}`;
-            }
+            // 고정된 색상 사용
+            const assetColor = getAssetColor(key);
 
             return (
               <Bar
                 key={`${key}-${index}`}
                 dataKey={key}
                 stackId="assets"
-                fill={`url(#${gradientId})`}
+                fill={assetColor}
                 name={key === "현금 자산" ? "현금" : key}
               />
             );
           })}
-
-        {/* 그라데이션 정의 */}
-        <defs>
-          {/* 현금 그라데이션 (양수: 초록색, 음수: 검은계열) */}
-          <linearGradient id="positiveCashGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#34d399" />
-            <stop offset="100%" stopColor="#10b981" />
-          </linearGradient>
-          <linearGradient id="negativeCashGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6b7280" />
-            <stop offset="100%" stopColor="#374151" />
-          </linearGradient>
-
-          {/* 연금 그라데이션 (노란 계열) - 10개 */}
-          <linearGradient id="pensionGradient1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fde047" />
-            <stop offset="100%" stopColor="#fbbf24" />
-          </linearGradient>
-          <linearGradient id="pensionGradient2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fef3c7" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-          <linearGradient id="pensionGradient3" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fef08a" />
-            <stop offset="100%" stopColor="#eab308" />
-          </linearGradient>
-          <linearGradient id="pensionGradient4" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fde68a" />
-            <stop offset="100%" stopColor="#d97706" />
-          </linearGradient>
-          <linearGradient id="pensionGradient5" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fcd34d" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-          <linearGradient id="pensionGradient6" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fbbf24" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-          <linearGradient id="pensionGradient7" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fef08a" />
-            <stop offset="100%" stopColor="#ca8a04" />
-          </linearGradient>
-          <linearGradient id="pensionGradient8" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fde68a" />
-            <stop offset="100%" stopColor="#a16207" />
-          </linearGradient>
-          <linearGradient id="pensionGradient9" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fef3c7" />
-            <stop offset="100%" stopColor="#d97706" />
-          </linearGradient>
-          <linearGradient id="pensionGradient10" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fde047" />
-            <stop offset="100%" stopColor="#ca8a04" />
-          </linearGradient>
-
-          {/* 자산 그라데이션 (파란 계열) - 10개 */}
-          <linearGradient id="assetGradient1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#93c5fd" />
-            <stop offset="100%" stopColor="#3b82f6" />
-          </linearGradient>
-          <linearGradient id="assetGradient2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#67e8f9" />
-            <stop offset="100%" stopColor="#06b6d4" />
-          </linearGradient>
-          <linearGradient id="assetGradient3" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#c4b5fd" />
-            <stop offset="100%" stopColor="#8b5cf6" />
-          </linearGradient>
-          <linearGradient id="assetGradient4" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a5b4fc" />
-            <stop offset="100%" stopColor="#6366f1" />
-          </linearGradient>
-          <linearGradient id="assetGradient5" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#7dd3fc" />
-            <stop offset="100%" stopColor="#0ea5e9" />
-          </linearGradient>
-          <linearGradient id="assetGradient6" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#bfdbfe" />
-            <stop offset="100%" stopColor="#2563eb" />
-          </linearGradient>
-          <linearGradient id="assetGradient7" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ddd6fe" />
-            <stop offset="100%" stopColor="#7c3aed" />
-          </linearGradient>
-          <linearGradient id="assetGradient8" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#e0e7ff" />
-            <stop offset="100%" stopColor="#4f46e5" />
-          </linearGradient>
-          <linearGradient id="assetGradient9" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#dbeafe" />
-            <stop offset="100%" stopColor="#1d4ed8" />
-          </linearGradient>
-          <linearGradient id="assetGradient10" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#e0f2fe" />
-            <stop offset="100%" stopColor="#0284c7" />
-          </linearGradient>
-
-          {/* 부채 그라데이션 (빨간/갈색 계열) - 10개 */}
-          <linearGradient id="debtGradient1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fca5a5" />
-            <stop offset="100%" stopColor="#ef4444" />
-          </linearGradient>
-          <linearGradient id="debtGradient2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fed7aa" />
-            <stop offset="100%" stopColor="#f97316" />
-          </linearGradient>
-          <linearGradient id="debtGradient3" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fecaca" />
-            <stop offset="100%" stopColor="#dc2626" />
-          </linearGradient>
-          <linearGradient id="debtGradient4" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fed7d7" />
-            <stop offset="100%" stopColor="#e53e3e" />
-          </linearGradient>
-          <linearGradient id="debtGradient5" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fbb6ce" />
-            <stop offset="100%" stopColor="#e11d48" />
-          </linearGradient>
-          <linearGradient id="debtGradient6" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fda4af" />
-            <stop offset="100%" stopColor="#f43f5e" />
-          </linearGradient>
-          <linearGradient id="debtGradient7" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#d97706" />
-            <stop offset="100%" stopColor="#92400e" />
-          </linearGradient>
-          <linearGradient id="debtGradient8" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a16207" />
-            <stop offset="100%" stopColor="#78350f" />
-          </linearGradient>
-          <linearGradient id="debtGradient9" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fbbf24" />
-            <stop offset="100%" stopColor="#d97706" />
-          </linearGradient>
-          <linearGradient id="debtGradient10" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f59e0b" />
-            <stop offset="100%" stopColor="#b45309" />
-          </linearGradient>
-        </defs>
 
         {/* 범례 */}
         <Legend
@@ -676,28 +588,7 @@ function RechartsAssetChart({
   return (
     <>
       <div className={styles.chartContainer}>
-        <div className={styles.chartHeader}>
-          <h3 className={styles.chartTitle}>가계 자산 규모</h3>
-          <button
-            className={styles.zoomButton}
-            onClick={() => setIsZoomed(true)}
-            title="확대"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-              <line x1="11" y1="8" x2="11" y2="14" />
-              <line x1="8" y1="11" x2="14" y2="11" />
-            </svg>
-          </button>
-        </div>
+        <h3 className={styles.chartTitle}>가계 자산 규모</h3>
         <div className={styles.chartWrapper}>{renderChart()}</div>
       </div>
 

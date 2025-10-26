@@ -45,6 +45,12 @@ function RechartsCashflowChart({
     year: item.year,
     amount: item.amount,
     formattedAmount: formatAmountForChart(item.amount),
+    assetPurchases: item.assetPurchases || [],
+    realEstatePurchases: item.realEstatePurchases || [],
+    assetSales: item.assetSales || [],
+    realEstateSales: item.realEstateSales || [],
+    debtInterests: item.debtInterests || [],
+    debtPrincipals: item.debtPrincipals || [],
   }));
 
   // 은퇴 시점 찾기
@@ -79,6 +85,8 @@ function RechartsCashflowChart({
           left: 40,
           bottom: 20,
         }}
+        onClick={() => !isZoomedView && setIsZoomed(true)}
+        style={{ cursor: !isZoomedView ? "pointer" : "default" }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
 
@@ -91,7 +99,7 @@ function RechartsCashflowChart({
           tickFormatter={(value) => `${value}`}
           stroke="#6b7280"
           fontSize={12}
-          label={{ value: "(세)", position: "insideBottom", offset: -5 }}
+          label={{ value: "", position: "insideBottom", offset: -5 }}
         />
 
         {/* Y축 - 금액 */}
@@ -188,6 +196,13 @@ function RechartsCashflowChart({
                 });
 
                 // 총 수입과 총 지출 계산
+                const totalAssetPurchaseExpense = (
+                  data.assetPurchases || []
+                ).reduce((sum, purchase) => sum + (purchase.amount || 0), 0);
+                const totalRealEstatePurchaseExpense = (
+                  data.realEstatePurchases || []
+                ).reduce((sum, purchase) => sum + (purchase.amount || 0), 0);
+
                 const totalIncome =
                   yearData.income +
                   totalPensionIncome +
@@ -202,7 +217,9 @@ function RechartsCashflowChart({
                   totalPensionExpense +
                   (yearData.savings || 0) +
                   (yearData.debtInterest || 0) +
-                  (yearData.debtPrincipal || 0);
+                  (yearData.debtPrincipal || 0) +
+                  totalAssetPurchaseExpense +
+                  totalRealEstatePurchaseExpense;
 
                 return (
                   <div
@@ -441,99 +458,6 @@ function RechartsCashflowChart({
                             }
                           });
 
-                        // 부채 항목들
-                        debts
-                          .filter(
-                            (debt) =>
-                              data.year >= debt.startYear &&
-                              data.year <= debt.endYear
-                          )
-                          .forEach((debt, index) => {
-                            const yearsElapsed = data.year - debt.startYear;
-                            const totalYears =
-                              debt.endYear - debt.startYear + 1;
-                            const interestRate = debt.interestRate;
-                            let yearlyInterest = 0;
-                            let yearlyPrincipal = 0;
-
-                            if (debt.debtType === "bullet") {
-                              if (data.year < debt.endYear) {
-                                yearlyInterest = debt.debtAmount * interestRate;
-                              } else if (data.year === debt.endYear) {
-                                yearlyInterest = debt.debtAmount * interestRate;
-                                yearlyPrincipal = debt.debtAmount;
-                              }
-                            } else if (debt.debtType === "equal") {
-                              if (totalYears > 0 && interestRate > 0) {
-                                const pmt =
-                                  (debt.debtAmount *
-                                    (interestRate *
-                                      Math.pow(1 + interestRate, totalYears))) /
-                                  (Math.pow(1 + interestRate, totalYears) - 1);
-                                let remainingPrincipal = debt.debtAmount;
-                                for (let i = 0; i < yearsElapsed; i++) {
-                                  const interestPayment =
-                                    remainingPrincipal * interestRate;
-                                  const principalPayment =
-                                    pmt - interestPayment;
-                                  remainingPrincipal -= principalPayment;
-                                }
-                                yearlyInterest =
-                                  remainingPrincipal * interestRate;
-                                yearlyPrincipal = pmt - yearlyInterest;
-                              } else if (interestRate === 0) {
-                                yearlyPrincipal = debt.debtAmount / totalYears;
-                              }
-                            } else if (debt.debtType === "principal") {
-                              const yearlyPrincipalPayment =
-                                debt.debtAmount / totalYears;
-                              const paidPrincipal =
-                                yearlyPrincipalPayment * yearsElapsed;
-                              const remainingPrincipal =
-                                debt.debtAmount - paidPrincipal;
-                              yearlyInterest =
-                                remainingPrincipal * interestRate;
-                              yearlyPrincipal = yearlyPrincipalPayment;
-                            } else if (debt.debtType === "grace") {
-                              const gracePeriod = debt.gracePeriod || 0;
-                              const graceEndYear =
-                                debt.startYear + gracePeriod - 1;
-                              const repaymentYears =
-                                debt.endYear - graceEndYear;
-
-                              if (data.year <= graceEndYear) {
-                                yearlyInterest = debt.debtAmount * interestRate;
-                              } else if (
-                                data.year > graceEndYear &&
-                                data.year <= debt.endYear
-                              ) {
-                                const yearlyPrincipalPayment =
-                                  debt.debtAmount / repaymentYears;
-                                const repaymentYearsElapsed =
-                                  data.year - graceEndYear;
-                                const paidPrincipal =
-                                  yearlyPrincipalPayment *
-                                  (repaymentYearsElapsed - 1);
-                                const remainingPrincipal =
-                                  debt.debtAmount - paidPrincipal;
-                                yearlyInterest =
-                                  remainingPrincipal * interestRate;
-                                yearlyPrincipal = yearlyPrincipalPayment;
-                              }
-                            }
-
-                            const totalDebtPayment =
-                              yearlyInterest + yearlyPrincipal;
-                            if (totalDebtPayment > 0) {
-                              allItems.push({
-                                key: `debt-${index}`,
-                                label: debt.title,
-                                value: totalDebtPayment,
-                                type: "negative",
-                              });
-                            }
-                          });
-
                         // 주택 연금 수입
                         if (yearData.realEstatePension > 0) {
                           // 해당 연도에 주택 연금을 받는 부동산 찾기
@@ -555,13 +479,18 @@ function RechartsCashflowChart({
                           });
                         }
 
-                        // 부동산 수입
-                        if (yearData.realEstateSale > 0) {
-                          allItems.push({
-                            key: "realEstateSale",
-                            label: "부동산 매각",
-                            value: yearData.realEstateSale,
-                            type: "positive",
+                        // 부동산 매각 수입 (상세 정보 표시)
+                        if (
+                          data.realEstateSales &&
+                          data.realEstateSales.length > 0
+                        ) {
+                          data.realEstateSales.forEach((sale, index) => {
+                            allItems.push({
+                              key: `realEstateSale-${index}`,
+                              label: `${sale.title} (매각)`,
+                              value: sale.amount,
+                              type: "positive",
+                            });
                           });
                         }
 
@@ -595,13 +524,15 @@ function RechartsCashflowChart({
                             });
                           });
 
-                        // 자산 수입
-                        if (yearData.assetSale > 0) {
-                          allItems.push({
-                            key: "assetSale",
-                            label: "자산 매각",
-                            value: yearData.assetSale,
-                            type: "positive",
+                        // 자산 매각 수입 (상세 정보 표시)
+                        if (data.assetSales && data.assetSales.length > 0) {
+                          data.assetSales.forEach((sale, index) => {
+                            allItems.push({
+                              key: `assetSale-${index}`,
+                              label: `${sale.title} (매각)`,
+                              value: sale.amount,
+                              type: "positive",
+                            });
                           });
                         }
 
@@ -612,6 +543,72 @@ function RechartsCashflowChart({
                             label: "저축 만료",
                             value: yearData.savingMaturity,
                             type: "positive",
+                          });
+                        }
+
+                        // 부동산 구매 (지출)
+                        if (
+                          data.realEstatePurchases &&
+                          data.realEstatePurchases.length > 0
+                        ) {
+                          data.realEstatePurchases.forEach(
+                            (purchase, index) => {
+                              allItems.push({
+                                key: `realEstatePurchase-${index}`,
+                                label: `${purchase.title} (구매)`,
+                                value: purchase.amount,
+                                type: "negative",
+                              });
+                            }
+                          );
+                        }
+
+                        // 자산 구매 (지출)
+                        if (
+                          data.assetPurchases &&
+                          data.assetPurchases.length > 0
+                        ) {
+                          data.assetPurchases.forEach((purchase, index) => {
+                            allItems.push({
+                              key: `assetPurchase-${index}`,
+                              label: `${purchase.title} (구매)`,
+                              value: purchase.amount,
+                              type: "negative",
+                            });
+                          });
+                        }
+
+                        // 부채 이자 지출
+                        if (
+                          data.debtInterests &&
+                          data.debtInterests.length > 0
+                        ) {
+                          data.debtInterests.forEach((payment, index) => {
+                            if (payment.amount > 0) {
+                              allItems.push({
+                                key: `debtInterest-${payment.title}-${index}`,
+                                label: `${payment.title} (이자)`,
+                                value: payment.amount,
+                                type: "negative",
+                              });
+                            }
+                          });
+                        }
+
+                        // 부채 원금 상환
+                        if (
+                          data.debtPrincipals &&
+                          data.debtPrincipals.length > 0
+                        ) {
+                          data.debtPrincipals.forEach((payment, index) => {
+                            if (payment.amount > 0) {
+                              allItems.push({
+                                key: `debtPrincipal-${payment.title}-${index}`,
+                                label: `${payment.title} (원금 상환)`,
+                                value: payment.amount,
+                                type: "negative",
+                              });
+                            }
                           });
                         }
 
@@ -703,30 +700,18 @@ function RechartsCashflowChart({
         )}
 
         {/* Bar 그래프 */}
-        <Bar dataKey="amount" radius={[6, 6, 0, 0]} strokeWidth={0}>
+        <Bar dataKey="amount" radius={[0, 0, 0, 0]} strokeWidth={0}>
           {chartData.map((entry, index) => (
             <Cell
               key={`cell-${index}`}
               fill={
                 entry.amount >= 0
-                  ? `url(#positiveGradient)`
-                  : `url(#negativeGradient)`
+                  ? "#10b981" // 초록색 (양수)
+                  : "#ef4444" // 빨간색 (음수)
               }
             />
           ))}
         </Bar>
-
-        {/* 그라데이션 정의 */}
-        <defs>
-          <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#34d399" />
-            <stop offset="100%" stopColor="#10b981" />
-          </linearGradient>
-          <linearGradient id="negativeGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f87171" />
-            <stop offset="100%" stopColor="#ef4444" />
-          </linearGradient>
-        </defs>
       </BarChart>
     </ResponsiveContainer>
   );
@@ -734,28 +719,7 @@ function RechartsCashflowChart({
   return (
     <>
       <div className={styles.chartContainer}>
-        <div className={styles.chartHeader}>
-          <h3 className={styles.chartTitle}>가계 현금흐름</h3>
-          <button
-            className={styles.zoomButton}
-            onClick={() => setIsZoomed(true)}
-            title="확대"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-              <line x1="11" y1="8" x2="11" y2="14" />
-              <line x1="8" y1="11" x2="14" y2="11" />
-            </svg>
-          </button>
-        </div>
+        <h3 className={styles.chartTitle}>가계 현금흐름</h3>
         <div className={styles.chartWrapper}>{renderChart()}</div>
       </div>
 
