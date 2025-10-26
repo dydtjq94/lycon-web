@@ -450,9 +450,30 @@ function DashboardPage() {
     setSidebarView("list");
   };
 
-  const handleBackToCategories = () => {
+  const handleBackToCategories = useCallback(() => {
     setSidebarView("categories");
-  };
+  }, []);
+
+  // 키보드 이벤트 핸들러 (백틱 키로 뒤로가기)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // 백틱 키 (`) 또는 ₩ 키
+      if (event.key === "`" || event.key === "₩") {
+        // 사이드바가 리스트 뷰일 때만 뒤로가기 작동
+        if (sidebarView === "list") {
+          handleBackToCategories();
+        }
+      }
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener("keydown", handleKeyDown);
+
+    // 컴포넌트 언마운트 시 리스너 제거
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [sidebarView, handleBackToCategories]);
 
   // 소득 데이터 핸들러들
   const handleAddIncome = () => {
