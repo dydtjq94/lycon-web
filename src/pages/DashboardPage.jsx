@@ -1698,6 +1698,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   data={simulationData.assets}
                   retirementAge={profileData.retirementAge}
                   targetAssets={profileData.targetAssets}
+                  savings={savings}
+                  pensions={pensions}
                 />
               </div>
             </div>

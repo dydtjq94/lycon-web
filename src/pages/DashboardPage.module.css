@@ -537,6 +537,8 @@
 }
 
 .sidebarMemoSection {
+  padding-left: 8px;
+  padding-right: 8px;
   margin-top: 24px;
   border-radius: 12px;
   display: flex;

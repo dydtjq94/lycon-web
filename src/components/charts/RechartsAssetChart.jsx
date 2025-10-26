@@ -23,6 +23,8 @@ function RechartsAssetChart({
   retirementAge,
   deathAge = 90,
   targetAssets = 50000,
+  savings = [],
+  pensions = [],
 }) {
   const [isZoomed, setIsZoomed] = useState(false);
   if (!data || data.length === 0) {
@@ -52,6 +54,98 @@ function RechartsAssetChart({
   };
 
   const cashNegativeTransition = findCashNegativeTransition();
+
+  // 저축/투자 이벤트 추출 (시작/종료 이벤트)
+  const getSavingEvents = () => {
+    const events = [];
+    if (savings && savings.length > 0) {
+      savings.forEach((saving) => {
+        // 시작 이벤트
+        events.push({
+          year: saving.startYear,
+          age: saving.startYear - (data[0]?.year - data[0]?.age),
+          type: "start",
+          category: "saving",
+          title: `${saving.title} 시작`,
+        });
+
+        // 종료 이벤트
+        if (saving.endYear) {
+          events.push({
+            year: saving.endYear,
+            age: saving.endYear - (data[0]?.year - data[0]?.age),
+            type: "end",
+            category: "saving",
+            title: `${saving.title} 종료`,
+          });
+        }
+      });
+    }
+    return events;
+  };
+
+  const savingEvents = getSavingEvents();
+
+  // 연금 이벤트 추출 (퇴직/개인연금: 적립 시작/종료, 수령 시작/종료)
+  const getPensionEvents = () => {
+    const events = [];
+    if (pensions && pensions.length > 0) {
+      pensions.forEach((pension) => {
+        if (pension.type !== "national") {
+          // 퇴직연금/개인연금: 적립 시작/종료 이벤트
+          events.push({
+            year: pension.contributionStartYear,
+            age: pension.contributionStartYear - (data[0]?.year - data[0]?.age),
+            type: "start",
+            category: "pension",
+            title: `${pension.title} 적립 시작`,
+          });
+
+          if (pension.contributionEndYear) {
+            events.push({
+              year: pension.contributionEndYear,
+              age: pension.contributionEndYear - (data[0]?.year - data[0]?.age),
+              type: "end",
+              category: "pension",
+              title: `${pension.title} 적립 종료`,
+            });
+          }
+
+          // 퇴직연금/개인연금: 수령 시작/종료 이벤트
+          events.push({
+            year: pension.paymentStartYear,
+            age: pension.paymentStartYear - (data[0]?.year - data[0]?.age),
+            type: "start",
+            category: "pension",
+            title: `${pension.title} 수령 시작`,
+          });
+
+          if (pension.paymentEndYear) {
+            events.push({
+              year: pension.paymentEndYear,
+              age: pension.paymentEndYear - (data[0]?.year - data[0]?.age),
+              type: "end",
+              category: "pension",
+              title: `${pension.title} 수령 종료`,
+            });
+          }
+        }
+      });
+    }
+    return events;
+  };
+
+  const pensionEvents = getPensionEvents();
+
+  // 이벤트를 년도별로 그룹화
+  const allEvents = [...savingEvents, ...pensionEvents];
+  const eventsByYear = allEvents.reduce((acc, event) => {
+    if (!acc[event.year]) {
+      acc[event.year] = [];
+    }
+    acc[event.year].push(event);
+    return acc;
+  }, {});
 
   // 차트 데이터 포맷팅 및 동적 자산 항목 추출
   const chartData = data.map((item) => {
@@ -307,7 +401,7 @@ function RechartsAssetChart({
           top: 20,
           right: 30,
           left: 40,
-          bottom: 20,
+          bottom: 60,
         }}
         onClick={() => !isZoomedView && setIsZoomed(true)}
         style={{ cursor: !isZoomedView ? "pointer" : "default" }}
@@ -484,6 +578,33 @@ function RechartsAssetChart({
                       });
                     })()}
                   </div>
+
+                  {/* 이벤트 섹션 */}
+                  {eventsByYear[data.year] &&
+                    eventsByYear[data.year].length > 0 && (
+                      <div className={styles.tooltipEvents}>
+                        <div className={styles.tooltipDivider}></div>
+
+                        {eventsByYear[data.year].map((event, index) => (
+                          <div key={index} className={styles.tooltipEventItem}>
+                            <span
+                              className={styles.tooltipEventDot}
+                              style={{
+                                backgroundColor:
+                                  event.category === "saving"
+                                    ? "#3b82f6"
+                                    : "#fbbf24", // 연금은 노란색
+                                width: "6px",
+                                height: "6px",
+                              }}
+                            ></span>
+                            <span className={styles.tooltipEventText}>
+                              {event.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                 </div>
               );
             }
@@ -622,6 +743,41 @@ function RechartsAssetChart({
               />
             );
           })}
+
+        {/* 이벤트 마커 */}
+        {allEvents.map((event, eventIndex) => {
+          const dataIndex = chartData.findIndex((d) => d.age === event.age);
+          if (dataIndex === -1) return null;
+
+          const eventColor =
+            event.category === "saving" ? "#3b82f6" : "#fbbf24"; // 연금은 노란색
+
+          // 같은 년도의 이벤트 인덱스 계산 (수직으로 쌓기 위해)
+          const eventsInSameYear = allEvents.filter((e) => e.age === event.age);
+          const eventVerticalIndex = eventsInSameYear.findIndex(
+            (e) => e.year === event.year && e.title === event.title
+          );
+          const offset = 25 + eventVerticalIndex * 7.5; // 각 이벤트마다 7.5px씩 아래로
+
+          return (
+            <ReferenceLine
+              key={`event-${eventIndex}`}
+              x={event.age}
+              stroke="transparent"
+              strokeWidth={0}
+              label={{
+                value: "●",
+                position: "bottom",
+                offset: offset,
+                style: {
+                  fill: eventColor,
+                  fontSize: "8px",
+                  fontWeight: "bold",
+                },
+              }}
+            />
+          );
+        })}
       </BarChart>
     </ResponsiveContainer>
   );

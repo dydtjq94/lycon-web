@@ -101,8 +101,106 @@ function RechartsCashflowChart({
 
   const expenseEvents = getExpenseEvents();
 
+  // 저축/투자 이벤트 추출 (시작/만료/수령 이벤트)
+  const getSavingEvents = () => {
+    const events = [];
+    if (savings && savings.length > 0) {
+      savings.forEach((saving) => {
+        // 시작 이벤트
+        events.push({
+          year: saving.startYear,
+          age: saving.startYear - (data[0]?.year - data[0]?.age),
+          type: "start",
+          category: "saving",
+          title: `${saving.title} 시작`,
+        });
+
+        // 만료 이벤트 (종료년도 + 1)
+        if (saving.endYear) {
+          events.push({
+            year: saving.endYear + 1,
+            age: saving.endYear + 1 - (data[0]?.year - data[0]?.age),
+            type: "maturity",
+            category: "saving",
+            title: `${saving.title} 만료`,
+          });
+        }
+
+        // 수령 이벤트 (만료 후 수령)
+        if (saving.endYear) {
+          events.push({
+            year: saving.endYear + 2,
+            age: saving.endYear + 2 - (data[0]?.year - data[0]?.age),
+            type: "withdrawal",
+            category: "saving",
+            title: `${saving.title} 수령`,
+          });
+        }
+      });
+    }
+    return events;
+  };
+
+  const savingEvents = getSavingEvents();
+
+  // 연금 이벤트 추출 (국민연금: 시작/종료, 퇴직/개인연금: 수령 시작/종료)
+  const getPensionEvents = () => {
+    const events = [];
+    if (pensions && pensions.length > 0) {
+      pensions.forEach((pension) => {
+        if (pension.type === "national") {
+          // 국민연금: 수령 시작/종료 이벤트
+          events.push({
+            year: pension.startYear,
+            age: pension.startYear - (data[0]?.year - data[0]?.age),
+            type: "start",
+            category: "pension",
+            title: `${pension.title} 수령 시작`,
+          });
+
+          if (pension.endYear) {
+            events.push({
+              year: pension.endYear,
+              age: pension.endYear - (data[0]?.year - data[0]?.age),
+              type: "end",
+              category: "pension",
+              title: `${pension.title} 수령 종료`,
+            });
+          }
+        } else {
+          // 퇴직연금/개인연금: 수령 시작/종료 이벤트
+          events.push({
+            year: pension.paymentStartYear,
+            age: pension.paymentStartYear - (data[0]?.year - data[0]?.age),
+            type: "start",
+            category: "pension",
+            title: `${pension.title} 수령 시작`,
+          });
+
+          if (pension.paymentEndYear) {
+            events.push({
+              year: pension.paymentEndYear,
+              age: pension.paymentEndYear - (data[0]?.year - data[0]?.age),
+              type: "end",
+              category: "pension",
+              title: `${pension.title} 수령 종료`,
+            });
+          }
+        }
+      });
+    }
+    return events;
+  };
+
+  const pensionEvents = getPensionEvents();
+
   // 이벤트를 년도별로 그룹화
-  const allEvents = [...incomeEvents, ...expenseEvents];
+  const allEvents = [
+    ...incomeEvents,
+    ...expenseEvents,
+    ...savingEvents,
+    ...pensionEvents,
+  ];
   const eventsByYear = allEvents.reduce((acc, event) => {
     if (!acc[event.year]) {
       acc[event.year] = [];
@@ -157,7 +255,7 @@ function RechartsCashflowChart({
           top: 20,
           right: 30,
           left: 40,
-          bottom: 20,
+          bottom: 60,
         }}
         onClick={() => !isZoomedView && setIsZoomed(true)}
         style={{ cursor: !isZoomedView ? "pointer" : "default" }}
@@ -760,7 +858,11 @@ function RechartsCashflowChart({
                                   backgroundColor:
                                     event.category === "income"
                                       ? "#10b981"
-                                      : "#ef4444",
+                                      : event.category === "expense"
+                                      ? "#ef4444"
+                                      : event.category === "saving"
+                                      ? "#3b82f6"
+                                      : "#fbbf24", // 연금은 노란색
                                   width: "6px",
                                   height: "6px",
                                 }}
@@ -824,7 +926,13 @@ function RechartsCashflowChart({
 
           // 카테고리별 색상 결정
           const eventColor =
-            event.category === "income" ? "#10b981" : "#ef4444";
+            event.category === "income"
+              ? "#10b981"
+              : event.category === "expense"
+              ? "#ef4444"
+              : event.category === "saving"
+              ? "#3b82f6"
+              : "#fbbf24"; // 연금은 노란색
 
           // 같은 년도의 이벤트 인덱스 계산 (수직으로 쌓기 위해)
           const eventsInSameYear = allEvents.filter((e) => e.age === event.age);
