@@ -1046,8 +1046,8 @@ function RechartsCashflowChart({
                                       : event.category === "asset"
                                       ? "#06b6d4"
                                       : event.category === "debt"
-                                      ? "#6b7280"
-                                      : "#6b7280", // 기본값
+                                      ? "#374151"
+                                      : "#374151", // 기본값
                                   width: "6px",
                                   height: "6px",
                                 }}
@@ -1124,8 +1124,8 @@ function RechartsCashflowChart({
               : event.category === "asset"
               ? "#06b6d4"
               : event.category === "debt"
-              ? "#6b7280"
-              : "#6b7280"; // 기본값
+              ? "#374151"
+              : "#374151"; // 기본값
 
           // 같은 년도의 이벤트 인덱스 계산 (수직으로 쌓기 위해)
           const eventsInSameYear = allEvents.filter((e) => e.age === event.age);

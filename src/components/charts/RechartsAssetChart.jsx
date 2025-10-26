@@ -424,7 +424,7 @@ function RechartsAssetChart({
       return pensionColors[Math.abs(hash) % pensionColors.length];
     }
 
-    // 부채 관련 (빨간 계열) - 10가지 색상
+    // 부채 관련 (회색 계열) - 10가지 색상
     if (
       assetName.includes("부채") ||
       assetName.includes("대출") ||
@@ -432,16 +432,16 @@ function RechartsAssetChart({
       (sampleData && sampleData[assetName] < 0)
     ) {
       const debtColors = [
-        "#ef4444",
-        "#dc2626",
-        "#e53e3e",
-        "#f97316",
-        "#f43f5e",
-        "#e11d48",
-        "#be123c",
-        "#9f1239",
-        "#991b1b",
-        "#7f1d1d",
+        "#374151",
+        "#1f2937",
+        "#111827",
+        "#0f172a",
+        "#1e1e1e",
+        "#2d2d2d",
+        "#1a1a1a",
+        "#2a2a2a",
+        "#151515",
+        "#252525",
       ];
       const hash = assetName.split("").reduce((a, b) => {
         a = (a << 5) - a + b.charCodeAt(0);
@@ -753,8 +753,8 @@ function RechartsAssetChart({
                                     : event.category === "asset"
                                     ? "#06b6d4"
                                     : event.category === "debt"
-                                    ? "#6b7280"
-                                    : "#6b7280", // 기본값
+                                    ? "#374151"
+                                    : "#374151", // 기본값
                                 width: "6px",
                                 height: "6px",
                               }}
@@ -920,8 +920,8 @@ function RechartsAssetChart({
               : event.category === "asset"
               ? "#06b6d4"
               : event.category === "debt"
-              ? "#6b7280"
-              : "#6b7280"; // 기본값
+              ? "#374151"
+              : "#374151"; // 기본값
 
           // 같은 년도의 이벤트 인덱스 계산 (수직으로 쌓기 위해)
           const eventsInSameYear = allEvents.filter((e) => e.age === event.age);
