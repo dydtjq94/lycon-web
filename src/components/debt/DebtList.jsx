@@ -5,7 +5,12 @@ import styles from "./DebtList.module.css";
 /**
  * 부채 데이터 목록 컴포넌트
  */
-function DebtList({ debts, onEdit, onDelete }) {
+function DebtList({
+  debts,
+  onEdit = () => {},
+  onDelete = () => {},
+  isReadOnly = false,
+}) {
   if (!debts || debts.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -19,24 +24,30 @@ function DebtList({ debts, onEdit, onDelete }) {
       {debts.map((debt) => (
         <div
           key={debt.id}
-          className={styles.debtItem}
-          onClick={() => onEdit(debt)}
+          className={`${styles.debtItem} ${isReadOnly ? styles.readOnly : ""}`}
+          onClick={() => {
+            if (!isReadOnly) {
+              onEdit(debt);
+            }
+          }}
         >
           <div className={styles.debtInfo}>
             <div className={styles.debtHeader}>
               <h4 className={styles.debtTitle}>{debt.title}</h4>
-              <div className={styles.debtActions}>
-                <button
-                  className={styles.deleteButton}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(debt.id);
-                  }}
-                  title="삭제"
-                >
-                  ×
-                </button>
-              </div>
+              {!isReadOnly && (
+                <div className={styles.debtActions}>
+                  <button
+                    className={styles.deleteButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(debt.id);
+                    }}
+                    title="삭제"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className={styles.debtAmount}>

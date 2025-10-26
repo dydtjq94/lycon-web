@@ -5,7 +5,12 @@ import styles from "./ExpenseList.module.css";
 /**
  * 지출 데이터 목록 컴포넌트
  */
-function ExpenseList({ expenses, onEdit, onDelete }) {
+function ExpenseList({
+  expenses,
+  onEdit = () => {},
+  onDelete = () => {},
+  isReadOnly = false,
+}) {
   if (!expenses || expenses.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -19,24 +24,30 @@ function ExpenseList({ expenses, onEdit, onDelete }) {
       {expenses.map((expense) => (
         <div
           key={expense.id}
-          className={styles.expenseItem}
-          onClick={() => onEdit(expense)}
+          className={`${styles.expenseItem} ${isReadOnly ? styles.readOnly : ""}`}
+          onClick={() => {
+            if (!isReadOnly) {
+              onEdit(expense);
+            }
+          }}
         >
           <div className={styles.expenseInfo}>
             <div className={styles.expenseHeader}>
               <h4 className={styles.expenseTitle}>{expense.title}</h4>
-              <div className={styles.expenseActions}>
-                <button
-                  className={styles.deleteButton}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(expense.id);
-                  }}
-                  title="삭제"
-                >
-                  ×
-                </button>
-              </div>
+              {!isReadOnly && (
+                <div className={styles.expenseActions}>
+                  <button
+                    className={styles.deleteButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(expense.id);
+                    }}
+                    title="삭제"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className={styles.expenseAmount}>

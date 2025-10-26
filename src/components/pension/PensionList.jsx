@@ -4,7 +4,12 @@ import styles from "./PensionList.module.css";
 /**
  * 연금 목록 컴포넌트
  */
-function PensionList({ pensions, onEdit, onDelete }) {
+function PensionList({
+  pensions,
+  onEdit = () => {},
+  onDelete = () => {},
+  isReadOnly = false,
+}) {
   const getTypeLabel = (type) => {
     switch (type) {
       case "national":
@@ -53,8 +58,14 @@ function PensionList({ pensions, onEdit, onDelete }) {
       {pensions.map((pension) => (
         <div
           key={pension.id}
-          className={styles.pensionItem}
-          onClick={() => onEdit(pension)}
+          className={`${styles.pensionItem} ${
+            isReadOnly ? styles.readOnly : ""
+          }`}
+          onClick={() => {
+            if (!isReadOnly) {
+              onEdit(pension);
+            }
+          }}
         >
           <div className={styles.pensionHeader}>
             <div className={styles.pensionTitle}>
@@ -67,15 +78,17 @@ function PensionList({ pensions, onEdit, onDelete }) {
                 </span>
               )}
             </div>
-            <button
-              className={styles.deleteButton}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(pension.id);
-              }}
-            >
-              ×
-            </button>
+            {!isReadOnly && (
+              <button
+                className={styles.deleteButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(pension.id);
+                }}
+              >
+                ×
+              </button>
+            )}
           </div>
 
           <div className={styles.pensionContent}>

@@ -39,6 +39,7 @@ import DebtList from "../components/debt/DebtList";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
 import ProfileSummary from "../components/profile/ProfileSummary";
 import CalculatorModal from "../components/common/CalculatorModal";
+import SimulationCompareModal from "../components/simulation/SimulationCompareModal";
 import styles from "./DashboardPage.module.css";
 
 /**
@@ -64,6 +65,51 @@ function DashboardPage() {
   const [isFinancialDataLoading, setIsFinancialDataLoading] = useState(true); // 재무 데이터 로딩 상태
   const [simulationMemo, setSimulationMemo] = useState("");
   const [isMemoSaving, setIsMemoSaving] = useState(false);
+  const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false);
+  const [profilePanelTab, setProfilePanelTab] = useState("memo");
+  const [profileMemo, setProfileMemo] = useState("");
+  const [isProfileMemoSaving, setIsProfileMemoSaving] = useState(false);
+  const fetchSimulationFinancialData = useCallback(
+    async (simulationId) => {
+      if (!profileId || !simulationId) return null;
+
+      const [
+        incomeData,
+        expenseData,
+        savingData,
+        pensionData,
+        realEstateData,
+        assetsData,
+        debtData,
+      ] = await Promise.all([
+        incomeService.getIncomes(profileId, simulationId),
+        expenseService.getExpenses(profileId, simulationId),
+        savingsService.getSavings(profileId, simulationId),
+        pensionService.getPensions(profileId, simulationId),
+        realEstateService.getRealEstates(profileId, simulationId),
+        assetService.getAssets(profileId, simulationId),
+        debtService.getDebts(profileId, simulationId),
+      ]);
+
+      const sortByCreatedAt = (list) =>
+        list
+          ? [...list].sort(
+              (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+            )
+          : [];
+
+      return {
+        incomes: sortByCreatedAt(incomeData),
+        expenses: sortByCreatedAt(expenseData),
+        savings: sortByCreatedAt(savingData),
+        pensions: sortByCreatedAt(pensionData),
+        realEstates: sortByCreatedAt(realEstateData),
+        assets: sortByCreatedAt(assetsData),
+        debts: sortByCreatedAt(debtData),
+      };
+    },
+    [profileId]
+  );
 
   const [incomes, setIncomes] = useState([]);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
@@ -90,6 +136,14 @@ function DashboardPage() {
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // 사이드바 접기/펼치기 상태
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  const [isCompareLoading, setIsCompareLoading] = useState(false);
+  const [comparisonData, setComparisonData] = useState({
+    defaultData: null,
+    targetData: null,
+    defaultTitle: "",
+    targetTitle: "",
+  });
 
   // 프로필 데이터 로드
   useEffect(() => {
@@ -106,6 +160,7 @@ function DashboardPage() {
         if (isMounted) {
           if (profile) {
             setProfileData(profile);
+            setProfileMemo(profile.memo || "");
             // generateSimulationData는 별도 useEffect에서 처리
           } else {
             navigate("/consult");
@@ -287,6 +342,10 @@ function DashboardPage() {
     const memoText = currentSimulation?.memo || "";
     setSimulationMemo(memoText);
   }, [activeSimulationId, simulations]);
+
+  useEffect(() => {
+    setProfileMemo(profileData?.memo || "");
+  }, [profileData?.memo]);
 
   // 시뮬레이션 데이터 생성
   const generateSimulationData = useCallback(
@@ -916,6 +975,89 @@ function DashboardPage() {
     setActiveSimulationId(simulationId);
   };
 
+  const openProfilePanel = (tab) => {
+    setProfilePanelTab(tab);
+    setIsProfilePanelOpen(true);
+  };
+
+  const closeProfilePanel = () => setIsProfilePanelOpen(false);
+
+  useEffect(() => {
+    if (!isProfilePanelOpen) return;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeProfilePanel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isProfilePanelOpen]);
+
+  const handleSaveProfileMemo = async (memoValue) => {
+    if (!profileId) return;
+    if ((profileMemo || "") === memoValue) return;
+
+    try {
+      setIsProfileMemoSaving(true);
+      await profileService.updateProfile(profileId, {
+        memo: memoValue,
+      });
+      setProfileMemo(memoValue);
+      setProfileData((prev) => (prev ? { ...prev, memo: memoValue } : prev));
+    } catch (error) {
+      console.error("프로필 메모 저장 오류:", error);
+      alert("프로필 메모 저장 중 오류가 발생했습니다.");
+    } finally {
+      setIsProfileMemoSaving(false);
+    }
+  };
+
+  const handleOpenCompareModal = async () => {
+    const defaultSimulation = simulations.find((sim) => sim.isDefault);
+    if (!defaultSimulation) {
+      alert("기본 시뮬레이션을 찾을 수 없습니다.");
+      return;
+    }
+    if (!activeSimulationId) {
+      alert("비교할 시뮬레이션을 선택하세요.");
+      return;
+    }
+    if (defaultSimulation.id === activeSimulationId) {
+      alert("현재 시뮬레이션은 기본 시뮬레이션과 동일합니다.");
+      return;
+    }
+
+    setIsCompareModalOpen(true);
+    setIsCompareLoading(true);
+    try {
+      const [defaultData, targetData] = await Promise.all([
+        fetchSimulationFinancialData(defaultSimulation.id),
+        fetchSimulationFinancialData(activeSimulationId),
+      ]);
+
+      const targetSimulation =
+        simulations.find((sim) => sim.id === activeSimulationId) || {};
+
+      setComparisonData({
+        defaultData,
+        targetData,
+        defaultTitle: defaultSimulation.title || "현재",
+        targetTitle: targetSimulation.title || "선택된 시뮬레이션",
+      });
+    } catch (error) {
+      console.error("시뮬레이션 비교 데이터 로드 오류:", error);
+      alert("시뮬레이션 비교 데이터를 불러오지 못했습니다.");
+      setComparisonData({
+        defaultData: null,
+        targetData: null,
+        defaultTitle: "",
+        targetTitle: "",
+      });
+    } finally {
+      setIsCompareLoading(false);
+    }
+  };
+
   const handleAddSimulation = async () => {
     try {
       // 기본 시뮬레이션(현재) 찾기
@@ -1271,18 +1413,21 @@ ${JSON.stringify(analysisData, null, 2)}`;
         <div className={styles.profileActions}>
           <button
             className={styles.iconButton}
-            onClick={handleGenerateAIAnalysis}
-            disabled={isGeneratingAI}
-          >
-            <span className={styles.buttonText}>
-              {isGeneratingAI ? "AI 분석 데이터" : "AI 분석 데이터 추출"}
-            </span>
-          </button>
-          <button
-            className={styles.iconButton}
             onClick={() => setIsCalculatorModalOpen(true)}
           >
             <span className={styles.buttonText}>목표 계산기</span>
+          </button>
+          <button
+            className={styles.iconButton}
+            onClick={() => openProfilePanel("memo")}
+          >
+            <span className={styles.buttonText}>프로필 메모</span>
+          </button>
+          <button
+            className={styles.iconButton}
+            onClick={() => openProfilePanel("checklist")}
+          >
+            <span className={styles.buttonText}>상담 체크리스트</span>
           </button>
         </div>
       </div>
@@ -1301,25 +1446,69 @@ ${JSON.stringify(analysisData, null, 2)}`;
 
       {/* 사이드바 토글 버튼 & 재무 항목 요약 */}
       <div className={styles.summaryContainer}>
-        <button
-          className={`${styles.sidebarToggleButton} ${
-            isSidebarCollapsed ? styles.collapsed : ""
-          }`}
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          title={isSidebarCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
+        <div className={styles.sidebarControlGroup}>
+          <button
+            className={styles.sidebarToggleButton}
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            title={isSidebarCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
           >
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <line x1="9" y1="3" x2="9" y2="21" />
-          </svg>
-        </button>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+            </svg>
+          </button>
+          <div className={styles.sidebarControlRightGroup}>
+            <button
+              className={styles.sidebarIconButton}
+              title="AI 분석 데이터 추출"
+              onClick={handleGenerateAIAnalysis}
+              disabled={isGeneratingAI || !activeSimulationId}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 3v12" />
+                <path d="M8 11l4 4 4-4" />
+                <path d="M5 19h14" />
+              </svg>
+            </button>
+            <button
+              className={styles.sidebarIconButton}
+              title="시뮬레이션 비교"
+              onClick={handleOpenCompareModal}
+              disabled={!activeSimulationId}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="4" y="4" width="6" height="12" rx="1" />
+                <rect x="14" y="8" width="6" height="12" rx="1" />
+                <path d="M4 20h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
         {/* 재무 항목 요약 - 항상 렌더링하여 레이아웃 시프트 방지 */}
         <ProfileSummary
           incomes={incomes}
@@ -1515,6 +1704,62 @@ ${JSON.stringify(analysisData, null, 2)}`;
         </div>
       </div>
 
+      {isProfilePanelOpen && (
+        <div
+          className={styles.profilePanelOverlay}
+          onClick={closeProfilePanel}
+        />
+      )}
+      <div
+        className={`${styles.profileSidePanel} ${
+          isProfilePanelOpen ? styles.open : ""
+        }`}
+      >
+        <div className={styles.profileSidePanelHeader}>
+          <div className={styles.profileSidePanelTabs}>
+            <button
+              className={`${styles.panelTab} ${
+                profilePanelTab === "memo" ? styles.active : ""
+              }`}
+              onClick={() => setProfilePanelTab("memo")}
+              type="button"
+            >
+              프로필 메모
+            </button>
+            <button
+              className={`${styles.panelTab} ${
+                profilePanelTab === "checklist" ? styles.active : ""
+              }`}
+              onClick={() => setProfilePanelTab("checklist")}
+              type="button"
+            >
+              상담 체크리스트
+            </button>
+          </div>
+          <button
+            className={styles.profilePanelClose}
+            onClick={closeProfilePanel}
+            type="button"
+          >
+            ×
+          </button>
+        </div>
+        <div className={styles.profileSidePanelContent}>
+          {profilePanelTab === "memo" ? (
+            <ProfileMemoPanel
+              memo={profileMemo}
+              onSave={handleSaveProfileMemo}
+              isSaving={isProfileMemoSaving}
+            />
+          ) : (
+            <div className={styles.checklistPlaceholder}>
+              <p>상담 체크리스트를 준비 중입니다.</p>
+              <p>필요한 항목들을 곧 추가할 예정이에요.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* 소득 모달 */}
       <IncomeModal
         isOpen={isIncomeModalOpen}
@@ -1589,9 +1834,68 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={() => setIsCalculatorModalOpen(false)}
         profileData={profileData}
       />
+      <SimulationCompareModal
+        isOpen={isCompareModalOpen}
+        onClose={() => setIsCompareModalOpen(false)}
+        isLoading={isCompareLoading}
+        defaultTitle={comparisonData.defaultTitle}
+        targetTitle={comparisonData.targetTitle}
+        defaultData={comparisonData.defaultData}
+        targetData={comparisonData.targetData}
+      />
     </div>
   );
 }
+
+const ProfileMemoPanel = React.memo(function ProfileMemoPanel({
+  memo,
+  onSave,
+  isSaving,
+}) {
+  const [value, setValue] = useState(memo || "");
+  const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    setValue(memo || "");
+    setIsDirty(false);
+  }, [memo]);
+
+  const handleChange = (event) => {
+    const nextValue = event.target.value;
+    setValue(nextValue);
+    setIsDirty(nextValue !== (memo || ""));
+  };
+
+  const handleSave = () => {
+    if (!isDirty || isSaving) return;
+    onSave?.(value);
+  };
+
+  return (
+    <div className={styles.profileMemoSection}>
+      <label className={styles.profileMemoLabel} htmlFor="profileMemo">
+        프로필 메모
+      </label>
+      <textarea
+        id="profileMemo"
+        className={styles.profileMemoTextarea}
+        value={value}
+        onChange={handleChange}
+        placeholder="프로필 전반에 대한 메모를 기록하세요."
+      />
+      <div className={styles.profileMemoActions}>
+        <button
+          className={styles.profileMemoSaveButton}
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving || !isDirty}
+        >
+          {isSaving ? "저장 중..." : "저장"}
+        </button>
+      </div>
+    </div>
+  );
+});
 
 export default DashboardPage;
 

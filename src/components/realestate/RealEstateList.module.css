@@ -13,6 +13,14 @@
   transition: background 0.15s ease;
 }
 
+.realEstateItem.readOnly {
+  cursor: default;
+}
+
+.realEstateItem.readOnly:hover {
+  background: white;
+}
+
 .realEstateItem:hover {
   background: #f9fafb;
 }

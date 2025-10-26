@@ -14,6 +14,14 @@
   transition: background 0.15s ease;
 }
 
+.pensionItem.readOnly {
+  cursor: default;
+}
+
+.pensionItem.readOnly:hover {
+  background: white;
+}
+
 .pensionItem:hover {
   background: #f9fafb;
 }

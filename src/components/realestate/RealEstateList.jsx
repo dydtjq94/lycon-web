@@ -2,7 +2,12 @@ import React from "react";
 import { formatAmount } from "../../utils/format";
 import styles from "./RealEstateList.module.css";
 
-const RealEstateList = ({ realEstates, onEdit, onDelete }) => {
+const RealEstateList = ({
+  realEstates,
+  onEdit = () => {},
+  onDelete = () => {},
+  isReadOnly = false,
+}) => {
   if (!realEstates || realEstates.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -17,22 +22,30 @@ const RealEstateList = ({ realEstates, onEdit, onDelete }) => {
       {realEstates.map((realEstate) => (
         <div
           key={realEstate.id}
-          className={styles.realEstateItem}
-          onClick={() => onEdit(realEstate)}
+          className={`${styles.realEstateItem} ${
+            isReadOnly ? styles.readOnly : ""
+          }`}
+          onClick={() => {
+            if (!isReadOnly) {
+              onEdit(realEstate);
+            }
+          }}
         >
           <div className={styles.realEstateHeader}>
             <div className={styles.realEstateTitle}>
               <span className={styles.title}>{realEstate.title}</span>
             </div>
-            <button
-              className={styles.deleteButton}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(realEstate.id);
-              }}
-            >
-              ×
-            </button>
+            {!isReadOnly && (
+              <button
+                className={styles.deleteButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(realEstate.id);
+                }}
+              >
+                ×
+              </button>
+            )}
           </div>
 
           <div className={styles.realEstateContent}>

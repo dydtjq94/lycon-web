@@ -5,7 +5,12 @@ import styles from "./SavingList.module.css";
 /**
  * 저축/투자 데이터 목록 컴포넌트
  */
-function SavingList({ savings, onEdit, onDelete }) {
+function SavingList({
+  savings,
+  onEdit = () => {},
+  onDelete = () => {},
+  isReadOnly = false,
+}) {
   if (!savings || savings.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -19,24 +24,30 @@ function SavingList({ savings, onEdit, onDelete }) {
       {savings.map((saving) => (
         <div
           key={saving.id}
-          className={styles.savingItem}
-          onClick={() => onEdit(saving)}
+          className={`${styles.savingItem} ${isReadOnly ? styles.readOnly : ""}`}
+          onClick={() => {
+            if (!isReadOnly) {
+              onEdit(saving);
+            }
+          }}
         >
           <div className={styles.savingInfo}>
             <div className={styles.savingHeader}>
               <h4 className={styles.savingTitle}>{saving.title}</h4>
-              <div className={styles.savingActions}>
-                <button
-                  className={styles.deleteButton}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(saving.id);
-                  }}
-                  title="삭제"
-                >
-                  ×
-                </button>
-              </div>
+              {!isReadOnly && (
+                <div className={styles.savingActions}>
+                  <button
+                    className={styles.deleteButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(saving.id);
+                    }}
+                    title="삭제"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className={styles.savingAmount}>

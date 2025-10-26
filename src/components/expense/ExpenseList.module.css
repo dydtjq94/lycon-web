@@ -14,6 +14,14 @@
   transition: background 0.15s ease;
 }
 
+.expenseItem.readOnly {
+  cursor: default;
+}
+
+.expenseItem.readOnly:hover {
+  background: white;
+}
+
 .expenseItem:hover {
   background: #f9fafb;
 }

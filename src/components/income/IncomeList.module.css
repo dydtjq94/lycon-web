@@ -13,6 +13,14 @@
   transition: background 0.15s ease;
 }
 
+.incomeItem.readOnly {
+  cursor: default;
+}
+
+.incomeItem.readOnly:hover {
+  background: white;
+}
+
 .incomeItem:hover {
   background: #f9fafb;
 }
