@@ -97,8 +97,8 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
     }
 
     const growthRateNum = parseFloat(formData.growthRate);
-    if (isNaN(growthRateNum) || growthRateNum < 0 || growthRateNum > 1000) {
-      newErrors.growthRate = "상승률은 0-100% 사이의 유효한 숫자여야 합니다.";
+    if (isNaN(growthRateNum) || growthRateNum < -100 || growthRateNum > 1000) {
+      newErrors.growthRate = "상승률은 -100%와 1000% 사이의 숫자여야 합니다.";
     }
 
     if (!formData.endYear || parseInt(formData.endYear) <= formData.startYear) {
@@ -107,8 +107,8 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
 
     if (formData.assetType === "income") {
       const incomeRateNum = parseFloat(formData.incomeRate);
-      if (isNaN(incomeRateNum) || incomeRateNum < 0 || incomeRateNum > 1000) {
-        newErrors.incomeRate = "수익률은 0-100% 사이의 유효한 숫자여야 합니다.";
+      if (isNaN(incomeRateNum) || incomeRateNum < -100 || incomeRateNum > 1000) {
+        newErrors.incomeRate = "수익률은 -100%와 1000% 사이의 숫자여야 합니다.";
       }
     }
 

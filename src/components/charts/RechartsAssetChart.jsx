@@ -556,8 +556,6 @@ function RechartsAssetChart({
           left: 40,
           bottom: 60,
         }}
-        onClick={() => !isZoomedView && setIsZoomed(true)}
-        style={{ cursor: !isZoomedView ? "pointer" : "default" }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
 
@@ -1015,7 +1013,28 @@ function RechartsAssetChart({
     <>
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
-          <h3 className={styles.chartTitle}>가계 자산 규모</h3>
+          <div className={styles.chartTitleWrapper}>
+            <h3 className={styles.chartTitle}>가계 자산 규모</h3>
+            <button
+              className={styles.zoomButton}
+              onClick={() => setIsZoomed(true)}
+              title="크게 보기"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </button>
+          </div>
           <div className={styles.chartLegend}>
             {legendData.map((item, index) => (
               <div key={index} className={styles.legendItem}>
