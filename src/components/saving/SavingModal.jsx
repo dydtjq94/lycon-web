@@ -109,7 +109,7 @@ function SavingModal({
   // 숫자만 입력 허용
   const handleKeyPress = (e) => {
     if (
-      !/[0-9.]/.test(e.key) &&
+      !/[0-9.\-]/.test(e.key) &&
       !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)
     ) {
       e.preventDefault();
@@ -317,8 +317,8 @@ function SavingModal({
                 value={formData.interestRate}
                 onChange={(e) => {
                   const value = e.target.value;
-                  // 숫자와 소수점만 허용
-                  if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                  // 숫자와 소수점, 마이너스 허용
+                  if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
                     setFormData({ ...formData, interestRate: value });
                   }
                 }}
@@ -339,8 +339,8 @@ function SavingModal({
                   value={formData.yearlyGrowthRate}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // 숫자와 소수점만 허용
-                    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                    // 숫자와 소수점, 마이너스 허용
+                    if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
                       setFormData({
                         ...formData,
                         yearlyGrowthRate: value,

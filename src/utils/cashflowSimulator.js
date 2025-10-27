@@ -318,21 +318,26 @@ export function calculateCashflowSimulation(
           totalPension += adjustedAmount;
         }
       } else {
-        // 퇴직연금/개인연금: 적립 기간과 수령 기간 모두 현금흐름에 반영
+        // 퇴직연금/개인연금: 수령 기간만 현금흐름에 반영
         const paymentStartYear = pension.paymentStartYear;
         const paymentEndYear = pension.paymentEndYear;
 
+        // 적립 기간 처리: 퇴직연금은 현금흐름에 영향 없음, 개인연금은 현금이 빠져나감
         if (
           year >= pension.contributionStartYear &&
           year <= pension.contributionEndYear
         ) {
-          // 적립 기간: 현금흐름에서 차감 (마이너스)
-          const monthlyAmount =
-            pension.contributionFrequency === "monthly"
-              ? pension.contributionAmount
-              : pension.contributionAmount / 12;
-          const yearlyContribution = monthlyAmount * 12;
-          totalPension -= yearlyContribution; // 마이너스로 차감
+          // 개인연금만 적립 시 현금이 빠져나감
+          if (pension.type === "personal") {
+            const monthlyAmount =
+              pension.contributionFrequency === "monthly"
+                ? pension.contributionAmount
+                : pension.contributionAmount / 12;
+            const yearlyContribution = monthlyAmount * 12;
+            // 개인연금 적립액을 음수로 현금흐름에 반영 (현금이 빠져나감)
+            totalExpense += yearlyContribution;
+          }
+          // 퇴직연금은 적립 시 현금이 빠져나가지 않음
         } else if (year >= paymentStartYear && year <= paymentEndYear) {
           // 수령 기간: 현금흐름에 추가 (플러스)
           // 적립 완료 시점의 총 금액을 직접 계산

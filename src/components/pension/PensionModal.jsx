@@ -273,7 +273,7 @@ function PensionModal({
   // 숫자만 입력 허용
   const handleKeyPress = (e) => {
     if (
-      !/[0-9.]/.test(e.key) &&
+      !/[0-9.\-]/.test(e.key) &&
       !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)
     ) {
       e.preventDefault();
@@ -525,12 +525,16 @@ function PensionModal({
                     <input
                       type="text"
                       value={formData.inflationRate}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          inflationRate: e.target.value,
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
+                        if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          setFormData({
+                            ...formData,
+                            inflationRate: value,
+                          });
+                        }
+                      }}
                       onKeyPress={handleKeyPress}
                       className={`${styles.input} ${
                         errors.inflationRate ? styles.error : ""
@@ -700,12 +704,16 @@ function PensionModal({
                       <input
                         type="text"
                         value={formData.returnRate}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            returnRate: e.target.value,
-                          })
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
+                          if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                            setFormData({
+                              ...formData,
+                              returnRate: value,
+                            });
+                          }
+                        }}
                         onKeyPress={handleKeyPress}
                         className={`${styles.input} ${
                           errors.returnRate ? styles.error : ""

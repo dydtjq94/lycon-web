@@ -312,8 +312,8 @@ const RealEstateModal = ({
               value={formData.growthRate}
               onChange={(e) => {
                 const value = e.target.value;
-                // 숫자와 소수점만 허용
-                if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
+                if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
                   setFormData({ ...formData, growthRate: value });
                 }
               }}

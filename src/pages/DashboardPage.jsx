@@ -457,7 +457,7 @@ function DashboardPage() {
   // 키보드 이벤트 핸들러 (백틱 키로 뒤로가기)
   useEffect(() => {
     const handleKeyDown = (event) => {
-      // 백틱 키 (`) 또는 ₩ 키
+      // 백틱 키 (`) 또는 ₩ 키로 뒤로가기
       if (event.key === "`" || event.key === "₩") {
         // 사이드바가 리스트 뷰일 때만 뒤로가기 작동
         if (sidebarView === "list") {
@@ -1043,28 +1043,41 @@ function DashboardPage() {
       alert("비교할 시뮬레이션을 선택하세요.");
       return;
     }
-    if (defaultSimulation.id === activeSimulationId) {
-      alert("현재 시뮬레이션은 기본 시뮬레이션과 동일합니다.");
-      return;
-    }
+
+    // 현재 시뮬레이션이 기본 시뮬레이션과 같을 때는 기본 시뮬레이션만 표시
+    const isCurrentSimulation = defaultSimulation.id === activeSimulationId;
 
     setIsCompareModalOpen(true);
     setIsCompareLoading(true);
     try {
-      const [defaultData, targetData] = await Promise.all([
-        fetchSimulationFinancialData(defaultSimulation.id),
-        fetchSimulationFinancialData(activeSimulationId),
-      ]);
+      if (isCurrentSimulation) {
+        // 현재 시뮬레이션만 보이도록 기본 시뮬레이션 데이터만 로드
+        const defaultData = await fetchSimulationFinancialData(
+          defaultSimulation.id
+        );
+        setComparisonData({
+          defaultData,
+          targetData: null, // null로 설정하여 비교하지 않음
+          defaultTitle: defaultSimulation.title || "현재",
+          targetTitle: null,
+        });
+      } else {
+        // 기존처럼 두 시뮬레이션 비교
+        const [defaultData, targetData] = await Promise.all([
+          fetchSimulationFinancialData(defaultSimulation.id),
+          fetchSimulationFinancialData(activeSimulationId),
+        ]);
 
-      const targetSimulation =
-        simulations.find((sim) => sim.id === activeSimulationId) || {};
+        const targetSimulation =
+          simulations.find((sim) => sim.id === activeSimulationId) || {};
 
-      setComparisonData({
-        defaultData,
-        targetData,
-        defaultTitle: defaultSimulation.title || "현재",
-        targetTitle: targetSimulation.title || "선택된 시뮬레이션",
-      });
+        setComparisonData({
+          defaultData,
+          targetData,
+          defaultTitle: defaultSimulation.title || "현재",
+          targetTitle: targetSimulation.title || "선택된 시뮬레이션",
+        });
+      }
     } catch (error) {
       console.error("시뮬레이션 비교 데이터 로드 오류:", error);
       alert("시뮬레이션 비교 데이터를 불러오지 못했습니다.");

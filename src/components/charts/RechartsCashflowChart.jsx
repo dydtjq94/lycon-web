@@ -495,10 +495,11 @@ function RechartsCashflowChart({
                   } else {
                     // 개인연금/퇴직연금
                     if (
+                      pension.type === "personal" &&
                       data.year >= pension.contributionStartYear &&
                       data.year <= pension.contributionEndYear
                     ) {
-                      // 적립 기간: 지출
+                      // 개인연금 적립 기간: 지출
                       const monthlyAmount =
                         pension.contributionFrequency === "monthly"
                           ? pension.contributionAmount
@@ -694,6 +695,7 @@ function RechartsCashflowChart({
                           } else {
                             // 개인연금/퇴직연금: 적립 기간과 수령 기간 모두 표시
                             if (
+                              pension.type === "personal" &&
                               data.year >= pension.contributionStartYear &&
                               data.year <= pension.contributionEndYear
                             ) {
