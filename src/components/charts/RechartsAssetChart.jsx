@@ -338,19 +338,36 @@ function RechartsAssetChart({
     : [];
 
   // 동적 자산 항목 추출 (기본 필드 제외)
-  const allKeys =
-    chartData.length > 0
-      ? Object.keys(chartData[0]).filter(
-          (key) =>
-            key !== "year" &&
-            key !== "age" &&
-            key !== "totalAmount" &&
-            key !== "formattedAmount"
-        )
-      : [];
+  const { allKeys, sampleData } = useMemo(() => {
+    if (!chartData || chartData.length === 0) {
+      return { allKeys: [], sampleData: {} };
+    }
+
+    const keysSet = new Set();
+    const sample = {};
+
+    chartData.forEach((item) => {
+      Object.keys(item).forEach((key) => {
+        if (
+          key === "year" ||
+          key === "age" ||
+          key === "totalAmount" ||
+          key === "formattedAmount"
+        ) {
+          return;
+        }
+        keysSet.add(key);
+        if (sample[key] === undefined && item[key] !== undefined) {
+          sample[key] = item[key];
+        }
+      });
+    });
+
+    return { allKeys: Array.from(keysSet), sampleData: sample };
+  }, [chartData]);
 
   // 툴팁과 동일한 카테고리별 정렬 로직 적용
-  const categorizeAndSortKeys = (keys, sampleData) => {
+  const categorizeAndSortKeys = (keys, sampleDataForSort) => {
     const categories = {
       현금: [],
       연금: [],
@@ -372,7 +389,7 @@ function RechartsAssetChart({
         key.includes("부채") ||
         key.includes("대출") ||
         key.includes("빚") ||
-        (sampleData && sampleData[key] < 0)
+        (sampleDataForSort && sampleDataForSort[key] < 0)
       ) {
         categories.부채.push(key);
       } else {
@@ -383,8 +400,12 @@ function RechartsAssetChart({
     // 각 카테고리 내에서 금액이 큰 순서대로 정렬 (바 차트에서 높은 금액이 위에 오도록)
     Object.keys(categories).forEach((category) => {
       categories[category].sort((a, b) => {
-        const valueA = sampleData ? Math.abs(sampleData[a] || 0) : 0;
-        const valueB = sampleData ? Math.abs(sampleData[b] || 0) : 0;
+        const valueA = sampleDataForSort
+          ? Math.abs(sampleDataForSort[a] || 0)
+          : 0;
+        const valueB = sampleDataForSort
+          ? Math.abs(sampleDataForSort[b] || 0)
+          : 0;
         return valueB - valueA; // 큰 값이 먼저 (바 차트에서 위에)
       });
     });
@@ -399,8 +420,6 @@ function RechartsAssetChart({
     ];
   };
 
-  // 샘플 데이터로 정렬 (첫 번째 데이터 사용)
-  const sampleData = chartData.length > 0 ? chartData[0] : {};
   const assetKeys = categorizeAndSortKeys(allKeys, sampleData);
 
   // 자산별 고정 색상 매핑

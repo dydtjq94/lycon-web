@@ -429,8 +429,18 @@ export function calculateCashflowSimulation(
     const assetSales = []; // 자산 매각 상세 정보
 
     assets.forEach((asset) => {
+      // 년도 데이터 타입 확인 및 변환
+      const startYear =
+        typeof asset.startYear === "string"
+          ? parseInt(asset.startYear)
+          : asset.startYear;
+      const endYear =
+        typeof asset.endYear === "string"
+          ? parseInt(asset.endYear)
+          : asset.endYear;
+
       // 자산 구매 비용 계산 (첫 년도에 현금으로 차감)
-      if (asset.isPurchase && year === asset.startYear) {
+      if (asset.isPurchase && year === startYear) {
         totalAssetPurchase += asset.currentValue;
         assetPurchases.push({
           title: asset.title,
@@ -441,20 +451,20 @@ export function calculateCashflowSimulation(
       if (
         asset.assetType === "income" &&
         asset.incomeRate > 0 &&
-        year >= asset.startYear &&
-        year <= asset.endYear
+        year >= startYear &&
+        year <= endYear
       ) {
         // 해당 연도의 자산 가치를 계산 (자산 시뮬레이션에서 가져와야 하지만, 여기서는 간단히 계산)
-        const yearsElapsed = year - asset.startYear;
+        const yearsElapsed = year - startYear;
         const currentAssetValue =
           asset.currentValue * Math.pow(1 + asset.growthRate, yearsElapsed);
         totalAssetIncome += currentAssetValue * asset.incomeRate;
       }
 
       // 자산 매각 수입 계산 (만료 다음 해)
-      if (year === asset.endYear + 1) {
+      if (year === endYear + 1) {
         // 자산 가치에 상승률을 적용한 최종 가치 계산
-        const yearsElapsed = asset.endYear - asset.startYear;
+        const yearsElapsed = endYear - startYear;
         const growthRate = asset.growthRate || 0;
         const finalValue =
           asset.currentValue * Math.pow(1 + growthRate, yearsElapsed);
@@ -596,10 +606,20 @@ export function calculateAssetSimulation(
   // 부동산별 자산 (제목별로 분리)
   const realEstatesByTitle = {};
   realEstates.forEach((realEstate) => {
+    // 년도 데이터 타입 확인 및 변환
+    const startYear =
+      typeof realEstate.startYear === "string"
+        ? parseInt(realEstate.startYear)
+        : realEstate.startYear || currentYear;
+    const endYear =
+      typeof realEstate.endYear === "string"
+        ? parseInt(realEstate.endYear)
+        : realEstate.endYear;
+
     realEstatesByTitle[realEstate.title] = {
       amount: realEstate.currentValue, // 현재 가치로 시작
-      startYear: currentYear,
-      endYear: realEstate.endYear,
+      startYear: startYear,
+      endYear: endYear,
       growthRate: realEstate.growthRate || 2.5, // 백분율 그대로 사용
       convertToPension: realEstate.convertToPension || false,
       pensionStartYear: realEstate.pensionStartYear,
@@ -611,24 +631,44 @@ export function calculateAssetSimulation(
   // 자산별 자산 (제목별로 분리)
   const assetsByTitle = {};
   assets.forEach((asset) => {
+    // 년도 데이터 타입 확인 및 변환
+    const startYear =
+      typeof asset.startYear === "string"
+        ? parseInt(asset.startYear)
+        : asset.startYear;
+    const endYear =
+      typeof asset.endYear === "string"
+        ? parseInt(asset.endYear)
+        : asset.endYear;
+
+    const initialValue = asset.currentValue || 0;
     assetsByTitle[asset.title] = {
-      amount: asset.currentValue, // 현재 가치로 시작
-      startYear: asset.startYear,
-      endYear: asset.endYear,
-      growthRate: asset.growthRate || 0, // 이미 소수로 저장됨
+      amount: initialValue, // 현재 가치로 시작
+      startYear: startYear,
+      endYear: endYear,
+      growthRate: asset.growthRate || 0, // 이미 소수로 저장됨 (예: 0.0286)
       assetType: asset.assetType || "general", // "general" 또는 "income"
       incomeRate: asset.incomeRate || 0, // 수익형 자산의 수익률
       isActive: true,
+      _initialValue: initialValue, // 초기값 저장
     };
   });
 
   // 부채별 자산 (제목별로 분리) - 음수로 표시
   const debtsByTitle = {};
   debts.forEach((debt) => {
+    // 년도 데이터 타입 확인 및 변환
+    const startYear =
+      typeof debt.startYear === "string"
+        ? parseInt(debt.startYear)
+        : debt.startYear;
+    const endYear =
+      typeof debt.endYear === "string" ? parseInt(debt.endYear) : debt.endYear;
+
     debtsByTitle[debt.title] = {
       amount: -debt.debtAmount, // 부채는 음수로 표시
-      startYear: debt.startYear,
-      endYear: debt.endYear,
+      startYear: startYear,
+      endYear: endYear,
       debtType: debt.debtType, // "bullet", "equal", "principal", "grace"
       interestRate: debt.interestRate,
       originalAmount: debt.debtAmount,
@@ -750,7 +790,10 @@ export function calculateAssetSimulation(
     Object.keys(realEstatesByTitle).forEach((title) => {
       const realEstate = realEstatesByTitle[title];
 
-      if (
+      if (year < realEstate.startYear) {
+        // 보유 시작 전: 부동산 비활성화
+        realEstate.isActive = false;
+      } else if (
         year >= realEstate.startYear &&
         year <= realEstate.endYear &&
         realEstate.isActive
@@ -800,23 +843,21 @@ export function calculateAssetSimulation(
     Object.keys(assetsByTitle).forEach((title) => {
       const asset = assetsByTitle[title];
 
-      if (year >= asset.startYear && year <= asset.endYear && asset.isActive) {
+      // 보유 기간에만 활성화
+      if (year >= asset.startYear && year <= asset.endYear) {
+        asset.isActive = true;
+
         if (year === asset.startYear) {
           // 첫 해: 현재 가치로 시작
-          asset.amount = asset.amount;
+          asset.amount = asset._initialValue || asset.amount || 0;
         } else {
-          // 상승률 적용
-          asset.amount *= 1 + asset.growthRate;
+          // 상승률 적용 (이전 년도의 금액에 적용)
+          asset.amount = asset.amount * (1 + asset.growthRate);
         }
-      } else if (year === asset.endYear + 1) {
-        // 보유 종료 다음 해: 자산을 비활성화 (현금흐름 시뮬레이션에서만 처리)
-        if (asset.isActive && asset.amount > 0) {
-          asset.amount = 0;
-        }
+      } else {
+        // 보유 기간 외: 자산 비활성화
         asset.isActive = false;
-      } else if (year > asset.endYear + 1) {
-        // 보유 종료 이후: 자산 비활성화
-        asset.isActive = false;
+        asset.amount = 0;
       }
     });
 
@@ -824,7 +865,14 @@ export function calculateAssetSimulation(
     Object.keys(debtsByTitle).forEach((title) => {
       const debt = debtsByTitle[title];
 
-      if (year >= debt.startYear && year <= debt.endYear && debt.isActive) {
+      if (year < debt.startYear) {
+        // 보유 시작 전: 부채 비활성화
+        debt.isActive = false;
+      } else if (
+        year >= debt.startYear &&
+        year <= debt.endYear &&
+        debt.isActive
+      ) {
         const yearsElapsed = year - debt.startYear;
         const totalYears = debt.endYear - debt.startYear + 1;
         const interestRate = debt.interestRate;
