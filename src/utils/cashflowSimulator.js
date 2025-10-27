@@ -245,6 +245,7 @@ export function calculateCashflowSimulation(
 
     // 저축 계산 (현금흐름에서는 년간 저축 상승률만 적용, 이자율 적용 안함)
     let totalSavingMaturity = 0; // 저축 만료 수입 (별도 변수)
+    let savingMaturities = []; // 저축 만료 상세 정보
 
     savings.forEach((saving) => {
       if (year >= saving.startYear && year <= saving.endYear) {
@@ -301,6 +302,12 @@ export function calculateCashflowSimulation(
 
         // 저축 만료 수입에 추가 (현금흐름에서 플러스로 처리)
         totalSavingMaturity += finalAmount;
+
+        // 저축 만료 상세 정보 추가
+        savingMaturities.push({
+          title: saving.title,
+          amount: finalAmount,
+        });
       }
     });
 
@@ -490,6 +497,7 @@ export function calculateCashflowSimulation(
       realEstateSale: totalRealEstateSale,
       assetSale: totalAssetSale,
       savingMaturity: totalSavingMaturity,
+      savingMaturities: savingMaturities, // 저축 만료 상세 정보
       debtInterest: totalDebtInterest,
       debtPrincipal: totalDebtPrincipal,
       debtInterests: debtInterestDetails,

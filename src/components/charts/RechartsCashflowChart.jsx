@@ -884,12 +884,30 @@ function RechartsCashflowChart({
 
                         // 저축 만료
                         if (yearData.savingMaturity > 0) {
-                          allItems.push({
-                            key: "savingMaturity",
-                            label: "저축 만료",
-                            value: yearData.savingMaturity,
-                            type: "positive",
-                          });
+                          // 저축 만료 상세 정보가 있으면 개별 표시
+                          if (
+                            yearData.savingMaturities &&
+                            yearData.savingMaturities.length > 0
+                          ) {
+                            yearData.savingMaturities.forEach(
+                              (saving, index) => {
+                                allItems.push({
+                                  key: `savingMaturity-${index}`,
+                                  label: `${saving.title} 만료`,
+                                  value: saving.amount,
+                                  type: "positive",
+                                });
+                              }
+                            );
+                          } else {
+                            // 상세 정보가 없으면 기본 표시
+                            allItems.push({
+                              key: "savingMaturity",
+                              label: "저축 만료",
+                              value: yearData.savingMaturity,
+                              type: "positive",
+                            });
+                          }
                         }
 
                         // 부동산 구매 (지출)
