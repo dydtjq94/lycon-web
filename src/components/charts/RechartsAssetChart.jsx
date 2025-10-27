@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -10,6 +10,8 @@ import {
   ReferenceLine,
   Legend,
   Cell,
+  PieChart,
+  Pie,
 } from "recharts";
 import { formatAmountForChart } from "../../utils/format";
 import ChartZoomModal from "./ChartZoomModal";
@@ -30,16 +32,21 @@ function RechartsAssetChart({
   debts = [],
 }) {
   const [isZoomed, setIsZoomed] = useState(false);
-  if (!data || data.length === 0) {
-    return (
-      <div className={styles.chartContainer}>
-        <div className={styles.noData}>데이터가 없습니다.</div>
-      </div>
-    );
-  }
+  const [distributionEntry, setDistributionEntry] = useState(null);
+  const [isDistributionOpen, setIsDistributionOpen] = useState(false);
+  const hasData = Array.isArray(data) && data.length > 0;
+
+  useEffect(() => {
+    if (!hasData) {
+      setIsZoomed(false);
+      setIsDistributionOpen(false);
+      setDistributionEntry(null);
+    }
+  }, [hasData]);
 
   // 현금이 마이너스로 변하는 시점 감지
   const findCashNegativeTransition = () => {
+    if (!hasData) return null;
     for (let i = 0; i < data.length - 1; i++) {
       const currentCash = data[i]["현금"] || 0;
       const nextCash = data[i + 1]["현금"] || 0;
@@ -61,7 +68,7 @@ function RechartsAssetChart({
   // 저축/투자 이벤트 추출 (시작/종료 이벤트)
   const getSavingEvents = () => {
     const events = [];
-    if (savings && savings.length > 0) {
+    if (hasData && savings && savings.length > 0) {
       savings.forEach((saving) => {
         // 시작 이벤트
         events.push({
@@ -92,7 +99,7 @@ function RechartsAssetChart({
   // 연금 이벤트 추출 (퇴직/개인연금: 적립 시작/종료, 수령 시작/종료)
   const getPensionEvents = () => {
     const events = [];
-    if (pensions && pensions.length > 0) {
+    if (hasData && pensions && pensions.length > 0) {
       pensions.forEach((pension) => {
         if (pension.type !== "national") {
           // 퇴직연금/개인연금: 적립 시작/종료 이벤트
@@ -143,7 +150,7 @@ function RechartsAssetChart({
   // 부동산 이벤트 추출 (보유 시작/종료, 주택연금 전환)
   const getRealEstateEvents = () => {
     const events = [];
-    if (realEstates && realEstates.length > 0) {
+    if (hasData && realEstates && realEstates.length > 0) {
       realEstates.forEach((realEstate) => {
         // 부동산 보유 시작 이벤트
         events.push({
@@ -185,7 +192,7 @@ function RechartsAssetChart({
   // 부채 이벤트 추출 (대출 시작, 상환 완료)
   const getDebtEvents = () => {
     const events = [];
-    if (debts && debts.length > 0) {
+    if (hasData && debts && debts.length > 0) {
       debts.forEach((debt) => {
         // 대출 시작 이벤트
         events.push({
@@ -300,31 +307,35 @@ function RechartsAssetChart({
   }, {});
 
   // 차트 데이터 포맷팅 및 동적 자산 항목 추출
-  const chartData = data.map((item) => {
-    const processedItem = {
-      age: item.age,
-      year: item.year,
-      totalAmount: item.totalAmount || item.amount,
-      formattedAmount: formatAmountForChart(item.totalAmount || item.amount),
-    };
+  const chartData = hasData
+    ? data.map((item) => {
+        const processedItem = {
+          age: item.age,
+          year: item.year,
+          totalAmount: item.totalAmount || item.amount,
+          formattedAmount: formatAmountForChart(
+            item.totalAmount || item.amount
+          ),
+        };
 
-    // 자산 항목들을 처리
-    Object.keys(item).forEach((key) => {
-      if (key !== "year" && key !== "age" && key !== "totalAmount") {
-        const value = item[key] || 0;
+        // 자산 항목들을 처리
+        Object.keys(item).forEach((key) => {
+          if (key !== "year" && key !== "age" && key !== "totalAmount") {
+            const value = item[key] || 0;
 
-        if (key === "현금") {
-          // 현금은 그대로 표시 (양수/음수 자동 처리)
-          processedItem[key] = value;
-        } else {
-          // 다른 자산들은 그대로 표시
-          processedItem[key] = value;
-        }
-      }
-    });
+            if (key === "현금") {
+              // 현금은 그대로 표시 (양수/음수 자동 처리)
+              processedItem[key] = value;
+            } else {
+              // 다른 자산들은 그대로 표시
+              processedItem[key] = value;
+            }
+          }
+        });
 
-    return processedItem;
-  });
+        return processedItem;
+      })
+    : [];
 
   // 동적 자산 항목 추출 (기본 필드 제외)
   const allKeys =
@@ -432,16 +443,16 @@ function RechartsAssetChart({
       (sampleData && sampleData[assetName] < 0)
     ) {
       const debtColors = [
-        "#374151",
-        "#1f2937",
-        "#111827",
-        "#0f172a",
-        "#1e1e1e",
-        "#2d2d2d",
-        "#1a1a1a",
-        "#2a2a2a",
-        "#151515",
-        "#252525",
+        "#fca5a5",
+        "#f97316",
+        "#dc2626",
+        "#e53e3e",
+        "#e11d48",
+        "#f43f5e",
+        "#d97706",
+        "#a16207",
+        "#fbbf24",
+        "#b45309",
       ];
       const hash = assetName.split("").reduce((a, b) => {
         a = (a << 5) - a + b.charCodeAt(0);
@@ -543,6 +554,57 @@ function RechartsAssetChart({
   const padding = maxAbsValue * 0.1;
 
   const yDomain = [-maxAbsValue - padding, maxAbsValue + padding];
+
+  const distributionSlices = useMemo(() => {
+    if (!distributionEntry) return { assetSlices: [], debtSlices: [] };
+    const keysToExclude = [
+      "year",
+      "age",
+      "totalAmount",
+      "formattedAmount",
+      "events",
+    ];
+    const assetSlices = [];
+    const debtSlices = [];
+    assetKeys.forEach((key) => {
+      if (keysToExclude.includes(key)) return;
+      const value = distributionEntry[key];
+      if (value === undefined || value === 0) return;
+      const slice = {
+        name: key,
+        value: Math.abs(value),
+        originalValue: value,
+        color: getAssetColor(key, value),
+      };
+      if (value < 0) {
+        debtSlices.push(slice);
+      } else {
+        assetSlices.push(slice);
+      }
+    });
+    return { assetSlices, debtSlices };
+  }, [assetKeys, distributionEntry]);
+
+  const totalAssetValue = useMemo(() => {
+    return distributionSlices.assetSlices?.reduce(
+      (sum, slice) => sum + slice.value,
+      0
+    );
+  }, [distributionSlices]);
+
+  const totalDebtValue = useMemo(() => {
+    return distributionSlices.debtSlices?.reduce(
+      (sum, slice) => sum + slice.value,
+      0
+    );
+  }, [distributionSlices]);
+
+  const handleBarSegmentClick = (barData, isZoomedView) => {
+    if (!hasData || isZoomedView) return;
+    if (!barData || !barData.payload) return;
+    setDistributionEntry(barData.payload);
+    setIsDistributionOpen(true);
+  };
 
   // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
   const renderChart = (height = 500, isZoomedView = false) => (
@@ -840,6 +902,7 @@ function RechartsAssetChart({
           fill="#10b981"
           stroke="#ffffff"
           strokeWidth={1}
+          onClick={(data, index) => handleBarSegmentClick(data, isZoomedView)}
         >
           {chartData.map((entry, entryIndex) => {
             const cashValue = entry.현금 || 0;
@@ -866,6 +929,7 @@ function RechartsAssetChart({
             fill="#10b981"
             stroke="#ffffff"
             strokeWidth={1}
+            onClick={(data, index) => handleBarSegmentClick(data, isZoomedView)}
           >
             {chartData.map((entry, entryIndex) => {
               const cashAssetValue = entry["현금 자산"] || 0;
@@ -928,6 +992,9 @@ function RechartsAssetChart({
                 name={key === "현금 자산" ? "현금" : key}
                 stroke="#ffffff"
                 strokeWidth={1}
+                onClick={(data, barIndex) =>
+                  handleBarSegmentClick(data, isZoomedView)
+                }
               />
             );
           });
@@ -1012,54 +1079,225 @@ function RechartsAssetChart({
   return (
     <>
       <div className={styles.chartContainer}>
-        <div className={styles.chartHeader}>
-          <div className={styles.chartTitleWrapper}>
-            <h3 className={styles.chartTitle}>가계 자산 규모</h3>
-            <button
-              className={styles.zoomButton}
-              onClick={() => setIsZoomed(true)}
-              title="크게 보기"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-            </button>
-          </div>
-          <div className={styles.chartLegend}>
-            {legendData.map((item, index) => (
-              <div key={index} className={styles.legendItem}>
-                <div
-                  className={styles.legendColor}
-                  style={{ backgroundColor: item.color }}
-                ></div>
-                <span className={styles.legendText}>{item.value}</span>
+        {hasData ? (
+          <>
+            <div className={styles.chartHeader}>
+              <div className={styles.chartTitleWrapper}>
+                <h3 className={styles.chartTitle}>가계 자산 규모</h3>
+                <button
+                  className={styles.zoomButton}
+                  onClick={() => setIsZoomed(true)}
+                  title="크게 보기"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                  </svg>
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
-        <div className={styles.chartWrapper}>{renderChart()}</div>
+              <div className={styles.chartLegend}>
+                {legendData.map((item, index) => (
+                  <div key={index} className={styles.legendItem}>
+                    <div
+                      className={styles.legendColor}
+                      style={{ backgroundColor: item.color }}
+                    ></div>
+                    <span className={styles.legendText}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className={styles.chartWrapper}>{renderChart()}</div>
+          </>
+        ) : (
+          <div className={styles.noData}>데이터가 없습니다.</div>
+        )}
       </div>
 
-      {/* 확대 모달 */}
-      <ChartZoomModal
-        isOpen={isZoomed}
-        onClose={() => setIsZoomed(false)}
-        title="가계 자산 규모"
-      >
-        <div style={{ width: "100%", height: "100%" }}>
-          {renderChart("100%", true)}
-        </div>
-      </ChartZoomModal>
+      {hasData && (
+        <ChartZoomModal
+          isOpen={isZoomed}
+          onClose={() => setIsZoomed(false)}
+          title="가계 자산 규모"
+        >
+          <div style={{ width: "100%", height: "100%" }}>
+            {renderChart("100%", true)}
+          </div>
+        </ChartZoomModal>
+      )}
+
+      {hasData && (
+        <ChartZoomModal
+          isOpen={isDistributionOpen}
+          onClose={() => {
+            setIsDistributionOpen(false);
+            setDistributionEntry(null);
+          }}
+          title={
+            distributionEntry
+              ? `${distributionEntry.year}년 자산 구성`
+              : "자산 구성"
+          }
+        >
+          <div className={styles.distributionModalContent}>
+            {distributionSlices.assetSlices.length === 0 &&
+            distributionSlices.debtSlices.length === 0 ? (
+              <div className={styles.noDistributionData}>
+                해당 연도의 자산 구성을 계산할 수 없습니다.
+              </div>
+            ) : (
+              <>
+                <div className={styles.distributionSection}>
+                  <h4>자산</h4>
+                  {distributionSlices.assetSlices.length === 0 ? (
+                    <div className={styles.noDistributionData}>
+                      자산 데이터 없음
+                    </div>
+                  ) : (
+                    <div className={styles.distributionChart}>
+                      <ResponsiveContainer width="100%" height={320}>
+                        <PieChart>
+                          <Pie
+                            data={distributionSlices.assetSlices}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={50}
+                            outerRadius={120}
+                            paddingAngle={2}
+                          >
+                            {distributionSlices.assetSlices.map(
+                              (slice, index) => (
+                                <Cell
+                                  key={`distribution-asset-slice-${slice.name}-${index}`}
+                                  fill={slice.color}
+                                />
+                              )
+                            )}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                  {distributionSlices.assetSlices.length > 0 && (
+                    <div className={styles.distributionList}>
+                      {distributionSlices.assetSlices
+                        .sort((a, b) => b.value - a.value)
+                        .map((slice) => {
+                          const percent =
+                            totalAssetValue > 0
+                              ? ((slice.value / totalAssetValue) * 100).toFixed(
+                                  1
+                                )
+                              : "0.0";
+                          return (
+                            <div
+                              key={`asset-list-${slice.name}`}
+                              className={styles.distributionRow}
+                            >
+                              <span className={styles.distributionLabel}>
+                                <span
+                                  className={styles.distributionDot}
+                                  style={{ backgroundColor: slice.color }}
+                                />
+                                {slice.name}
+                              </span>
+                              <span className={styles.distributionValue}>
+                                {formatAmountForChart(
+                                  Math.abs(slice.originalValue)
+                                )}
+                                <span className={styles.distributionPercent}>
+                                  {percent}%
+                                </span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+                <div className={styles.distributionSection}>
+                  <h4>부채</h4>
+                  {distributionSlices.debtSlices.length === 0 ? (
+                    <div className={styles.noDistributionData}>
+                      부채 데이터 없음
+                    </div>
+                  ) : (
+                    <div className={styles.distributionChart}>
+                      <ResponsiveContainer width="100%" height={320}>
+                        <PieChart>
+                          <Pie
+                            data={distributionSlices.debtSlices}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={50}
+                            outerRadius={120}
+                            paddingAngle={2}
+                          >
+                            {distributionSlices.debtSlices.map(
+                              (slice, index) => (
+                                <Cell
+                                  key={`distribution-debt-slice-${slice.name}-${index}`}
+                                  fill={slice.color}
+                                />
+                              )
+                            )}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                  {distributionSlices.debtSlices.length > 0 && (
+                    <div className={styles.distributionList}>
+                      {distributionSlices.debtSlices
+                        .sort((a, b) => b.value - a.value)
+                        .map((slice) => {
+                          const percent =
+                            totalDebtValue > 0
+                              ? ((slice.value / totalDebtValue) * 100).toFixed(
+                                  1
+                                )
+                              : "0.0";
+                          return (
+                            <div
+                              key={`debt-list-${slice.name}`}
+                              className={styles.distributionRow}
+                            >
+                              <span className={styles.distributionLabel}>
+                                <span
+                                  className={styles.distributionDot}
+                                  style={{ backgroundColor: slice.color }}
+                                />
+                                {slice.name}
+                              </span>
+                              <span className={styles.distributionValue}>
+                                -
+                                {formatAmountForChart(
+                                  Math.abs(slice.originalValue)
+                                )}
+                                <span className={styles.distributionPercent}>
+                                  {percent}%
+                                </span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </ChartZoomModal>
+      )}
     </>
   );
 }

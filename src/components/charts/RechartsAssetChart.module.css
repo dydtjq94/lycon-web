@@ -296,3 +296,78 @@
 .customTooltip[data-zoomed="true"] .tooltipEventText {
   font-size: 14px;
 }
+
+
+.distributionModalContent {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.distributionSection {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.distributionChart {
+  width: 100%;
+  min-height: 300px;
+}
+
+.distributionList {
+  flex: 1;
+  min-width: 240px;
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.distributionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.distributionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #111827;
+}
+
+.distributionDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.distributionValue {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.distributionPercent {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-left: 6px;
+}
+
+.noDistributionData {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
