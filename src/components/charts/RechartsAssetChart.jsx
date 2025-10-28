@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, memo } from "react";
 import {
   BarChart,
   Bar,
@@ -16,6 +16,45 @@ import {
 import { formatAmountForChart } from "../../utils/format";
 import ChartZoomModal from "./ChartZoomModal";
 import styles from "./RechartsAssetChart.module.css";
+
+// 파이차트 컴포넌트 최적화
+const OptimizedPieChart = memo(({ data, title }) => {
+  if (!data || data.length === 0) {
+    return <div className={styles.noDistributionData}>{title} 데이터 없음</div>;
+  }
+
+  return (
+    <div className={styles.distributionChart}>
+      <PieChart
+        width={280}
+        height={280}
+        margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      >
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          innerRadius={60}
+          outerRadius={120}
+          paddingAngle={1}
+          animationDuration={0}
+          animationBegin={0}
+          animationEasing="ease"
+          isAnimationActive={false}
+        >
+          {data.map((slice, index) => (
+            <Cell
+              key={`${title}-slice-${slice.name}-${index}`}
+              fill={slice.color}
+            />
+          ))}
+        </Pie>
+      </PieChart>
+    </div>
+  );
+});
+
+OptimizedPieChart.displayName = "OptimizedPieChart";
 
 /**
  * Recharts를 사용한 자산 시뮬레이션 차트
@@ -574,8 +613,10 @@ function RechartsAssetChart({
 
   const yDomain = [-maxAbsValue - padding, maxAbsValue + padding];
 
-  const distributionSlices = useMemo(() => {
-    if (!distributionEntry) return { assetSlices: [], debtSlices: [] };
+  // 모든 연도별 분포 데이터를 미리 계산
+  const allDistributionData = useMemo(() => {
+    if (!hasData) return {};
+
     const keysToExclude = [
       "year",
       "age",
@@ -583,28 +624,50 @@ function RechartsAssetChart({
       "formattedAmount",
       "events",
     ];
-    const assetSlices = [];
-    const debtSlices = [];
-    assetKeys.forEach((key) => {
-      if (keysToExclude.includes(key)) return;
-      const value = distributionEntry[key];
-      if (value === undefined || value === 0) return;
-      const slice = {
-        name: key,
-        value: Math.abs(value),
-        originalValue: value,
-        color: getAssetColor(key, value),
-      };
-      if (value < 0) {
-        debtSlices.push(slice);
-      } else {
-        assetSlices.push(slice);
-      }
+
+    const distributionMap = {};
+
+    chartData.forEach((entry) => {
+      const assetSlices = [];
+      const debtSlices = [];
+
+      assetKeys.forEach((key) => {
+        if (keysToExclude.includes(key)) return;
+        const value = entry[key];
+        if (value === undefined || value === 0) return;
+
+        const slice = {
+          name: key,
+          value: Math.abs(value),
+          originalValue: value,
+          color: getAssetColor(key, value),
+        };
+
+        if (value < 0) {
+          debtSlices.push(slice);
+        } else {
+          assetSlices.push(slice);
+        }
+      });
+
+      distributionMap[entry.year] = { assetSlices, debtSlices };
     });
-    return { assetSlices, debtSlices };
-  }, [assetKeys, distributionEntry]);
+
+    return distributionMap;
+  }, [chartData, assetKeys, hasData]);
+
+  const distributionSlices = useMemo(() => {
+    if (!distributionEntry || !allDistributionData[distributionEntry.year]) {
+      return { assetSlices: [], debtSlices: [] };
+    }
+    return allDistributionData[distributionEntry.year];
+  }, [distributionEntry, allDistributionData]);
 
   const sortedDistribution = useMemo(() => {
+    if (!distributionSlices.assetSlices || !distributionSlices.debtSlices) {
+      return { assetSlices: [], debtSlices: [] };
+    }
+
     const assetSlices = [...distributionSlices.assetSlices].sort(
       (a, b) => b.value - a.value
     );
@@ -612,7 +675,7 @@ function RechartsAssetChart({
       (a, b) => b.value - a.value
     );
     return { assetSlices, debtSlices };
-  }, [distributionSlices.assetSlices, distributionSlices.debtSlices]);
+  }, [distributionSlices]);
 
   const totalAssetValue = useMemo(() => {
     return distributionSlices.assetSlices?.reduce(
@@ -811,28 +874,39 @@ function RechartsAssetChart({
                         ...categorizedItems.부채, // 바 차트에서 가장 위 (툴팁에서 가장 아래) - 순서 유지
                       ];
 
-                        return sortedItems.map((entry, index) => {
-                          // 바 차트와 동일한 색상 사용 - entry의 value도 함께 전달
-                          const colorKey = entry.key || entry.displayName;
-                          const itemColor = getAssetColor(
-                            colorKey,
-                            entry.value
-                          );
+                      const totalItems = sortedItems.length;
 
-                          return (
-                            <div key={index} className={styles.tooltipItem}>
-                              <span
-                                className={styles.tooltipLabel}
-                                style={{ color: itemColor }}
-                              >
-                                {(entry.displayName || entry.name) + ":"}
-                              </span>
-                              <span className={styles.tooltipValue}>
-                                {formatAmountForChart(entry.value)}
-                              </span>
+                      return (
+                        <>
+                          {sortedItems.map((entry, index) => {
+                            // 바 차트와 동일한 색상 사용 - entry의 value도 함께 전달
+                            const colorKey = entry.key || entry.displayName;
+                            const itemColor = getAssetColor(
+                              colorKey,
+                              entry.value
+                            );
+
+                            return (
+                              <div key={index} className={styles.tooltipItem}>
+                                <span
+                                  className={styles.tooltipLabel}
+                                  style={{ color: itemColor }}
+                                >
+                                  {(entry.displayName || entry.name) + ":"}
+                                </span>
+                                <span className={styles.tooltipValue}>
+                                  {formatAmountForChart(entry.value)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {/* {totalItems > 12 && (
+                            <div className={styles.tooltipHint}>
+                              항목이 많으면 아래로 스크롤하거나 막대를 클릭해 자세히 볼 수 있어요.
                             </div>
-                        );
-                      });
+                          )} */}
+                        </>
+                      );
                     })()}
                   </div>
 
@@ -1194,134 +1268,80 @@ function RechartsAssetChart({
               <>
                 <div className={styles.distributionSection}>
                   <h4>자산</h4>
-                  {sortedDistribution.assetSlices.length === 0 ? (
-                    <div className={styles.noDistributionData}>
-                      자산 데이터 없음
-                    </div>
-                  ) : (
-                    <div className={styles.distributionChart}>
-                      <ResponsiveContainer width="100%" height={320}>
-                        <PieChart>
-                          <Pie
-                            data={sortedDistribution.assetSlices}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius={50}
-                            outerRadius={120}
-                            paddingAngle={2}
-                          >
-                            {sortedDistribution.assetSlices.map(
-                              (slice, index) => (
-                                <Cell
-                                  key={`distribution-asset-slice-${slice.name}-${index}`}
-                                  fill={slice.color}
-                                />
-                              )
-                            )}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
+                  <OptimizedPieChart
+                    data={sortedDistribution.assetSlices}
+                    title="자산"
+                  />
                   {sortedDistribution.assetSlices.length > 0 && (
                     <div className={styles.distributionList}>
                       {sortedDistribution.assetSlices.map((slice) => {
-                          const percent =
-                            totalAssetValue > 0
-                              ? ((slice.value / totalAssetValue) * 100).toFixed(
-                                  1
-                                )
-                              : "0.0";
-                          return (
-                            <div
-                              key={`asset-list-${slice.name}`}
-                              className={styles.distributionRow}
-                            >
-                              <span className={styles.distributionLabel}>
-                                <span
-                                  className={styles.distributionDot}
-                                  style={{ backgroundColor: slice.color }}
-                                />
-                                {slice.name}
+                        const percent =
+                          totalAssetValue > 0
+                            ? ((slice.value / totalAssetValue) * 100).toFixed(1)
+                            : "0.0";
+                        return (
+                          <div
+                            key={`asset-list-${slice.name}`}
+                            className={styles.distributionRow}
+                          >
+                            <span className={styles.distributionLabel}>
+                              <span
+                                className={styles.distributionDot}
+                                style={{ backgroundColor: slice.color }}
+                              />
+                              {slice.name}
+                            </span>
+                            <span className={styles.distributionValue}>
+                              {formatAmountForChart(
+                                Math.abs(slice.originalValue)
+                              )}
+                              <span className={styles.distributionPercent}>
+                                {percent}%
                               </span>
-                              <span className={styles.distributionValue}>
-                                {formatAmountForChart(
-                                  Math.abs(slice.originalValue)
-                                )}
-                                <span className={styles.distributionPercent}>
-                                  {percent}%
-                                </span>
-                              </span>
-                            </div>
-                          );
-                        })}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
                 <div className={styles.distributionSection}>
                   <h4>부채</h4>
-                  {sortedDistribution.debtSlices.length === 0 ? (
-                    <div className={styles.noDistributionData}>
-                      부채 데이터 없음
-                    </div>
-                  ) : (
-                    <div className={styles.distributionChart}>
-                      <ResponsiveContainer width="100%" height={320}>
-                        <PieChart>
-                          <Pie
-                            data={sortedDistribution.debtSlices}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius={50}
-                            outerRadius={120}
-                            paddingAngle={2}
-                          >
-                            {sortedDistribution.debtSlices.map(
-                              (slice, index) => (
-                                <Cell
-                                  key={`distribution-debt-slice-${slice.name}-${index}`}
-                                  fill={slice.color}
-                                />
-                              )
-                            )}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
+                  <OptimizedPieChart
+                    data={sortedDistribution.debtSlices}
+                    title="부채"
+                  />
                   {sortedDistribution.debtSlices.length > 0 && (
                     <div className={styles.distributionList}>
                       {sortedDistribution.debtSlices.map((slice) => {
-                          const percent =
-                            totalDebtValue > 0
-                              ? ((slice.value / totalDebtValue) * 100).toFixed(
-                                  1
-                                )
-                              : "0.0";
-                          return (
-                            <div
-                              key={`debt-list-${slice.name}`}
-                              className={styles.distributionRow}
-                            >
-                              <span className={styles.distributionLabel}>
-                                <span
-                                  className={styles.distributionDot}
-                                  style={{ backgroundColor: slice.color }}
-                                />
-                                {slice.name}
+                        const percent =
+                          totalDebtValue > 0
+                            ? ((slice.value / totalDebtValue) * 100).toFixed(1)
+                            : "0.0";
+                        return (
+                          <div
+                            key={`debt-list-${slice.name}`}
+                            className={styles.distributionRow}
+                          >
+                            <span className={styles.distributionLabel}>
+                              <span
+                                className={styles.distributionDot}
+                                style={{ backgroundColor: slice.color }}
+                              />
+                              {slice.name}
+                            </span>
+                            <span className={styles.distributionValue}>
+                              -
+                              {formatAmountForChart(
+                                Math.abs(slice.originalValue)
+                              )}
+                              <span className={styles.distributionPercent}>
+                                {percent}%
                               </span>
-                              <span className={styles.distributionValue}>
-                                -
-                                {formatAmountForChart(
-                                  Math.abs(slice.originalValue)
-                                )}
-                                <span className={styles.distributionPercent}>
-                                  {percent}%
-                                </span>
-                              </span>
-                            </div>
-                          );
-                        })}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

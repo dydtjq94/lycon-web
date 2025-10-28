@@ -288,7 +288,11 @@ export function calculateCashflowSimulation(
             }
 
             debt.amount = -principal;
-          } else if (year > graceEndYear && year <= debtEndYear && repaymentYears > 0) {
+          } else if (
+            year > graceEndYear &&
+            year <= debtEndYear &&
+            repaymentYears > 0
+          ) {
             // 상환기간: 원금을 균등하게 상환 + 남은 원금의 이자
             const yearlyPrincipalPayment = principal / repaymentYears;
             const repaymentYearsElapsed = year - graceEndYear; // 상환 시작 후 경과년수 (1부터 시작)
@@ -495,7 +499,11 @@ export function calculateCashflowSimulation(
       }
 
       // 주택연금 수령액 계산
-      if (realEstate.convertToPension && year >= realEstate.pensionStartYear) {
+      if (
+        realEstate.convertToPension &&
+        year >= realEstate.pensionStartYear &&
+        year <= (realEstate.pensionEndYear || 9999)
+      ) {
         totalRealEstatePension += realEstate.monthlyPensionAmount * 12;
       }
 
@@ -720,10 +728,12 @@ export function calculateAssetSimulation(
       growthRate: realEstate.growthRate || 2.5, // 백분율 그대로 사용
       convertToPension: realEstate.convertToPension || false,
       pensionStartYear: realEstate.pensionStartYear,
+      pensionEndYear: realEstate.pensionEndYear,
       monthlyPensionAmount: realEstate.monthlyPensionAmount,
       isPurchase: realEstate.isPurchase || false, // 구매 여부 저장
       isActive: false, // 초기에는 비활성화 (startYear에 활성화)
       _initialValue: initialRealEstateValue, // 초기값 저장
+      _pensionBaseValue: 0, // 주택연금 시작 직전 가치 (상승률 적용 기준)
     };
   });
 
@@ -909,29 +919,39 @@ export function calculateAssetSimulation(
           realEstate.amount =
             realEstate._initialValue || realEstate.amount || 0;
         } else {
-          // 주택연금 수령 중이 아닌 경우에만 상승률 적용
-          const isPensionActive =
-            realEstate.convertToPension && year >= realEstate.pensionStartYear;
-          if (!isPensionActive) {
-            const growthRate = realEstate.growthRate / 100; // 백분율을 소수로 변환
-            realEstate.amount = realEstate.amount * (1 + growthRate);
-          }
-        }
+          const growthRate = realEstate.growthRate / 100; // 월 상승률을 소수로 변환
 
-        // 주택연금 전환 처리
-        if (
-          realEstate.convertToPension &&
-          year >= realEstate.pensionStartYear
-        ) {
-          // 주택연금 수령 시: 자산에서 월 수령액만큼 차감 (현금으로 변환하지 않음)
-          const yearlyPensionAmount = realEstate.monthlyPensionAmount * 12;
-          if (realEstate.amount >= yearlyPensionAmount) {
-            realEstate.amount -= yearlyPensionAmount;
-            // 현금으로 변환하지 않음 - 현금흐름 시뮬레이션에서만 처리
+          const isPensionActive =
+            realEstate.convertToPension &&
+            year >= realEstate.pensionStartYear &&
+            year <= (realEstate.pensionEndYear || 9999);
+
+          if (isPensionActive) {
+            // 주택연금 시작 해에 기준 값을 저장 (직전 연도까지 상승률 적용)
+            if (year === realEstate.pensionStartYear) {
+              const yearsElapsed =
+                realEstate.pensionStartYear - 1 - realEstate.startYear;
+              realEstate._pensionBaseValue =
+                realEstate._initialValue *
+                Math.pow(1 + growthRate, yearsElapsed);
+            }
+
+            const yearsSinceStart = year - realEstate.pensionStartYear;
+            const grownValue =
+              realEstate._pensionBaseValue *
+              Math.pow(1 + growthRate, yearsSinceStart + 1);
+
+            const yearlyPensionAmount = realEstate.monthlyPensionAmount * 12;
+            const totalPensionPaid =
+              yearlyPensionAmount * (yearsSinceStart + 1);
+
+            realEstate.amount = Math.max(0, grownValue - totalPensionPaid);
+
+            if (realEstate.amount <= 0) {
+              realEstate.isActive = false;
+            }
           } else {
-            // 부동산 가치가 부족하면 남은 가치만 차감
-            realEstate.amount = 0;
-            realEstate.isActive = false;
+            realEstate.amount = realEstate.amount * (1 + growthRate);
           }
         }
       } else if (year === realEstate.endYear + 1) {

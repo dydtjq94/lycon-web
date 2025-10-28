@@ -200,8 +200,10 @@
 }
 
 .tooltipDetails {
-  max-height: 320px;
+  max-height: 420px;
   overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .tooltipItem {
@@ -239,6 +241,16 @@
 
 .customTooltip[data-zoomed="true"] .tooltipValue {
   font-size: 16px;
+}
+
+.tooltipHint {
+  margin-top: 0.5rem;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.customTooltip[data-zoomed="true"] .tooltipHint {
+  font-size: 14px;
 }
 
 .retirementWarning {
@@ -319,7 +331,10 @@
 
 .distributionChart {
   width: 100%;
-  min-height: 300px;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .distributionList {
