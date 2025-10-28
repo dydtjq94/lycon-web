@@ -98,8 +98,9 @@ function IncomeModal({
     }
 
     const growthRateNum = parseFloat(formData.growthRate);
-    if (isNaN(growthRateNum) || growthRateNum < 0 || growthRateNum > 100) {
-      newErrors.growthRate = "상승률은 0-100% 사이의 유효한 숫자여야 합니다.";
+    if (isNaN(growthRateNum) || growthRateNum < -100 || growthRateNum > 100) {
+      newErrors.growthRate =
+        "상승률은 -100% ~ +100% 사이의 유효한 숫자여야 합니다.";
     }
 
     setErrors(newErrors);

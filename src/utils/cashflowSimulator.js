@@ -698,7 +698,7 @@ export function calculateAssetSimulation(
         contributionEndYear: pension.contributionEndYear,
         paymentStartYear: pension.paymentStartYear,
         paymentEndYear: pension.paymentEndYear,
-        returnRate: pension.returnRate || 5.0,
+        returnRate: pension.returnRate !== undefined ? pension.returnRate : 5.0,
         contributionAmount: pension.contributionAmount,
         contributionFrequency: pension.contributionFrequency,
         monthlyPayment: 0, // 월 수령액 (적립 종료 후 계산)

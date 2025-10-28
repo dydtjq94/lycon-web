@@ -102,9 +102,10 @@ function PensionModal({
             editData.contributionStartYear || new Date().getFullYear(),
           contributionEndYear:
             editData.contributionEndYear || new Date().getFullYear() + 10,
-          returnRate: editData.returnRate
-            ? editData.returnRate.toFixed(2)
-            : 2.86,
+          returnRate:
+            editData.returnRate !== undefined
+              ? editData.returnRate.toFixed(2)
+              : 2.86,
           paymentStartYear:
             editData.paymentStartYear || new Date().getFullYear() + 11,
           paymentEndYear:
@@ -266,7 +267,8 @@ function PensionModal({
         newErrors.paymentStartYear =
           "수령 시작년도는 적립 종료년도보다 늦어야 합니다.";
       }
-      if (formData.returnRate < 0 || formData.returnRate > 100) {
+      const returnRateNum = parseFloat(formData.returnRate);
+      if (isNaN(returnRateNum) || returnRateNum < 0 || returnRateNum > 100) {
         newErrors.returnRate = "투자 수익률은 0-100% 사이여야 합니다.";
       }
     }
@@ -308,7 +310,7 @@ function PensionModal({
           ? parseInt(formData.contributionAmount)
           : 0,
       returnRate:
-        formData.type !== "national" ? parseFloat(formData.returnRate) : 0,
+        formData.type !== "national" ? parseFloat(formData.returnRate) : 0, // 백분율로 저장 (사용 시 /100 해야 함)
       paymentStartYear:
         formData.type !== "national" ? parseInt(formData.paymentStartYear) : 0,
       paymentEndYear:
