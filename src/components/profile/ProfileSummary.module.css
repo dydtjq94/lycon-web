@@ -92,6 +92,7 @@
 
 .financialModalButton:hover {
   color: #0062ff;
+  cursor: pointer;
 }
 
 .financialModalButton svg {

@@ -1306,6 +1306,52 @@ function DashboardPage() {
     }
   };
 
+  // 시뮬레이션 복제 핸들러 (우클릭 컨텍스트 메뉴에서 호출)
+  const handleCopySimulation = async (sourceSimulationId) => {
+    try {
+      // 복제할 시뮬레이션 찾기
+      const sourceSimulation = simulations.find(
+        (sim) => sim.id === sourceSimulationId
+      );
+      if (!sourceSimulation) {
+        alert("복제할 시뮬레이션을 찾을 수 없습니다.");
+        return;
+      }
+
+      // 시뮬레이션 개수에 따라 자동으로 제목 생성
+      const simulationNumber = simulations.length;
+      const title = `${sourceSimulation.title} 복사본`;
+
+      // 선택된 시뮬레이션의 데이터를 복사하여 새 시뮬레이션 생성
+      const newSimulationId = await simulationService.copySimulation(
+        profileId,
+        sourceSimulationId,
+        title
+      );
+
+      // 시뮬레이션 목록 다시 로드
+      const updatedSimulations = await simulationService.getSimulations(
+        profileId
+      );
+      setSimulations(updatedSimulations);
+
+      // 새로 생성한 시뮬레이션으로 전환
+      setActiveSimulationId(newSimulationId);
+
+      // Mixpanel 트래킹
+      if (window.mixpanel) {
+        window.mixpanel.track("시뮬레이션 복제", {
+          sourceSimulationId: sourceSimulationId,
+          sourceSimulationTitle: sourceSimulation.title,
+          newSimulationId: newSimulationId,
+        });
+      }
+    } catch (error) {
+      console.error("시뮬레이션 복제 오류:", error);
+      alert("시뮬레이션 복제 중 오류가 발생했습니다: " + error.message);
+    }
+  };
+
   const handleCreateSimulation = async (title) => {
     try {
       setIsCreatingSimulation(true);
@@ -1653,6 +1699,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
           onAddSimulation={handleAddSimulation}
           onDeleteSimulation={handleDeleteSimulation}
           onRenameSimulation={handleRenameSimulation}
+          onCopySimulation={handleCopySimulation}
         />
       )}
 

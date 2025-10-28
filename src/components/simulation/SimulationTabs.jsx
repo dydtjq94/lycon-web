@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styles from "./SimulationTabs.module.css";
 
 /**
@@ -11,6 +11,7 @@ import styles from "./SimulationTabs.module.css";
  * @param {Function} onAddSimulation - 새 시뮬레이션 추가 시 호출되는 함수
  * @param {Function} onDeleteSimulation - 시뮬레이션 삭제 시 호출되는 함수
  * @param {Function} onRenameSimulation - 시뮬레이션 이름 변경 시 호출되는 함수
+ * @param {Function} onCopySimulation - 시뮬레이션 복제 시 호출되는 함수
  */
 function SimulationTabs({
   simulations,
@@ -19,10 +20,63 @@ function SimulationTabs({
   onAddSimulation,
   onDeleteSimulation,
   onRenameSimulation,
+  onCopySimulation,
 }) {
   // 이름 수정 중인 시뮬레이션 ID
   const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
+
+  // 컨텍스트 메뉴 상태
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    simulationId: null,
+  });
+
+  // 컨텍스트 메뉴 ref
+  const contextMenuRef = useRef(null);
+
+  // 컨텍스트 메뉴 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        contextMenuRef.current &&
+        !contextMenuRef.current.contains(event.target)
+      ) {
+        setContextMenu({ visible: false, x: 0, y: 0, simulationId: null });
+      }
+    };
+
+    if (contextMenu.visible) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [contextMenu.visible]);
+
+  // 우클릭 핸들러
+  const handleContextMenu = (e, simulationId) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      simulationId: simulationId,
+    });
+  };
+
+  // 시뮬레이션 복제 핸들러
+  const handleCopySimulation = (simulationId) => {
+    if (onCopySimulation) {
+      onCopySimulation(simulationId);
+    }
+    setContextMenu({ visible: false, x: 0, y: 0, simulationId: null });
+  };
 
   // 탭 클릭 핸들러
   const handleTabClick = (simulationId) => {
@@ -93,6 +147,7 @@ function SimulationTabs({
             onDoubleClick={(e) =>
               !simulation.isDefault && handleStartEdit(e, simulation)
             }
+            onContextMenu={(e) => handleContextMenu(e, simulation.id)}
           >
             {editingId === simulation.id ? (
               // 이름 수정 모드
@@ -135,6 +190,27 @@ function SimulationTabs({
           +
         </button>
       </div>
+
+      {/* 컨텍스트 메뉴 */}
+      {contextMenu.visible && (
+        <div
+          ref={contextMenuRef}
+          className={styles.contextMenu}
+          style={{
+            position: "fixed",
+            left: contextMenu.x,
+            top: contextMenu.y,
+            zIndex: 10001,
+          }}
+        >
+          <button
+            className={styles.contextMenuItem}
+            onClick={() => handleCopySimulation(contextMenu.simulationId)}
+          >
+            복제하기
+          </button>
+        </div>
+      )}
     </div>
   );
 }

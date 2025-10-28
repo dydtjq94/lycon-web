@@ -183,6 +183,39 @@
   }
 }
 
+/* 컨텍스트 메뉴 */
+.contextMenu {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  padding: 4px 0;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.contextMenuItem {
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  outline: none;
+}
+
+.contextMenuItem:hover {
+  background-color: #f3f4f6;
+}
+
+.contextMenuItem:focus {
+  outline: none;
+  background-color: #f3f4f6;
+}
+
 /* 태블릿 대응 */
 @media (min-width: 769px) and (max-width: 1024px) {
   .tab {
