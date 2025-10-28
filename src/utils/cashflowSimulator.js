@@ -37,6 +37,8 @@ export function calculateCashflowSimulation(
     let totalExpense = 0;
     let totalSavings = 0;
     let totalPension = 0;
+    let totalDebtInjection = 0;
+    const debtInjections = [];
 
     // 소득 계산
     incomes.forEach((income) => {
@@ -79,16 +81,52 @@ export function calculateCashflowSimulation(
     const debtPrincipalDetails = [];
 
     debts.forEach((debt) => {
-      if (year >= debt.startYear && year <= debt.endYear) {
-        const yearsElapsed = year - debt.startYear;
-        const totalYears = debt.endYear - debt.startYear + 1;
-        const interestRate = debt.interestRate; // 이미 소수로 저장됨
+      const debtStartYear =
+        typeof debt.startYear === "string"
+          ? parseInt(debt.startYear, 10)
+          : debt.startYear;
+      const debtEndYear =
+        typeof debt.endYear === "string"
+          ? parseInt(debt.endYear, 10)
+          : debt.endYear;
+      const rawDebtAmount =
+        typeof debt.debtAmount === "string"
+          ? parseFloat(debt.debtAmount)
+          : debt.debtAmount;
+      const debtAmount = Number.isFinite(rawDebtAmount) ? rawDebtAmount : 0;
+
+      if (
+        debt.addCashToFlow &&
+        debtAmount > 0 &&
+        Number.isFinite(debtStartYear) &&
+        year === debtStartYear
+      ) {
+        totalDebtInjection += debtAmount;
+        debtInjections.push({
+          title: debt.title,
+          amount: debtAmount,
+        });
+      }
+
+      if (
+        !Number.isFinite(debtStartYear) ||
+        !Number.isFinite(debtEndYear) ||
+        debtStartYear === undefined ||
+        debtEndYear === undefined
+      ) {
+        return;
+      }
+
+      if (year >= debtStartYear && year <= debtEndYear) {
+        const yearsElapsed = year - debtStartYear;
+        const totalYears = debtEndYear - debtStartYear + 1;
+        const interestRate = debt.interestRate || 0; // 이미 소수로 저장됨
 
         if (debt.debtType === "bullet") {
           // 만기일시상환: 매년 이자만 지불, 만기일에 원금 상환
-          if (year < debt.endYear) {
+          if (year < debtEndYear) {
             // 만기 전: 이자만 지불
-            const yearlyInterest = debt.debtAmount * interestRate;
+            const yearlyInterest = debtAmount * interestRate;
             if (yearlyInterest > 0) {
               totalDebtInterest += yearlyInterest;
               debtInterestDetails.push({
@@ -96,9 +134,9 @@ export function calculateCashflowSimulation(
                 amount: yearlyInterest,
               });
             }
-          } else if (year === debt.endYear) {
+          } else if (year === debtEndYear) {
             // 만기년도: 이자 + 원금 상환
-            const yearlyInterest = debt.debtAmount * interestRate;
+            const yearlyInterest = debtAmount * interestRate;
             if (yearlyInterest > 0) {
               totalDebtInterest += yearlyInterest;
               debtInterestDetails.push({
@@ -106,24 +144,27 @@ export function calculateCashflowSimulation(
                 amount: yearlyInterest,
               });
             }
-            if (debt.debtAmount > 0) {
-              totalDebtPrincipal += debt.debtAmount;
+            if (debtAmount > 0) {
+              totalDebtPrincipal += debtAmount;
               debtPrincipalDetails.push({
                 title: debt.title,
-                amount: debt.debtAmount,
+                amount: debtAmount,
               });
             }
           }
         } else if (debt.debtType === "equal") {
           // 원리금균등상환: 매년 동일한 금액 상환
           // PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
-          const principal = debt.debtAmount;
+          const principal = debtAmount;
           const r = interestRate;
           const n = totalYears;
 
           if (n > 0 && r > 0) {
+            const denominator = Math.pow(1 + r, n) - 1;
             const pmt =
-              (principal * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
+              denominator !== 0
+                ? (principal * (r * Math.pow(1 + r, n))) / denominator
+                : 0;
             const yearlyPayment = pmt;
 
             // 이자 부분 계산: 남은 원금 * 이자율
@@ -151,7 +192,7 @@ export function calculateCashflowSimulation(
                 amount: principalPayment,
               });
             }
-          } else if (r === 0) {
+          } else if (r === 0 && n > 0) {
             // 이자율이 0%인 경우: 원금을 균등 분할
             const yearlyPayment = principal / n;
             if (yearlyPayment > 0) {
@@ -164,10 +205,10 @@ export function calculateCashflowSimulation(
           }
         } else if (debt.debtType === "principal") {
           // 원금균등상환: 매년 동일한 원금 상환, 이자는 남은 원금에 대해 계산
-          const principal = debt.debtAmount;
+          const principal = debtAmount;
           const r = interestRate;
           const n = totalYears;
-          const yearlyPrincipalPayment = principal / n;
+          const yearlyPrincipalPayment = n > 0 ? principal / n : 0;
 
           // 이자 부분 계산: 남은 원금 * 이자율
           let remainingPrincipal = principal;
@@ -194,11 +235,11 @@ export function calculateCashflowSimulation(
           }
         } else if (debt.debtType === "grace") {
           // 거치식상환: 거치기간 동안 이자만 지불, 이후 원금 균등상환 + 남은 원금의 이자
-          const principal = debt.debtAmount;
+          const principal = debtAmount;
           const r = interestRate;
-          const gracePeriod = parseInt(debt.gracePeriod) || 0;
-          const graceEndYear = debt.startYear + gracePeriod - 1; // 거치기간 마지막 년도
-          const repaymentYears = debt.endYear - graceEndYear; // 상환기간 = 종료년도 - 거치기간종료년도
+          const gracePeriod = parseInt(debt.gracePeriod, 10) || 0;
+          const graceEndYear = debtStartYear + gracePeriod - 1; // 거치기간 마지막 년도
+          const repaymentYears = debtEndYear - graceEndYear; // 상환기간 = 종료년도 - 거치기간종료년도
 
           if (year <= graceEndYear) {
             // 거치기간: 이자만 지불 (거치기간 마지막 년도까지 포함)
@@ -210,7 +251,7 @@ export function calculateCashflowSimulation(
                 amount: yearlyInterest,
               });
             }
-          } else if (year > graceEndYear && year <= debt.endYear) {
+          } else if (year > graceEndYear && year <= debtEndYear && repaymentYears > 0) {
             // 상환기간: 원금을 균등하게 상환 + 남은 원금의 이자
             const yearlyPrincipalPayment = principal / repaymentYears;
             const repaymentYearsElapsed = year - graceEndYear; // 상환 시작 후 경과년수 (1부터 시작)
@@ -476,7 +517,7 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 현금흐름 = 소득 - 지출 - 저축 + 연금 + 임대소득 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 - 부채이자 - 부채원금상환 - 자산구매 - 부동산구매 (각 년도별 순현금흐름)
+    // 현금흐름 = 소득 - 지출 - 저축 + 연금 + 임대소득 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 + 대출 현금 유입 - 부채이자 - 부채원금상환 - 자산구매 - 부동산구매 (각 년도별 순현금흐름)
     const netCashflow =
       totalIncome -
       totalExpense -
@@ -487,6 +528,7 @@ export function calculateCashflowSimulation(
       totalAssetIncome +
       totalRealEstateSale +
       totalAssetSale +
+      totalDebtInjection +
       totalSavingMaturity -
       totalDebtInterest -
       totalDebtPrincipal -
@@ -506,6 +548,7 @@ export function calculateCashflowSimulation(
       assetIncome: totalAssetIncome,
       realEstateSale: totalRealEstateSale,
       assetSale: totalAssetSale,
+      debtInjection: totalDebtInjection,
       savingMaturity: totalSavingMaturity,
       savingMaturities: savingMaturities, // 저축 만료 상세 정보
       debtInterest: totalDebtInterest,
@@ -515,6 +558,7 @@ export function calculateCashflowSimulation(
       // 구매와 매각 상세 정보 추가
       assetPurchases: assetPurchases,
       realEstatePurchases: realEstatePurchases,
+      debtInjections: debtInjections,
       assetSales: assetSales,
       realEstateSales: realEstateSales,
     });

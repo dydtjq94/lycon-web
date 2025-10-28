@@ -393,6 +393,7 @@ function RechartsCashflowChart({
     realEstatePurchases: item.realEstatePurchases || [],
     assetSales: item.assetSales || [],
     realEstateSales: item.realEstateSales || [],
+    debtInjections: item.debtInjections || [],
     debtInterests: item.debtInterests || [],
     debtPrincipals: item.debtPrincipals || [],
     // 이벤트 정보 추가
@@ -556,7 +557,8 @@ function RechartsCashflowChart({
                   (yearData.assetIncome || 0) +
                   (yearData.realEstateSale || 0) +
                   (yearData.assetSale || 0) +
-                  (yearData.savingMaturity || 0);
+                  (yearData.savingMaturity || 0) +
+                  (yearData.debtInjection || 0);
                 const totalExpense =
                   yearData.expense +
                   totalPensionExpense +
@@ -939,6 +941,23 @@ function RechartsCashflowChart({
                               value: purchase.amount,
                               type: "negative",
                             });
+                          });
+                        }
+
+                        // 대출 실행으로 유입된 현금
+                        if (
+                          data.debtInjections &&
+                          data.debtInjections.length > 0
+                        ) {
+                          data.debtInjections.forEach((injection, index) => {
+                            if (injection.amount > 0) {
+                              allItems.push({
+                                key: `debtInjection-${index}`,
+                                label: `${injection.title} (대출 유입)`,
+                                value: injection.amount,
+                                type: "positive",
+                              });
+                            }
                           });
                         }
 

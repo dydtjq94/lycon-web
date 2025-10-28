@@ -30,6 +30,7 @@ function DebtModal({
     interestRate: "3.5", // 이자율 3.5%
     gracePeriod: 5, // 거치기간 (년) - 기본값 5년
     memo: "",
+    addCashToFlow: false,
   });
 
   const [errors, setErrors] = useState({});
@@ -56,6 +57,7 @@ function DebtModal({
             : "3.5",
           gracePeriod: parsedGracePeriod,
           memo: editData.memo || "",
+          addCashToFlow: !!editData.addCashToFlow,
         });
       } else {
         // 새 데이터일 때 초기화
@@ -68,6 +70,7 @@ function DebtModal({
           interestRate: "3.5",
           gracePeriod: 5, // 거치식 상환의 기본값을 5년으로 설정
           memo: "",
+          addCashToFlow: false,
         });
       }
     }
@@ -144,6 +147,7 @@ function DebtModal({
       endYear: parseInt(formData.endYear, 10),
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
       gracePeriod: parseInt(formData.gracePeriod, 10), // 10진수로 명확하게 변환
+      addCashToFlow: !!formData.addCashToFlow,
     };
 
     onSave(debtData);
@@ -161,6 +165,7 @@ function DebtModal({
       interestRate: "3.5",
       gracePeriod: 0,
       memo: "",
+      addCashToFlow: false,
     });
     setErrors({});
     onClose();
@@ -269,6 +274,21 @@ function DebtModal({
               {errors.debtAmount && (
                 <span className={styles.errorText}>{errors.debtAmount}</span>
               )}
+              <label className={styles.checkboxRow} htmlFor="addCashToFlow">
+                <input
+                  id="addCashToFlow"
+                  type="checkbox"
+                  checked={formData.addCashToFlow}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      addCashToFlow: e.target.checked,
+                    })
+                  }
+                  className={styles.checkboxInput}
+                />
+                <span>현금으로 추가</span>
+              </label>
             </div>
 
             <div className={styles.field}>

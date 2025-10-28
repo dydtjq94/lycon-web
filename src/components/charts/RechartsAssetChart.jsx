@@ -604,6 +604,16 @@ function RechartsAssetChart({
     return { assetSlices, debtSlices };
   }, [assetKeys, distributionEntry]);
 
+  const sortedDistribution = useMemo(() => {
+    const assetSlices = [...distributionSlices.assetSlices].sort(
+      (a, b) => b.value - a.value
+    );
+    const debtSlices = [...distributionSlices.debtSlices].sort(
+      (a, b) => b.value - a.value
+    );
+    return { assetSlices, debtSlices };
+  }, [distributionSlices.assetSlices, distributionSlices.debtSlices]);
+
   const totalAssetValue = useMemo(() => {
     return distributionSlices.assetSlices?.reduce(
       (sum, slice) => sum + slice.value,
@@ -745,7 +755,7 @@ function RechartsAssetChart({
                         };
 
                         items.forEach((entry) => {
-                          const name = entry.name;
+                          const name = entry.displayName || entry.name;
                           const value = entry.value;
 
                           if (name === "현금") {
@@ -778,34 +788,49 @@ function RechartsAssetChart({
                         return categories;
                       };
 
-                      const categorizedItems = categorizeItems(payload);
+                      const tooltipEntries = assetKeys
+                        .map((key) => {
+                          const rawValue = data[key];
+                          const value =
+                            typeof rawValue === "number" ? rawValue : 0;
+                          if (!value) return null;
+                          return {
+                            key,
+                            value,
+                            displayName: key === "현금 자산" ? "현금" : key,
+                          };
+                        })
+                        .filter(Boolean);
+
+                      const categorizedItems = categorizeItems(tooltipEntries);
                       // 바 차트와 동일한 순서로 정렬 (아래부터 위로 쌓이는 순서)
                       const sortedItems = [
-                        ...categorizedItems.자산.reverse(), // 바 차트에서 중간 - 순서 반대
-                        ...categorizedItems.연금.reverse(), // 바 차트에서 중간 - 순서 반대
-                        ...categorizedItems.현금.reverse(), // 바 차트에서 가장 아래 (툴팁에서 가장 위) - 순서 반대
+                        ...[...categorizedItems.자산].reverse(), // 바 차트에서 중간 - 순서 반대
+                        ...[...categorizedItems.연금].reverse(), // 바 차트에서 중간 - 순서 반대
+                        ...[...categorizedItems.현금].reverse(), // 바 차트에서 가장 아래 (툴팁에서 가장 위) - 순서 반대
                         ...categorizedItems.부채, // 바 차트에서 가장 위 (툴팁에서 가장 아래) - 순서 유지
                       ];
 
-                      return sortedItems.map((entry, index) => {
-                        // 바 차트와 동일한 색상 사용 - entry의 value도 함께 전달
-                        const itemColor = getAssetColor(
-                          entry.name,
-                          entry.value
-                        );
+                        return sortedItems.map((entry, index) => {
+                          // 바 차트와 동일한 색상 사용 - entry의 value도 함께 전달
+                          const colorKey = entry.key || entry.displayName;
+                          const itemColor = getAssetColor(
+                            colorKey,
+                            entry.value
+                          );
 
-                        return (
-                          <div key={index} className={styles.tooltipItem}>
-                            <span
-                              className={styles.tooltipLabel}
-                              style={{ color: itemColor }}
-                            >
-                              {entry.name}:
-                            </span>
-                            <span className={styles.tooltipValue}>
-                              {formatAmountForChart(entry.value)}
-                            </span>
-                          </div>
+                          return (
+                            <div key={index} className={styles.tooltipItem}>
+                              <span
+                                className={styles.tooltipLabel}
+                                style={{ color: itemColor }}
+                              >
+                                {(entry.displayName || entry.name) + ":"}
+                              </span>
+                              <span className={styles.tooltipValue}>
+                                {formatAmountForChart(entry.value)}
+                              </span>
+                            </div>
                         );
                       });
                     })()}
@@ -921,6 +946,7 @@ function RechartsAssetChart({
           fill="#10b981"
           stroke="#ffffff"
           strokeWidth={1}
+          className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data, index) => handleBarSegmentClick(data, isZoomedView)}
         >
           {chartData.map((entry, entryIndex) => {
@@ -948,6 +974,7 @@ function RechartsAssetChart({
             fill="#10b981"
             stroke="#ffffff"
             strokeWidth={1}
+            className={!isZoomedView ? styles.clickableBar : undefined}
             onClick={(data, index) => handleBarSegmentClick(data, isZoomedView)}
           >
             {chartData.map((entry, entryIndex) => {
@@ -1011,6 +1038,7 @@ function RechartsAssetChart({
                 name={key === "현금 자산" ? "현금" : key}
                 stroke="#ffffff"
                 strokeWidth={1}
+                className={!isZoomedView ? styles.clickableBar : undefined}
                 onClick={(data, barIndex) =>
                   handleBarSegmentClick(data, isZoomedView)
                 }
@@ -1166,7 +1194,7 @@ function RechartsAssetChart({
               <>
                 <div className={styles.distributionSection}>
                   <h4>자산</h4>
-                  {distributionSlices.assetSlices.length === 0 ? (
+                  {sortedDistribution.assetSlices.length === 0 ? (
                     <div className={styles.noDistributionData}>
                       자산 데이터 없음
                     </div>
@@ -1175,14 +1203,14 @@ function RechartsAssetChart({
                       <ResponsiveContainer width="100%" height={320}>
                         <PieChart>
                           <Pie
-                            data={distributionSlices.assetSlices}
+                            data={sortedDistribution.assetSlices}
                             dataKey="value"
                             nameKey="name"
                             innerRadius={50}
                             outerRadius={120}
                             paddingAngle={2}
                           >
-                            {distributionSlices.assetSlices.map(
+                            {sortedDistribution.assetSlices.map(
                               (slice, index) => (
                                 <Cell
                                   key={`distribution-asset-slice-${slice.name}-${index}`}
@@ -1195,11 +1223,9 @@ function RechartsAssetChart({
                       </ResponsiveContainer>
                     </div>
                   )}
-                  {distributionSlices.assetSlices.length > 0 && (
+                  {sortedDistribution.assetSlices.length > 0 && (
                     <div className={styles.distributionList}>
-                      {distributionSlices.assetSlices
-                        .sort((a, b) => b.value - a.value)
-                        .map((slice) => {
+                      {sortedDistribution.assetSlices.map((slice) => {
                           const percent =
                             totalAssetValue > 0
                               ? ((slice.value / totalAssetValue) * 100).toFixed(
@@ -1234,7 +1260,7 @@ function RechartsAssetChart({
                 </div>
                 <div className={styles.distributionSection}>
                   <h4>부채</h4>
-                  {distributionSlices.debtSlices.length === 0 ? (
+                  {sortedDistribution.debtSlices.length === 0 ? (
                     <div className={styles.noDistributionData}>
                       부채 데이터 없음
                     </div>
@@ -1243,14 +1269,14 @@ function RechartsAssetChart({
                       <ResponsiveContainer width="100%" height={320}>
                         <PieChart>
                           <Pie
-                            data={distributionSlices.debtSlices}
+                            data={sortedDistribution.debtSlices}
                             dataKey="value"
                             nameKey="name"
                             innerRadius={50}
                             outerRadius={120}
                             paddingAngle={2}
                           >
-                            {distributionSlices.debtSlices.map(
+                            {sortedDistribution.debtSlices.map(
                               (slice, index) => (
                                 <Cell
                                   key={`distribution-debt-slice-${slice.name}-${index}`}
@@ -1263,11 +1289,9 @@ function RechartsAssetChart({
                       </ResponsiveContainer>
                     </div>
                   )}
-                  {distributionSlices.debtSlices.length > 0 && (
+                  {sortedDistribution.debtSlices.length > 0 && (
                     <div className={styles.distributionList}>
-                      {distributionSlices.debtSlices
-                        .sort((a, b) => b.value - a.value)
-                        .map((slice) => {
+                      {sortedDistribution.debtSlices.map((slice) => {
                           const percent =
                             totalDebtValue > 0
                               ? ((slice.value / totalDebtValue) * 100).toFixed(
