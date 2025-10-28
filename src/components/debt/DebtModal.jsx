@@ -52,7 +52,7 @@ function DebtModal({
             parseInt(editData.startYear, 10) || new Date().getFullYear(),
           endYear: parseInt(editData.endYear, 10) || getRetirementYear(),
           interestRate: editData.interestRate
-            ? (editData.interestRate * 100).toString()
+            ? (editData.interestRate * 100).toFixed(2)
             : "3.5",
           gracePeriod: parsedGracePeriod,
           memo: editData.memo || "",

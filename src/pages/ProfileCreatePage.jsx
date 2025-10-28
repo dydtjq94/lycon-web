@@ -7,9 +7,11 @@ import {
   expenseService,
   pensionService,
   realEstateService,
+  checklistService,
 } from "../services/firestoreService";
 import { simulationService } from "../services/simulationService";
 import { formatAmountForChart } from "../utils/format";
+import { buildChecklistTemplateItems } from "../constants/profileChecklist";
 import styles from "./ProfileCreatePage.module.css";
 
 /**
@@ -372,6 +374,15 @@ function ProfileCreatePage() {
       console.log("프로필 데이터 전송:", profileData);
       const createdProfile = await profileService.createProfile(profileData);
       console.log("생성된 프로필:", createdProfile);
+
+      try {
+        await checklistService.createChecklist(createdProfile.id, {
+          title: "상담 체크리스트",
+          items: buildChecklistTemplateItems(),
+        });
+      } catch (error) {
+        console.error("기본 상담 체크리스트 생성 오류:", error);
+      }
 
       // 기본 시뮬레이션("현재") 생성
       let defaultSimulationId;

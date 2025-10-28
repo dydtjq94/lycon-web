@@ -1135,3 +1135,84 @@ export const debtService = {
     }
   },
 };
+
+// 체크리스트 서비스 (프로필 단위 저장)
+export const checklistService = {
+  // 체크리스트 생성
+  async createChecklist(profileId, checklistData) {
+    try {
+      const docRef = await addDoc(
+        collection(db, "profiles", profileId, "checklists"),
+        {
+          ...checklistData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      );
+      return { id: docRef.id, ...checklistData };
+    } catch (error) {
+      console.error("체크리스트 생성 오류:", error);
+      throw error;
+    }
+  },
+
+  // 체크리스트 조회 (전체)
+  async getChecklists(profileId) {
+    try {
+      const querySnapshot = await getDocs(
+        query(
+          collection(db, "profiles", profileId, "checklists"),
+          orderBy("createdAt", "asc")
+        )
+      );
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("체크리스트 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 체크리스트 조회 (단일)
+  async getChecklist(profileId, checklistId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "checklists", checklistId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error("체크리스트 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 체크리스트 업데이트
+  async updateChecklist(profileId, checklistId, updateData) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "checklists", checklistId);
+      await updateDoc(docRef, {
+        ...updateData,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("체크리스트 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  // 체크리스트 삭제
+  async deleteChecklist(profileId, checklistId) {
+    try {
+      const docRef = doc(db, "profiles", profileId, "checklists", checklistId);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("체크리스트 삭제 오류:", error);
+      throw error;
+    }
+  },
+};

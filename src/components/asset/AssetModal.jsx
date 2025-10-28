@@ -31,14 +31,14 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
           currentValue: editData.currentValue || "",
           growthRate:
             editData.growthRate !== undefined
-              ? (editData.growthRate * 100).toString()
+              ? (editData.growthRate * 100).toFixed(2)
               : "2.86",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || "",
           assetType: editData.assetType || "general",
           incomeRate:
             editData.incomeRate !== undefined
-              ? (editData.incomeRate * 100).toString()
+              ? (editData.incomeRate * 100).toFixed(2)
               : "3",
           memo: editData.memo || "",
           isPurchase: editData.isPurchase || false,
@@ -107,7 +107,11 @@ function AssetModal({ isOpen, onClose, onSave, editData, profileData }) {
 
     if (formData.assetType === "income") {
       const incomeRateNum = parseFloat(formData.incomeRate);
-      if (isNaN(incomeRateNum) || incomeRateNum < -100 || incomeRateNum > 1000) {
+      if (
+        isNaN(incomeRateNum) ||
+        incomeRateNum < -100 ||
+        incomeRateNum > 1000
+      ) {
         newErrors.incomeRate = "수익률은 -100%와 1000% 사이의 숫자여야 합니다.";
       }
     }

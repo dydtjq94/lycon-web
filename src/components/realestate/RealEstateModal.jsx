@@ -38,7 +38,7 @@ const RealEstateModal = ({
           title: editData.title || "",
           currentValue: editData.currentValue || "",
           growthRate: editData.growthRate
-            ? editData.growthRate.toString()
+            ? editData.growthRate.toFixed(2)
             : "2.4",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 30,

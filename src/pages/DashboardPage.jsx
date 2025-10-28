@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { calculateKoreanAge, getKoreanAgeInYear } from "../utils/koreanAge";
 import { formatAmount } from "../utils/format";
@@ -16,6 +16,7 @@ import {
   realEstateService,
   assetService,
   debtService,
+  checklistService,
 } from "../services/firestoreService";
 import { simulationService } from "../services/simulationService";
 import { migrateProfileData } from "../utils/dataMigration";
@@ -40,6 +41,8 @@ import ProfileEditModal from "../components/profile/ProfileEditModal";
 import ProfileSummary from "../components/profile/ProfileSummary";
 import CalculatorModal from "../components/common/CalculatorModal";
 import SimulationCompareModal from "../components/simulation/SimulationCompareModal";
+import ProfileChecklistPanel from "../components/checklist/ProfileChecklistPanel";
+import { normalizeChecklistItems } from "../constants/profileChecklist";
 import styles from "./DashboardPage.module.css";
 
 /**
@@ -69,6 +72,10 @@ function DashboardPage() {
   const [profilePanelTab, setProfilePanelTab] = useState("memo");
   const [profileMemo, setProfileMemo] = useState("");
   const [isProfileMemoSaving, setIsProfileMemoSaving] = useState(false);
+  const [profileChecklist, setProfileChecklist] = useState(null);
+  const [isChecklistLoading, setIsChecklistLoading] = useState(false);
+  const [isChecklistSaving, setIsChecklistSaving] = useState(false);
+  const checklistIdRef = useRef(null);
   const fetchSimulationFinancialData = useCallback(
     async (simulationId) => {
       if (!profileId || !simulationId) return null;
@@ -110,6 +117,39 @@ function DashboardPage() {
     },
     [profileId]
   );
+
+  const loadProfileChecklist = useCallback(async () => {
+    if (!profileId) return;
+    setIsChecklistLoading(true);
+    try {
+      const checklists = await checklistService.getChecklists(profileId);
+      if (!checklists || checklists.length === 0) {
+        checklistIdRef.current = null;
+        setProfileChecklist({
+          id: null,
+          title: "상담 체크리스트",
+          items: [],
+        });
+        return;
+      }
+
+      const first = {
+        ...checklists[0],
+      };
+      const normalizedItems = normalizeChecklistItems(first.items || []);
+      checklistIdRef.current = first.id;
+      setProfileChecklist({
+        id: first.id,
+        title: first.title || "상담 체크리스트",
+        items: normalizedItems,
+      });
+    } catch (error) {
+      console.error("상담 체크리스트 로드 오류:", error);
+      alert("상담 체크리스트를 불러오는 중 오류가 발생했습니다.");
+    } finally {
+      setIsChecklistLoading(false);
+    }
+  }, [profileId]);
 
   const [incomes, setIncomes] = useState([]);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
@@ -185,6 +225,17 @@ function DashboardPage() {
       isMounted = false;
     };
   }, [profileId, navigate]);
+
+  useEffect(() => {
+    if (!profileId) {
+      setProfileChecklist(null);
+      checklistIdRef.current = null;
+      return;
+    }
+    checklistIdRef.current = null;
+    setProfileChecklist(null);
+    loadProfileChecklist();
+  }, [profileId, loadProfileChecklist]);
 
   // 시뮬레이션 목록 로드 및 자동 마이그레이션
   useEffect(() => {
@@ -1033,6 +1084,59 @@ function DashboardPage() {
     }
   };
 
+  const handleChecklistItemsChange = useCallback(
+    async (nextItems, { persist }) => {
+      setProfileChecklist((prev) => {
+        if (prev) {
+          return { ...prev, items: nextItems };
+        }
+        if (checklistIdRef.current) {
+          return {
+            id: checklistIdRef.current,
+            title: "상담 체크리스트",
+            items: nextItems,
+          };
+        }
+        return prev;
+      });
+
+      if (persist && profileId) {
+        try {
+          setIsChecklistSaving(true);
+          if (!checklistIdRef.current) {
+            const created = await checklistService.createChecklist(
+              profileId,
+              {
+                title: "상담 체크리스트",
+                items: nextItems,
+              }
+            );
+            checklistIdRef.current = created.id;
+            setProfileChecklist((prev) => ({
+              id: created.id,
+              title: created.title || "상담 체크리스트",
+              items: nextItems,
+            }));
+          } else {
+            await checklistService.updateChecklist(
+              profileId,
+              checklistIdRef.current,
+              {
+                items: nextItems,
+              }
+            );
+          }
+        } catch (error) {
+          console.error("상담 체크리스트 저장 오류:", error);
+          alert("상담 체크리스트 저장 중 오류가 발생했습니다.");
+        } finally {
+          setIsChecklistSaving(false);
+        }
+      }
+    },
+    [profileId]
+  );
+
   const handleOpenCompareModal = async () => {
     const defaultSimulation = simulations.find((sim) => sim.isDefault);
     if (!defaultSimulation) {
@@ -1792,10 +1896,13 @@ ${JSON.stringify(analysisData, null, 2)}`;
               isSaving={isProfileMemoSaving}
             />
           ) : (
-            <div className={styles.checklistPlaceholder}>
-              <p>상담 체크리스트를 준비 중입니다.</p>
-              <p>필요한 항목들을 곧 추가할 예정이에요.</p>
-            </div>
+            <ProfileChecklistPanel
+              items={profileChecklist?.items || []}
+              onItemsChange={handleChecklistItemsChange}
+              isLoading={isChecklistLoading}
+              isSaving={isChecklistSaving}
+              disabled={isChecklistSaving}
+            />
           )}
         </div>
       </div>

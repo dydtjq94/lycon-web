@@ -610,7 +610,7 @@
   position: fixed;
   top: 0;
   right: -420px;
-  width: 360px;
+  width: 400px;
   height: 100vh;
   background: #ffffff;
   box-shadow: -10px 0 30px rgba(15, 23, 42, 0.2);
@@ -634,23 +634,29 @@
 
 .profileSidePanelTabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
+  align-items: flex-end;
 }
 
 .panelTab {
   border: none;
-  background: #f3f4f6;
-  color: #4b5563;
-  padding: 0.35rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.85rem;
+  background: transparent;
+  color: #6b7280;
+  padding: 0 0 0.3rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 .panelTab.active {
-  background: #111827;
-  color: #ffffff;
+  color: #111827;
+  border-color: #111827;
+  font-weight: 600;
+}
+
+.panelTab:hover {
+  color: #374151;
 }
 
 .profilePanelClose {
@@ -716,16 +722,6 @@
 .profileMemoSaveButton:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.checklistPlaceholder {
-  padding: 1rem;
-  border: 1px dashed #d1d5db;
-  border-radius: 12px;
-  background: #f9fafb;
-  color: #6b7280;
-  font-size: 0.9rem;
-  line-height: 1.5;
 }
 
 /* 리스트 헤더 아이콘 버튼들 */

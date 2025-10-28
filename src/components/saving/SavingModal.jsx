@@ -49,10 +49,10 @@ function SavingModal({
           endYear: parseInt(editData.endYear) || getRetirementYear(),
           memo: editData.memo || "",
           interestRate: editData.interestRate
-            ? (editData.interestRate * 100).toString()
+            ? (editData.interestRate * 100).toFixed(2)
             : "2.86",
           yearlyGrowthRate: editData.yearlyGrowthRate
-            ? (editData.yearlyGrowthRate * 100).toString()
+            ? (editData.yearlyGrowthRate * 100).toFixed(2)
             : "1.89",
         });
       } else {

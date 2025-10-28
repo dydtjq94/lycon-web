@@ -92,6 +92,9 @@ function PensionModal({
           monthlyAmount: editData.monthlyAmount || "",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 20,
+          inflationRate: editData.inflationRate
+            ? editData.inflationRate.toFixed(2)
+            : 1.89,
           currentAmount: editData.currentAmount || "",
           contributionAmount: editData.contributionAmount || "",
           contributionFrequency: editData.contributionFrequency || "monthly",
@@ -99,7 +102,9 @@ function PensionModal({
             editData.contributionStartYear || new Date().getFullYear(),
           contributionEndYear:
             editData.contributionEndYear || new Date().getFullYear() + 10,
-          returnRate: editData.returnRate || 2.86,
+          returnRate: editData.returnRate
+            ? editData.returnRate.toFixed(2)
+            : 2.86,
           paymentStartYear:
             editData.paymentStartYear || new Date().getFullYear() + 11,
           paymentEndYear:
