@@ -1001,7 +1001,8 @@ function DashboardPage() {
       default:
         break;
     }
-    setIsFinancialDataModalOpen(false);
+    // 재무 데이터 모달은 열어둠 (수정 모달 위에 표시)
+    // setIsFinancialDataModalOpen(false);
   };
 
   const handleFinancialDataDelete = (category, itemId) => {

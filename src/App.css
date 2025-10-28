@@ -136,15 +136,6 @@ textarea {
   font-family: inherit;
 }
 
-/* 포커스 스타일 */
-button:focus,
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  outline-offset: 2px;
-}
-
 /* App Container */
 .App {
   min-height: 100vh;

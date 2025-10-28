@@ -7,7 +7,7 @@ import PensionList from "../pension/PensionList";
 import RealEstateList from "../realestate/RealEstateList";
 import AssetList from "../asset/AssetList";
 import DebtList from "../debt/DebtList";
-import { formatAmountForChart } from "../../utils/format";
+import { formatAmountForChart, formatAmount } from "../../utils/format";
 
 const categoryConfigs = [
   { key: "incomes", label: "소득", component: IncomeList, propName: "incomes" },
@@ -88,7 +88,13 @@ function FinancialDataModal({
   }, [isOpen, onClose]);
 
   return (
-    <div className={styles.overlay}>
+    <div
+      className={styles.overlay}
+      onClick={(e) => {
+        // overlay를 클릭해도 모달이 닫히지 않도록 함 (X 버튼으로만 닫기)
+        e.stopPropagation();
+      }}
+    >
       <div className={styles.modal}>
         <div className={styles.header}>
           <div>
@@ -135,7 +141,7 @@ function FinancialDataModal({
                 <span className={styles.profileLabel}>목표 자산</span>
                 <span className={styles.profileValue}>
                   {profileData.targetAssets
-                    ? `${profileData.targetAssets.toLocaleString()}만원`
+                    ? formatAmount(profileData.targetAssets)
                     : "미설정"}
                 </span>
               </div>
