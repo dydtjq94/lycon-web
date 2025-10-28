@@ -25,6 +25,7 @@ function SavingModal({
     title: "",
     frequency: "monthly", // monthly, yearly, one_time
     amount: "",
+    currentAmount: "", // 현재 보유 금액
     startYear: new Date().getFullYear(),
     endYear: getRetirementYear(),
     memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
@@ -43,6 +44,7 @@ function SavingModal({
           frequency:
             editData.originalFrequency || editData.frequency || "monthly",
           amount: editData.originalAmount || editData.amount || "",
+          currentAmount: editData.currentAmount || "",
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
           endYear: parseInt(editData.endYear) || getRetirementYear(),
           memo: editData.memo || "",
@@ -59,6 +61,7 @@ function SavingModal({
           title: "",
           frequency: "monthly",
           amount: "",
+          currentAmount: "",
           startYear: new Date().getFullYear(),
           endYear: getRetirementYear(),
           memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
@@ -127,6 +130,9 @@ function SavingModal({
     const savingData = {
       ...formData,
       amount: parseInt(formData.amount),
+      currentAmount: formData.currentAmount
+        ? parseInt(formData.currentAmount)
+        : 0,
       startYear: parseInt(formData.startYear), // 문자열을 숫자로 변환
       endYear: parseInt(formData.endYear), // 문자열을 숫자로 변환
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
@@ -145,6 +151,7 @@ function SavingModal({
       title: "",
       frequency: "monthly",
       amount: "",
+      currentAmount: "",
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
       memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
@@ -235,6 +242,33 @@ function SavingModal({
               {errors.amount && (
                 <span className={styles.errorText}>{errors.amount}</span>
               )}
+            </div>
+          </div>
+
+          {/* 현재 보유 금액 */}
+          <div className={styles.field}>
+            <label htmlFor="currentAmount" className={styles.label}>
+              현재 보유 금액 (만원)
+            </label>
+            <input
+              type="text"
+              id="currentAmount"
+              value={formData.currentAmount}
+              onChange={(e) =>
+                setFormData({ ...formData, currentAmount: e.target.value })
+              }
+              onKeyPress={handleKeyPress}
+              className={styles.input}
+              placeholder="예: 500"
+            />
+            {formData.currentAmount &&
+              !isNaN(parseInt(formData.currentAmount)) && (
+                <div className={styles.amountPreview}>
+                  {formatAmountForChart(parseInt(formData.currentAmount))}
+                </div>
+              )}
+            <div className={styles.helperText}>
+              시작년도 기준 현재 이미 보유하고 있는 금액입니다 (선택사항)
             </div>
           </div>
 

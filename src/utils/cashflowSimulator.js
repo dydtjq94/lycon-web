@@ -570,7 +570,7 @@ export function calculateAssetSimulation(
           : saving.endYear;
 
       savingsById[saving.id] = {
-        amount: 0,
+        amount: saving.currentAmount || 0, // 현재 보유 금액으로 시작
         startYear: startYear,
         endYear: endYear,
         interestRate: saving.interestRate || 0.03, // 이자율 (소수로 저장됨)
@@ -722,7 +722,8 @@ export function calculateAssetSimulation(
         if (saving.frequency === "one_time") {
           // 일회성 저축 (정기예금 등)
           if (year === saving.startYear) {
-            saving.amount = saving.originalAmount;
+            // 현재 보유 금액 + 추가 저축 금액
+            saving.amount = saving.amount + saving.originalAmount;
           } else if (year > saving.startYear) {
             // 시작년도 다음 해부터 만료년도까지 이자율만 적용
             saving.amount *= 1 + interestRate;
@@ -739,8 +740,13 @@ export function calculateAssetSimulation(
             monthlyAmount * Math.pow(1 + yearlyGrowthRate, yearsElapsed);
           const yearlyAmount = adjustedMonthlyAmount * 12;
 
-          // 작년 자산에 이자율 적용 + 올해 저축 추가
-          saving.amount = saving.amount * (1 + interestRate) + yearlyAmount;
+          if (year === saving.startYear) {
+            // 첫 해: 현재 보유 금액 + 올해 저축만 추가 (이자율 미적용)
+            saving.amount = saving.amount + yearlyAmount;
+          } else {
+            // 작년 자산에 이자율 적용 + 올해 저축 추가
+            saving.amount = saving.amount * (1 + interestRate) + yearlyAmount;
+          }
         }
       } else if (year > saving.endYear + 1) {
         // endYear + 1 이후: 이미 비활성화된 저축은 건너뛰기
