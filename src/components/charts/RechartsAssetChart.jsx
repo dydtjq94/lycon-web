@@ -462,16 +462,16 @@ function RechartsAssetChart({
       (sampleData && sampleData[assetName] < 0)
     ) {
       const debtColors = [
-        "#fca5a5",
-        "#f97316",
-        "#dc2626",
-        "#e53e3e",
-        "#e11d48",
-        "#f43f5e",
-        "#d97706",
-        "#a16207",
-        "#fbbf24",
-        "#b45309",
+        "#111827",
+        "#1f2937",
+        "#374151",
+        "#4b5563",
+        "#6b7280",
+        "#9ca3af",
+        "#d1d5db",
+        "#0f172a",
+        "#312e81",
+        "#0b1120",
       ];
       const hash = assetName.split("").reduce((a, b) => {
         a = (a << 5) - a + b.charCodeAt(0);
