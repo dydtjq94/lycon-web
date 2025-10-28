@@ -626,7 +626,7 @@ function RechartsAssetChart({
   };
 
   // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
-  const renderChart = (height = 500, isZoomedView = false) => (
+  const renderChart = (height = 600, isZoomedView = false) => (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
@@ -635,7 +635,7 @@ function RechartsAssetChart({
           top: 20,
           right: 30,
           left: 40,
-          bottom: 60,
+          bottom: 120,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -1122,17 +1122,6 @@ function RechartsAssetChart({
                     <path d="M21 21l-4.35-4.35" />
                   </svg>
                 </button>
-              </div>
-              <div className={styles.chartLegend}>
-                {legendData.map((item, index) => (
-                  <div key={index} className={styles.legendItem}>
-                    <div
-                      className={styles.legendColor}
-                      style={{ backgroundColor: item.color }}
-                    ></div>
-                    <span className={styles.legendText}>{item.value}</span>
-                  </div>
-                ))}
               </div>
             </div>
             <div className={styles.chartWrapper}>{renderChart()}</div>

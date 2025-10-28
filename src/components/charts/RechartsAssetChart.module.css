@@ -69,8 +69,12 @@
 .chartLegend {
   display: flex;
   gap: 1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* 줄바꿈 방지 */
   align-items: center;
+  overflow-x: auto; /* 가로 스크롤 활성화 */
+  overflow-y: hidden;
+  max-width: 100%; /* 컨테이너 최대 너비 */
+  -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
 }
 
 .legendItem {
@@ -115,8 +119,10 @@
 
   .chartLegend {
     align-self: flex-end;
-    flex-direction: column;
-    gap: 0.5rem;
+    /* 모바일에서도 가로 스크롤 유지 */
+    flex-direction: row;
+    gap: 1rem;
+    max-width: 100%;
   }
 
   .chartWrapper {
@@ -264,10 +270,6 @@
 }
 
 /* 이벤트 스타일 */
-.tooltipEvents {
-  /* margin-top: 12px;
-  padding-top: 12px; */
-}
 
 .tooltipEventHeader {
   margin-bottom: 8px;
@@ -296,7 +298,6 @@
 .customTooltip[data-zoomed="true"] .tooltipEventText {
   font-size: 14px;
 }
-
 
 .distributionModalContent {
   display: flex;

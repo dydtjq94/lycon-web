@@ -421,7 +421,7 @@ function RechartsCashflowChart({
   }
 
   // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
-  const renderChart = (height = 500, isZoomedView = false) => (
+  const renderChart = (height = 600, isZoomedView = false) => (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
@@ -429,7 +429,7 @@ function RechartsCashflowChart({
           top: 20,
           right: 30,
           left: 40,
-          bottom: 60,
+          bottom: 120,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
