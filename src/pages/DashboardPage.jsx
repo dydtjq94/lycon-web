@@ -39,6 +39,7 @@ import DebtModal from "../components/debt/DebtModal";
 import DebtList from "../components/debt/DebtList";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
 import ProfileSummary from "../components/profile/ProfileSummary";
+import FinancialDataModal from "../components/profile/FinancialDataModal";
 import CalculatorModal from "../components/common/CalculatorModal";
 import SimulationCompareModal from "../components/simulation/SimulationCompareModal";
 import ProfileChecklistPanel from "../components/checklist/ProfileChecklistPanel";
@@ -174,6 +175,8 @@ function DashboardPage() {
   const [editingDebt, setEditingDebt] = useState(null);
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
+  const [isFinancialDataModalOpen, setIsFinancialDataModalOpen] =
+    useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // 사이드바 접기/펼치기 상태
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
@@ -955,7 +958,80 @@ function DashboardPage() {
     }
   };
 
-  // ProfileSummary에서 항목 클릭 시 해당 수정 모달 열기
+  // 재무 데이터 모달 핸들러
+  const handleOpenFinancialModal = () => {
+    setIsFinancialDataModalOpen(true);
+  };
+
+  const handleCloseFinancialModal = () => {
+    setIsFinancialDataModalOpen(false);
+  };
+
+  const handleFinancialDataEdit = (category, item) => {
+    // 기존 편집 핸들러들을 재사용
+    switch (category) {
+      case "incomes":
+        setEditingIncome(item);
+        setIsIncomeModalOpen(true);
+        break;
+      case "expenses":
+        setEditingExpense(item);
+        setIsExpenseModalOpen(true);
+        break;
+      case "savings":
+        setEditingSaving(item);
+        setIsSavingModalOpen(true);
+        break;
+      case "pensions":
+        setEditingPension(item);
+        setIsPensionModalOpen(true);
+        break;
+      case "realEstates":
+        setEditingRealEstate(item);
+        setIsRealEstateModalOpen(true);
+        break;
+      case "assets":
+        setEditingAsset(item);
+        setIsAssetModalOpen(true);
+        break;
+      case "debts":
+        setEditingDebt(item);
+        setIsDebtModalOpen(true);
+        break;
+      default:
+        break;
+    }
+    setIsFinancialDataModalOpen(false);
+  };
+
+  const handleFinancialDataDelete = (category, itemId) => {
+    // 기존 삭제 핸들러들을 재사용
+    switch (category) {
+      case "incomes":
+        handleDeleteIncome(itemId);
+        break;
+      case "expenses":
+        handleDeleteExpense(itemId);
+        break;
+      case "savings":
+        handleDeleteSaving(itemId);
+        break;
+      case "pensions":
+        handleDeletePension(itemId);
+        break;
+      case "realEstates":
+        handleDeleteRealEstate(itemId);
+        break;
+      case "assets":
+        handleDeleteAsset(itemId);
+        break;
+      case "debts":
+        handleDeleteDebt(itemId);
+        break;
+      default:
+        break;
+    }
+  };
   const handleProfileSummaryItemClick = (type, item) => {
     switch (type) {
       case "income":
@@ -1104,13 +1180,10 @@ function DashboardPage() {
         try {
           setIsChecklistSaving(true);
           if (!checklistIdRef.current) {
-            const created = await checklistService.createChecklist(
-              profileId,
-              {
-                title: "상담 체크리스트",
-                items: nextItems,
-              }
-            );
+            const created = await checklistService.createChecklist(profileId, {
+              title: "상담 체크리스트",
+              items: nextItems,
+            });
             checklistIdRef.current = created.id;
             setProfileChecklist((prev) => ({
               id: created.id,
@@ -1658,6 +1731,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
           debts={debts}
           onItemClick={handleProfileSummaryItemClick}
           onDelete={handleProfileSummaryDelete}
+          onOpenFinancialModal={handleOpenFinancialModal}
           isLoading={isFinancialDataLoading}
         />
       </div>
@@ -1981,6 +2055,26 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={() => setIsCalculatorModalOpen(false)}
         profileData={profileData}
       />
+
+      {/* 재무 데이터 모달 */}
+      <FinancialDataModal
+        isOpen={isFinancialDataModalOpen}
+        onClose={handleCloseFinancialModal}
+        isLoading={isFinancialDataLoading}
+        profileData={profileData}
+        financialData={{
+          incomes,
+          expenses,
+          savings,
+          pensions,
+          realEstates,
+          assets,
+          debts,
+        }}
+        onEdit={handleFinancialDataEdit}
+        onDelete={handleFinancialDataDelete}
+      />
+
       <SimulationCompareModal
         isOpen={isCompareModalOpen}
         onClose={() => setIsCompareModalOpen(false)}

@@ -15,6 +15,7 @@ function ProfileSummary({
   debts = [],
   onItemClick,
   onDelete,
+  onOpenFinancialModal,
   isLoading = false,
 }) {
   // 모든 재무 항목을 하나의 배열로 합치기
@@ -59,6 +60,28 @@ function ProfileSummary({
   return (
     <div className={styles.profileSummary}>
       <div className={styles.scrollContainer}>
+        {/* 재무 데이터 모달 버튼 */}
+        <button
+          className={styles.financialModalButton}
+          onClick={onOpenFinancialModal}
+          title="재무 데이터 전체 보기"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+            <line x1="15" y1="3" x2="15" y2="21" />
+          </svg>
+        </button>
+
         {allFinanceItems.map((item) => (
           <div
             key={`${item.category}-${item.id}`}
