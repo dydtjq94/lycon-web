@@ -616,15 +616,18 @@ export function calculateAssetSimulation(
         ? parseInt(realEstate.endYear)
         : realEstate.endYear;
 
+    const initialRealEstateValue = realEstate.currentValue || 0;
     realEstatesByTitle[realEstate.title] = {
-      amount: realEstate.currentValue, // 현재 가치로 시작
+      amount: initialRealEstateValue, // 현재 가치로 시작
       startYear: startYear,
       endYear: endYear,
       growthRate: realEstate.growthRate || 2.5, // 백분율 그대로 사용
       convertToPension: realEstate.convertToPension || false,
       pensionStartYear: realEstate.pensionStartYear,
       monthlyPensionAmount: realEstate.monthlyPensionAmount,
-      isActive: true,
+      isPurchase: realEstate.isPurchase || false, // 구매 여부 저장
+      isActive: false, // 초기에는 비활성화 (startYear에 활성화)
+      _initialValue: initialRealEstateValue, // 초기값 저장
     };
   });
 
@@ -649,6 +652,7 @@ export function calculateAssetSimulation(
       growthRate: asset.growthRate || 0, // 이미 소수로 저장됨 (예: 0.0286)
       assetType: asset.assetType || "general", // "general" 또는 "income"
       incomeRate: asset.incomeRate || 0, // 수익형 자산의 수익률
+      isPurchase: asset.isPurchase || false, // 구매 여부 저장
       isActive: true,
       _initialValue: initialValue, // 초기값 저장
     };
@@ -793,14 +797,15 @@ export function calculateAssetSimulation(
       if (year < realEstate.startYear) {
         // 보유 시작 전: 부동산 비활성화
         realEstate.isActive = false;
-      } else if (
-        year >= realEstate.startYear &&
-        year <= realEstate.endYear &&
-        realEstate.isActive
-      ) {
+        realEstate.amount = 0;
+      } else if (year >= realEstate.startYear && year <= realEstate.endYear) {
+        // 보유 기간 중: 부동산 활성화
+        realEstate.isActive = true;
+
         if (year === realEstate.startYear) {
           // 첫 해: 현재 가치로 시작
-          realEstate.amount = realEstate.amount;
+          realEstate.amount =
+            realEstate._initialValue || realEstate.amount || 0;
         } else {
           // 주택연금 수령 중이 아닌 경우에만 상승률 적용
           const isPensionActive =
@@ -828,14 +833,13 @@ export function calculateAssetSimulation(
           }
         }
       } else if (year === realEstate.endYear + 1) {
-        // 보유 종료 다음 해: 부동산 자산을 비활성화 (현금흐름 시뮬레이션에서만 처리)
-        if (realEstate.isActive && realEstate.amount > 0) {
-          realEstate.amount = 0;
-        }
+        // 보유 종료 다음 해: 부동산 자산을 비활성화
         realEstate.isActive = false;
+        realEstate.amount = 0;
       } else if (year > realEstate.endYear + 1) {
         // 보유 종료 이후: 부동산 비활성화
         realEstate.isActive = false;
+        realEstate.amount = 0;
       }
     });
 
