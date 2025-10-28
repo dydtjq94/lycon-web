@@ -45,9 +45,10 @@ function IncomeModal({
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || getRetirementYear(),
           memo: editData.memo || "",
-          growthRate: editData.growthRate
-            ? editData.growthRate.toString()
-            : "3.3",
+          growthRate:
+            editData.growthRate !== undefined
+              ? editData.growthRate.toString()
+              : "",
         });
       } else {
         // 새 데이터일 때 초기화
@@ -58,7 +59,7 @@ function IncomeModal({
           startYear: new Date().getFullYear(),
           endYear: getRetirementYear(),
           memo: "2014년부터 2024년까지의 10년간 평균",
-          growthRate: "3.3",
+          growthRate: "",
         });
       }
     }
@@ -97,10 +98,15 @@ function IncomeModal({
       newErrors.endYear = "종료년도는 시작년도보다 늦어야 합니다.";
     }
 
-    const growthRateNum = parseFloat(formData.growthRate);
-    if (isNaN(growthRateNum) || growthRateNum < -100 || growthRateNum > 100) {
-      newErrors.growthRate =
-        "상승률은 -100% ~ +100% 사이의 유효한 숫자여야 합니다.";
+    // 상승률이 비어있으면 0으로 처리
+    if (formData.growthRate === "") {
+      // 빈 값은 허용 (기본값 0으로 처리됨)
+    } else {
+      const growthRateNum = parseFloat(formData.growthRate);
+      if (isNaN(growthRateNum) || growthRateNum < -100 || growthRateNum > 100) {
+        newErrors.growthRate =
+          "상승률은 -100% ~ +100% 사이의 유효한 숫자여야 합니다.";
+      }
     }
 
     setErrors(newErrors);
@@ -118,7 +124,8 @@ function IncomeModal({
     const incomeData = {
       ...formData,
       amount: parseInt(formData.amount),
-      growthRate: parseFloat(formData.growthRate),
+      growthRate:
+        formData.growthRate === "" ? 0 : parseFloat(formData.growthRate),
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
     };
@@ -136,7 +143,7 @@ function IncomeModal({
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
       memo: "2014년부터 2024년까지의 10년간 평균",
-      growthRate: "3.3",
+      growthRate: "",
     });
     setErrors({});
     onClose();
