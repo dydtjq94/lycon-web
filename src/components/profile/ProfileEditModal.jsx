@@ -411,7 +411,9 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                       <div className={styles.memberInfo}>
                         <span className={styles.memberName}>{member.name}</span>
                         <span className={styles.memberDetails}>
-                          ({member.relation}, {member.birthYear}년생)
+                          ({member.relationship || member.relation},{" "}
+                          {member.birthYear}년생, 현재{" "}
+                          {calculateKoreanAge(member.birthYear)}세)
                         </span>
                       </div>
                       <button

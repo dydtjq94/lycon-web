@@ -67,6 +67,7 @@ function FinancialDataModal({
   financialData,
   onEdit,
   onDelete,
+  onAdd, // 새로 추가: 카테고리별 추가 핸들러
 }) {
   if (!isOpen) return null;
 
@@ -155,7 +156,29 @@ function FinancialDataModal({
           <div className={styles.sections}>
             {categoryConfigs.map((config) => (
               <div key={config.key} className={styles.section}>
-                <h4 className={styles.sectionTitle}>{config.label}</h4>
+                <div className={styles.sectionHeader}>
+                  <h4 className={styles.sectionTitle}>{config.label}</h4>
+                  <button
+                    type="button"
+                    className={styles.addButton}
+                    onClick={() => onAdd?.(config.key)}
+                    title={`${config.label} 추가`}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </button>
+                </div>
                 {renderList(
                   config,
                   financialData[config.key],

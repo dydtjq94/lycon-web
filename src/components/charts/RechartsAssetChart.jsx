@@ -1273,36 +1273,43 @@ function RechartsAssetChart({
                     title="자산"
                   />
                   {sortedDistribution.assetSlices.length > 0 && (
-                    <div className={styles.distributionList}>
-                      {sortedDistribution.assetSlices.map((slice) => {
-                        const percent =
-                          totalAssetValue > 0
-                            ? ((slice.value / totalAssetValue) * 100).toFixed(1)
-                            : "0.0";
-                        return (
-                          <div
-                            key={`asset-list-${slice.name}`}
-                            className={styles.distributionRow}
-                          >
-                            <span className={styles.distributionLabel}>
-                              <span
-                                className={styles.distributionDot}
-                                style={{ backgroundColor: slice.color }}
-                              />
-                              {slice.name}
-                            </span>
-                            <span className={styles.distributionValue}>
-                              {formatAmountForChart(
-                                Math.abs(slice.originalValue)
-                              )}
-                              <span className={styles.distributionPercent}>
-                                {percent}%
+                    <>
+                      <div className={styles.totalValue}>
+                        총 자산: {formatAmountForChart(totalAssetValue)}
+                      </div>
+                      <div className={styles.distributionList}>
+                        {sortedDistribution.assetSlices.map((slice) => {
+                          const percent =
+                            totalAssetValue > 0
+                              ? ((slice.value / totalAssetValue) * 100).toFixed(
+                                  1
+                                )
+                              : "0.0";
+                          return (
+                            <div
+                              key={`asset-list-${slice.name}`}
+                              className={styles.distributionRow}
+                            >
+                              <span className={styles.distributionLabel}>
+                                <span
+                                  className={styles.distributionDot}
+                                  style={{ backgroundColor: slice.color }}
+                                />
+                                {slice.name}
                               </span>
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                              <span className={styles.distributionValue}>
+                                {formatAmountForChart(
+                                  Math.abs(slice.originalValue)
+                                )}
+                                <span className={styles.distributionPercent}>
+                                  {percent}%
+                                </span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
                 <div className={styles.distributionSection}>
@@ -1312,37 +1319,44 @@ function RechartsAssetChart({
                     title="부채"
                   />
                   {sortedDistribution.debtSlices.length > 0 && (
-                    <div className={styles.distributionList}>
-                      {sortedDistribution.debtSlices.map((slice) => {
-                        const percent =
-                          totalDebtValue > 0
-                            ? ((slice.value / totalDebtValue) * 100).toFixed(1)
-                            : "0.0";
-                        return (
-                          <div
-                            key={`debt-list-${slice.name}`}
-                            className={styles.distributionRow}
-                          >
-                            <span className={styles.distributionLabel}>
-                              <span
-                                className={styles.distributionDot}
-                                style={{ backgroundColor: slice.color }}
-                              />
-                              {slice.name}
-                            </span>
-                            <span className={styles.distributionValue}>
-                              -
-                              {formatAmountForChart(
-                                Math.abs(slice.originalValue)
-                              )}
-                              <span className={styles.distributionPercent}>
-                                {percent}%
+                    <>
+                      <div className={styles.totalValue}>
+                        총 부채: -{formatAmountForChart(totalDebtValue)}
+                      </div>
+                      <div className={styles.distributionList}>
+                        {sortedDistribution.debtSlices.map((slice) => {
+                          const percent =
+                            totalDebtValue > 0
+                              ? ((slice.value / totalDebtValue) * 100).toFixed(
+                                  1
+                                )
+                              : "0.0";
+                          return (
+                            <div
+                              key={`debt-list-${slice.name}`}
+                              className={styles.distributionRow}
+                            >
+                              <span className={styles.distributionLabel}>
+                                <span
+                                  className={styles.distributionDot}
+                                  style={{ backgroundColor: slice.color }}
+                                />
+                                {slice.name}
                               </span>
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                              <span className={styles.distributionValue}>
+                                -
+                                {formatAmountForChart(
+                                  Math.abs(slice.originalValue)
+                                )}
+                                <span className={styles.distributionPercent}>
+                                  {percent}%
+                                </span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
               </>

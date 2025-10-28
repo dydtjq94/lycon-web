@@ -1033,6 +1033,34 @@ function DashboardPage() {
         break;
     }
   };
+
+  const handleFinancialDataAdd = (category) => {
+    switch (category) {
+      case "incomes":
+        handleAddIncome();
+        break;
+      case "expenses":
+        handleAddExpense();
+        break;
+      case "savings":
+        handleAddSaving();
+        break;
+      case "pensions":
+        handleAddPension();
+        break;
+      case "realEstates":
+        handleAddRealEstate();
+        break;
+      case "assets":
+        handleAddAsset();
+        break;
+      case "debts":
+        handleAddDebt();
+        break;
+      default:
+        break;
+    }
+  };
   const handleProfileSummaryItemClick = (type, item) => {
     switch (type) {
       case "income":
@@ -1666,6 +1694,25 @@ ${JSON.stringify(analysisData, null, 2)}`;
               return count;
             })()}
             명
+            {(profileData.hasSpouse ||
+              (profileData.familyMembers &&
+                profileData.familyMembers.length > 0)) && (
+              <span className={styles.familyDetail}>
+                {profileData.hasSpouse &&
+                  `배우자(${calculateKoreanAge(
+                    profileData.spouseBirthYear
+                  )}세), `}
+                {profileData.familyMembers &&
+                  profileData.familyMembers.length > 0 &&
+                  profileData.familyMembers.map((member, index) => (
+                    <span key={member.id}>
+                      {index > 0 && ", "}
+                      {member.relationship || member.relation || "가족"}(
+                      {calculateKoreanAge(member.birthYear)}세)
+                    </span>
+                  ))}
+              </span>
+            )}
           </span>
         </div>
         <div className={styles.profileActions}>
@@ -2121,6 +2168,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         }}
         onEdit={handleFinancialDataEdit}
         onDelete={handleFinancialDataDelete}
+        onAdd={handleFinancialDataAdd}
       />
 
       <SimulationCompareModal
