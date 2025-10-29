@@ -118,143 +118,125 @@
   color: #6b7280;
 }
 
-/* 생애 자금 수급/수요 총합 섹션 - 보고서 스타일 */
-.pvSection {
-  margin: 1.25rem 1.5rem;
-  margin-bottom: 0.5rem;
-  padding: 1rem 1.25rem;
-  border-radius: 10px;
-  border: 1px solid #ebeff5;
-  background: #fafcff;
+.summarySection {
+  margin: 1.5rem 1.5rem 1rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.pvTitle {
-  font-size: 0.9rem;
+.summaryTitle {
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #374151;
-  margin: 0 0 0.25rem 0;
-  text-align: left;
+  color: #111827;
+  margin: 0 0 0.75rem;
 }
 
-.pvDescription {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin: 0 0 0.75rem 0;
-  text-align: left;
-  line-height: 1.4;
-}
-
-.pvGroups {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-}
-
-.pvGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-
-.pvGroupHeader {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.pvGroupColumns {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 0.9rem;
-}
-
-.pvGroupColumn {
-  background: #ffffff;
-  border: 1px solid #edf1f5;
-  border-radius: 8px;
-  padding: 0.75rem 0.9rem;
+.summaryTable {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
 }
 
-.pvColumnHeader {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid #d1d5db;
-}
-
-.pvDetailList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding-top: 0.2rem;
-}
-
-.pvDetailRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.summaryRow {
+  display: grid;
   gap: 0.75rem;
+  align-items: start;
   padding: 0.35rem 0;
-  border-bottom: 1px solid #f1f5f9;
 }
 
-.pvDetailRow:last-child {
-  border-bottom: none;
-}
-
-.pvItemLabel {
+.summaryHeader {
+  border-bottom: 1px solid #e5e7eb;
   font-size: 0.78rem;
-  color: #0f172a;
+  color: #6b7280;
   font-weight: 500;
-  line-height: 1.35;
+  padding-bottom: 0.45rem;
 }
 
-.pvRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.35rem 0;
-  border-bottom: 1px solid #f3f4f6;
+.summaryCell {
+  font-size: 0.85rem;
+  color: #1f2937;
 }
 
-.pvRow:last-child {
-  border-bottom: none;
-  padding-top: 0.5rem;
-  margin-top: 0.25rem;
-  border-top: 1px solid #d1d5db;
-}
-
-.pvLabel {
-  font-size: 0.75rem;
-  color: #4b5563;
-  font-weight: 400;
-}
-
-.pvValue {
-  font-size: 0.8rem;
+.summaryLabel {
   font-weight: 600;
   color: #111827;
 }
 
-.pvSupplyLabel {
-  color: #059669;
+.summaryValue {
   font-weight: 600;
+  color: #1f2937;
 }
 
-.pvDemandLabel {
+.summaryEmpty {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.summaryBreakdown {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.summaryBreakdownItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.summaryBreakdownLabel {
+  flex: 1;
+}
+
+.summaryBreakdownValue {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.summaryDelta {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.4rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.deltaPositive {
+  color: #0f766e;
+}
+
+.deltaNegative {
   color: #dc2626;
+}
+
+.deltaNeutral {
+  color: #6b7280;
+}
+
+.netWorthSection {
+  margin: 0 1.5rem 1.25rem;
+  padding: 0.35rem 0 0.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.netWorthTitle {
+  font-size: 0.95rem;
   font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.75rem;
 }
 
-.pvValue.positive {
-  color: #059669;
+.positive {
+  color: #0f766e;
 }
 
-.pvValue.negative {
+.negative {
   color: #dc2626;
 }

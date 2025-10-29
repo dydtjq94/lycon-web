@@ -91,12 +91,17 @@ function FinancialDataModal({
   return (
     <div
       className={styles.overlay}
-      onClick={(e) => {
-        // overlay를 클릭해도 모달이 닫히지 않도록 함 (X 버튼으로만 닫기)
-        e.stopPropagation();
+      onClick={() => {
+        onClose?.();
       }}
     >
-      <div className={styles.modal}>
+      <div
+        className={styles.modal}
+        onClick={(event) => {
+          // 내부 클릭은 overlay onClick 으로 전파되지 않도록 차단
+          event.stopPropagation();
+        }}
+      >
         <div className={styles.header}>
           <div>
             <h3>재무 데이터 전체 보기</h3>

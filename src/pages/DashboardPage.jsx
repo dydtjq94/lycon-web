@@ -2232,6 +2232,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         targetTitle={comparisonData.targetTitle}
         defaultData={comparisonData.defaultData}
         targetData={comparisonData.targetData}
+        profileData={profileData}
       />
     </div>
   );
