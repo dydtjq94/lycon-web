@@ -561,7 +561,6 @@ function RechartsCashflowChart({
                   (yearData.debtInjection || 0);
                 const totalExpense =
                   yearData.expense +
-                  totalPensionExpense +
                   (yearData.savings || 0) +
                   (yearData.debtInterest || 0) +
                   (yearData.debtPrincipal || 0) +
