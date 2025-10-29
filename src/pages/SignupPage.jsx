@@ -3,10 +3,10 @@
  * Firestore 기반 이메일/비밀번호 회원가입
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { trackEvent } from "../libs/mixpanel";
+import { trackEvent, trackPageView } from "../libs/mixpanel";
 import styles from "./SignupPage.module.css";
 
 function SignupPage() {
@@ -16,6 +16,14 @@ function SignupPage() {
 
   // URL에서 profileId 가져오기
   const profileId = searchParams.get("profileId");
+
+  // Mixpanel: 페이지 진입 이벤트
+  useEffect(() => {
+    trackPageView("회원가입/로그인 페이지", {
+      profileId: profileId || null,
+      hasProfileId: !!profileId,
+    });
+  }, [profileId]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,8 +40,18 @@ function SignupPage() {
     e.preventDefault();
     setError("");
 
+    // Mixpanel: 회원가입 시도 이벤트
+    trackEvent("회원가입 시도", {
+      profileId: profileId || null,
+      hasEmail: !!email,
+      hasName: !!name,
+    });
+
     if (!profileId) {
       setError("프로필 정보가 없습니다. 다시 시도해주세요.");
+      trackEvent("회원가입 실패", {
+        reason: "프로필 정보 없음",
+      });
       return;
     }
 
@@ -82,6 +100,13 @@ function SignupPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Mixpanel: 로그인 시도 이벤트
+    trackEvent("사용자 로그인 시도", {
+      profileId: profileId || null,
+      hasEmail: !!email,
+    });
+
     setLoading(true);
 
     try {
@@ -137,7 +162,12 @@ function SignupPage() {
             className={`${styles.modeButton} ${
               !isLoginMode ? styles.active : ""
             }`}
-            onClick={() => setIsLoginMode(false)}
+            onClick={() => {
+              setIsLoginMode(false);
+              trackEvent("회원가입 모드 전환", {
+                profileId: profileId || null,
+              });
+            }}
             disabled={loading}
           >
             회원가입
@@ -147,7 +177,12 @@ function SignupPage() {
             className={`${styles.modeButton} ${
               isLoginMode ? styles.active : ""
             }`}
-            onClick={() => setIsLoginMode(true)}
+            onClick={() => {
+              setIsLoginMode(true);
+              trackEvent("로그인 모드 전환", {
+                profileId: profileId || null,
+              });
+            }}
             disabled={loading}
           >
             로그인

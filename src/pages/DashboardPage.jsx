@@ -52,6 +52,7 @@ import CalculatorModal from "../components/common/CalculatorModal";
 import SimulationCompareModal from "../components/simulation/SimulationCompareModal";
 import ProfileChecklistPanel from "../components/checklist/ProfileChecklistPanel";
 import { normalizeChecklistItems } from "../constants/profileChecklist";
+import { trackEvent, trackPageView } from "../libs/mixpanel";
 import styles from "./DashboardPage.module.css";
 
 /**
@@ -485,6 +486,27 @@ function DashboardPage() {
     setProfileMemo(profileData?.memo || "");
   }, [profileData?.memo]);
 
+  // Mixpanel: Dashboard 페이지 진입 이벤트
+  useEffect(() => {
+    if (profileData && !loading) {
+      trackPageView("Dashboard 페이지", {
+        profileId: profileId,
+        profileName: profileData.name,
+        retirementAge: profileData.retirementAge,
+        simulationCount: simulations.length,
+        hasEditPermission: hasEditPermission,
+        isAdmin: isAdmin,
+      });
+    }
+  }, [
+    profileData,
+    loading,
+    profileId,
+    simulations.length,
+    hasEditPermission,
+    isAdmin,
+  ]);
+
   // 시뮬레이션 데이터 생성
   const generateSimulationData = useCallback(
     (profileData) => {
@@ -632,6 +654,7 @@ function DashboardPage() {
   // 소득 데이터 핸들러들
   const handleAddIncome = () => {
     if (!checkEditPermission("소득 추가")) return;
+    trackEvent("소득 추가 버튼 클릭", { profileId });
     setEditingIncome(null);
     setIsIncomeModalOpen(true);
   };
@@ -646,6 +669,11 @@ function DashboardPage() {
     try {
       if (editingIncome) {
         // 수정
+        trackEvent("소득 수정", {
+          profileId,
+          simulationId: activeSimulationId,
+          incomeId: editingIncome.id,
+        });
         await incomeService.updateIncome(
           profileId,
           activeSimulationId,
@@ -661,6 +689,10 @@ function DashboardPage() {
         );
       } else {
         // 추가
+        trackEvent("소득 추가", {
+          profileId,
+          simulationId: activeSimulationId,
+        });
         const newIncome = await incomeService.createIncome(
           profileId,
           activeSimulationId,
@@ -1248,6 +1280,11 @@ function DashboardPage() {
 
       try {
         setIsMemoSaving(true);
+        trackEvent("시뮬레이션 메모 저장", {
+          profileId,
+          simulationId: activeSimulationId,
+          memoLength: nextMemo.length,
+        });
         await simulationService.updateSimulation(
           profileId,
           activeSimulationId,
@@ -1277,6 +1314,10 @@ function DashboardPage() {
   const openProfilePanel = (tab) => {
     // 권한이 없으면 회원가입 유도
     if (!hasEditPermission) {
+      trackEvent("메모/체크리스트 접근 시도 (권한 없음)", {
+        profileId,
+        tab: tab,
+      });
       if (
         confirm(
           `${
@@ -1284,10 +1325,18 @@ function DashboardPage() {
           }를 수정하려면 회원가입이 필요합니다. 회원가입 페이지로 이동하시겠습니까?`
         )
       ) {
+        trackEvent("회원가입 페이지로 이동", {
+          profileId,
+          source: "메모/체크리스트",
+        });
         navigate(`/signup?profileId=${profileId}`);
       }
       return;
     }
+    trackEvent("프로필 패널 열기", {
+      profileId,
+      tab: tab,
+    });
     setProfilePanelTab(tab);
     setIsProfilePanelOpen(true);
   };
@@ -1312,6 +1361,10 @@ function DashboardPage() {
 
     try {
       setIsProfileMemoSaving(true);
+      trackEvent("프로필 메모 저장", {
+        profileId,
+        memoLength: memoValue.length,
+      });
       await profileService.updateProfile(profileId, {
         memo: memoValue,
       });
@@ -1349,6 +1402,11 @@ function DashboardPage() {
       if (persist && profileId) {
         try {
           setIsChecklistSaving(true);
+          trackEvent("상담 체크리스트 저장", {
+            profileId,
+            itemCount: nextItems.length,
+            isNew: !checklistIdRef.current,
+          });
           if (!checklistIdRef.current) {
             const created = await checklistService.createChecklist(profileId, {
               title: "체크리스트",
