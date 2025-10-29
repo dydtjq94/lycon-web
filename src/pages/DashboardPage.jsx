@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { calculateKoreanAge, getKoreanAgeInYear } from "../utils/koreanAge";
 import { formatAmount } from "../utils/format";
@@ -79,7 +79,7 @@ function DashboardPage() {
   const checklistIdRef = useRef(null);
   const fetchSimulationFinancialData = useCallback(
     async (simulationId) => {
-      if (!profileId || !simulationId) return null;
+      if (!profileId || !simulationId || !profileData) return null;
 
       const [
         incomeData,
@@ -106,17 +106,37 @@ function DashboardPage() {
             )
           : [];
 
+      const sortedIncomes = sortByCreatedAt(incomeData);
+      const sortedExpenses = sortByCreatedAt(expenseData);
+      const sortedSavings = sortByCreatedAt(savingData);
+      const sortedPensions = sortByCreatedAt(pensionData);
+      const sortedRealEstates = sortByCreatedAt(realEstateData);
+      const sortedAssets = sortByCreatedAt(assetsData);
+      const sortedDebts = sortByCreatedAt(debtData);
+
+      const cashflow = calculateCashflowSimulation(
+        profileData,
+        sortedIncomes,
+        sortedExpenses,
+        sortedSavings,
+        sortedPensions,
+        sortedRealEstates,
+        sortedAssets,
+        sortedDebts
+      );
+
       return {
-        incomes: sortByCreatedAt(incomeData),
-        expenses: sortByCreatedAt(expenseData),
-        savings: sortByCreatedAt(savingData),
-        pensions: sortByCreatedAt(pensionData),
-        realEstates: sortByCreatedAt(realEstateData),
-        assets: sortByCreatedAt(assetsData),
-        debts: sortByCreatedAt(debtData),
+        incomes: sortedIncomes,
+        expenses: sortedExpenses,
+        savings: sortedSavings,
+        pensions: sortedPensions,
+        realEstates: sortedRealEstates,
+        assets: sortedAssets,
+        debts: sortedDebts,
+        cashflow,
       };
     },
-    [profileId]
+    [profileId, profileData]
   );
 
   const loadProfileChecklist = useCallback(async () => {
@@ -187,6 +207,16 @@ function DashboardPage() {
     defaultTitle: "",
     targetTitle: "",
   });
+  const defaultSimulationEntry = useMemo(
+    () => simulations.find((sim) => sim.isDefault),
+    [simulations]
+  );
+  const isActiveSimulationDefault =
+    !!(
+      defaultSimulationEntry &&
+      activeSimulationId &&
+      defaultSimulationEntry.id === activeSimulationId
+    );
 
   // 프로필 데이터 로드
   useEffect(() => {
@@ -1240,8 +1270,7 @@ function DashboardPage() {
   );
 
   const handleOpenCompareModal = async () => {
-    const defaultSimulation = simulations.find((sim) => sim.isDefault);
-    if (!defaultSimulation) {
+    if (!defaultSimulationEntry) {
       alert("기본 시뮬레이션을 찾을 수 없습니다.");
       return;
     }
@@ -1251,7 +1280,8 @@ function DashboardPage() {
     }
 
     // 현재 시뮬레이션이 기본 시뮬레이션과 같을 때는 기본 시뮬레이션만 표시
-    const isCurrentSimulation = defaultSimulation.id === activeSimulationId;
+    const isCurrentSimulation =
+      defaultSimulationEntry.id === activeSimulationId;
 
     setIsCompareModalOpen(true);
     setIsCompareLoading(true);
@@ -1259,18 +1289,18 @@ function DashboardPage() {
       if (isCurrentSimulation) {
         // 현재 시뮬레이션만 보이도록 기본 시뮬레이션 데이터만 로드
         const defaultData = await fetchSimulationFinancialData(
-          defaultSimulation.id
+          defaultSimulationEntry.id
         );
         setComparisonData({
           defaultData,
           targetData: null, // null로 설정하여 비교하지 않음
-          defaultTitle: defaultSimulation.title || "현재",
+          defaultTitle: defaultSimulationEntry.title || "현재",
           targetTitle: null,
         });
       } else {
         // 기존처럼 두 시뮬레이션 비교
         const [defaultData, targetData] = await Promise.all([
-          fetchSimulationFinancialData(defaultSimulation.id),
+          fetchSimulationFinancialData(defaultSimulationEntry.id),
           fetchSimulationFinancialData(activeSimulationId),
         ]);
 
@@ -1280,7 +1310,7 @@ function DashboardPage() {
         setComparisonData({
           defaultData,
           targetData,
-          defaultTitle: defaultSimulation.title || "현재",
+          defaultTitle: defaultSimulationEntry.title || "현재",
           targetTitle: targetSimulation.title || "선택된 시뮬레이션",
         });
       }
@@ -1794,9 +1824,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
             </button>
             <button
               className={styles.sidebarIconButton}
-              title="시뮬레이션 비교"
-              onClick={handleOpenCompareModal}
-              disabled={!activeSimulationId}
+              title="재무 데이터 전체 보기"
+              onClick={handleOpenFinancialModal}
             >
               <svg
                 width="20"
@@ -1808,11 +1837,35 @@ ${JSON.stringify(analysisData, null, 2)}`;
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <rect x="4" y="4" width="6" height="12" rx="1" />
-                <rect x="14" y="8" width="6" height="12" rx="1" />
-                <path d="M4 20h16" />
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="M7 8h10" />
+                <path d="M7 12h10" />
+                <path d="M7 16h6" />
               </svg>
             </button>
+            {!isActiveSimulationDefault && (
+              <button
+                className={styles.sidebarIconButton}
+                title="시뮬레이션 비교"
+                onClick={handleOpenCompareModal}
+                disabled={!activeSimulationId}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="4" y="4" width="6" height="12" rx="1" />
+                  <rect x="14" y="8" width="6" height="12" rx="1" />
+                  <path d="M4 20h16" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
         {/* 재무 항목 요약 - 항상 렌더링하여 레이아웃 시프트 방지 */}

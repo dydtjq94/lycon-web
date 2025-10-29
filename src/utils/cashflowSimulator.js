@@ -39,9 +39,33 @@ export function calculateCashflowSimulation(
     let totalPension = 0;
     let totalDebtInjection = 0;
     const debtInjections = [];
+    const positiveBreakdown = [];
+    const negativeBreakdown = [];
+
+    const addPositive = (label, amount, category, keyBase) => {
+      const value = Number(amount) || 0;
+      if (value <= 0) return;
+      positiveBreakdown.push({
+        key: `${keyBase || category}-${year}`,
+        label,
+        category,
+        amount: value,
+      });
+    };
+
+    const addNegative = (label, amount, category, keyBase) => {
+      const value = Number(amount) || 0;
+      if (value <= 0) return;
+      negativeBreakdown.push({
+        key: `${keyBase || category}-${year}`,
+        label,
+        category,
+        amount: value,
+      });
+    };
 
     // 소득 계산
-    incomes.forEach((income) => {
+    incomes.forEach((income, incomeIndex) => {
       if (year >= income.startYear && year <= income.endYear) {
         const yearsElapsed = year - income.startYear;
         const growthRate = income.growthRate / 100;
@@ -53,11 +77,18 @@ export function calculateCashflowSimulation(
         const adjustedAmount =
           yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
         totalIncome += adjustedAmount;
+
+        addPositive(
+          income.title,
+          adjustedAmount,
+          "소득",
+          income.id ? `income-${income.id}` : `income-${incomeIndex}`
+        );
       }
     });
 
     // 지출 계산
-    expenses.forEach((expense) => {
+    expenses.forEach((expense, expenseIndex) => {
       if (year >= expense.startYear && year <= expense.endYear) {
         const yearsElapsed = year - expense.startYear;
         const growthRate = expense.growthRate / 100;
@@ -71,6 +102,13 @@ export function calculateCashflowSimulation(
         const adjustedAmount =
           yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
         totalExpense += adjustedAmount;
+
+        addNegative(
+          expense.title,
+          adjustedAmount,
+          "지출",
+          expense.id ? `expense-${expense.id}` : `expense-${expenseIndex}`
+        );
       }
     });
 
@@ -106,6 +144,13 @@ export function calculateCashflowSimulation(
           title: debt.title,
           amount: debtAmount,
         });
+
+        addPositive(
+          `${debt.title} (대출 유입)`,
+          debtAmount,
+          "대출 유입",
+          `debtInjection-${debt.id || debt.title}`
+        );
       }
 
       if (
@@ -133,19 +178,31 @@ export function calculateCashflowSimulation(
                 title: debt.title,
                 amount: yearlyInterest,
               });
+              addNegative(
+                `${debt.title} (이자)`,
+                yearlyInterest,
+                "부채 이자",
+                `debt-interest-${debt.id || debt.title}`
+              );
             }
 
             debt.amount = -debtAmount;
           } else if (year === debtEndYear) {
             // 만기년도: 이자 + 원금 상환
             const yearlyInterest = debtAmount * interestRate;
-            if (yearlyInterest > 0) {
-              totalDebtInterest += yearlyInterest;
-              debtInterestDetails.push({
-                title: debt.title,
-                amount: yearlyInterest,
-              });
-            }
+          if (yearlyInterest > 0) {
+            totalDebtInterest += yearlyInterest;
+            debtInterestDetails.push({
+              title: debt.title,
+              amount: yearlyInterest,
+            });
+            addNegative(
+              `${debt.title} (이자)`,
+              yearlyInterest,
+              "부채 이자",
+              `debt-interest-${debt.id || debt.title}`
+            );
+          }
             if (debtAmount > 0) {
               totalDebtPrincipal += debtAmount;
               debtPrincipalDetails.push({
@@ -189,6 +246,12 @@ export function calculateCashflowSimulation(
                 title: debt.title,
                 amount: interestPayment,
               });
+              addNegative(
+                `${debt.title} (이자)`,
+                interestPayment,
+                "부채 이자",
+                `debt-interest-${debt.id || debt.title}`
+              );
             }
             if (principalPayment > 0) {
               totalDebtPrincipal += principalPayment;
@@ -196,6 +259,12 @@ export function calculateCashflowSimulation(
                 title: debt.title,
                 amount: principalPayment,
               });
+              addNegative(
+                `${debt.title} (원금 상환)`,
+                principalPayment,
+                "부채 원금 상환",
+                `debt-principal-${debt.id || debt.title}`
+              );
             }
 
             const remainingAfterPayment = Math.max(
@@ -244,20 +313,32 @@ export function calculateCashflowSimulation(
           const interestPayment = remainingPrincipal * r;
           const principalPayment = yearlyPrincipalPayment;
 
-          if (interestPayment > 0) {
-            totalDebtInterest += interestPayment;
-            debtInterestDetails.push({
-              title: debt.title,
-              amount: interestPayment,
-            });
-          }
-          if (principalPayment > 0) {
-            totalDebtPrincipal += principalPayment;
-            debtPrincipalDetails.push({
-              title: debt.title,
-              amount: principalPayment,
-            });
-          }
+            if (interestPayment > 0) {
+              totalDebtInterest += interestPayment;
+              debtInterestDetails.push({
+                title: debt.title,
+                amount: interestPayment,
+              });
+              addNegative(
+                `${debt.title} (이자)`,
+                interestPayment,
+                "부채 이자",
+                `debt-interest-${debt.id || debt.title}`
+              );
+            }
+            if (principalPayment > 0) {
+              totalDebtPrincipal += principalPayment;
+              debtPrincipalDetails.push({
+                title: debt.title,
+                amount: principalPayment,
+              });
+              addNegative(
+                `${debt.title} (원금 상환)`,
+                principalPayment,
+                "부채 원금 상환",
+                `debt-principal-${debt.id || debt.title}`
+              );
+            }
 
           const remainingAfterPayment = Math.max(
             remainingPrincipal - principalPayment,
@@ -312,6 +393,12 @@ export function calculateCashflowSimulation(
                 title: debt.title,
                 amount: interestPayment,
               });
+              addNegative(
+                `${debt.title} (이자)`,
+                interestPayment,
+                "부채 이자",
+                `debt-interest-${debt.id || debt.title}`
+              );
             }
             if (principalPayment > 0) {
               totalDebtPrincipal += principalPayment;
@@ -319,6 +406,12 @@ export function calculateCashflowSimulation(
                 title: debt.title,
                 amount: principalPayment,
               });
+              addNegative(
+                `${debt.title} (원금 상환)`,
+                principalPayment,
+                "부채 원금 상환",
+                `debt-principal-${debt.id || debt.title}`
+              );
             }
 
             const remainingAfterPayment = Math.max(
@@ -353,6 +446,12 @@ export function calculateCashflowSimulation(
           // 일회성 저축: 시작년도에만 현금흐름에 반영
           if (year === saving.startYear) {
             totalSavings += saving.amount;
+            addNegative(
+              saving.title,
+              saving.amount,
+              "저축 적립",
+              `saving-contrib-${saving.id || saving.title}`
+            );
           }
         } else {
           // 월간/연간 저축
@@ -365,6 +464,12 @@ export function calculateCashflowSimulation(
           const yearlyAmount = adjustedMonthlyAmount * 12;
 
           totalSavings += yearlyAmount;
+          addNegative(
+            saving.title,
+            yearlyAmount,
+            "저축 적립",
+            `saving-contrib-${saving.id || saving.title}`
+          );
         }
       } else if (year === saving.endYear + 1) {
         // 저축 만료 다음 해: 만료된 저축 금액을 현금흐름에 추가
@@ -405,6 +510,13 @@ export function calculateCashflowSimulation(
           title: saving.title,
           amount: finalAmount,
         });
+
+        addPositive(
+          saving.title,
+          finalAmount,
+          "저축 만료",
+          `saving-maturity-${saving.id || saving.title}`
+        );
       }
     });
 
@@ -420,6 +532,12 @@ export function calculateCashflowSimulation(
             12 *
             Math.pow(1 + inflationRate, yearsElapsed);
           totalPension += adjustedAmount;
+          addPositive(
+            pension.title,
+            adjustedAmount,
+            "국민연금",
+            `pension-national-${pension.id || pension.title}`
+          );
         }
       } else {
         // 퇴직연금/개인연금: 수령 기간만 현금흐름에 반영
@@ -440,6 +558,12 @@ export function calculateCashflowSimulation(
             const yearlyContribution = monthlyAmount * 12;
             // 개인연금 적립액을 음수로 현금흐름에 반영 (현금이 빠져나감)
             totalExpense += yearlyContribution;
+            addNegative(
+              `${pension.title} (적립)`,
+              yearlyContribution,
+              "연금 적립",
+              `pension-contrib-${pension.id || pension.title}`
+            );
           }
           // 퇴직연금은 적립 시 현금이 빠져나가지 않음
         } else if (year >= paymentStartYear && year <= paymentEndYear) {
@@ -467,6 +591,12 @@ export function calculateCashflowSimulation(
           const paymentYears = paymentEndYear - paymentStartYear + 1;
           const monthlyPayment = totalAccumulated / paymentYears / 12;
           totalPension += monthlyPayment * 12; // 플러스로 추가
+          addPositive(
+            pension.title,
+            monthlyPayment * 12,
+            pension.type === "retirement" ? "퇴직연금" : "개인연금",
+            `pension-payment-${pension.id || pension.title}`
+          );
         }
       }
     });
@@ -479,46 +609,106 @@ export function calculateCashflowSimulation(
     const realEstatePurchases = []; // 부동산 구매 상세 정보
     const realEstateSales = []; // 부동산 매각 상세 정보
 
+    const normalizeYear = (value) => {
+      if (value === null || value === undefined || value === "") {
+        return undefined;
+      }
+      if (typeof value === "number") {
+        return Number.isFinite(value) ? value : undefined;
+      }
+      const parsed = parseInt(value, 10);
+      return Number.isNaN(parsed) ? undefined : parsed;
+    };
+
     realEstates.forEach((realEstate) => {
+      const startYear = normalizeYear(realEstate.startYear);
+      const endYear = normalizeYear(realEstate.endYear);
+      const rentalStartYear = normalizeYear(realEstate.rentalIncomeStartYear);
+      const rentalEndYear = normalizeYear(realEstate.rentalIncomeEndYear);
+      const pensionStartYear = normalizeYear(realEstate.pensionStartYear);
+      const pensionEndYear = normalizeYear(realEstate.pensionEndYear);
+      const purchaseAmount = Number(realEstate.currentValue) || 0;
+      const rentalMonthly = Number(realEstate.monthlyRentalIncome) || 0;
+      const pensionMonthly = Number(realEstate.monthlyPensionAmount) || 0;
+
       // 부동산 구매 비용 계산 (첫 년도에 현금으로 차감)
-      if (realEstate.isPurchase && year === realEstate.startYear) {
-        totalRealEstatePurchase += realEstate.currentValue;
+      if (
+        realEstate.isPurchase &&
+        Number.isFinite(startYear) &&
+        year === startYear &&
+        purchaseAmount > 0
+      ) {
+        totalRealEstatePurchase += purchaseAmount;
         realEstatePurchases.push({
           title: realEstate.title,
-          amount: realEstate.currentValue,
+          amount: purchaseAmount,
         });
+        addNegative(
+          `${realEstate.title} (구매)`,
+          purchaseAmount,
+          "부동산 구매",
+          `realestate-purchase-${realEstate.id || realEstate.title}`
+        );
       }
 
       // 임대 소득 계산
       if (
         realEstate.hasRentalIncome &&
-        year >= realEstate.rentalIncomeStartYear &&
-        year <= realEstate.rentalIncomeEndYear
+        Number.isFinite(rentalStartYear) &&
+        year >= rentalStartYear &&
+        (rentalEndYear === undefined || year <= rentalEndYear) &&
+        rentalMonthly > 0
       ) {
-        totalRentalIncome += realEstate.monthlyRentalIncome * 12;
+        const yearlyRentalIncome = rentalMonthly * 12;
+        totalRentalIncome += yearlyRentalIncome;
+        addPositive(
+          `${realEstate.title} (임대소득)`,
+          yearlyRentalIncome,
+          "임대소득",
+          `realestate-rent-${realEstate.id || realEstate.title}`
+        );
       }
 
       // 주택연금 수령액 계산
       if (
         realEstate.convertToPension &&
-        year >= realEstate.pensionStartYear &&
-        year <= (realEstate.pensionEndYear || 9999)
+        Number.isFinite(pensionStartYear) &&
+        year >= pensionStartYear &&
+        (pensionEndYear === undefined || year <= pensionEndYear) &&
+        pensionMonthly > 0
       ) {
-        totalRealEstatePension += realEstate.monthlyPensionAmount * 12;
+        const yearlyPensionAmount = pensionMonthly * 12;
+        totalRealEstatePension += yearlyPensionAmount;
+        addPositive(
+          `${realEstate.title} (주택연금)`,
+          yearlyPensionAmount,
+          "주택연금",
+          `realestate-pension-${realEstate.id || realEstate.title}`
+        );
       }
 
       // 부동산 매각 수입 계산 (만료 다음 해)
-      if (year === realEstate.endYear + 1) {
+      if (
+        Number.isFinite(endYear) &&
+        Number.isFinite(startYear) &&
+        year === endYear + 1 &&
+        purchaseAmount > 0
+      ) {
         // 부동산 가치에 상승률을 적용한 최종 가치 계산
-        const yearsElapsed = realEstate.endYear - realEstate.startYear;
+        const yearsElapsed = endYear - startYear;
         const growthRate = (realEstate.growthRate || 0) / 100;
-        const finalValue =
-          realEstate.currentValue * Math.pow(1 + growthRate, yearsElapsed);
+        const finalValue = purchaseAmount * Math.pow(1 + growthRate, yearsElapsed);
         totalRealEstateSale += finalValue;
         realEstateSales.push({
           title: realEstate.title,
           amount: finalValue,
         });
+        addPositive(
+          `${realEstate.title} (매각)`,
+          finalValue,
+          "부동산 매각",
+          `realestate-sale-${realEstate.id || realEstate.title}`
+        );
       }
     });
 
@@ -547,6 +737,12 @@ export function calculateCashflowSimulation(
           title: asset.title,
           amount: asset.currentValue,
         });
+        addNegative(
+          `${asset.title} (구매)`,
+          asset.currentValue,
+          "자산 구매",
+          `asset-purchase-${asset.id || asset.title}`
+        );
       }
 
       if (
@@ -559,7 +755,14 @@ export function calculateCashflowSimulation(
         const yearsElapsed = year - startYear;
         const currentAssetValue =
           asset.currentValue * Math.pow(1 + asset.growthRate, yearsElapsed);
-        totalAssetIncome += currentAssetValue * asset.incomeRate;
+        const yearlyIncome = currentAssetValue * asset.incomeRate;
+        totalAssetIncome += yearlyIncome;
+        addPositive(
+          `${asset.title} (수익)`,
+          yearlyIncome,
+          "자산 수익",
+          `asset-income-${asset.id || asset.title}`
+        );
       }
 
       // 자산 매각 수입 계산 (만료 다음 해)
@@ -574,6 +777,12 @@ export function calculateCashflowSimulation(
           title: asset.title,
           amount: finalValue,
         });
+        addPositive(
+          `${asset.title} (매각)`,
+          finalValue,
+          "자산 매각",
+          `asset-sale-${asset.id || asset.title}`
+        );
       }
     });
 
@@ -621,6 +830,10 @@ export function calculateCashflowSimulation(
       debtInjections: debtInjections,
       assetSales: assetSales,
       realEstateSales: realEstateSales,
+      breakdown: {
+        positives: positiveBreakdown,
+        negatives: negativeBreakdown,
+      },
     });
   }
 

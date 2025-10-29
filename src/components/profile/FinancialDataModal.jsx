@@ -116,11 +116,6 @@ function FinancialDataModal({
           <div className={styles.profileSection}>
             <div className={styles.profileInfo}>
               <div className={styles.profileItem}>
-                <span className={styles.profileLabel}>이름</span>
-                <span className={styles.profileValue}>{profileData.name}</span>
-              </div>
-
-              <div className={styles.profileItem}>
                 <span className={styles.profileLabel}>현재 나이</span>
                 <span className={styles.profileValue}>
                   {new Date().getFullYear() - profileData.birthYear}세
