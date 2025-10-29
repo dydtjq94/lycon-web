@@ -150,7 +150,7 @@ function SimulationCompareModal({
 
   const valueColumnCount =
     Number(showDefaultColumn) + Number(showTargetColumn) || 1;
-  const gridTemplateColumns = `minmax(80px, 0.3fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
+  const gridTemplateColumns = `minmax(80px, 0.4fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
 
   const renderBreakdownList = (items, prefix) => {
     if (!Array.isArray(items) || items.length === 0) {
@@ -330,7 +330,7 @@ function SimulationCompareModal({
     const checkpoints = [
       {
         key: "start",
-        label: startAge !== null ? `시작 (${startAge}세)` : "시작",
+        label: startAge !== null ? `현재 (${startAge}세)` : "현재",
         age: startAge,
       },
       {

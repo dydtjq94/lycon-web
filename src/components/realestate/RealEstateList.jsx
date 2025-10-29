@@ -75,7 +75,8 @@ const RealEstateList = ({
             {realEstate.convertToPension && (
               <div className={styles.pensionInfo}>
                 <div className={styles.pensionPeriod}>
-                  주택연금: {realEstate.pensionStartYear}년부터
+                  주택연금: {realEstate.pensionStartYear}년 -{" "}
+                  {realEstate.pensionEndYear}년
                 </div>
                 <div className={styles.pensionAmount}>
                   월 수령액: {formatAmount(realEstate.monthlyPensionAmount)}/월
