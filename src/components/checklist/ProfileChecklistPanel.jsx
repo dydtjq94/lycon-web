@@ -327,7 +327,7 @@ function ProfileChecklistPanel({
   if (isLoading) {
     return (
       <div className={styles.stateBox}>
-        <p className={styles.stateText}>상담 체크리스트를 불러오는 중입니다…</p>
+        <p className={styles.stateText}>체크리스트를 불러오는 중입니다…</p>
       </div>
     );
   }
@@ -335,7 +335,7 @@ function ProfileChecklistPanel({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h3>상담 체크리스트</h3>
+        <h3>체크리스트</h3>
         {isSaving && <span className={styles.savingBadge}>저장 중…</span>}
       </div>
       <div className={styles.list}>{topLevelItems.map(renderTopLevelItem)}</div>

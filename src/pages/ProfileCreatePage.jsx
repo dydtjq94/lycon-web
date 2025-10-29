@@ -377,11 +377,11 @@ function ProfileCreatePage() {
 
       try {
         await checklistService.createChecklist(createdProfile.id, {
-          title: "상담 체크리스트",
+          title: "체크리스트",
           items: buildChecklistTemplateItems(),
         });
       } catch (error) {
-        console.error("기본 상담 체크리스트 생성 오류:", error);
+        console.error("기본 체크리스트 생성 오류:", error);
       }
 
       // 기본 시뮬레이션("현재") 생성

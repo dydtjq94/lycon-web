@@ -159,7 +159,7 @@ function DashboardPage() {
         checklistIdRef.current = null;
         setProfileChecklist({
           id: null,
-          title: "상담 체크리스트",
+          title: "체크리스트",
           items: [],
         });
         return;
@@ -172,12 +172,12 @@ function DashboardPage() {
       checklistIdRef.current = first.id;
       setProfileChecklist({
         id: first.id,
-        title: first.title || "상담 체크리스트",
+        title: first.title || "체크리스트",
         items: normalizedItems,
       });
     } catch (error) {
-      console.error("상담 체크리스트 로드 오류:", error);
-      alert("상담 체크리스트를 불러오는 중 오류가 발생했습니다.");
+      console.error("체크리스트 로드 오류:", error);
+      alert("체크리스트를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setIsChecklistLoading(false);
     }
@@ -1242,6 +1242,7 @@ function DashboardPage() {
   // 시뮬레이션 관련 핸들러들
   const handleSaveSimulationMemo = useCallback(
     async (nextMemo) => {
+      if (!checkEditPermission("시뮬레이션 메모 저장")) return;
       if (!profileId || !activeSimulationId) return;
       if ((simulationMemo || "") === nextMemo) return;
 
@@ -1274,6 +1275,19 @@ function DashboardPage() {
   };
 
   const openProfilePanel = (tab) => {
+    // 권한이 없으면 회원가입 유도
+    if (!hasEditPermission) {
+      if (
+        confirm(
+          `${
+            tab === "memo" ? "프로필 메모" : "상담 체크리스트"
+          }를 수정하려면 회원가입이 필요합니다. 회원가입 페이지로 이동하시겠습니까?`
+        )
+      ) {
+        navigate(`/signup?profileId=${profileId}`);
+      }
+      return;
+    }
     setProfilePanelTab(tab);
     setIsProfilePanelOpen(true);
   };
@@ -1292,6 +1306,7 @@ function DashboardPage() {
   }, [isProfilePanelOpen]);
 
   const handleSaveProfileMemo = async (memoValue) => {
+    if (!checkEditPermission("프로필 메모 저장")) return;
     if (!profileId) return;
     if ((profileMemo || "") === memoValue) return;
 
@@ -1312,6 +1327,11 @@ function DashboardPage() {
 
   const handleChecklistItemsChange = useCallback(
     async (nextItems, { persist }) => {
+      // persist가 false면 로컬 상태만 업데이트 (권한 확인 안 함)
+      if (persist && !checkEditPermission("상담 체크리스트 저장")) {
+        return;
+      }
+
       setProfileChecklist((prev) => {
         if (prev) {
           return { ...prev, items: nextItems };
@@ -1319,7 +1339,7 @@ function DashboardPage() {
         if (checklistIdRef.current) {
           return {
             id: checklistIdRef.current,
-            title: "상담 체크리스트",
+            title: "체크리스트",
             items: nextItems,
           };
         }
@@ -1331,13 +1351,13 @@ function DashboardPage() {
           setIsChecklistSaving(true);
           if (!checklistIdRef.current) {
             const created = await checklistService.createChecklist(profileId, {
-              title: "상담 체크리스트",
+              title: "체크리스트",
               items: nextItems,
             });
             checklistIdRef.current = created.id;
             setProfileChecklist((prev) => ({
               id: created.id,
-              title: created.title || "상담 체크리스트",
+              title: created.title || "체크리스트",
               items: nextItems,
             }));
           } else {
@@ -1350,14 +1370,14 @@ function DashboardPage() {
             );
           }
         } catch (error) {
-          console.error("상담 체크리스트 저장 오류:", error);
-          alert("상담 체크리스트 저장 중 오류가 발생했습니다.");
+          console.error("체크리스트 저장 오류:", error);
+          alert("체크리스트 저장 중 오류가 발생했습니다.");
         } finally {
           setIsChecklistSaving(false);
         }
       }
     },
-    [profileId]
+    [profileId, checkEditPermission]
   );
 
   const handleOpenCompareModal = async () => {
@@ -1859,7 +1879,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
             className={styles.iconButton}
             onClick={() => openProfilePanel("checklist")}
           >
-            <span className={styles.buttonText}>상담 체크리스트</span>
+            <span className={styles.buttonText}>체크리스트</span>
           </button>
         </div>
       </div>
@@ -1899,27 +1919,29 @@ ${JSON.stringify(analysisData, null, 2)}`;
             </svg>
           </button>
           <div className={styles.sidebarControlRightGroup}>
-            <button
-              className={styles.sidebarIconButton}
-              title="AI 분석 데이터 추출"
-              onClick={handleGenerateAIAnalysis}
-              disabled={isGeneratingAI || !activeSimulationId}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {isAdmin && (
+              <button
+                className={styles.sidebarIconButton}
+                title="AI 분석 데이터 추출"
+                onClick={handleGenerateAIAnalysis}
+                disabled={isGeneratingAI || !activeSimulationId}
               >
-                <path d="M12 3v12" />
-                <path d="M8 11l4 4 4-4" />
-                <path d="M5 19h14" />
-              </svg>
-            </button>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 3v12" />
+                  <path d="M8 11l4 4 4-4" />
+                  <path d="M5 19h14" />
+                </svg>
+              </button>
+            )}
             <button
               className={styles.sidebarIconButton}
               title="재무 데이터 전체 보기"
@@ -2136,7 +2158,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
               memo={simulationMemo}
               onSave={handleSaveSimulationMemo}
               isSaving={isMemoSaving}
-              isDisabled={!activeSimulationId}
+              isDisabled={!activeSimulationId || !hasEditPermission}
             />
           )}
         </div>
@@ -2206,7 +2228,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
               onClick={() => setProfilePanelTab("checklist")}
               type="button"
             >
-              상담 체크리스트
+              체크리스트
             </button>
           </div>
           <button
@@ -2223,6 +2245,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
               memo={profileMemo}
               onSave={handleSaveProfileMemo}
               isSaving={isProfileMemoSaving}
+              isDisabled={!hasEditPermission}
             />
           ) : (
             <ProfileChecklistPanel
@@ -2230,7 +2253,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
               onItemsChange={handleChecklistItemsChange}
               isLoading={isChecklistLoading}
               isSaving={isChecklistSaving}
-              disabled={isChecklistSaving}
+              disabled={isChecklistSaving || !hasEditPermission}
             />
           )}
         </div>
@@ -2350,6 +2373,7 @@ const ProfileMemoPanel = React.memo(function ProfileMemoPanel({
   memo,
   onSave,
   isSaving,
+  isDisabled,
 }) {
   const [value, setValue] = useState(memo || "");
   const [isDirty, setIsDirty] = useState(false);
@@ -2360,13 +2384,14 @@ const ProfileMemoPanel = React.memo(function ProfileMemoPanel({
   }, [memo]);
 
   const handleChange = (event) => {
+    if (isDisabled) return;
     const nextValue = event.target.value;
     setValue(nextValue);
     setIsDirty(nextValue !== (memo || ""));
   };
 
   const handleSave = () => {
-    if (!isDirty || isSaving) return;
+    if (isDisabled || !isDirty || isSaving) return;
     onSave?.(value);
   };
 
@@ -2380,7 +2405,7 @@ const ProfileMemoPanel = React.memo(function ProfileMemoPanel({
           className={styles.profileMemoSaveButton}
           type="button"
           onClick={handleSave}
-          disabled={isSaving || !isDirty}
+          disabled={isDisabled || isSaving || !isDirty}
         >
           {isSaving ? "저장 중..." : "저장"}
         </button>
@@ -2390,7 +2415,12 @@ const ProfileMemoPanel = React.memo(function ProfileMemoPanel({
         className={styles.profileMemoTextarea}
         value={value}
         onChange={handleChange}
-        placeholder="프로필 전반에 대한 메모를 기록하세요."
+        placeholder={
+          isDisabled
+            ? "수정하려면 회원가입이 필요합니다."
+            : "프로필 전반에 대한 메모를 기록하세요."
+        }
+        disabled={isDisabled}
       />
     </div>
   );
@@ -2438,7 +2468,11 @@ const SimulationMemoPanel = React.memo(function SimulationMemoPanel({
       </div>
       <textarea
         className={styles.memoTextarea}
-        placeholder={isDisabled ? "메모를 작성하세요." : "메모를 작성하세요."}
+        placeholder={
+          isDisabled
+            ? "수정하려면 회원가입이 필요합니다."
+            : "메모를 작성하세요."
+        }
         value={value}
         onChange={handleChange}
         disabled={isDisabled}
