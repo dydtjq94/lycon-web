@@ -39,7 +39,7 @@ const categoryConfigs = [
   { key: "debts", label: "부채", component: DebtList, propName: "debts" },
 ];
 
-const renderList = (config, data, onEdit, onDelete) => {
+const renderList = (config, data, onEdit, onDelete, isReadOnly = false) => {
   const Component = config.component;
   if (!Component) {
     return <div className={styles.empty}>지원되지 않는 카테고리입니다.</div>;
@@ -49,7 +49,7 @@ const renderList = (config, data, onEdit, onDelete) => {
     [config.propName]: data || [],
     onEdit: onEdit,
     onDelete: onDelete,
-    isReadOnly: false, // 편집 가능하도록 설정
+    isReadOnly: isReadOnly,
   };
 
   return (
@@ -68,6 +68,7 @@ function FinancialDataModal({
   onEdit,
   onDelete,
   onAdd, // 새로 추가: 카테고리별 추가 핸들러
+  isReadOnly = false, // 읽기 전용 모드
 }) {
   if (!isOpen) return null;
 
@@ -183,7 +184,8 @@ function FinancialDataModal({
                   config,
                   financialData[config.key],
                   (item) => onEdit?.(config.key, item),
-                  (itemId) => onDelete?.(config.key, itemId)
+                  (itemId) => onDelete?.(config.key, itemId),
+                  isReadOnly
                 )}
               </div>
             ))}

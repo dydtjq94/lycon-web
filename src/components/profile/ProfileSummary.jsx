@@ -17,6 +17,7 @@ function ProfileSummary({
   onDelete,
   onOpenFinancialModal,
   isLoading = false,
+  isReadOnly = false,
 }) {
   // 모든 재무 항목을 하나의 배열로 합치기
   const allFinanceItems = [
@@ -42,7 +43,7 @@ function ProfileSummary({
     );
   }
 
-  // 카드 클릭 핸들러
+  // 카드 클릭 핸들러 (항상 활성화, 권한 확인은 핸들러에서 처리)
   const handleCardClick = (item) => {
     if (onItemClick) {
       onItemClick(item.category, item);

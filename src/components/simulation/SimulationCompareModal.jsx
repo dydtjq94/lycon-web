@@ -10,6 +10,7 @@ import DebtList from "../debt/DebtList";
 import { calculateLifetimeCashFlowTotals } from "../../utils/presentValueCalculator";
 import { formatAmountForChart } from "../../utils/format";
 import { calculateAssetSimulation } from "../../utils/cashflowSimulator";
+import { trackEvent } from "../../libs/mixpanel";
 
 const categoryConfigs = [
   { key: "incomes", label: "소득", component: IncomeList, propName: "incomes" },
@@ -402,19 +403,34 @@ function SimulationCompareModal({
 
   useEffect(() => {
     if (!isOpen) return;
+
+    // Mixpanel: 시뮬레이션 비교 모달 열림
+    trackEvent("시뮬레이션 비교 모달 열림", {
+      defaultTitle: defaultTitle || "현재 시뮬레이션",
+      targetTitle: targetTitle || "비교 시뮬레이션",
+      hasDefaultData: !!defaultData,
+      hasTargetData: !!targetData,
+    });
+
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
         onClose?.();
+        trackEvent("시뮬레이션 비교 모달 닫힘", {
+          method: "ESC 키",
+        });
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, defaultTitle, targetTitle, defaultData, targetData]);
 
   return (
     <div
       className={styles.overlay}
       onClick={() => {
+        trackEvent("시뮬레이션 비교 모달 닫힘", {
+          method: "오버레이 클릭",
+        });
         onClose?.();
       }}
     >
@@ -433,7 +449,12 @@ function SimulationCompareModal({
           </div>
           <button
             className={styles.closeButton}
-            onClick={onClose}
+            onClick={() => {
+              trackEvent("시뮬레이션 비교 모달 닫힘", {
+                method: "닫기 버튼",
+              });
+              onClose?.();
+            }}
             type="button"
           >
             ×

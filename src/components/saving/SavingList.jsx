@@ -24,32 +24,26 @@ function SavingList({
       {savings.map((saving) => (
         <div
           key={saving.id}
-          className={`${styles.savingItem} ${
-            isReadOnly ? styles.readOnly : ""
-          }`}
+          className={styles.savingItem}
           onClick={() => {
-            if (!isReadOnly) {
-              onEdit(saving);
-            }
+            onEdit(saving);
           }}
         >
           <div className={styles.savingInfo}>
             <div className={styles.savingHeader}>
               <h4 className={styles.savingTitle}>{saving.title}</h4>
-              {!isReadOnly && (
-                <div className={styles.savingActions}>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(saving.id);
-                    }}
-                    title="삭제"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
+              <div className={styles.savingActions}>
+                <button
+                  className={styles.deleteButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(saving.id);
+                  }}
+                  title="삭제"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className={styles.savingAmount}>

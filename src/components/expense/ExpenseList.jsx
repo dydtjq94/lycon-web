@@ -24,30 +24,26 @@ function ExpenseList({
       {expenses.map((expense) => (
         <div
           key={expense.id}
-          className={`${styles.expenseItem} ${isReadOnly ? styles.readOnly : ""}`}
+          className={styles.expenseItem}
           onClick={() => {
-            if (!isReadOnly) {
-              onEdit(expense);
-            }
+            onEdit(expense);
           }}
         >
           <div className={styles.expenseInfo}>
             <div className={styles.expenseHeader}>
               <h4 className={styles.expenseTitle}>{expense.title}</h4>
-              {!isReadOnly && (
-                <div className={styles.expenseActions}>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(expense.id);
-                    }}
-                    title="삭제"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
+              <div className={styles.expenseActions}>
+                <button
+                  className={styles.deleteButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(expense.id);
+                  }}
+                  title="삭제"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className={styles.expenseAmount}>

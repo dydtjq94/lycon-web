@@ -107,6 +107,15 @@
   color: #374151;
 }
 
+.profileName.readOnly {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.profileName.readOnly:hover {
+  color: #111827;
+}
+
 .infoText {
   font-weight: 500;
   font-size: 14px;
@@ -120,6 +129,15 @@
 
 .infoText:hover {
   color: #374151;
+}
+
+.infoText.readOnly {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.infoText.readOnly:hover {
+  color: #6b7280;
 }
 
 .infoDivider {

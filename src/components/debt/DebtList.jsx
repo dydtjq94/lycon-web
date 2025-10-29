@@ -24,30 +24,26 @@ function DebtList({
       {debts.map((debt) => (
         <div
           key={debt.id}
-          className={`${styles.debtItem} ${isReadOnly ? styles.readOnly : ""}`}
+          className={styles.debtItem}
           onClick={() => {
-            if (!isReadOnly) {
-              onEdit(debt);
-            }
+            onEdit(debt);
           }}
         >
           <div className={styles.debtInfo}>
             <div className={styles.debtHeader}>
               <h4 className={styles.debtTitle}>{debt.title}</h4>
-              {!isReadOnly && (
-                <div className={styles.debtActions}>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(debt.id);
-                    }}
-                    title="삭제"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
+              <div className={styles.debtActions}>
+                <button
+                  className={styles.deleteButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(debt.id);
+                  }}
+                  title="삭제"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className={styles.debtAmount}>

@@ -24,30 +24,26 @@ function IncomeList({
       {incomes.map((income) => (
         <div
           key={income.id}
-          className={`${styles.incomeItem} ${isReadOnly ? styles.readOnly : ""}`}
+          className={styles.incomeItem}
           onClick={() => {
-            if (!isReadOnly) {
-              onEdit(income);
-            }
+            onEdit(income);
           }}
         >
           <div className={styles.incomeInfo}>
             <div className={styles.incomeHeader}>
               <h4 className={styles.incomeTitle}>{income.title}</h4>
-              {!isReadOnly && (
-                <div className={styles.incomeActions}>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(income.id);
-                    }}
-                    title="삭제"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
+              <div className={styles.incomeActions}>
+                <button
+                  className={styles.deleteButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(income.id);
+                  }}
+                  title="삭제"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className={styles.incomeAmount}>

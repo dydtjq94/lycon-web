@@ -125,6 +125,16 @@
   background: #f3f4f6;
 }
 
+.financeCard.readOnly {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.financeCard.readOnly:hover {
+  border-color: #e3e3e3;
+  background: transparent;
+}
+
 .cardContent {
   display: flex;
   flex-direction: column;

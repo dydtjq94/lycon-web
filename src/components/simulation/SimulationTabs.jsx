@@ -21,6 +21,7 @@ function SimulationTabs({
   onDeleteSimulation,
   onRenameSimulation,
   onCopySimulation,
+  isReadOnly = false,
 }) {
   // 이름 수정 중인 시뮬레이션 ID
   const [editingId, setEditingId] = useState(null);
@@ -182,13 +183,15 @@ function SimulationTabs({
         ))}
 
         {/* 새 시뮬레이션 추가 버튼 */}
-        <button
-          className={styles.addButton}
-          onClick={onAddSimulation}
-          title="새 시뮬레이션 추가"
-        >
-          +
-        </button>
+        {onAddSimulation && (
+          <button
+            className={styles.addButton}
+            onClick={onAddSimulation}
+            title="새 시뮬레이션 추가"
+          >
+            +
+          </button>
+        )}
       </div>
 
       {/* 컨텍스트 메뉴 */}

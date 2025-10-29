@@ -1,5 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { getAdminInfo, checkProfileAccess } from "../services/authService";
 import { calculateKoreanAge, getKoreanAgeInYear } from "../utils/koreanAge";
 import { formatAmount } from "../utils/format";
 import {
@@ -53,6 +61,9 @@ import styles from "./DashboardPage.module.css";
 function DashboardPage() {
   const { profileId } = useParams();
   const navigate = useNavigate();
+  const { adminId, userId, isAdmin: isAdminFromAuth } = useAuth(); // 관리자 및 사용자 정보
+  const [isAdmin, setIsAdmin] = useState(false); // 실제 편집 권한 여부 (관리자 또는 권한 있는 사용자)
+  const [hasEditPermission, setHasEditPermission] = useState(false); // 편집 권한 여부
   const [selectedCategory, setSelectedCategory] = useState("income");
   const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -211,12 +222,55 @@ function DashboardPage() {
     () => simulations.find((sim) => sim.isDefault),
     [simulations]
   );
-  const isActiveSimulationDefault =
-    !!(
-      defaultSimulationEntry &&
-      activeSimulationId &&
-      defaultSimulationEntry.id === activeSimulationId
-    );
+  const isActiveSimulationDefault = !!(
+    defaultSimulationEntry &&
+    activeSimulationId &&
+    defaultSimulationEntry.id === activeSimulationId
+  );
+
+  // 권한 확인: 관리자 또는 해당 프로필에 권한이 있는 사용자
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (!profileId) {
+        setIsAdmin(false);
+        setHasEditPermission(false);
+        return;
+      }
+
+      // 1. 관리자 권한 확인
+      if (adminId) {
+        try {
+          const result = await getAdminInfo(adminId);
+          if (result.success && result.admin) {
+            const adminIsAdmin = result.admin.isAdmin !== false;
+            setIsAdmin(adminIsAdmin);
+            setHasEditPermission(adminIsAdmin); // 관리자는 항상 편집 가능
+            return;
+          }
+        } catch (error) {
+          console.error("관리자 상태 확인 오류:", error);
+        }
+      }
+
+      // 2. 사용자 권한 확인
+      if (userId) {
+        try {
+          const hasAccess = await checkProfileAccess(userId, profileId);
+          setIsAdmin(false); // 관리자가 아님
+          setHasEditPermission(hasAccess); // 프로필 접근 권한이 있으면 편집 가능
+          return;
+        } catch (error) {
+          console.error("사용자 권한 확인 오류:", error);
+        }
+      }
+
+      // 3. 비로그인 사용자
+      setIsAdmin(false);
+      setHasEditPermission(false);
+    };
+
+    checkPermissions();
+  }, [adminId, userId, profileId]);
 
   // 프로필 데이터 로드
   useEffect(() => {
@@ -513,7 +567,23 @@ function DashboardPage() {
   // 프로필 수정 핸들러
 
   // 프로필 수정 모달 열기
+  // 수정/삭제 권한 확인 함수 (권한이 없으면 회원가입 페이지로 이동)
+  const checkEditPermission = (actionName = "수정") => {
+    if (!hasEditPermission) {
+      if (
+        confirm(
+          `${actionName} 권한이 필요합니다. 로그인 또는 회원가입을 진행하시겠습니까?`
+        )
+      ) {
+        navigate(`/signup?profileId=${profileId}`);
+      }
+      return false;
+    }
+    return true;
+  };
+
   const handleEditProfile = () => {
+    if (!checkEditPermission("프로필 수정")) return;
     setIsProfileEditModalOpen(true);
   };
 
@@ -561,11 +631,13 @@ function DashboardPage() {
 
   // 소득 데이터 핸들러들
   const handleAddIncome = () => {
+    if (!checkEditPermission("소득 추가")) return;
     setEditingIncome(null);
     setIsIncomeModalOpen(true);
   };
 
   const handleEditIncome = (income) => {
+    if (!checkEditPermission("소득 수정")) return;
     setEditingIncome(income);
     setIsIncomeModalOpen(true);
   };
@@ -602,6 +674,7 @@ function DashboardPage() {
   };
 
   const handleDeleteIncome = async (incomeId) => {
+    if (!checkEditPermission("소득 삭제")) return;
     if (!window.confirm("이 소득 데이터를 삭제하시겠습니까?")) return;
 
     try {
@@ -614,17 +687,20 @@ function DashboardPage() {
 
   // 지출 핸들러들
   const handleAddExpense = () => {
+    if (!checkEditPermission("지출 추가")) return;
     setEditingExpense(null);
     setIsExpenseModalOpen(true);
   };
 
   // 저축/투자 핸들러들
   const handleAddSaving = () => {
+    if (!checkEditPermission("저축 추가")) return;
     setEditingSaving(null);
     setIsSavingModalOpen(true);
   };
 
   const handleEditExpense = (expense) => {
+    if (!checkEditPermission("지출 수정")) return;
     setEditingExpense(expense);
     setIsExpenseModalOpen(true);
   };
@@ -661,6 +737,7 @@ function DashboardPage() {
   };
 
   const handleDeleteExpense = async (expenseId) => {
+    if (!checkEditPermission("지출 삭제")) return;
     if (!window.confirm("이 지출 데이터를 삭제하시겠습니까?")) return;
 
     try {
@@ -710,12 +787,14 @@ function DashboardPage() {
 
   // 저축/투자 수정 핸들러
   const handleEditSaving = (saving) => {
+    if (!checkEditPermission("저축 수정")) return;
     setEditingSaving(saving);
     setIsSavingModalOpen(true);
   };
 
   // 저축/투자 삭제 핸들러
   const handleDeleteSaving = async (savingId) => {
+    if (!checkEditPermission("저축 삭제")) return;
     if (!window.confirm("이 저축/투자 데이터를 삭제하시겠습니까?")) return;
 
     try {
@@ -732,11 +811,13 @@ function DashboardPage() {
 
   // 연금 핸들러들
   const handleAddPension = () => {
+    if (!checkEditPermission("연금 추가")) return;
     setEditingPension(null);
     setIsPensionModalOpen(true);
   };
 
   const handleEditPension = (pension) => {
+    if (!checkEditPermission("연금 수정")) return;
     setEditingPension(pension);
     setIsPensionModalOpen(true);
   };
@@ -776,6 +857,7 @@ function DashboardPage() {
   };
 
   const handleDeletePension = async (pensionId) => {
+    if (!checkEditPermission("연금 삭제")) return;
     if (!window.confirm("이 연금 데이터를 삭제하시겠습니까?")) return;
 
     try {
@@ -792,11 +874,13 @@ function DashboardPage() {
 
   // 부동산 핸들러들
   const handleAddRealEstate = () => {
+    if (!checkEditPermission("부동산 추가")) return;
     setEditingRealEstate(null);
     setIsRealEstateModalOpen(true);
   };
 
   const handleEditRealEstate = (realEstate) => {
+    if (!checkEditPermission("부동산 수정")) return;
     setEditingRealEstate(realEstate);
     setIsRealEstateModalOpen(true);
   };
@@ -838,6 +922,7 @@ function DashboardPage() {
   };
 
   const handleDeleteRealEstate = async (realEstateId) => {
+    if (!checkEditPermission("부동산 삭제")) return;
     if (!window.confirm("이 부동산 데이터를 삭제하시겠습니까?")) return;
 
     try {
@@ -856,11 +941,13 @@ function DashboardPage() {
 
   // 자산 관련 핸들러들
   const handleAddAsset = () => {
+    if (!checkEditPermission("자산 추가")) return;
     setEditingAsset(null);
     setIsAssetModalOpen(true);
   };
 
   const handleEditAsset = (asset) => {
+    if (!checkEditPermission("자산 수정")) return;
     setEditingAsset(asset);
     setIsAssetModalOpen(true);
   };
@@ -895,6 +982,7 @@ function DashboardPage() {
   };
 
   const handleDeleteAsset = async (assetId) => {
+    if (!checkEditPermission("자산 삭제")) return;
     if (!window.confirm("이 자산 데이터를 삭제하시겠습니까?")) return;
 
     try {
@@ -907,11 +995,13 @@ function DashboardPage() {
 
   // 부채 핸들러들
   const handleAddDebt = () => {
+    if (!checkEditPermission("부채 추가")) return;
     setEditingDebt(null);
     setIsDebtModalOpen(true);
   };
 
   const handleEditDebt = (debt) => {
+    if (!checkEditPermission("부채 수정")) return;
     setEditingDebt(debt);
     setIsDebtModalOpen(true);
   };
@@ -949,6 +1039,7 @@ function DashboardPage() {
   };
 
   const handleDeleteDebt = async (debtId) => {
+    if (!checkEditPermission("부채 삭제")) return;
     if (!window.confirm("이 부채 데이터를 삭제하시겠습니까?")) return;
 
     try {
@@ -1329,6 +1420,7 @@ function DashboardPage() {
   };
 
   const handleAddSimulation = async () => {
+    if (!checkEditPermission("시뮬레이션 추가")) return;
     try {
       // 기본 시뮬레이션(현재) 찾기
       const defaultSimulation = simulations.find(
@@ -1366,6 +1458,7 @@ function DashboardPage() {
 
   // 시뮬레이션 복제 핸들러 (우클릭 컨텍스트 메뉴에서 호출)
   const handleCopySimulation = async (sourceSimulationId) => {
+    if (!checkEditPermission("시뮬레이션 복제")) return;
     try {
       // 복제할 시뮬레이션 찾기
       const sourceSimulation = simulations.find(
@@ -1447,6 +1540,7 @@ function DashboardPage() {
   };
 
   const handleDeleteSimulation = async (simulationId) => {
+    if (!checkEditPermission("시뮬레이션 삭제")) return;
     try {
       await simulationService.deleteSimulation(profileId, simulationId);
 
@@ -1474,6 +1568,7 @@ function DashboardPage() {
   };
 
   const handleRenameSimulation = async (simulationId, newTitle) => {
+    if (!checkEditPermission("시뮬레이션 이름 변경")) return;
     try {
       await simulationService.updateSimulation(profileId, simulationId, {
         title: newTitle,
@@ -1662,13 +1757,15 @@ ${JSON.stringify(analysisData, null, 2)}`;
     <div className={styles.container}>
       {/* 상단 프로필 정보 */}
       <div className={styles.profileHeader}>
-        <button
-          className={styles.backIconButton}
-          onClick={() => navigate("/consult")}
-          title="목록으로"
-        >
-          ←
-        </button>
+        {isAdmin && (
+          <button
+            className={styles.backIconButton}
+            onClick={() => navigate("/consult")}
+            title="목록으로"
+          >
+            ←
+          </button>
+        )}
         <div className={styles.profileInfo}>
           <h1
             className={styles.profileName}
@@ -1777,6 +1874,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
           onDeleteSimulation={handleDeleteSimulation}
           onRenameSimulation={handleRenameSimulation}
           onCopySimulation={handleCopySimulation}
+          isReadOnly={false}
         />
       )}
 
@@ -1881,6 +1979,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
           onDelete={handleProfileSummaryDelete}
           onOpenFinancialModal={handleOpenFinancialModal}
           isLoading={isFinancialDataLoading}
+          isReadOnly={false}
         />
       </div>
 
@@ -1910,6 +2009,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                         {category.count}개
                       </span>
                     </button>
+                    {/* 수정/삭제 버튼은 모두 표시, 클릭 시 권한 확인 */}
                     <button
                       className={styles.categoryAddButton}
                       onClick={(e) => {
@@ -1978,42 +2078,49 @@ ${JSON.stringify(analysisData, null, 2)}`;
                     incomes={incomes}
                     onEdit={handleEditIncome}
                     onDelete={handleDeleteIncome}
+                    isReadOnly={false}
                   />
                 ) : selectedCategory === "expense" ? (
                   <ExpenseList
                     expenses={expenses}
                     onEdit={handleEditExpense}
                     onDelete={handleDeleteExpense}
+                    isReadOnly={false}
                   />
                 ) : selectedCategory === "savings" ? (
                   <SavingList
                     savings={savings}
                     onEdit={handleEditSaving}
                     onDelete={handleDeleteSaving}
+                    isReadOnly={false}
                   />
                 ) : selectedCategory === "pension" ? (
                   <PensionList
                     pensions={pensions}
                     onEdit={handleEditPension}
                     onDelete={handleDeletePension}
+                    isReadOnly={false}
                   />
                 ) : selectedCategory === "realEstate" ? (
                   <RealEstateList
                     realEstates={realEstates}
                     onEdit={handleEditRealEstate}
                     onDelete={handleDeleteRealEstate}
+                    isReadOnly={false}
                   />
                 ) : selectedCategory === "assets" ? (
                   <AssetList
                     assets={assets}
                     onEdit={handleEditAsset}
                     onDelete={handleDeleteAsset}
+                    isReadOnly={false}
                   />
                 ) : selectedCategory === "debt" ? (
                   <DebtList
                     debts={debts}
                     onEdit={handleEditDebt}
                     onDelete={handleDeleteDebt}
+                    isReadOnly={false}
                   />
                 ) : (
                   <div className={styles.emptyList}>
@@ -2222,6 +2329,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onEdit={handleFinancialDataEdit}
         onDelete={handleFinancialDataDelete}
         onAdd={handleFinancialDataAdd}
+        isReadOnly={false}
       />
 
       <SimulationCompareModal

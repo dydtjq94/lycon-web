@@ -1,23 +1,51 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { getAdminInfo } from "../../services/authService";
 import versionData from "../../../version.json";
 import styles from "./VersionDisplay.module.css";
 
 /**
  * 버전 표시 컴포넌트 (개발자용)
+ * 관리자만 볼 수 있습니다.
  * 마우스를 올리면 버전 히스토리가 표시됩니다.
  * 클릭하면 툴팁이 고정되어 더 편하게 볼 수 있습니다.
  */
 function VersionDisplay() {
+  const { adminId, loading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  // 모든 hooks는 조건부 리턴 이전에 선언되어야 함 (React 규칙)
   const [isHovered, setIsHovered] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
   const tooltipRef = useRef(null);
-  const history = versionData.history || [];
 
-  // 클릭으로 고정 토글
-  const handleVersionClick = (e) => {
-    e.stopPropagation();
-    setIsFixed(!isFixed);
-  };
+  // DashboardPage와 동일한 방식으로 관리자 권한 확인
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!adminId) {
+        setIsAdmin(false);
+        setIsChecking(false);
+        return;
+      }
+
+      try {
+        const result = await getAdminInfo(adminId);
+        if (result.success && result.admin) {
+          const adminIsAdmin = result.admin.isAdmin !== false;
+          setIsAdmin(adminIsAdmin);
+        } else {
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error("관리자 상태 확인 오류:", error);
+        setIsAdmin(false);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [adminId]);
 
   // 바깥쪽 클릭 시 고정 해제
   useEffect(() => {
@@ -39,6 +67,19 @@ function VersionDisplay() {
       };
     }
   }, [isFixed]);
+
+  // 로딩 중이거나 관리자가 아니면 아무것도 표시하지 않음
+  if (loading || isChecking || !isAdmin) {
+    return null;
+  }
+
+  const history = versionData.history || [];
+
+  // 클릭으로 고정 토글
+  const handleVersionClick = (e) => {
+    e.stopPropagation();
+    setIsFixed(!isFixed);
+  };
 
   const showTooltip = isHovered || isFixed;
 

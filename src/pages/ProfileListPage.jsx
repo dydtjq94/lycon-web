@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { profileService } from "../services/firestoreService";
 import { calculateKoreanAge } from "../utils/koreanAge";
 import { formatAmount } from "../utils/format";
+import { trackPageView, trackEvent } from "../libs/mixpanel";
 import styles from "./ProfileListPage.module.css";
 
 /**
@@ -11,6 +13,7 @@ import styles from "./ProfileListPage.module.css";
  */
 function ProfileListPage() {
   const navigate = useNavigate();
+  const { logout, admin, adminId, isAdmin, loading: authLoading } = useAuth();
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,6 +22,17 @@ function ProfileListPage() {
   useEffect(() => {
     loadProfiles();
   }, []);
+
+  // Mixpanel: Consult 화면 진입 이벤트
+  useEffect(() => {
+    // 로딩이 완료되고 프로필 목록이 로드된 후 이벤트 트래킹
+    if (!loading) {
+      trackPageView("Consult 화면", {
+        profileCount: profiles.length,
+        hasProfiles: profiles.length > 0,
+      });
+    }
+  }, [loading, profiles.length]);
 
   const loadProfiles = async () => {
     try {
@@ -37,6 +51,15 @@ function ProfileListPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 로그아웃 핸들러
+  const handleLogout = () => {
+    trackEvent("로그아웃", {
+      email: admin?.email,
+    });
+    logout();
+    navigate("/login");
   };
 
   // 프로필 완전 삭제 (모든 관련 데이터 포함)
@@ -60,6 +83,35 @@ function ProfileListPage() {
 
   // 만 나이 계산 (calculateKoreanAge 함수 사용)
 
+  // 인증 로딩 중
+  if (authLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>로딩 중...</div>
+      </div>
+    );
+  }
+
+  // 관리자가 아니면 로그인 페이지로 연결하는 안내 표시
+  if (!adminId || !isAdmin) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loginPrompt}>
+          <h2 className={styles.loginTitle}>관리자 로그인이 필요합니다</h2>
+          <p className={styles.loginMessage}>
+            이 페이지에 접근하려면 관리자 계정으로 로그인해주세요.
+          </p>
+          <button
+            className={styles.loginButton}
+            onClick={() => navigate("/login")}
+          >
+            관리자 로그인하기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -80,12 +132,21 @@ function ProfileListPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>Lycon Planning</h1>
-        <button
-          className={styles.createButton}
-          onClick={() => navigate("/consult/create")}
-        >
-          + 새 프로필
-        </button>
+        <div className={styles.headerActions}>
+          <button
+            className={styles.createButton}
+            onClick={() => navigate("/consult/create")}
+          >
+            + 새 프로필
+          </button>
+          <button
+            className={styles.logoutButton}
+            onClick={handleLogout}
+            title={`${admin?.email || "사용자"} 로그아웃`}
+          >
+            로그아웃
+          </button>
+        </div>
       </div>
 
       <div className={styles.profileList}>

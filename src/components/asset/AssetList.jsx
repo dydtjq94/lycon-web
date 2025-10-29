@@ -25,11 +25,9 @@ function AssetList({
       {assets.map((asset) => (
         <div
           key={asset.id}
-          className={`${styles.assetItem} ${isReadOnly ? styles.readOnly : ""}`}
+          className={styles.assetItem}
           onClick={() => {
-            if (!isReadOnly) {
-              onEdit(asset);
-            }
+            onEdit(asset);
           }}
         >
           <div className={styles.assetInfo}>
@@ -37,20 +35,18 @@ function AssetList({
               <h4 className={styles.assetTitle}>
                 {asset.title === "현금" ? "현금 자산" : asset.title}
               </h4>
-              {!isReadOnly && (
-                <div className={styles.assetActions}>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(asset.id, asset.title);
-                    }}
-                    title="삭제"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
+              <div className={styles.assetActions}>
+                <button
+                  className={styles.deleteButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(asset.id, asset.title);
+                  }}
+                  title="삭제"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className={styles.assetAmount}>
@@ -67,9 +63,7 @@ function AssetList({
               )
             </div>
 
-            {asset.memo && (
-              <div className={styles.assetMemo}>{asset.memo}</div>
-            )}
+            {asset.memo && <div className={styles.assetMemo}>{asset.memo}</div>}
           </div>
         </div>
       ))}

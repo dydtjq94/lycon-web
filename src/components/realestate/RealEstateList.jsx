@@ -22,30 +22,24 @@ const RealEstateList = ({
       {realEstates.map((realEstate) => (
         <div
           key={realEstate.id}
-          className={`${styles.realEstateItem} ${
-            isReadOnly ? styles.readOnly : ""
-          }`}
+          className={styles.realEstateItem}
           onClick={() => {
-            if (!isReadOnly) {
-              onEdit(realEstate);
-            }
+            onEdit(realEstate);
           }}
         >
           <div className={styles.realEstateHeader}>
             <div className={styles.realEstateTitle}>
               <span className={styles.title}>{realEstate.title}</span>
             </div>
-            {!isReadOnly && (
-              <button
-                className={styles.deleteButton}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(realEstate.id);
-                }}
-              >
-                ×
-              </button>
-            )}
+            <button
+              className={styles.deleteButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(realEstate.id);
+              }}
+            >
+              ×
+            </button>
           </div>
 
           <div className={styles.realEstateContent}>

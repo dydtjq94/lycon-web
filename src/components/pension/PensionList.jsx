@@ -58,13 +58,9 @@ function PensionList({
       {pensions.map((pension) => (
         <div
           key={pension.id}
-          className={`${styles.pensionItem} ${
-            isReadOnly ? styles.readOnly : ""
-          }`}
+          className={styles.pensionItem}
           onClick={() => {
-            if (!isReadOnly) {
-              onEdit(pension);
-            }
+            onEdit(pension);
           }}
         >
           <div className={styles.pensionHeader}>
@@ -78,17 +74,15 @@ function PensionList({
                 </span>
               )}
             </div>
-            {!isReadOnly && (
-              <button
-                className={styles.deleteButton}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(pension.id);
-                }}
-              >
-                ×
-              </button>
-            )}
+            <button
+              className={styles.deleteButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(pension.id);
+              }}
+            >
+              ×
+            </button>
           </div>
 
           <div className={styles.pensionContent}>
