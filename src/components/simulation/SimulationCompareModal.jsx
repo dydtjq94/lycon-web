@@ -150,7 +150,7 @@ function SimulationCompareModal({
 
   const valueColumnCount =
     Number(showDefaultColumn) + Number(showTargetColumn) || 1;
-  const gridTemplateColumns = `minmax(140px, 0.9fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
+  const gridTemplateColumns = `minmax(80px, 0.3fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
 
   const renderBreakdownList = (items, prefix) => {
     if (!Array.isArray(items) || items.length === 0) {
@@ -631,25 +631,50 @@ function SimulationCompareModal({
                 </div>
               )}
 
-              {/* 기존 재무 데이터 비교 */}
-              <div className={styles.sections}>
-                {categoryConfigs.map((config) => (
-                  <div key={config.key} className={styles.section}>
-                    <div className={styles.sectionTitle}>{config.label}</div>
-                    <div className={styles.sectionColumns}>
-                      <div className={styles.column}>
-                        <div className={styles.columnHeader}>
-                          {defaultTitle}
-                        </div>
-                        {renderList(config, defaultData?.[config.key])}
+              {/* 상세 재무 데이터 비교 */}
+              <div className={styles.financialDataSection}>
+                <h4 className={styles.financialDataTitle}>상세 재무 데이터</h4>
+                <div className={styles.summaryTable}>
+                  <div
+                    className={`${styles.summaryRow} ${styles.summaryHeader}`}
+                    style={{ gridTemplateColumns }}
+                  >
+                    <div className={styles.summaryCell}>재무 항목</div>
+                    {showDefaultColumn && (
+                      <div className={styles.summaryCell}>
+                        {defaultTitle || "현재 시뮬레이션"}
                       </div>
-                      <div className={styles.column}>
-                        <div className={styles.columnHeader}>{targetTitle}</div>
-                        {renderList(config, targetData?.[config.key])}
+                    )}
+                    {showTargetColumn && (
+                      <div className={styles.summaryCell}>
+                        {targetTitle || "비교 시뮬레이션"}
                       </div>
-                    </div>
+                    )}
                   </div>
-                ))}
+                  {categoryConfigs.map((config) => (
+                    <div
+                      key={config.key}
+                      className={styles.summaryRow}
+                      style={{ gridTemplateColumns }}
+                    >
+                      <div
+                        className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                      >
+                        {config.label}
+                      </div>
+                      {showDefaultColumn && (
+                        <div className={styles.summaryCell}>
+                          {renderList(config, defaultData?.[config.key])}
+                        </div>
+                      )}
+                      {showTargetColumn && (
+                        <div className={styles.summaryCell}>
+                          {renderList(config, targetData?.[config.key])}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
