@@ -1216,3 +1216,92 @@ export const checklistService = {
     }
   },
 };
+
+/**
+ * 버전 히스토리 서비스
+ * Firebase의 versionHistory 컬렉션에 버전 변경 내역을 저장하고 조회합니다.
+ */
+export const versionHistoryService = {
+  /**
+   * 새 버전 정보를 Firebase에 추가
+   * @param {Object} versionData - 버전 정보 (version, date, changes)
+   */
+  async addVersion(versionData) {
+    try {
+      // 동일한 버전이 이미 있는지 확인
+      const existingQuery = query(
+        collection(db, "versionHistory"),
+        where("version", "==", versionData.version)
+      );
+      const existingDocs = await getDocs(existingQuery);
+
+      if (!existingDocs.empty) {
+        // 이미 존재하는 버전이면 업데이트
+        const existingDoc = existingDocs.docs[0];
+        await updateDoc(doc(db, "versionHistory", existingDoc.id), {
+          ...versionData,
+          updatedAt: new Date().toISOString(),
+        });
+        console.log("버전 정보 업데이트:", versionData.version);
+      } else {
+        // 새 버전이면 추가
+        const docRef = await addDoc(collection(db, "versionHistory"), {
+          ...versionData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        console.log("버전 정보 추가:", versionData.version, docRef.id);
+      }
+    } catch (error) {
+      console.error("버전 정보 저장 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 모든 버전 히스토리를 조회 (최신순)
+   * @returns {Array} 버전 히스토리 배열
+   */
+  async getHistory() {
+    try {
+      const q = query(
+        collection(db, "versionHistory"),
+        orderBy("date", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      const history = [];
+      querySnapshot.forEach((doc) => {
+        history.push({ id: doc.id, ...doc.data() });
+      });
+      return history;
+    } catch (error) {
+      console.error("버전 히스토리 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 특정 버전 정보 조회
+   * @param {String} version - 버전 문자열
+   * @returns {Object|null} 버전 정보 또는 null
+   */
+  async getVersion(version) {
+    try {
+      const q = query(
+        collection(db, "versionHistory"),
+        where("version", "==", version)
+      );
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        return {
+          id: querySnapshot.docs[0].id,
+          ...querySnapshot.docs[0].data(),
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("버전 정보 조회 오류:", error);
+      throw error;
+    }
+  },
+};

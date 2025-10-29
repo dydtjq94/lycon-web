@@ -190,19 +190,19 @@ export function calculateCashflowSimulation(
           } else if (year === debtEndYear) {
             // 만기년도: 이자 + 원금 상환
             const yearlyInterest = debtAmount * interestRate;
-          if (yearlyInterest > 0) {
-            totalDebtInterest += yearlyInterest;
-            debtInterestDetails.push({
-              title: debt.title,
-              amount: yearlyInterest,
-            });
-            addNegative(
-              `${debt.title} (이자)`,
-              yearlyInterest,
-              "부채 이자",
-              `debt-interest-${debt.id || debt.title}`
-            );
-          }
+            if (yearlyInterest > 0) {
+              totalDebtInterest += yearlyInterest;
+              debtInterestDetails.push({
+                title: debt.title,
+                amount: yearlyInterest,
+              });
+              addNegative(
+                `${debt.title} (이자)`,
+                yearlyInterest,
+                "부채 이자",
+                `debt-interest-${debt.id || debt.title}`
+              );
+            }
             if (debtAmount > 0) {
               totalDebtPrincipal += debtAmount;
               debtPrincipalDetails.push({
@@ -313,32 +313,32 @@ export function calculateCashflowSimulation(
           const interestPayment = remainingPrincipal * r;
           const principalPayment = yearlyPrincipalPayment;
 
-            if (interestPayment > 0) {
-              totalDebtInterest += interestPayment;
-              debtInterestDetails.push({
-                title: debt.title,
-                amount: interestPayment,
-              });
-              addNegative(
-                `${debt.title} (이자)`,
-                interestPayment,
-                "부채 이자",
-                `debt-interest-${debt.id || debt.title}`
-              );
-            }
-            if (principalPayment > 0) {
-              totalDebtPrincipal += principalPayment;
-              debtPrincipalDetails.push({
-                title: debt.title,
-                amount: principalPayment,
-              });
-              addNegative(
-                `${debt.title} (원금 상환)`,
-                principalPayment,
-                "부채 원금 상환",
-                `debt-principal-${debt.id || debt.title}`
-              );
-            }
+          if (interestPayment > 0) {
+            totalDebtInterest += interestPayment;
+            debtInterestDetails.push({
+              title: debt.title,
+              amount: interestPayment,
+            });
+            addNegative(
+              `${debt.title} (이자)`,
+              interestPayment,
+              "부채 이자",
+              `debt-interest-${debt.id || debt.title}`
+            );
+          }
+          if (principalPayment > 0) {
+            totalDebtPrincipal += principalPayment;
+            debtPrincipalDetails.push({
+              title: debt.title,
+              amount: principalPayment,
+            });
+            addNegative(
+              `${debt.title} (원금 상환)`,
+              principalPayment,
+              "부채 원금 상환",
+              `debt-principal-${debt.id || debt.title}`
+            );
+          }
 
           const remainingAfterPayment = Math.max(
             remainingPrincipal - principalPayment,
@@ -697,7 +697,8 @@ export function calculateCashflowSimulation(
         // 부동산 가치에 상승률을 적용한 최종 가치 계산
         const yearsElapsed = endYear - startYear;
         const growthRate = (realEstate.growthRate || 0) / 100;
-        const finalValue = purchaseAmount * Math.pow(1 + growthRate, yearsElapsed);
+        const finalValue =
+          purchaseAmount * Math.pow(1 + growthRate, yearsElapsed);
         totalRealEstateSale += finalValue;
         realEstateSales.push({
           title: realEstate.title,
@@ -748,14 +749,16 @@ export function calculateCashflowSimulation(
       if (
         asset.assetType === "income" &&
         asset.incomeRate > 0 &&
-        year >= startYear &&
+        year > startYear &&
         year <= endYear
       ) {
-        // 해당 연도의 자산 가치를 계산 (자산 시뮬레이션에서 가져와야 하지만, 여기서는 간단히 계산)
-        const yearsElapsed = year - startYear;
-        const currentAssetValue =
-          asset.currentValue * Math.pow(1 + asset.growthRate, yearsElapsed);
-        const yearlyIncome = currentAssetValue * asset.incomeRate;
+        // 연말 기준: 수익은 시작 다음 해부터 발생하며, 전년도 말 자산 가치 기준으로 계산
+        // 전년도 말 자산 가치 = currentValue * (1 + growthRate)^(year - startYear - 1)
+        // 수익 = 전년도 말 자산 가치 * 수익률
+        const yearsElapsed = year - startYear; // 시작부터 현재 해까지 경과 년수
+        const previousYearEndValue =
+          asset.currentValue * Math.pow(1 + asset.growthRate, yearsElapsed - 1);
+        const yearlyIncome = previousYearEndValue * asset.incomeRate;
         totalAssetIncome += yearlyIncome;
         addPositive(
           `${asset.title} (수익)`,

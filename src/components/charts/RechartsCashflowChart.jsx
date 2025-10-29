@@ -847,21 +847,22 @@ function RechartsCashflowChart({
                             (asset) =>
                               asset.assetType === "income" &&
                               asset.incomeRate > 0 &&
-                              data.year >= asset.startYear &&
+                              // 연말 기준: 시작 다음 해부터 수익 발생
+                              data.year > asset.startYear &&
                               data.year <= asset.endYear
                           )
                           .forEach((asset, index) => {
-                            const yearsElapsed = data.year - asset.startYear;
+                            // 전년도 말 자산 가치 기준으로 수익 계산
+                            // 전년도 말 자산 가치 = currentValue * (1 + growthRate)^(year - startYear - 1)
+                            const yearsElapsed = data.year - asset.startYear; // 시작부터 현재 해까지 경과 년수
                             const growthRate = asset.growthRate || 0;
 
-                            // 자산 가치 계산 (상승률 적용)
-                            const currentAssetValue =
+                            const prevYearEndValue =
                               asset.currentValue *
-                              Math.pow(1 + growthRate, yearsElapsed);
+                              Math.pow(1 + growthRate, yearsElapsed - 1);
 
-                            // 연간 수익 계산 (자산 가치 * 수익률)
                             const annualIncome =
-                              currentAssetValue * asset.incomeRate;
+                              prevYearEndValue * asset.incomeRate;
 
                             allItems.push({
                               key: `asset-income-${index}`,
