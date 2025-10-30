@@ -101,36 +101,40 @@ function RechartsCashflowChart({
 
   const expenseEvents = getExpenseEvents();
 
-  // 저축/투자 이벤트 추출 (시작/만료/수령 이벤트)
+  // 저축/투자 이벤트 추출 (시작/종료/수령 이벤트)
   const getSavingEvents = () => {
     const events = [];
     if (savings && savings.length > 0) {
       savings.forEach((saving) => {
-        // 시작 이벤트
-        events.push({
-          year: saving.startYear,
-          age: saving.startYear - (data[0]?.year - data[0]?.age),
-          type: "start",
-          category: "saving",
-          title: `${saving.title} 시작`,
-        });
+        // 숫자형으로 보정 (문자열로 들어오는 경우 방지)
+        const sStart = Number(saving.startYear);
+        const sEnd = Number(saving.endYear);
 
-        // 만료 이벤트 (종료년도 + 1)
-        if (saving.endYear) {
+        // 시작 이벤트
+        if (Number.isFinite(sStart)) {
           events.push({
-            year: saving.endYear + 1,
-            age: saving.endYear + 1 - (data[0]?.year - data[0]?.age),
-            type: "maturity",
+            year: sStart,
+            age: sStart - (data[0]?.year - data[0]?.age),
+            type: "start",
             category: "saving",
-            title: `${saving.title} 만료`,
+            title: `${saving.title} 시작`,
           });
         }
 
-        // 수령 이벤트 (만료 후 수령)
-        if (saving.endYear) {
+        // 종료 이벤트: 종료년도에 "종료" 표시
+        if (Number.isFinite(sEnd)) {
           events.push({
-            year: saving.endYear + 2,
-            age: saving.endYear + 2 - (data[0]?.year - data[0]?.age),
+            year: sEnd,
+            age: sEnd - (data[0]?.year - data[0]?.age),
+            type: "end",
+            category: "saving",
+            title: `${saving.title} 종료`,
+          });
+
+          // 수령 이벤트: 종료 다음 해에 "수령" 표시
+          events.push({
+            year: sEnd + 1,
+            age: sEnd + 1 - (data[0]?.year - data[0]?.age),
             type: "withdrawal",
             category: "saving",
             title: `${saving.title} 수령`,

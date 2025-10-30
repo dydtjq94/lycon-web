@@ -1,6 +1,6 @@
 /* 대시보드 페이지 스타일 - 블랙 & 화이트 톤앤매너 */
 .container {
-  min-height: 100vh;
+  height: 100vh;
   background: #ffffff;
   color: #111827;
   display: flex;
@@ -250,6 +250,7 @@
   display: flex;
   flex: 1;
   min-height: 0;
+  overflow: hidden; /* 전체 화면 스크롤 방지, 내부만 스크롤 */
 }
 
 /* 사이드바 토글 버튼 컨테이너 */
@@ -332,6 +333,14 @@
   overflow: hidden;
   padding: 4px 0px 4px 0px;
   overflow-y: auto;
+  /* 스크롤은 가능하되 스크롤바는 숨김 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* WebKit 기반 브라우저에서 사이드바 스크롤바 숨김 */
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar.collapsed {
@@ -800,6 +809,7 @@
   flex-direction: column;
   min-height: 0;
   background: white;
+  overflow-y: auto; /* 메인도 내부 스크롤 */
 }
 
 /* 데이터 입력 섹션 (매우 작고 심플) */

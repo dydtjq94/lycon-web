@@ -1,7 +1,64 @@
 {
-  "version": "0.26.2",
-  "lastUpdated": "2025-10-24",
+  "version": "0.26.9",
+  "today": "2025-10-30",
   "history": [
+    {
+      "version": "0.26.9",
+      "date": "2025-10-30",
+      "changes": [
+        "update-version.cjs 개선: today 자동 갱신 및 touch 모드 지원",
+        "package.json: predev/prebuild에서 today 자동 갱신 연결"
+      ]
+    },
+    {
+      "version": "0.26.8",
+      "date": "2025-10-30",
+      "changes": [
+        "version.json 스키마 변경: lastUpdated → today (항상 오늘 날짜로 유지)",
+        "앱은 버전 히스토리 중심으로 확인하므로 메타 필드 명확화"
+      ]
+    },
+    {
+      "version": "0.26.7",
+      "date": "2025-10-30",
+      "changes": [
+        "사이드바 스크롤바 숨김 처리: 스크롤은 유지하고 바 UI만 감춤",
+        "DashboardPage.module.css: .sidebar에 scrollbar-width:none, -ms-overflow-style:none, ::-webkit-scrollbar 숨김 추가"
+      ]
+    },
+    {
+      "version": "0.26.6",
+      "date": "2025-10-30",
+      "changes": [
+        "대시보드 레이아웃 고정: 전체 페이지 스크롤 방지 및 사이드바/메인 내부 스크롤 처리",
+        "DashboardPage.module.css 수정: .container height:100vh, .dashboardMain overflow:hidden, .mainContent overflow-y:auto"
+      ]
+    },
+    {
+      "version": "0.26.5",
+      "date": "2025-10-30",
+      "changes": [
+        "저축/투자 하단 이벤트 정정: 종료년도에 '종료', 다음 해에 '수령' 표시",
+        "RechartsCashflowChart의 저축 이벤트 로직 보정 및 연도 숫자형 강제 변환"
+      ]
+    },
+    {
+      "version": "0.26.4",
+      "date": "2025-10-30",
+      "changes": [
+        "저축 이벤트 연도 문자열 처리 버그 수정: endYear+1이 문자열 결합으로 처리되던 문제 해결",
+        "현금흐름 시뮬레이터에서 저축 startYear/endYear를 숫자로 정규화하여 만기 수령 이벤트가 종료년도 다음 해에 정확히 표시되도록 수정"
+      ]
+    },
+    {
+      "version": "0.26.3",
+      "date": "2025-10-30",
+      "changes": [
+        "저축 평가 로직 연말 기준으로 수정: (현재보유+해당연도 적립)×(1+연도 수익률)",
+        "저축 만기 수령을 만기 다음 해에 현금 유입으로 반영 (예: 2025-2025 → 2026 수령)",
+        "일회성 저축도 단년도(예: 2025-2025)에 1년치 수익률 적용"
+      ]
+    },
     {
       "version": "0.26.2",
       "date": "2025-10-24",

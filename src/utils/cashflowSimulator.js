@@ -438,8 +438,18 @@ export function calculateCashflowSimulation(
     let savingMaturities = []; // 저축 만료 상세 정보
 
     savings.forEach((saving) => {
-      if (year >= saving.startYear && year <= saving.endYear) {
-        const yearsElapsed = year - saving.startYear;
+      // 년도 데이터 타입 확인 및 변환(문자열 → 숫자)
+      const sStartYear =
+        typeof saving.startYear === "string"
+          ? parseInt(saving.startYear, 10)
+          : saving.startYear;
+      const sEndYear =
+        typeof saving.endYear === "string"
+          ? parseInt(saving.endYear, 10)
+          : saving.endYear;
+
+      if (year >= sStartYear && year <= sEndYear) {
+        const yearsElapsed = year - sStartYear;
         const yearlyGrowthRate = saving.yearlyGrowthRate || 0; // 이미 소수로 저장됨
 
         if (saving.frequency === "one_time") {
@@ -471,10 +481,10 @@ export function calculateCashflowSimulation(
             `saving-contrib-${saving.id || saving.title}`
           );
         }
-      } else if (year === saving.endYear + 1) {
+      } else if (year === sEndYear + 1) {
         // 저축 만료 다음 해: 만료된 저축 금액을 현금흐름에 추가
         // 이자율을 적용한 최종 금액 계산
-        const yearsElapsed = saving.endYear - saving.startYear;
+        const yearsElapsed = sEndYear - sStartYear;
         const interestRate = saving.interestRate || 0;
         const yearlyGrowthRate = saving.yearlyGrowthRate || 0;
 
@@ -482,21 +492,22 @@ export function calculateCashflowSimulation(
         const currentAmount = Number(saving.currentAmount) || 0; // 현재 보유 금액 포함
 
         if (saving.frequency === "one_time") {
-          // 일회성 저축: (현재 보유 + 일회성 적립 원금)에 이자율 적용
+          // 일회성 저축: (현재 보유 + 일회성 적립 원금)에 해당 연도 수익률까지 포함하여 연말 평가
+          // 예: 2025-2025라면 1년치 이자 적용 필요 → yearsElapsed + 1
           finalAmount =
             (currentAmount + (Number(saving.amount) || 0)) *
-            Math.pow(1 + interestRate, yearsElapsed);
+            Math.pow(1 + interestRate, yearsElapsed + 1);
         } else {
           // 월간/연간 저축: 복리 계산
           const monthlyAmount =
             saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
-          // 현재 보유 금액으로 시작하여 매년 이자 적용 후 해당 해 적립액을 추가
+          // 현재 보유 금액으로 시작하여 매년 [보유 + 해당 해 적립]에 이자 적용 (연말 평가)
           let accumulated = currentAmount;
           for (let i = 0; i <= yearsElapsed; i++) {
             const adjustedMonthlyAmount =
               monthlyAmount * Math.pow(1 + yearlyGrowthRate, i);
             const yearlyAmount = adjustedMonthlyAmount * 12;
-            accumulated = accumulated * (1 + interestRate) + yearlyAmount;
+            accumulated = (accumulated + yearlyAmount) * (1 + interestRate);
           }
           finalAmount = accumulated;
         }
@@ -1041,13 +1052,13 @@ export function calculateAssetSimulation(
         const yearlyGrowthRate = saving.yearlyGrowthRate; // 이미 소수로 저장됨
 
         if (saving.frequency === "one_time") {
-          // 일회성 저축 (정기예금 등)
+          // 일회성 저축 (정기예금 등): 시작년도에는 (보유+일회성 적립) 후 해당 연도 수익률 적용(연말 평가)
           if (year === saving.startYear) {
-            // 현재 보유 금액 + 추가 저축 금액
-            saving.amount = saving.amount + saving.originalAmount;
+            saving.amount =
+              (saving.amount + saving.originalAmount) * (1 + interestRate);
           } else if (year > saving.startYear) {
-            // 시작년도 다음 해부터 만료년도까지 이자율만 적용
-            saving.amount *= 1 + interestRate;
+            // 이후 해에는 이자만 적용 (추가 적립 없음)
+            saving.amount = saving.amount * (1 + interestRate);
           }
         } else {
           // 월간/연간 저축
@@ -1061,13 +1072,8 @@ export function calculateAssetSimulation(
             monthlyAmount * Math.pow(1 + yearlyGrowthRate, yearsElapsed);
           const yearlyAmount = adjustedMonthlyAmount * 12;
 
-          if (year === saving.startYear) {
-            // 첫 해: 현재 보유 금액 + 올해 저축만 추가 (이자율 미적용)
-            saving.amount = saving.amount + yearlyAmount;
-          } else {
-            // 작년 자산에 이자율 적용 + 올해 저축 추가
-            saving.amount = saving.amount * (1 + interestRate) + yearlyAmount;
-          }
+          // 모든 해에 대해 연말 평가 기준 적용: (보유 + 올해 적립) × (1 + 수익률)
+          saving.amount = (saving.amount + yearlyAmount) * (1 + interestRate);
         }
       } else if (year > saving.endYear + 1) {
         // endYear + 1 이후: 이미 비활성화된 저축은 건너뛰기
