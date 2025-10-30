@@ -541,8 +541,23 @@ function ProfileCreatePage() {
                 <label htmlFor="retirementAge" className={styles.label}>
                   은퇴 목표 연령 * (은퇴년도:{" "}
                   {formData.birthYear && formData.retirementAge
-                    ? parseInt(formData.birthYear) +
-                      parseInt(formData.retirementAge)
+                    ? (() => {
+                        const currentYear = new Date().getFullYear();
+                        const birth = parseInt(formData.birthYear, 10);
+                        const retireAge = parseInt(formData.retirementAge, 10);
+                        if (
+                          Number.isFinite(birth) &&
+                          Number.isFinite(retireAge)
+                        ) {
+                          const currentAge = currentYear - birth;
+                          const yearsToRetire = retireAge - currentAge;
+                          return (
+                            currentYear +
+                            (Number.isFinite(yearsToRetire) ? yearsToRetire : 0)
+                          );
+                        }
+                        return "?";
+                      })()
                     : "?"}
                   년)
                 </label>

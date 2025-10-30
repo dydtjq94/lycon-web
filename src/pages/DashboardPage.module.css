@@ -331,7 +331,6 @@
   border-right: 1px solid #e5e7eb;
   transition: all 0.3s ease;
   overflow: hidden;
-  padding: 4px 0px 4px 0px;
   overflow-y: auto;
   /* 스크롤은 가능하되 스크롤바는 숨김 */
   scrollbar-width: none; /* Firefox */
@@ -543,6 +542,12 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #ffffff; /* 스크롤 시 헤더 배경 유지 */
+  padding: 8px; /* 고정 시 내용과 겹침 방지 */
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .listTitle {

@@ -53,8 +53,8 @@
 
 /* 로딩 스피너 애니메이션 */
 .loadingSpinner {
-  width: 2px;
-  height: 2px;
+  width: 16px;
+  height: 16px;
   border: 2px solid #f3f4f6;
   border-top: 2px solid #6b7280;
   border-radius: 50%;

@@ -192,8 +192,11 @@ function PensionModal({
       : currentYear - currentAge;
 
     // 은퇴 나이 계산
-    const retirementAge = profileData?.retirementAge || 54;
-    const retirementYear = birthYear + retirementAge; // 은퇴 년도
+    const retirementAge = parseInt(profileData?.retirementAge || 54, 10);
+    // 현재 연도 기준 은퇴년도 계산 (문자열 결합 방지)
+    const currentYearSafe = new Date().getFullYear();
+    const currentAgeSafe = Math.max(0, currentYearSafe - birthYear);
+    const retirementYear = currentYearSafe + (retirementAge - currentAgeSafe);
     const retirementYearPlus1 = retirementYear + 1; // 은퇴 년도 + 1
     const paymentEndYear = retirementYearPlus1 + 9; // 은퇴 년도 + 1부터 10년간
 

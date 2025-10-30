@@ -1,7 +1,48 @@
 {
-  "version": "0.26.12",
+  "version": "0.26.17",
   "today": "2025-10-30",
   "history": [
+    {
+      "version": "0.26.17",
+      "date": "2025-10-30",
+      "changes": [
+        "사이드바 리스트 헤더 고정: listHeader를 position: sticky로 고정하고 스크롤은 내용만",
+        "DashboardPage.module.css: listHeader에 sticky/top/background/z-index/border 추가"
+      ]
+    },
+    {
+      "version": "0.26.16",
+      "date": "2025-10-30",
+      "changes": [
+        "Dashboard 상단 프로필 정보의 은퇴년도 표시 수정: birthYear+retirementAge 결합 제거",
+        "현재연도+(은퇴나이-현재나이) 방식으로 안전 계산"
+      ]
+    },
+    {
+      "version": "0.26.15",
+      "date": "2025-10-30",
+      "changes": [
+        "ProfileCreatePage 은퇴년도 미리보기 계산 수정: birthYear+retirementAge → 올해+(은퇴나이-현재나이)",
+        "출생년도 변경 시 199355 등 문자열 결합 문제 해결"
+      ]
+    },
+    {
+      "version": "0.26.14",
+      "date": "2025-10-30",
+      "changes": [
+        "은퇴년도 계산 문자열 결합 버그 수정: 프로필/모달/AI 분석 데이터에서 birthYear+retirementAge 결합 제거",
+        "Income/Expense/Saving/Debt/Pension 모달: 현재 연도 기준 은퇴년도 계산으로 통일",
+        "cashflowSimulator AI 분석 데이터: 은퇴년도 계산 로직 안전하게 변경"
+      ]
+    },
+    {
+      "version": "0.26.13",
+      "date": "2025-10-30",
+      "changes": [
+        "체크리스트 우측 패널 닫기 아이콘을 X에서 오른쪽 화살표(→)로 변경",
+        "DashboardPage.jsx: profilePanelClose 버튼 텍스트 교체"
+      ]
+    },
     {
       "version": "0.26.12",
       "date": "2025-10-30",

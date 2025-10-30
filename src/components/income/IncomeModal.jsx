@@ -13,12 +13,21 @@ function IncomeModal({
   editData = null,
   profileData = null,
 }) {
-  // 은퇴년도 계산 (만 나이 기준)
+  // 은퇴년도 계산 (문자열 결합 방지 및 현재 연도 기준)
   const getRetirementYear = () => {
+    const currentYear = new Date().getFullYear();
     if (profileData && profileData.birthYear && profileData.retirementAge) {
-      return profileData.birthYear + profileData.retirementAge; // 설정된 은퇴 나이 (만 나이 기준)
+      const birth = parseInt(profileData.birthYear, 10);
+      const retireAge = parseInt(profileData.retirementAge, 10);
+      if (Number.isFinite(birth) && Number.isFinite(retireAge)) {
+        const currentAge = calculateKoreanAge(birth, currentYear);
+        const yearsToRetire = retireAge - currentAge;
+        return (
+          currentYear + (Number.isFinite(yearsToRetire) ? yearsToRetire : 0)
+        );
+      }
     }
-    return new Date().getFullYear() + 11; // 기본값
+    return currentYear + 10;
   };
 
   const [formData, setFormData] = useState({

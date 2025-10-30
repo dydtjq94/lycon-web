@@ -1866,7 +1866,21 @@ ${JSON.stringify(analysisData, null, 2)}`;
             title="클릭하여 수정"
           >
             은퇴 {profileData.retirementAge}세 (
-            {profileData.birthYear + profileData.retirementAge}년)
+            {(() => {
+              const currentYear = new Date().getFullYear();
+              const birth = parseInt(profileData.birthYear, 10);
+              const retireAge = parseInt(profileData.retirementAge, 10);
+              if (Number.isFinite(birth) && Number.isFinite(retireAge)) {
+                const currentAge = calculateKoreanAge(birth, currentYear);
+                const yearsToRetire = retireAge - currentAge;
+                return (
+                  currentYear +
+                  (Number.isFinite(yearsToRetire) ? yearsToRetire : 0)
+                );
+              }
+              return "?";
+            })()}
+            년)
           </span>
           <span className={styles.infoDivider}>|</span>
           <span
@@ -2294,7 +2308,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
             onClick={closeProfilePanel}
             type="button"
           >
-            ×
+            →
           </button>
         </div>
         <div className={styles.profileSidePanelContent}>

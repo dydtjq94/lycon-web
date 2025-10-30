@@ -1535,7 +1535,10 @@ export function extractAIAnalysisData(
       name: profileData.name,
       currentAge: calculateKoreanAge(profileData.birthYear), // 만 나이로 실시간 계산
       retirementAge: profileData.retirementAge,
-      retirementYear: profileData.birthYear + profileData.retirementAge, // 만 나이 기준으로 계산
+      retirementYear:
+        new Date().getFullYear() +
+        (parseInt(profileData.retirementAge, 10) -
+          calculateKoreanAge(parseInt(profileData.birthYear, 10))),
       currentCash: profileData.currentCash || 0,
       targetAssets: profileData.targetAssets,
     },
