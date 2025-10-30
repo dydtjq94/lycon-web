@@ -70,7 +70,7 @@ function DebtList({
               <div className={styles.debtPeriod}>
                 {debt.startYear}년 - {debt.endYear}년
                 <br />
-                (이자율 {(debt.interestRate * 100).toFixed(1)}% 적용)
+                (이자율 {(debt.interestRate * 100).toFixed(2)}% 적용)
               </div>
             </div>
 

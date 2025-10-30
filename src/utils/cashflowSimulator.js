@@ -479,27 +479,26 @@ export function calculateCashflowSimulation(
         const yearlyGrowthRate = saving.yearlyGrowthRate || 0;
 
         let finalAmount = 0;
+        const currentAmount = Number(saving.currentAmount) || 0; // 현재 보유 금액 포함
 
         if (saving.frequency === "one_time") {
-          // 일회성 저축: 원금에 이자율 적용
+          // 일회성 저축: (현재 보유 + 일회성 적립 원금)에 이자율 적용
           finalAmount =
-            saving.amount * Math.pow(1 + interestRate, yearsElapsed);
+            (currentAmount + (Number(saving.amount) || 0)) *
+            Math.pow(1 + interestRate, yearsElapsed);
         } else {
           // 월간/연간 저축: 복리 계산
           const monthlyAmount =
             saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
-
+          // 현재 보유 금액으로 시작하여 매년 이자 적용 후 해당 해 적립액을 추가
+          let accumulated = currentAmount;
           for (let i = 0; i <= yearsElapsed; i++) {
             const adjustedMonthlyAmount =
               monthlyAmount * Math.pow(1 + yearlyGrowthRate, i);
             const yearlyAmount = adjustedMonthlyAmount * 12;
-
-            if (i === 0) {
-              finalAmount = yearlyAmount;
-            } else {
-              finalAmount = finalAmount * (1 + interestRate) + yearlyAmount;
-            }
+            accumulated = accumulated * (1 + interestRate) + yearlyAmount;
           }
+          finalAmount = accumulated;
         }
 
         // 저축 만료 수입에 추가 (현금흐름에서 플러스로 처리)
