@@ -13,6 +13,8 @@ function ProfileChecklistPanel({
 }) {
   const [editingState, setEditingState] = useState(null);
   const skipNextBlurCommitRef = useRef(false);
+  const [dragState, setDragState] = useState(null); // { type: 'top'|'child', id, parentId? }
+  const [dropTarget, setDropTarget] = useState(null); // { type, id, parentId? }
 
   const topLevelItems = useMemo(() => items || [], [items]);
   const isInteractionDisabled = disabled || isLoading;
@@ -230,8 +232,39 @@ function ProfileChecklistPanel({
   const renderTopLevelItem = (item) => {
     const isEditing =
       editingState && editingState.id === item.id && !editingState.parentId;
+    const isDraggingThis =
+      dragState && dragState.type === "top" && dragState.id === item.id;
+    const showDropBefore =
+      dropTarget && dropTarget.type === "top" && dropTarget.id === item.id;
     return (
-      <div key={item.id} className={styles.itemBlock}>
+      <div
+        key={item.id}
+        className={`${styles.itemBlock} ${
+          isDraggingThis ? styles.dragging : ""
+        } ${showDropBefore ? styles.dropBeforeTop : ""}`}
+        onDragOver={(e) => {
+          if (!dragState || dragState.type !== "top") return;
+          e.preventDefault();
+          if (!showDropBefore) setDropTarget({ type: "top", id: item.id });
+        }}
+        onDrop={(e) => {
+          if (!dragState || dragState.type !== "top") return;
+          e.preventDefault();
+          if (dragState.id === item.id) return;
+          const fromIndex = topLevelItems.findIndex(
+            (it) => it.id === dragState.id
+          );
+          const toIndex = topLevelItems.findIndex((it) => it.id === item.id);
+          if (fromIndex < 0 || toIndex < 0) return;
+          const next = [...topLevelItems];
+          const [moved] = next.splice(fromIndex, 1);
+          // 드롭 대상 앞에 삽입
+          next.splice(toIndex, 0, moved);
+          applyItemsChange(next, true);
+          setDragState(null);
+          setDropTarget(null);
+        }}
+      >
         <div className={styles.itemRow}>
           <label className={styles.checkboxLabel}>
             <input
@@ -265,6 +298,21 @@ function ProfileChecklistPanel({
           >
             ×
           </button>
+          <button
+            type="button"
+            className={styles.dragHandle}
+            draggable={!isInteractionDisabled}
+            onDragStart={() => setDragState({ type: "top", id: item.id })}
+            onDragEnd={() => {
+              setDragState(null);
+              setDropTarget(null);
+            }}
+            onClick={(e) => e.preventDefault()}
+            aria-label="드래그하여 순서 변경"
+            title="드래그하여 순서 변경"
+          >
+            ≡
+          </button>
         </div>
         {(item.children || []).map((child) => renderChildItem(item.id, child))}
         <div className={styles.actionLine}>
@@ -286,8 +334,49 @@ function ProfileChecklistPanel({
       editingState &&
       editingState.id === child.id &&
       editingState.parentId === parentId;
+    const isDraggingThisChild =
+      dragState && dragState.type === "child" && dragState.id === child.id;
+    const showDropBeforeChild =
+      dropTarget &&
+      dropTarget.type === "child" &&
+      dropTarget.parentId === parentId &&
+      dropTarget.id === child.id;
     return (
-      <div key={child.id} className={styles.childRow}>
+      <div
+        key={child.id}
+        className={`${styles.childRow} ${
+          isDraggingThisChild ? styles.dragging : ""
+        } ${showDropBeforeChild ? styles.dropBeforeChild : ""}`}
+        onDragOver={(e) => {
+          if (!dragState || dragState.type !== "child") return;
+          if (dragState.parentId !== parentId) return; // 동일 부모 내에서만 허용
+          e.preventDefault();
+          if (!showDropBeforeChild)
+            setDropTarget({ type: "child", id: child.id, parentId });
+        }}
+        onDrop={(e) => {
+          if (!dragState || dragState.type !== "child") return;
+          if (dragState.parentId !== parentId) return;
+          e.preventDefault();
+          if (dragState.id === child.id) return;
+          const parent = topLevelItems.find((i) => i.id === parentId);
+          if (!parent) return;
+          const children = parent.children || [];
+          const fromIndex = children.findIndex((c) => c.id === dragState.id);
+          const toIndex = children.findIndex((c) => c.id === child.id);
+          if (fromIndex < 0 || toIndex < 0) return;
+          const nextChildren = [...children];
+          const [moved] = nextChildren.splice(fromIndex, 1);
+          // 드롭 대상 앞에 삽입
+          nextChildren.splice(toIndex, 0, moved);
+          const next = topLevelItems.map((it) =>
+            it.id === parentId ? { ...it, children: nextChildren } : it
+          );
+          applyItemsChange(next, true);
+          setDragState(null);
+          setDropTarget(null);
+        }}
+      >
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"
@@ -319,6 +408,23 @@ function ProfileChecklistPanel({
           title="체크리스트 삭제"
         >
           ×
+        </button>
+        <button
+          type="button"
+          className={styles.dragHandle}
+          draggable={!isInteractionDisabled}
+          onDragStart={() =>
+            setDragState({ type: "child", id: child.id, parentId })
+          }
+          onDragEnd={() => {
+            setDragState(null);
+            setDropTarget(null);
+          }}
+          onClick={(e) => e.preventDefault()}
+          aria-label="드래그하여 순서 변경"
+          title="드래그하여 순서 변경"
+        >
+          ≡
         </button>
       </div>
     );

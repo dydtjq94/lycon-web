@@ -34,6 +34,7 @@
   flex-direction: column;
   gap: 0.35rem;
   padding: 0.35rem 0.25rem;
+  border-radius: 8px;
 }
 
 .itemRow {
@@ -42,11 +43,35 @@
   gap: 0.5rem;
 }
 
+.itemBlock[draggable="true"],
+.childRow[draggable="true"] {
+  cursor: grab;
+}
+
+.itemBlock[draggable="true"]:active,
+.childRow[draggable="true"]:active {
+  cursor: grabbing;
+}
+
 .childRow {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
   margin-left: 1.75rem;
+}
+
+/* 드롭 위치 가이드 라인 표시 */
+.dropBeforeTop {
+  border-top: 2px solid #3b82f6;
+}
+
+.dropBeforeChild {
+  border-top: 2px solid #60a5fa;
+}
+
+/* 드래그 중인 항목 시각화 */
+.dragging {
+  opacity: 0.6;
 }
 
 .checkboxLabel {
@@ -113,10 +138,10 @@
   border: none;
   background: transparent;
   color: #4b5563;
-  font-size: 1.2rem;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
-  padding: 0.1rem 0.35rem;
+  padding: 2px;
   border-radius: 6px;
   transition: background 0.2s ease;
 }
@@ -128,6 +153,27 @@
 .deleteButton:disabled {
   cursor: not-allowed;
   color: #d1d5db;
+}
+
+/* 드래그 핸들 (≡) */
+.dragHandle {
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-size: 16px;
+  line-height: 1;
+  cursor: grab;
+  padding: 2px;
+  border-radius: 6px;
+}
+
+.dragHandle:hover:enabled {
+  background: rgba(17, 24, 39, 0.05);
+  color: #4b5563;
+}
+
+.dragHandle:active:enabled {
+  cursor: grabbing;
 }
 
 .inlineAction {
