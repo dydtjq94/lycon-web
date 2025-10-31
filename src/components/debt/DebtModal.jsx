@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styles from "./DebtModal.module.css";
 import { formatAmountForChart } from "../../utils/format";
 import { calculateKoreanAge } from "../../utils/koreanAge";
+import { debtService } from "../../services/firestoreService";
 
 /**
  * 부채 데이터 추가/수정 모달
@@ -12,6 +13,9 @@ function DebtModal({
   onSave,
   editData = null,
   profileData = null,
+  simulations = [],
+  activeSimulationId = null,
+  profileId = null,
 }) {
   // 은퇴년도 계산 함수 (문자열 결합 방지 및 현재 연도 기준)
   const getRetirementYear = () => {
@@ -43,6 +47,68 @@ function DebtModal({
   });
 
   const [errors, setErrors] = useState({});
+  const [selectedSimulationIds, setSelectedSimulationIds] = useState([]);
+  const [availableSimulationIds, setAvailableSimulationIds] = useState([]);
+  const [isSimSelectionLoading, setIsSimSelectionLoading] = useState(false);
+
+  // 수정 모드일 때 해당 id가 존재하는 시뮬레이션 확인
+  useEffect(() => {
+    const checkAvailableSimulations = async () => {
+      setIsSimSelectionLoading(true);
+      const startTime = Date.now();
+
+      if (
+        isOpen &&
+        editData &&
+        editData.id &&
+        profileId &&
+        simulations.length > 0
+      ) {
+        try {
+          const checkPromises = simulations.map(async (sim) => {
+            try {
+              await debtService.getDebt(profileId, sim.id, editData.id);
+              return sim.id;
+            } catch (error) {
+              return null;
+            }
+          });
+          const results = await Promise.all(checkPromises);
+          const availableIds = results.filter((id) => id !== null);
+          setAvailableSimulationIds(availableIds);
+          const defaultSelected = availableIds.includes(activeSimulationId)
+            ? [activeSimulationId]
+            : availableIds.length > 0
+            ? [availableIds[0]]
+            : [];
+          setSelectedSimulationIds(defaultSelected);
+          const elapsedTime = Date.now() - startTime;
+          const remainingTime = Math.max(0, 1000 - elapsedTime);
+          await new Promise((resolve) => setTimeout(resolve, remainingTime));
+        } catch (error) {
+          console.error("시뮬레이션 확인 오류:", error);
+          setAvailableSimulationIds(simulations.map((s) => s.id));
+          setSelectedSimulationIds(
+            activeSimulationId ? [activeSimulationId] : []
+          );
+          const elapsedTime = Date.now() - startTime;
+          const remainingTime = Math.max(0, 1000 - elapsedTime);
+          await new Promise((resolve) => setTimeout(resolve, remainingTime));
+        } finally {
+          setIsSimSelectionLoading(false);
+        }
+      } else {
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, 1000 - elapsedTime);
+        await new Promise((resolve) => setTimeout(resolve, remainingTime));
+        setAvailableSimulationIds(simulations.map((s) => s.id));
+        const defaultSelected = activeSimulationId ? [activeSimulationId] : [];
+        setSelectedSimulationIds(defaultSelected);
+        setIsSimSelectionLoading(false);
+      }
+    };
+    checkAvailableSimulations();
+  }, [isOpen, editData, profileId, simulations, activeSimulationId]);
 
   // 수정 모드일 때 데이터 로드, 모달이 열릴 때마다 초기화
   useEffect(() => {
@@ -157,6 +223,12 @@ function DebtModal({
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
       gracePeriod: parseInt(formData.gracePeriod, 10), // 10진수로 명확하게 변환
       addCashToFlow: !!formData.addCashToFlow,
+      selectedSimulationIds:
+        selectedSimulationIds && selectedSimulationIds.length > 0
+          ? selectedSimulationIds
+          : activeSimulationId
+          ? [activeSimulationId]
+          : [],
     };
 
     onSave(debtData);
@@ -440,6 +512,55 @@ function DebtModal({
               placeholder="추가 설명이나 참고사항을 입력하세요"
             />
           </div>
+
+          {/* 적용할 시뮬레이션 선택 */}
+          {simulations && simulations.length > 0 && (
+            <div className={styles.field}>
+              <label className={styles.label}>
+                적용할 시뮬레이션
+                {editData && (
+                  <span className={styles.hintText}>
+                    {" "}
+                    (동일한 항목이 있는 시뮬레이션만 표시됨)
+                  </span>
+                )}
+              </label>
+              <div>
+                {isSimSelectionLoading ? (
+                  <span className={styles.hintText}>
+                    시뮬레이션 목록 불러오는 중…
+                  </span>
+                ) : (
+                  simulations
+                    .filter((sim) =>
+                      editData ? availableSimulationIds.includes(sim.id) : true
+                    )
+                    .map((sim) => (
+                      <label key={sim.id} className={styles.fixedCheckboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={selectedSimulationIds.includes(sim.id)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setSelectedSimulationIds((prev) => {
+                              if (checked)
+                                return Array.from(
+                                  new Set([...(prev || []), sim.id])
+                                );
+                              return (prev || []).filter((id) => id !== sim.id);
+                            });
+                          }}
+                          className={styles.fixedCheckbox}
+                        />
+                        <span className={styles.fixedCheckboxText}>
+                          {sim.title || (sim.isDefault ? "현재" : "시뮬레이션")}
+                        </span>
+                      </label>
+                    ))
+                )}
+              </div>
+            </div>
+          )}
 
           <div className={styles.modalFooter}>
             <button

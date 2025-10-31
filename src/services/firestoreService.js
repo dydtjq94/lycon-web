@@ -11,6 +11,7 @@ import {
   getDoc,
   where,
   writeBatch,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../libs/firebase.js";
 
@@ -322,6 +323,29 @@ export const incomeService = {
     }
   },
 
+  // 특정 ID로 수입 데이터 생성 (동일 ID 유지 목적)
+  async createIncomeWithId(profileId, simulationId, incomeId, incomeData) {
+    const incomeRef = doc(
+      db,
+      "profiles",
+      profileId,
+      "simulations",
+      simulationId,
+      "incomes",
+      incomeId
+    );
+    await setDoc(
+      incomeRef,
+      {
+        ...incomeData,
+        createdAt: incomeData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return { id: incomeId, ...incomeData };
+  },
+
   // 프로필의 모든 수입 데이터 조회
   async getIncomes(profileId, simulationId) {
     try {
@@ -591,6 +615,29 @@ export const expenseService = {
     }
   },
 
+  // 특정 ID로 지출 데이터 생성 (동일 ID 유지 목적)
+  async createExpenseWithId(profileId, simulationId, expenseId, expenseData) {
+    const expenseRef = doc(
+      db,
+      "profiles",
+      profileId,
+      "simulations",
+      simulationId,
+      "expenses",
+      expenseId
+    );
+    await setDoc(
+      expenseRef,
+      {
+        ...expenseData,
+        createdAt: expenseData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return { id: expenseId, ...expenseData };
+  },
+
   // 지출 데이터 삭제
   async deleteExpense(profileId, simulationId, expenseId) {
     try {
@@ -781,6 +828,29 @@ export const savingsService = {
       console.error("저축 데이터 업데이트 오류:", error);
       throw error;
     }
+  },
+
+  // 특정 ID로 저축 데이터 생성 (동일 ID 유지 목적)
+  async createSavingWithId(profileId, simulationId, savingId, savingData) {
+    const savingRef = doc(
+      db,
+      "profiles",
+      profileId,
+      "simulations",
+      simulationId,
+      "savings",
+      savingId
+    );
+    await setDoc(
+      savingRef,
+      {
+        ...savingData,
+        createdAt: savingData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return { id: savingId, ...savingData };
   },
 
   // 저축 데이터 삭제
@@ -976,6 +1046,29 @@ export const pensionService = {
       console.error("연금 데이터 업데이트 오류:", error);
       throw error;
     }
+  },
+
+  // 특정 ID로 연금 데이터 생성 (동일 ID 유지 목적)
+  async createPensionWithId(profileId, simulationId, pensionId, pensionData) {
+    const pensionRef = doc(
+      db,
+      "profiles",
+      profileId,
+      "simulations",
+      simulationId,
+      "pensions",
+      pensionId
+    );
+    await setDoc(
+      pensionRef,
+      {
+        ...pensionData,
+        createdAt: pensionData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return { id: pensionId, ...pensionData };
   },
 
   // 연금 데이터 삭제
@@ -1175,6 +1268,29 @@ export const assetService = {
     }
   },
 
+  // 특정 ID로 자산 데이터 생성 (동일 ID 유지 목적)
+  async createAssetWithId(profileId, simulationId, assetId, assetData) {
+    const assetRef = doc(
+      db,
+      "profiles",
+      profileId,
+      "simulations",
+      simulationId,
+      "assets",
+      assetId
+    );
+    await setDoc(
+      assetRef,
+      {
+        ...assetData,
+        createdAt: assetData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return { id: assetId, ...assetData };
+  },
+
   // 자산 삭제
   async deleteAsset(profileId, simulationId, assetId) {
     try {
@@ -1291,6 +1407,34 @@ export const realEstateService = {
       console.error("부동산 데이터 업데이트 오류:", error);
       throw error;
     }
+  },
+
+  // 특정 ID로 부동산 데이터 생성 (동일 ID 유지 목적)
+  async createRealEstateWithId(
+    profileId,
+    simulationId,
+    realEstateId,
+    realEstateData
+  ) {
+    const realEstateRef = doc(
+      db,
+      "profiles",
+      profileId,
+      "simulations",
+      simulationId,
+      "realEstates",
+      realEstateId
+    );
+    await setDoc(
+      realEstateRef,
+      {
+        ...realEstateData,
+        createdAt: realEstateData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return { id: realEstateId, ...realEstateData };
   },
 
   // 부동산 데이터 삭제
@@ -1419,6 +1563,29 @@ export const debtService = {
       console.error("부채 데이터 업데이트 오류:", error);
       throw error;
     }
+  },
+
+  // 특정 ID로 부채 데이터 생성 (동일 ID 유지 목적)
+  async createDebtWithId(profileId, simulationId, debtId, debtData) {
+    const debtRef = doc(
+      db,
+      "profiles",
+      profileId,
+      "simulations",
+      simulationId,
+      "debts",
+      debtId
+    );
+    await setDoc(
+      debtRef,
+      {
+        ...debtData,
+        createdAt: debtData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return { id: debtId, ...debtData };
   },
 
   // 부채 데이터 삭제

@@ -85,7 +85,12 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       newErrors.birthYear = "올바른 출생년도를 입력해주세요.";
     }
 
-    if (formData.retirementAge < 30 || formData.retirementAge > 80) {
+    const retirementAgeNum =
+      typeof formData.retirementAge === "string" &&
+      formData.retirementAge === ""
+        ? null
+        : parseInt(formData.retirementAge, 10);
+    if (!retirementAgeNum || retirementAgeNum < 30 || retirementAgeNum > 80) {
       newErrors.retirementAge = "은퇴 나이는 30-80세 사이여야 합니다.";
     }
 
@@ -191,6 +196,11 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       const updatedProfile = {
         ...profileData,
         ...formData,
+        retirementAge:
+          typeof formData.retirementAge === "string" &&
+          formData.retirementAge === ""
+            ? 55
+            : parseInt(formData.retirementAge, 10) || 55,
         currentCash: parseInt(formData.currentCash) || 0,
         targetAssets: parseInt(formData.targetAssets) || 0,
         currentKoreanAge: calculateKoreanAge(formData.birthYear),
@@ -201,8 +211,13 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       };
 
       // 은퇴년도 또는 출생년도가 변경되었는지 확인
+      const retirementAgeNum =
+        typeof formData.retirementAge === "string" &&
+        formData.retirementAge === ""
+          ? 55
+          : parseInt(formData.retirementAge, 10) || 55;
       const retirementAgeChanged =
-        profileData.retirementAge !== formData.retirementAge;
+        profileData.retirementAge !== retirementAgeNum;
       const birthYearChanged = profileData.birthYear !== formData.birthYear;
 
       // 프로필 업데이트
@@ -214,9 +229,16 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       // 은퇴년도가 변경된 경우, 고정된 소득/저축/지출/연금 항목들의 endYear 업데이트
       if (retirementAgeChanged || birthYearChanged) {
         try {
+          const retirementAgeForCalc =
+            typeof formData.retirementAge === "string" &&
+            formData.retirementAge === ""
+              ? profileData.retirementAge || 55
+              : parseInt(formData.retirementAge, 10) ||
+                profileData.retirementAge ||
+                55;
           const newRetirementYear = getRetirementYear(
             formData.birthYear,
-            formData.retirementAge
+            retirementAgeForCalc
           );
 
           // 소득, 저축, 지출, 연금 항목을 병렬로 업데이트
@@ -341,12 +363,16 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
             <input
               type="text"
               value={formData.retirementAge}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  retirementAge: parseInt(e.target.value) || 55,
-                })
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                // 빈 문자열 허용, 숫자만 허용
+                if (value === "" || /^\d+$/.test(value)) {
+                  setFormData({
+                    ...formData,
+                    retirementAge: value === "" ? "" : parseInt(value, 10),
+                  });
+                }
+              }}
               onKeyPress={handleKeyPress}
               className={`${styles.input} ${
                 errors.retirementAge ? styles.error : ""

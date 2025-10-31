@@ -213,6 +213,35 @@
   border-left: 3px solid #3b82f6;
 }
 
+.fixedCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0.5rem;
+}
+
+.fixedCheckbox {
+  cursor: pointer;
+  width: 1rem;
+  height: 1rem;
+  accent-color: #3b82f6;
+}
+
+.fixedCheckboxText {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.hintText {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  font-weight: 400;
+  font-style: italic;
+}
+
 .buttonGroup {
   display: flex;
   gap: 12px;

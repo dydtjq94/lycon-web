@@ -708,31 +708,63 @@ function DashboardPage() {
           simulationId: activeSimulationId,
           incomeId: editingIncome.id,
         });
-        await incomeService.updateIncome(
-          profileId,
-          activeSimulationId,
-          editingIncome.id,
-          incomeData
-        );
-        setIncomes(
-          incomes.map((income) =>
-            income.id === editingIncome.id
-              ? { ...income, ...incomeData }
-              : income
+        const targetSimIds = incomeData.selectedSimulationIds?.length
+          ? incomeData.selectedSimulationIds
+          : [activeSimulationId];
+        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
+        await Promise.all(
+          targetSimIds.map((simId) =>
+            incomeService.updateIncome(
+              profileId,
+              simId,
+              editingIncome.id,
+              incomeData
+            )
           )
         );
+        // 현재 탭 상태만 즉시 반영
+        if (targetSimIds.includes(activeSimulationId)) {
+          setIncomes(
+            incomes.map((income) =>
+              income.id === editingIncome.id
+                ? { ...income, ...incomeData }
+                : income
+            )
+          );
+        }
       } else {
         // 추가
         trackEvent("소득 추가", {
           profileId,
           simulationId: activeSimulationId,
         });
+        const targetSimIds = incomeData.selectedSimulationIds?.length
+          ? incomeData.selectedSimulationIds
+          : [activeSimulationId];
+        // 첫 번째 시뮬레이션에 생성하여 id 획득
+        const primarySimId = targetSimIds[0];
         const newIncome = await incomeService.createIncome(
           profileId,
-          activeSimulationId,
+          primarySimId,
           incomeData
         );
-        setIncomes([...incomes, newIncome]);
+        const newId = newIncome.id;
+        // 나머지 시뮬레이션들에 동일 id로 생성
+        await Promise.all(
+          targetSimIds
+            .filter((sid) => sid !== primarySimId)
+            .map((sid) =>
+              incomeService.createIncomeWithId(
+                profileId,
+                sid,
+                newId,
+                incomeData
+              )
+            )
+        );
+        if (primarySimId === activeSimulationId) {
+          setIncomes([...incomes, newIncome]);
+        }
       }
     } catch (error) {
       console.error("소득 데이터 저장 오류:", error);
@@ -775,27 +807,59 @@ function DashboardPage() {
     try {
       if (editingExpense) {
         // 수정
-        await expenseService.updateExpense(
-          profileId,
-          activeSimulationId,
-          editingExpense.id,
-          expenseData
-        );
-        setExpenses(
-          expenses.map((expense) =>
-            expense.id === editingExpense.id
-              ? { ...expense, ...expenseData }
-              : expense
+        const targetSimIds = expenseData.selectedSimulationIds?.length
+          ? expenseData.selectedSimulationIds
+          : [activeSimulationId];
+        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
+        await Promise.all(
+          targetSimIds.map((simId) =>
+            expenseService.updateExpense(
+              profileId,
+              simId,
+              editingExpense.id,
+              expenseData
+            )
           )
         );
+        // 현재 탭 상태만 즉시 반영
+        if (targetSimIds.includes(activeSimulationId)) {
+          setExpenses(
+            expenses.map((expense) =>
+              expense.id === editingExpense.id
+                ? { ...expense, ...expenseData }
+                : expense
+            )
+          );
+        }
       } else {
         // 추가
+        const targetSimIds = expenseData.selectedSimulationIds?.length
+          ? expenseData.selectedSimulationIds
+          : [activeSimulationId];
+        // 첫 번째 시뮬레이션에 생성하여 id 획득
+        const primarySimId = targetSimIds[0];
         const newExpense = await expenseService.createExpense(
           profileId,
-          activeSimulationId,
+          primarySimId,
           expenseData
         );
-        setExpenses([...expenses, newExpense]);
+        const newId = newExpense.id;
+        // 나머지 시뮬레이션들에 동일 id로 생성
+        await Promise.all(
+          targetSimIds
+            .filter((sid) => sid !== primarySimId)
+            .map((sid) =>
+              expenseService.createExpenseWithId(
+                profileId,
+                sid,
+                newId,
+                expenseData
+              )
+            )
+        );
+        if (primarySimId === activeSimulationId) {
+          setExpenses([...expenses, newExpense]);
+        }
       }
     } catch (error) {
       console.error("지출 데이터 저장 오류:", error);
@@ -823,28 +887,60 @@ function DashboardPage() {
     try {
       if (editingSaving) {
         // 수정
-        await savingsService.updateSaving(
-          profileId,
-          activeSimulationId,
-          editingSaving.id,
-          savingData
-        );
-        setSavings(
-          savings.map((saving) =>
-            saving.id === editingSaving.id
-              ? { ...saving, ...savingData }
-              : saving
+        const targetSimIds = savingData.selectedSimulationIds?.length
+          ? savingData.selectedSimulationIds
+          : [activeSimulationId];
+        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
+        await Promise.all(
+          targetSimIds.map((simId) =>
+            savingsService.updateSaving(
+              profileId,
+              simId,
+              editingSaving.id,
+              savingData
+            )
           )
         );
+        // 현재 탭 상태만 즉시 반영
+        if (targetSimIds.includes(activeSimulationId)) {
+          setSavings(
+            savings.map((saving) =>
+              saving.id === editingSaving.id
+                ? { ...saving, ...savingData }
+                : saving
+            )
+          );
+        }
         setEditingSaving(null);
       } else {
         // 추가
+        const targetSimIds = savingData.selectedSimulationIds?.length
+          ? savingData.selectedSimulationIds
+          : [activeSimulationId];
+        // 첫 번째 시뮬레이션에 생성하여 id 획득
+        const primarySimId = targetSimIds[0];
         const newSaving = await savingsService.createSaving(
           profileId,
-          activeSimulationId,
+          primarySimId,
           savingData
         );
-        setSavings([...savings, newSaving]);
+        const newId = newSaving.id;
+        // 나머지 시뮬레이션들에 동일 id로 생성
+        await Promise.all(
+          targetSimIds
+            .filter((sid) => sid !== primarySimId)
+            .map((sid) =>
+              savingsService.createSavingWithId(
+                profileId,
+                sid,
+                newId,
+                savingData
+              )
+            )
+        );
+        if (primarySimId === activeSimulationId) {
+          setSavings([...savings, newSaving]);
+        }
       }
     } catch (error) {
       console.error("저축/투자 데이터 저장 오류:", error);
@@ -892,27 +988,58 @@ function DashboardPage() {
     try {
       if (editingPension) {
         // 수정
-        await pensionService.updatePension(
-          profileId,
-          activeSimulationId,
-          editingPension.id,
-          pensionData
-        );
-        setPensions(
-          pensions.map((pension) =>
-            pension.id === editingPension.id
-              ? { ...pension, ...pensionData }
-              : pension
+        const targetSimIds = pensionData.selectedSimulationIds?.length
+          ? pensionData.selectedSimulationIds
+          : [activeSimulationId];
+        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
+        await Promise.all(
+          targetSimIds.map((simId) =>
+            pensionService.updatePension(
+              profileId,
+              simId,
+              editingPension.id,
+              pensionData
+            )
           )
         );
+        // 현재 탭 상태만 즉시 반영
+        if (targetSimIds.includes(activeSimulationId)) {
+          setPensions(
+            pensions.map((pension) =>
+              pension.id === editingPension.id
+                ? { ...pension, ...pensionData }
+                : pension
+            )
+          );
+        }
       } else {
         // 추가
+        const targetSimIds = pensionData.selectedSimulationIds?.length
+          ? pensionData.selectedSimulationIds
+          : [activeSimulationId];
+        // 첫 번째 시뮬레이션에 생성하여 id 획득
+        const primarySimId = targetSimIds[0];
         const pensionId = await pensionService.createPension(
           profileId,
-          activeSimulationId,
+          primarySimId,
           pensionData
         );
-        setPensions([...pensions, { id: pensionId, ...pensionData }]);
+        // 나머지 시뮬레이션들에 동일 id로 생성
+        await Promise.all(
+          targetSimIds
+            .filter((sid) => sid !== primarySimId)
+            .map((sid) =>
+              pensionService.createPensionWithId(
+                profileId,
+                sid,
+                pensionId,
+                pensionData
+              )
+            )
+        );
+        if (primarySimId === activeSimulationId) {
+          setPensions([...pensions, { id: pensionId, ...pensionData }]);
+        }
       }
 
       setEditingPension(null);
@@ -955,30 +1082,61 @@ function DashboardPage() {
     try {
       if (editingRealEstate) {
         // 수정
-        await realEstateService.updateRealEstate(
-          profileId,
-          activeSimulationId,
-          editingRealEstate.id,
-          realEstateData
-        );
-        setRealEstates(
-          realEstates.map((realEstate) =>
-            realEstate.id === editingRealEstate.id
-              ? { ...realEstate, ...realEstateData }
-              : realEstate
+        const targetSimIds = realEstateData.selectedSimulationIds?.length
+          ? realEstateData.selectedSimulationIds
+          : [activeSimulationId];
+        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
+        await Promise.all(
+          targetSimIds.map((simId) =>
+            realEstateService.updateRealEstate(
+              profileId,
+              simId,
+              editingRealEstate.id,
+              realEstateData
+            )
           )
         );
+        // 현재 탭 상태만 즉시 반영
+        if (targetSimIds.includes(activeSimulationId)) {
+          setRealEstates(
+            realEstates.map((realEstate) =>
+              realEstate.id === editingRealEstate.id
+                ? { ...realEstate, ...realEstateData }
+                : realEstate
+            )
+          );
+        }
       } else {
         // 추가
+        const targetSimIds = realEstateData.selectedSimulationIds?.length
+          ? realEstateData.selectedSimulationIds
+          : [activeSimulationId];
+        // 첫 번째 시뮬레이션에 생성하여 id 획득
+        const primarySimId = targetSimIds[0];
         const newRealEstateId = await realEstateService.createRealEstate(
           profileId,
-          activeSimulationId,
+          primarySimId,
           realEstateData
         );
-        setRealEstates([
-          ...realEstates,
-          { id: newRealEstateId, ...realEstateData },
-        ]);
+        // 나머지 시뮬레이션들에 동일 id로 생성
+        await Promise.all(
+          targetSimIds
+            .filter((sid) => sid !== primarySimId)
+            .map((sid) =>
+              realEstateService.createRealEstateWithId(
+                profileId,
+                sid,
+                newRealEstateId,
+                realEstateData
+              )
+            )
+        );
+        if (primarySimId === activeSimulationId) {
+          setRealEstates([
+            ...realEstates,
+            { id: newRealEstateId, ...realEstateData },
+          ]);
+        }
       }
 
       setIsRealEstateModalOpen(false);
@@ -1021,24 +1179,51 @@ function DashboardPage() {
   const handleSaveAsset = async (assetData) => {
     try {
       if (editingAsset) {
-        await assetService.updateAsset(
-          profileId,
-          activeSimulationId,
-          editingAsset.id,
-          assetData
-        );
-        setAssets(
-          assets.map((asset) =>
-            asset.id === editingAsset.id ? { ...asset, ...assetData } : asset
+        const targetSimIds = assetData.selectedSimulationIds?.length
+          ? assetData.selectedSimulationIds
+          : [activeSimulationId];
+        await Promise.all(
+          targetSimIds.map((simId) =>
+            assetService.updateAsset(
+              profileId,
+              simId,
+              editingAsset.id,
+              assetData
+            )
           )
         );
+        if (targetSimIds.includes(activeSimulationId)) {
+          setAssets(
+            assets.map((asset) =>
+              asset.id === editingAsset.id ? { ...asset, ...assetData } : asset
+            )
+          );
+        }
       } else {
+        const targetSimIds = assetData.selectedSimulationIds?.length
+          ? assetData.selectedSimulationIds
+          : [activeSimulationId];
+        const primarySimId = targetSimIds[0];
         const newAssetId = await assetService.createAsset(
           profileId,
-          activeSimulationId,
+          primarySimId,
           assetData
         );
-        setAssets([...assets, { id: newAssetId, ...assetData }]);
+        await Promise.all(
+          targetSimIds
+            .filter((sid) => sid !== primarySimId)
+            .map((sid) =>
+              assetService.createAssetWithId(
+                profileId,
+                sid,
+                newAssetId,
+                assetData
+              )
+            )
+        );
+        if (primarySimId === activeSimulationId) {
+          setAssets([...assets, { id: newAssetId, ...assetData }]);
+        }
       }
 
       setIsAssetModalOpen(false);
@@ -1076,26 +1261,44 @@ function DashboardPage() {
     try {
       if (editingDebt) {
         // 수정
-        await debtService.updateDebt(
-          profileId,
-          activeSimulationId,
-          editingDebt.id,
-          debtData
-        );
-        setDebts(
-          debts.map((debt) =>
-            debt.id === editingDebt.id ? { ...debt, ...debtData } : debt
+        const targetSimIds = debtData.selectedSimulationIds?.length
+          ? debtData.selectedSimulationIds
+          : [activeSimulationId];
+        await Promise.all(
+          targetSimIds.map((simId) =>
+            debtService.updateDebt(profileId, simId, editingDebt.id, debtData)
           )
         );
+        if (targetSimIds.includes(activeSimulationId)) {
+          setDebts(
+            debts.map((debt) =>
+              debt.id === editingDebt.id ? { ...debt, ...debtData } : debt
+            )
+          );
+        }
         setEditingDebt(null);
       } else {
         // 추가
+        const targetSimIds = debtData.selectedSimulationIds?.length
+          ? debtData.selectedSimulationIds
+          : [activeSimulationId];
+        const primarySimId = targetSimIds[0];
         const newDebt = await debtService.createDebt(
           profileId,
-          activeSimulationId,
+          primarySimId,
           debtData
         );
-        setDebts([...debts, newDebt]);
+        const newId = newDebt.id;
+        await Promise.all(
+          targetSimIds
+            .filter((sid) => sid !== primarySimId)
+            .map((sid) =>
+              debtService.createDebtWithId(profileId, sid, newId, debtData)
+            )
+        );
+        if (primarySimId === activeSimulationId) {
+          setDebts([...debts, newDebt]);
+        }
       }
 
       setIsDebtModalOpen(false);
@@ -2372,6 +2575,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onSave={handleSaveIncome}
         editData={editingIncome}
         profileData={profileData}
+        simulations={simulations}
+        activeSimulationId={activeSimulationId}
+        profileId={profileId}
       />
 
       {/* 지출 모달 */}
@@ -2381,6 +2587,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onSave={handleSaveExpense}
         editData={editingExpense}
         profileData={profileData}
+        simulations={simulations}
+        activeSimulationId={activeSimulationId}
+        profileId={profileId}
       />
 
       {/* 저축/투자 모달 */}
@@ -2390,6 +2599,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onSave={handleSaveSaving}
         editData={editingSaving}
         profileData={profileData}
+        simulations={simulations}
+        activeSimulationId={activeSimulationId}
+        profileId={profileId}
       />
 
       <PensionModal
@@ -2398,6 +2610,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onSave={handleSavePension}
         editData={editingPension}
         profileData={profileData}
+        simulations={simulations}
+        activeSimulationId={activeSimulationId}
+        profileId={profileId}
       />
 
       <RealEstateModal
@@ -2406,6 +2621,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onSave={handleSaveRealEstate}
         editData={editingRealEstate}
         profileData={profileData}
+        simulations={simulations}
+        activeSimulationId={activeSimulationId}
+        profileId={profileId}
       />
 
       <ProfileEditModal
@@ -2422,6 +2640,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onSave={handleSaveAsset}
         editData={editingAsset}
         profileData={profileData}
+        simulations={simulations}
+        activeSimulationId={activeSimulationId}
+        profileId={profileId}
       />
 
       {/* 부채 모달 */}
@@ -2431,6 +2652,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onSave={handleSaveDebt}
         editData={editingDebt}
         profileData={profileData}
+        simulations={simulations}
+        activeSimulationId={activeSimulationId}
+        profileId={profileId}
       />
 
       {/* 계산기 모달 */}

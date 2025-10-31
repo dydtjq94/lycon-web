@@ -204,6 +204,13 @@
   color: #9ca3af;
 }
 
+.hintText {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  font-weight: 400;
+  font-style: italic;
+}
+
 .buttonGroup {
   display: flex;
   gap: 12px;

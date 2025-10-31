@@ -333,18 +333,18 @@ export const simulationService = {
       let count = 0;
 
       snapshot.docs.forEach((sourceDoc) => {
+        // 원본 문서 ID를 그대로 사용하여 대상 문서 생성 → 시뮬레이션 간 동일 ID 유지
         const targetRef = doc(
-          collection(
-            db,
-            "profiles",
-            profileId,
-            "simulations",
-            targetSimulationId,
-            subcollectionName
-          )
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          targetSimulationId,
+          subcollectionName,
+          sourceDoc.id
         );
 
-        // id를 제외한 데이터 복사 (createdAt은 원본 유지, updatedAt만 갱신)
+        // 데이터 복사 (createdAt은 원본 유지, updatedAt만 갱신)
         const data = sourceDoc.data();
         batch.set(targetRef, {
           ...data,

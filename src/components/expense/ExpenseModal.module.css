@@ -159,6 +159,13 @@
   font-weight: 400;
 }
 
+.hintText {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  font-weight: 400;
+  font-style: italic;
+}
+
 .input.disabled {
   background-color: #f3f4f6;
   cursor: not-allowed;
