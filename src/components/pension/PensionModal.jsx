@@ -14,6 +14,23 @@ function PensionModal({
   editData = null,
   profileData = null,
 }) {
+  // 은퇴년도 계산 함수
+  const getRetirementYear = () => {
+    const currentYear = new Date().getFullYear();
+    if (profileData && profileData.birthYear && profileData.retirementAge) {
+      const birth = parseInt(profileData.birthYear, 10);
+      const retireAge = parseInt(profileData.retirementAge, 10);
+      if (Number.isFinite(birth) && Number.isFinite(retireAge)) {
+        const currentAge = calculateKoreanAge(birth, currentYear);
+        const yearsToRetire = retireAge - currentAge;
+        return (
+          currentYear + (Number.isFinite(yearsToRetire) ? yearsToRetire : 0)
+        );
+      }
+    }
+    return currentYear + 10;
+  };
+
   // 기본값 계산 함수
   const getDefaultYears = () => {
     const currentYear = new Date().getFullYear();
@@ -78,9 +95,33 @@ function PensionModal({
     paymentStartYear: age65Year, // 수령 시작년도
     paymentEndYear: age90Year, // 수령 종료년도
     memo: "",
+    isFixedContributionEndYearToRetirement: false, // 적립 종료년도 은퇴년도 고정 여부
   });
 
   const [errors, setErrors] = useState({});
+
+  // 은퇴년도 고정이 켜져있으면 적립 종료년도를 자동으로 은퇴년도로 업데이트
+  useEffect(() => {
+    if (
+      formData.isFixedContributionEndYearToRetirement &&
+      profileData &&
+      formData.type !== "national"
+    ) {
+      const retirementYear = getRetirementYear();
+      if (formData.contributionEndYear !== retirementYear) {
+        setFormData((prev) => ({
+          ...prev,
+          contributionEndYear: retirementYear,
+        }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    formData.isFixedContributionEndYearToRetirement,
+    profileData?.retirementAge,
+    profileData?.birthYear,
+    formData.type,
+  ]);
 
   // 수정 모드일 때 데이터 로드, 모달이 열릴 때마다 초기화
   useEffect(() => {
@@ -111,6 +152,8 @@ function PensionModal({
           paymentEndYear:
             editData.paymentEndYear || new Date().getFullYear() + 20,
           memo: editData.memo || "",
+          isFixedContributionEndYearToRetirement:
+            editData.isFixedContributionEndYearToRetirement || false,
         });
       } else {
         // 새 데이터일 때 초기화
@@ -131,6 +174,7 @@ function PensionModal({
           paymentStartYear: age65Year,
           paymentEndYear: age90Year,
           memo: "",
+          isFixedContributionEndYearToRetirement: false,
         });
       }
     }
@@ -318,6 +362,10 @@ function PensionModal({
         formData.type !== "national" ? parseInt(formData.paymentStartYear) : 0,
       paymentEndYear:
         formData.type !== "national" ? parseInt(formData.paymentEndYear) : 0,
+      isFixedContributionEndYearToRetirement:
+        formData.type !== "national"
+          ? formData.isFixedContributionEndYearToRetirement || false
+          : false,
     };
 
     onSave(pensionData);
@@ -343,6 +391,7 @@ function PensionModal({
       paymentStartYear: age65Year,
       paymentEndYear: age90Year,
       memo: "",
+      isFixedContributionEndYearToRetirement: false,
     });
     setErrors({});
     onClose();
@@ -672,19 +721,54 @@ function PensionModal({
                     </div>
 
                     <div className={styles.field}>
-                      <label className={styles.label}>적립 종료년도</label>
+                      <div className={styles.endYearWrapper}>
+                        <label className={styles.label}>적립 종료년도</label>
+                        <label className={styles.fixedCheckboxLabel}>
+                          <input
+                            type="checkbox"
+                            checked={
+                              formData.isFixedContributionEndYearToRetirement
+                            }
+                            onChange={(e) => {
+                              const isFixed = e.target.checked;
+                              setFormData({
+                                ...formData,
+                                isFixedContributionEndYearToRetirement: isFixed,
+                                // 체크 시 은퇴년도로 자동 설정
+                                contributionEndYear: isFixed
+                                  ? getRetirementYear()
+                                  : formData.contributionEndYear,
+                              });
+                            }}
+                            className={styles.fixedCheckbox}
+                          />
+                          <span className={styles.fixedCheckboxText}>
+                            은퇴 년도 고정
+                          </span>
+                        </label>
+                      </div>
                       <input
                         type="text"
                         value={formData.contributionEndYear}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
                           setFormData({
                             ...formData,
-                            contributionEndYear: parseInt(e.target.value) || 0,
-                          })
+                            contributionEndYear: value,
+                            // 수동으로 변경하면 고정 해제
+                            isFixedContributionEndYearToRetirement: false,
+                          });
+                        }}
+                        disabled={
+                          formData.isFixedContributionEndYearToRetirement
                         }
                         onKeyPress={handleKeyPress}
                         className={`${styles.input} ${
                           errors.contributionEndYear ? styles.error : ""
+                        } ${
+                          formData.isFixedContributionEndYearToRetirement
+                            ? styles.disabled
+                            : ""
                         }`}
                         placeholder="2035"
                       />

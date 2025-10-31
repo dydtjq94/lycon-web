@@ -38,9 +38,25 @@ function ExpenseModal({
     endYear: getRetirementYear(),
     memo: "2014년부터 2024년까지의 10년간 평균",
     growthRate: "1.89", // 기본 상승률 1.89%
+    isFixedToRetirementYear: false, // 은퇴년도 고정 여부
   });
 
   const [errors, setErrors] = useState({});
+
+  // 은퇴년도 고정이 켜져있으면 endYear를 자동으로 은퇴년도로 업데이트
+  useEffect(() => {
+    if (formData.isFixedToRetirementYear && profileData) {
+      const retirementYear = getRetirementYear();
+      if (formData.endYear !== retirementYear) {
+        setFormData((prev) => ({ ...prev, endYear: retirementYear }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    formData.isFixedToRetirementYear,
+    profileData?.retirementAge,
+    profileData?.birthYear,
+  ]);
 
   // 수정 모드일 때 데이터 로드, 모달이 열릴 때마다 초기화
   useEffect(() => {
@@ -57,6 +73,7 @@ function ExpenseModal({
           growthRate: editData.growthRate
             ? editData.growthRate.toString()
             : "1.89",
+          isFixedToRetirementYear: editData.isFixedToRetirementYear || false,
         });
       } else {
         // 새 데이터일 때 초기화
@@ -68,6 +85,7 @@ function ExpenseModal({
           endYear: getRetirementYear(),
           memo: "2014년부터 2024년까지의 10년간 평균",
           growthRate: "1.89",
+          isFixedToRetirementYear: false,
         });
       }
     }
@@ -136,6 +154,7 @@ function ExpenseModal({
       growthRate: parseFloat(formData.growthRate), // 백분율 그대로 저장 (마이너스 값 포함)
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
+      isFixedToRetirementYear: formData.isFixedToRetirementYear || false,
     };
 
     onSave(expenseData);
@@ -152,6 +171,7 @@ function ExpenseModal({
       endYear: new Date().getFullYear() + 10,
       memo: "2014년부터 2024년까지의 10년간 평균",
       growthRate: "1.89",
+      isFixedToRetirementYear: false,
     });
     setErrors({});
     onClose();
@@ -273,9 +293,32 @@ function ExpenseModal({
             </div>
 
             <div className={styles.field}>
-              <label htmlFor="endYear" className={styles.label}>
-                종료년도 *
-              </label>
+              <div className={styles.endYearWrapper}>
+                <label htmlFor="endYear" className={styles.label}>
+                  종료년도 *
+                </label>
+                <label className={styles.fixedCheckboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isFixedToRetirementYear}
+                    onChange={(e) => {
+                      const isFixed = e.target.checked;
+                      setFormData({
+                        ...formData,
+                        isFixedToRetirementYear: isFixed,
+                        // 체크 시 은퇴년도로 자동 설정
+                        endYear: isFixed
+                          ? getRetirementYear()
+                          : formData.endYear,
+                      });
+                    }}
+                    className={styles.fixedCheckbox}
+                  />
+                  <span className={styles.fixedCheckboxText}>
+                    은퇴 년도 고정
+                  </span>
+                </label>
+              </div>
               <input
                 type="text"
                 id="endYear"
@@ -284,13 +327,19 @@ function ExpenseModal({
                   const value = e.target.value;
                   // 숫자만 허용하고 4자리 제한
                   if (value === "" || /^\d{0,4}$/.test(value)) {
-                    setFormData({ ...formData, endYear: value });
+                    setFormData({
+                      ...formData,
+                      endYear: value,
+                      // 수동으로 변경하면 고정 해제
+                      isFixedToRetirementYear: false,
+                    });
                   }
                 }}
+                disabled={formData.isFixedToRetirementYear}
                 onKeyPress={handleKeyPress}
                 className={`${styles.input} ${
                   errors.endYear ? styles.error : ""
-                }`}
+                } ${formData.isFixedToRetirementYear ? styles.disabled : ""}`}
                 placeholder="2035"
               />
               {/* 종료년도 나이 표시 */}

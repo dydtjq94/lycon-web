@@ -615,9 +615,43 @@ function DashboardPage() {
   };
 
   // 프로필 수정 저장
-  const handleSaveProfileEdit = (updatedProfile) => {
+  const handleSaveProfileEdit = async (updatedProfile) => {
     setProfileData(updatedProfile);
     // 시뮬레이션 재계산은 useEffect에서 자동 처리
+
+    // 프로필 업데이트 후 소득/저축/지출/연금 데이터 다시 로드 (은퇴년도 변경 시 고정된 항목 업데이트 반영)
+    if (activeSimulationId) {
+      try {
+        const [incomeData, savingData, expenseData, pensionData] =
+          await Promise.all([
+            incomeService.getIncomes(profileId, activeSimulationId),
+            savingsService.getSavings(profileId, activeSimulationId),
+            expenseService.getExpenses(profileId, activeSimulationId),
+            pensionService.getPensions(profileId, activeSimulationId),
+          ]);
+
+        const sortedIncomes = incomeData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+        const sortedSavings = savingData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+        const sortedExpenses = expenseData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+        const sortedPensions = pensionData.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+
+        setIncomes(sortedIncomes);
+        setSavings(sortedSavings);
+        setExpenses(sortedExpenses);
+        setPensions(sortedPensions);
+      } catch (error) {
+        console.error("재무 데이터 리로드 오류:", error);
+        // 데이터 리로드 실패해도 프로필 업데이트는 성공으로 처리
+      }
+    }
   };
 
   // 사이드바 뷰 핸들러들

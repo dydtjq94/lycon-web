@@ -10,6 +10,7 @@ import {
   orderBy,
   getDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "../libs/firebase.js";
 
@@ -414,6 +415,82 @@ export const incomeService = {
       throw error;
     }
   },
+
+  // 모든 시뮬레이션의 은퇴년도 고정된 소득 항목들의 endYear 업데이트
+  async updateFixedIncomesEndYear(profileId, retirementYear) {
+    try {
+      console.log(
+        "고정된 소득 항목들의 endYear 업데이트 시작:",
+        profileId,
+        retirementYear
+      );
+
+      // 모든 시뮬레이션 조회
+      const simulationsRef = collection(
+        db,
+        "profiles",
+        profileId,
+        "simulations"
+      );
+      const simulationsSnapshot = await getDocs(simulationsRef);
+
+      let totalUpdated = 0;
+
+      // 각 시뮬레이션의 소득 데이터 조회 및 업데이트
+      for (const simDoc of simulationsSnapshot.docs) {
+        const simulationId = simDoc.id;
+        const incomesRef = collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "incomes"
+        );
+        const incomesSnapshot = await getDocs(incomesRef);
+
+        // isFixedToRetirementYear가 true인 소득 항목들 찾기
+        const fixedIncomes = incomesSnapshot.docs.filter(
+          (doc) => doc.data().isFixedToRetirementYear === true
+        );
+
+        // 일괄 업데이트
+        if (fixedIncomes.length > 0) {
+          const batch = writeBatch(db);
+
+          fixedIncomes.forEach((incomeDoc) => {
+            const incomeRef = doc(
+              db,
+              "profiles",
+              profileId,
+              "simulations",
+              simulationId,
+              "incomes",
+              incomeDoc.id
+            );
+            batch.update(incomeRef, {
+              endYear: retirementYear,
+              updatedAt: new Date().toISOString(),
+            });
+            totalUpdated++;
+          });
+
+          await batch.commit();
+          console.log(
+            `시뮬레이션 ${simulationId}: ${fixedIncomes.length}개 소득 항목 업데이트 완료`
+          );
+        }
+      }
+
+      console.log(
+        `모든 고정된 소득 항목 업데이트 완료: ${totalUpdated}개 항목 업데이트됨`
+      );
+      return totalUpdated;
+    } catch (error) {
+      console.error("고정된 소득 항목 업데이트 오류:", error);
+      throw error;
+    }
+  },
 };
 
 // 지출 데이터 서비스
@@ -529,6 +606,82 @@ export const expenseService = {
       await deleteDoc(docRef);
     } catch (error) {
       console.error("지출 데이터 삭제 오류:", error);
+      throw error;
+    }
+  },
+
+  // 모든 시뮬레이션의 은퇴년도 고정된 지출 항목들의 endYear 업데이트
+  async updateFixedExpensesEndYear(profileId, retirementYear) {
+    try {
+      console.log(
+        "고정된 지출 항목들의 endYear 업데이트 시작:",
+        profileId,
+        retirementYear
+      );
+
+      // 모든 시뮬레이션 조회
+      const simulationsRef = collection(
+        db,
+        "profiles",
+        profileId,
+        "simulations"
+      );
+      const simulationsSnapshot = await getDocs(simulationsRef);
+
+      let totalUpdated = 0;
+
+      // 각 시뮬레이션의 지출 데이터 조회 및 업데이트
+      for (const simDoc of simulationsSnapshot.docs) {
+        const simulationId = simDoc.id;
+        const expensesRef = collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "expenses"
+        );
+        const expensesSnapshot = await getDocs(expensesRef);
+
+        // isFixedToRetirementYear가 true인 지출 항목들 찾기
+        const fixedExpenses = expensesSnapshot.docs.filter(
+          (doc) => doc.data().isFixedToRetirementYear === true
+        );
+
+        // 일괄 업데이트
+        if (fixedExpenses.length > 0) {
+          const batch = writeBatch(db);
+
+          fixedExpenses.forEach((expenseDoc) => {
+            const expenseRef = doc(
+              db,
+              "profiles",
+              profileId,
+              "simulations",
+              simulationId,
+              "expenses",
+              expenseDoc.id
+            );
+            batch.update(expenseRef, {
+              endYear: retirementYear,
+              updatedAt: new Date().toISOString(),
+            });
+            totalUpdated++;
+          });
+
+          await batch.commit();
+          console.log(
+            `시뮬레이션 ${simulationId}: ${fixedExpenses.length}개 지출 항목 업데이트 완료`
+          );
+        }
+      }
+
+      console.log(
+        `모든 고정된 지출 항목 업데이트 완료: ${totalUpdated}개 항목 업데이트됨`
+      );
+      return totalUpdated;
+    } catch (error) {
+      console.error("고정된 지출 항목 업데이트 오류:", error);
       throw error;
     }
   },
@@ -648,6 +801,82 @@ export const savingsService = {
       throw error;
     }
   },
+
+  // 모든 시뮬레이션의 은퇴년도 고정된 저축 항목들의 endYear 업데이트
+  async updateFixedSavingsEndYear(profileId, retirementYear) {
+    try {
+      console.log(
+        "고정된 저축 항목들의 endYear 업데이트 시작:",
+        profileId,
+        retirementYear
+      );
+
+      // 모든 시뮬레이션 조회
+      const simulationsRef = collection(
+        db,
+        "profiles",
+        profileId,
+        "simulations"
+      );
+      const simulationsSnapshot = await getDocs(simulationsRef);
+
+      let totalUpdated = 0;
+
+      // 각 시뮬레이션의 저축 데이터 조회 및 업데이트
+      for (const simDoc of simulationsSnapshot.docs) {
+        const simulationId = simDoc.id;
+        const savingsRef = collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "savings"
+        );
+        const savingsSnapshot = await getDocs(savingsRef);
+
+        // isFixedToRetirementYear가 true인 저축 항목들 찾기
+        const fixedSavings = savingsSnapshot.docs.filter(
+          (doc) => doc.data().isFixedToRetirementYear === true
+        );
+
+        // 일괄 업데이트
+        if (fixedSavings.length > 0) {
+          const batch = writeBatch(db);
+
+          fixedSavings.forEach((savingDoc) => {
+            const savingRef = doc(
+              db,
+              "profiles",
+              profileId,
+              "simulations",
+              simulationId,
+              "savings",
+              savingDoc.id
+            );
+            batch.update(savingRef, {
+              endYear: retirementYear,
+              updatedAt: new Date().toISOString(),
+            });
+            totalUpdated++;
+          });
+
+          await batch.commit();
+          console.log(
+            `시뮬레이션 ${simulationId}: ${fixedSavings.length}개 저축 항목 업데이트 완료`
+          );
+        }
+      }
+
+      console.log(
+        `모든 고정된 저축 항목 업데이트 완료: ${totalUpdated}개 항목 업데이트됨`
+      );
+      return totalUpdated;
+    } catch (error) {
+      console.error("고정된 저축 항목 업데이트 오류:", error);
+      throw error;
+    }
+  },
 };
 
 /**
@@ -764,6 +993,82 @@ export const pensionService = {
       await deleteDoc(docRef);
     } catch (error) {
       console.error("연금 데이터 삭제 오류:", error);
+      throw error;
+    }
+  },
+
+  // 모든 시뮬레이션의 은퇴년도 고정된 연금 항목들의 endYear 업데이트
+  async updateFixedPensionsEndYear(profileId, retirementYear) {
+    try {
+      console.log(
+        "고정된 연금 항목들의 endYear 업데이트 시작:",
+        profileId,
+        retirementYear
+      );
+
+      // 모든 시뮬레이션 조회
+      const simulationsRef = collection(
+        db,
+        "profiles",
+        profileId,
+        "simulations"
+      );
+      const simulationsSnapshot = await getDocs(simulationsRef);
+
+      let totalUpdated = 0;
+
+      // 각 시뮬레이션의 연금 데이터 조회 및 업데이트
+      for (const simDoc of simulationsSnapshot.docs) {
+        const simulationId = simDoc.id;
+        const pensionsRef = collection(
+          db,
+          "profiles",
+          profileId,
+          "simulations",
+          simulationId,
+          "pensions"
+        );
+        const pensionsSnapshot = await getDocs(pensionsRef);
+
+        // isFixedContributionEndYearToRetirement가 true인 연금 항목들 찾기
+        const fixedPensions = pensionsSnapshot.docs.filter(
+          (doc) => doc.data().isFixedContributionEndYearToRetirement === true
+        );
+
+        // 일괄 업데이트
+        if (fixedPensions.length > 0) {
+          const batch = writeBatch(db);
+
+          fixedPensions.forEach((pensionDoc) => {
+            const pensionRef = doc(
+              db,
+              "profiles",
+              profileId,
+              "simulations",
+              simulationId,
+              "pensions",
+              pensionDoc.id
+            );
+            batch.update(pensionRef, {
+              contributionEndYear: retirementYear,
+              updatedAt: new Date().toISOString(),
+            });
+            totalUpdated++;
+          });
+
+          await batch.commit();
+          console.log(
+            `시뮬레이션 ${simulationId}: ${fixedPensions.length}개 연금 항목 업데이트 완료`
+          );
+        }
+      }
+
+      console.log(
+        `모든 고정된 연금 항목 업데이트 완료: ${totalUpdated}개 항목 업데이트됨`
+      );
+      return totalUpdated;
+    } catch (error) {
+      console.error("고정된 연금 항목 업데이트 오류:", error);
       throw error;
     }
   },

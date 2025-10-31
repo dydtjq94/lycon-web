@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { calculateKoreanAge, getKoreanAgeInYear } from "../../utils/koreanAge";
-import { profileService } from "../../services/firestoreService";
+import {
+  profileService,
+  incomeService,
+  savingsService,
+  expenseService,
+  pensionService,
+} from "../../services/firestoreService";
 import { formatAmountForChart } from "../../utils/format";
 import styles from "./ProfileEditModal.module.css";
 
@@ -154,6 +160,23 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
     });
   };
 
+  // 은퇴년도 계산 함수
+  const getRetirementYear = (birthYear, retirementAge) => {
+    const currentYear = new Date().getFullYear();
+    if (birthYear && retirementAge) {
+      const birth = parseInt(birthYear, 10);
+      const retireAge = parseInt(retirementAge, 10);
+      if (Number.isFinite(birth) && Number.isFinite(retireAge)) {
+        const currentAge = calculateKoreanAge(birth, currentYear);
+        const yearsToRetire = retireAge - currentAge;
+        return (
+          currentYear + (Number.isFinite(yearsToRetire) ? yearsToRetire : 0)
+        );
+      }
+    }
+    return currentYear + 10;
+  };
+
   // 폼 제출
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -177,10 +200,59 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         updatedAt: new Date().toISOString(),
       };
 
+      // 은퇴년도 또는 출생년도가 변경되었는지 확인
+      const retirementAgeChanged =
+        profileData.retirementAge !== formData.retirementAge;
+      const birthYearChanged = profileData.birthYear !== formData.birthYear;
+
+      // 프로필 업데이트
       await profileService.updateProfile(
         profileData.id || profileData.docId,
         updatedProfile
       );
+
+      // 은퇴년도가 변경된 경우, 고정된 소득/저축/지출/연금 항목들의 endYear 업데이트
+      if (retirementAgeChanged || birthYearChanged) {
+        try {
+          const newRetirementYear = getRetirementYear(
+            formData.birthYear,
+            formData.retirementAge
+          );
+
+          // 소득, 저축, 지출, 연금 항목을 병렬로 업데이트
+          const [incomeCount, savingCount, expenseCount, pensionCount] =
+            await Promise.all([
+              incomeService.updateFixedIncomesEndYear(
+                profileData.id || profileData.docId,
+                newRetirementYear
+              ),
+              savingsService.updateFixedSavingsEndYear(
+                profileData.id || profileData.docId,
+                newRetirementYear
+              ),
+              expenseService.updateFixedExpensesEndYear(
+                profileData.id || profileData.docId,
+                newRetirementYear
+              ),
+              pensionService.updateFixedPensionsEndYear(
+                profileData.id || profileData.docId,
+                newRetirementYear
+              ),
+            ]);
+
+          const totalUpdated =
+            incomeCount + savingCount + expenseCount + pensionCount;
+          if (totalUpdated > 0) {
+            console.log(
+              `${totalUpdated}개의 고정된 항목이 자동으로 업데이트되었습니다. (소득: ${incomeCount}, 저축: ${savingCount}, 지출: ${expenseCount}, 연금: ${pensionCount})`
+            );
+          }
+        } catch (error) {
+          console.error("고정된 항목 업데이트 오류:", error);
+          // 항목 업데이트 실패해도 프로필 업데이트는 성공으로 처리
+        }
+      }
+
       onSave(updatedProfile);
       onClose();
     } catch (error) {
@@ -223,7 +295,12 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form
+          onSubmit={handleSubmit}
+          className={styles.form}
+          id="profile-edit-modal-form"
+        >
+          {/* 2열(양쪽)에 배치되는 기본정보 필드 - 이름, 출생년도, 은퇴 나이, 현금, 목표자산, 배우자 관련 */}
           <div className={styles.field}>
             <label className={styles.label}>이름 *</label>
             <input
@@ -330,7 +407,8 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
             )}
           </div>
 
-          <div className={styles.field}>
+          {/* 배우자 여부 체크 - 필드 쪽에 2열 채우기 */}
+          <div className={styles.field} style={{ alignSelf: "flex-end" }}>
             <label className={styles.checkboxLabel}>
               <input
                 type="checkbox"
@@ -350,6 +428,7 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
             </label>
           </div>
 
+          {/* 배우자 정보 입력란 - 2열 중 하나에 배치 */}
           {formData.hasSpouse && (
             <>
               <div className={styles.field}>
@@ -357,12 +436,9 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                 <input
                   type="text"
                   value={formData.spouseName}
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      spouseName: e.target.value,
-                    });
-                  }}
+                  onChange={(e) =>
+                    setFormData({ ...formData, spouseName: e.target.value })
+                  }
                   className={`${styles.input} ${
                     errors.spouseName ? styles.error : ""
                   }`}
@@ -378,12 +454,12 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                 <input
                   type="text"
                   value={formData.spouseBirthYear}
-                  onChange={(e) => {
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
                       spouseBirthYear: e.target.value,
-                    });
-                  }}
+                    })
+                  }
                   onKeyPress={handleKeyPress}
                   className={`${styles.input} ${
                     errors.spouseBirthYear ? styles.error : ""
@@ -399,8 +475,8 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
             </>
           )}
 
-          {/* 가구 구성원 관리 */}
-          <div className={styles.field}>
+          {/* 가구 구성원부터는 한 줄(1컬럼)로 쭉 - familyRowFull 적용 */}
+          <div className={styles.familyRowFull}>
             <label className={styles.label}>가구 구성원</label>
             <div className={styles.familyMembersSection}>
               {/* 기존 가구 구성원 목록 */}
@@ -428,7 +504,6 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                   ))}
                 </div>
               )}
-
               {/* 새 가구 구성원 추가 */}
               <div className={styles.addMemberSection}>
                 <div className={styles.addMemberInputs}>
@@ -462,30 +537,32 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                     onClick={handleAddFamilyMember}
                     className={styles.addMemberButton}
                   >
-                    추가
+                    +
                   </button>
                 </div>
               </div>
             </div>
           </div>
-
-          <div className={styles.buttonGroup}>
-            <button
-              type="button"
-              onClick={handleClose}
-              className={styles.cancelButton}
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={styles.submitButton}
-            >
-              {isSubmitting ? "수정 중..." : "수정"}
-            </button>
-          </div>
         </form>
+
+        {/* 버튼을 모달 바닥 고정 레이어로 분리 */}
+        <div className={styles.fixedButtonGroup}>
+          <button
+            type="button"
+            onClick={handleClose}
+            className={styles.cancelButton}
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            form="profile-edit-modal-form"
+            disabled={isSubmitting}
+            className={styles.submitButton}
+          >
+            {isSubmitting ? "수정 중..." : "수정"}
+          </button>
+        </div>
       </div>
     </div>
   );
