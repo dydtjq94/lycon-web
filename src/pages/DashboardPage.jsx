@@ -51,7 +51,9 @@ import FinancialDataModal from "../components/profile/FinancialDataModal";
 import CalculatorModal from "../components/common/CalculatorModal";
 import SimulationCompareModal from "../components/simulation/SimulationCompareModal";
 import ProfileChecklistPanel from "../components/checklist/ProfileChecklistPanel";
+import ChecklistTemplateModal from "../components/checklist/ChecklistTemplateModal";
 import { normalizeChecklistItems } from "../constants/profileChecklist";
+import FinancialDataStorePanel from "../components/datastore/FinancialDataStorePanel";
 import { trackEvent, trackPageView } from "../libs/mixpanel";
 import styles from "./DashboardPage.module.css";
 
@@ -83,12 +85,14 @@ function DashboardPage() {
   const [isMemoSaving, setIsMemoSaving] = useState(false);
   const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false);
   const [profilePanelTab, setProfilePanelTab] = useState("memo");
+  const [isDataStorePanelOpen, setIsDataStorePanelOpen] = useState(false);
   const [profileMemo, setProfileMemo] = useState("");
   const [isProfileMemoSaving, setIsProfileMemoSaving] = useState(false);
   const [profileChecklist, setProfileChecklist] = useState(null);
   const [isChecklistLoading, setIsChecklistLoading] = useState(false);
   const [isChecklistSaving, setIsChecklistSaving] = useState(false);
   const checklistIdRef = useRef(null);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false); // 템플릿 수정 모달
   const fetchSimulationFinancialData = useCallback(
     async (simulationId) => {
       if (!profileId || !simulationId || !profileData) return null;
@@ -507,73 +511,66 @@ function DashboardPage() {
     isAdmin,
   ]);
 
-  // 시뮬레이션 데이터 생성
-  const generateSimulationData = useCallback(
-    (profileData) => {
-      if (!profileData) {
-        return;
-      }
-
-      const currentYear = new Date().getFullYear();
-      const startAge = calculateKoreanAge(profileData.birthYear, currentYear); // 만 나이로 실시간 계산
-      const retirementAge = parseInt(profileData.retirementAge);
-      const deathAge = 90;
-      const startYear = currentYear;
-
-      // 현재 나이와 은퇴 나이의 차이를 계산해서 은퇴 년도 구하기
-      const yearsToRetirement = retirementAge - startAge;
-      const retirementYear = currentYear + yearsToRetirement;
-
-      // 현재 나이와 죽을 나이의 차이를 계산해서 죽을 년도 구하기
-      const yearsToDeath = deathAge - startAge;
-      const deathYear = currentYear + yearsToDeath;
-
-      const years = [];
-      for (let year = startYear; year <= deathYear; year++) {
-        const age = getKoreanAgeInYear(profileData.birthYear, year);
-        years.push({ year, age });
-      }
-
-      // 실제 소득 데이터를 기반으로 현금흐름 시뮬레이션 계산
-      const cashflow = calculateCashflowSimulation(
-        profileData,
-        incomes,
-        expenses, // 지출 데이터 사용
-        savings, // 저축/투자 데이터 사용
-        pensions, // 연금 데이터 사용
-        realEstates, // 부동산 데이터 사용
-        assets, // 자산 데이터 사용
-        debts // 부채 데이터 사용
-      );
-
-      // 자산 시뮬레이션 데이터 계산 (현금 흐름 데이터 포함)
-      const assetSimulation = calculateAssetSimulation(
-        profileData,
-        incomes,
-        expenses,
-        savings, // 저축/투자 데이터 사용
-        pensions, // 연금 데이터 사용
-        realEstates, // 부동산 데이터 사용
-        assets, // 자산 데이터 사용
-        cashflow, // 현금 흐름 데이터 전달
-        debts // 부채 데이터 사용
-      );
-
-      setSimulationData({
-        cashflow,
-        cashflowDetailed: cashflow, // 상세 데이터는 cashflow와 동일
-        assets: assetSimulation,
-      });
-    },
-    [incomes, expenses, savings, pensions, realEstates, assets, debts]
-  );
-
-  // 재무 데이터 로딩이 완료되고 데이터가 변경될 때마다 시뮬레이션 재계산
-  useEffect(() => {
-    if (profileData && !isFinancialDataLoading) {
-      generateSimulationData(profileData);
+  // useMemo를 사용해 시뮬레이션 데이터를 메모이제이션하여 불필요한 재계산 방지
+  // 재무 데이터나 프로필이 실제로 변경될 때만 계산 수행
+  const memoizedSimulationData = useMemo(() => {
+    // profileData가 없거나 재무 데이터 로딩 중이면 빈 데이터 반환
+    if (!profileData || isFinancialDataLoading) {
+      return { cashflow: [], cashflowDetailed: [], assets: [] };
     }
+
+    const currentYear = new Date().getFullYear();
+    const startAge = calculateKoreanAge(profileData.birthYear, currentYear); // 만 나이로 실시간 계산
+    const retirementAge = parseInt(profileData.retirementAge);
+    const deathAge = 90;
+    const startYear = currentYear;
+
+    // 현재 나이와 은퇴 나이의 차이를 계산해서 은퇴 년도 구하기
+    const yearsToRetirement = retirementAge - startAge;
+    const retirementYear = currentYear + yearsToRetirement;
+
+    // 현재 나이와 죽을 나이의 차이를 계산해서 죽을 년도 구하기
+    const yearsToDeath = deathAge - startAge;
+    const deathYear = currentYear + yearsToDeath;
+
+    const years = [];
+    for (let year = startYear; year <= deathYear; year++) {
+      const age = getKoreanAgeInYear(profileData.birthYear, year);
+      years.push({ year, age });
+    }
+
+    // 실제 소득 데이터를 기반으로 현금흐름 시뮬레이션 계산
+    const cashflow = calculateCashflowSimulation(
+      profileData,
+      incomes,
+      expenses, // 지출 데이터 사용
+      savings, // 저축/투자 데이터 사용
+      pensions, // 연금 데이터 사용
+      realEstates, // 부동산 데이터 사용
+      assets, // 자산 데이터 사용
+      debts // 부채 데이터 사용
+    );
+
+    // 자산 시뮬레이션 데이터 계산 (현금 흐름 데이터 포함)
+    const assetSimulation = calculateAssetSimulation(
+      profileData,
+      incomes,
+      expenses,
+      savings, // 저축/투자 데이터 사용
+      pensions, // 연금 데이터 사용
+      realEstates, // 부동산 데이터 사용
+      assets, // 자산 데이터 사용
+      cashflow, // 현금 흐름 데이터 전달
+      debts // 부채 데이터 사용
+    );
+
+    return {
+      cashflow,
+      cashflowDetailed: cashflow, // 상세 데이터는 cashflow와 동일
+      assets: assetSimulation,
+    };
   }, [
+    profileData,
     incomes,
     expenses,
     savings,
@@ -581,10 +578,14 @@ function DashboardPage() {
     realEstates,
     assets,
     debts,
-    profileData,
     isFinancialDataLoading,
-    generateSimulationData,
   ]);
+
+  // 메모이제이션된 데이터를 state에 동기화
+  // 이렇게 하면 패널 열기 등 다른 state 변경 시에는 재계산되지 않음
+  useEffect(() => {
+    setSimulationData(memoizedSimulationData);
+  }, [memoizedSimulationData]);
 
   // 프로필 수정 핸들러
 
@@ -1579,6 +1580,7 @@ function DashboardPage() {
   };
 
   const closeProfilePanel = () => setIsProfilePanelOpen(false);
+  const closeDataStorePanel = () => setIsDataStorePanelOpen(false);
 
   useEffect(() => {
     if (!isProfilePanelOpen) return;
@@ -1590,6 +1592,146 @@ function DashboardPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isProfilePanelOpen]);
+
+  useEffect(() => {
+    if (!isDataStorePanelOpen) return;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeDataStorePanel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDataStorePanelOpen]);
+
+  // 재무 라이브러리에서 선택한 항목들 추가
+  const handleAddDataStoreItems = async (items) => {
+    if (!checkEditPermission("재무 데이터 추가")) return;
+    if (!profileId || !activeSimulationId) return;
+
+    try {
+      for (const item of items) {
+        const { category, ...itemData } = item;
+
+        // 현재 연도와 은퇴년도 계산
+        const currentYear = new Date().getFullYear();
+        let retirementYear = currentYear + 10;
+        if (profileData && profileData.birthYear && profileData.retirementAge) {
+          const birth = parseInt(profileData.birthYear, 10);
+          const retireAge = parseInt(profileData.retirementAge, 10);
+          if (Number.isFinite(birth) && Number.isFinite(retireAge)) {
+            const currentAge = calculateKoreanAge(birth, currentYear);
+            const yearsToRetire = retireAge - currentAge;
+            retirementYear =
+              currentYear +
+              (Number.isFinite(yearsToRetire) ? yearsToRetire : 10);
+          }
+        }
+
+        // 카테고리별 필수 필드 보완
+        let itemWithDefaults = {
+          ...itemData,
+          startYear: itemData.startYear || currentYear,
+          endYear:
+            itemData.endYear ||
+            (category === "expense" ||
+            category === "income" ||
+            category === "saving"
+              ? retirementYear
+              : currentYear + 30),
+        };
+
+        // 카테고리별 추가 필드 설정
+        if (category === "income" || category === "expense") {
+          itemWithDefaults = {
+            ...itemWithDefaults,
+            amount: itemData.amount || 0,
+            originalAmount: itemData.originalAmount || itemData.amount || 0,
+            originalFrequency:
+              itemData.originalFrequency || itemData.frequency || "monthly",
+            growthRate: itemData.growthRate || 0,
+            isFixedToRetirementYear: itemData.isFixedToRetirementYear || false,
+          };
+        } else if (category === "saving") {
+          itemWithDefaults = {
+            ...itemWithDefaults,
+            amount: itemData.amount || 0,
+            originalAmount: itemData.originalAmount || itemData.amount || 0,
+            originalFrequency:
+              itemData.originalFrequency || itemData.frequency || "monthly",
+            interestRate: itemData.interestRate || 0,
+            yearlyGrowthRate: itemData.yearlyGrowthRate || 0,
+            currentAmount: itemData.currentAmount || 0,
+            isFixedToRetirementYear: itemData.isFixedToRetirementYear || false,
+          };
+        } else if (category === "pension") {
+          itemWithDefaults = {
+            ...itemWithDefaults,
+            type: itemData.type || "national",
+            monthlyAmount: itemData.monthlyAmount || 0,
+            inflationRate: itemData.inflationRate || 1.89,
+          };
+        }
+
+        switch (category) {
+          case "income":
+            await incomeService.createIncome(
+              profileId,
+              activeSimulationId,
+              itemWithDefaults
+            );
+            break;
+          case "expense":
+            await expenseService.createExpense(
+              profileId,
+              activeSimulationId,
+              itemWithDefaults
+            );
+            break;
+          case "saving":
+            await savingsService.createSaving(
+              profileId,
+              activeSimulationId,
+              itemWithDefaults
+            );
+            break;
+          case "pension":
+            // 연금 데이터 형식 변환
+            const pensionData = {
+              ...itemWithDefaults,
+              title: itemData.title || itemWithDefaults.title,
+              monthlyAmount: itemWithDefaults.monthlyAmount || 0,
+              startYear: itemWithDefaults.startYear || currentYear,
+              endYear: itemWithDefaults.endYear || currentYear + 30,
+              inflationRate: itemWithDefaults.inflationRate || 1.89,
+              memo: itemWithDefaults.memo || "",
+            };
+            await pensionService.createPension(
+              profileId,
+              activeSimulationId,
+              pensionData
+            );
+            break;
+          default:
+            console.warn(`Unknown category: ${category}`);
+        }
+      }
+
+      // 데이터 다시 로드
+      await fetchSimulationFinancialData(activeSimulationId);
+
+      // 패널 닫기
+      closeDataStorePanel();
+
+      trackEvent("재무 라이브러리 항목 추가", {
+        profileId,
+        itemCount: items.length,
+      });
+    } catch (error) {
+      console.error("재무 라이브러리 항목 추가 오류:", error);
+      alert("항목 추가 중 오류가 발생했습니다.");
+    }
+  };
 
   const handleSaveProfileMemo = async (memoValue) => {
     if (!checkEditPermission("프로필 메모 저장")) return;
@@ -2161,7 +2303,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                 {profileData.familyMembers &&
                   profileData.familyMembers.length > 0 &&
                   profileData.familyMembers.map((member, index) => (
-                    <span key={member.id}>
+                    <span key={member.id || `family-${index}`}>
                       {index > 0 && ", "}
                       {member.relationship || member.relation || "가족"}(
                       {calculateKoreanAge(member.birthYear)}세)
@@ -2172,6 +2314,12 @@ ${JSON.stringify(analysisData, null, 2)}`;
           </span>
         </div>
         <div className={styles.profileActions}>
+          <button
+            className={styles.iconButton}
+            onClick={() => setIsDataStorePanelOpen(true)}
+          >
+            <span className={styles.buttonText}>재무 라이브러리</span>
+          </button>
           <button
             className={styles.iconButton}
             onClick={() => setIsCalculatorModalOpen(true)}
@@ -2297,21 +2445,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
             )}
           </div>
         </div>
-        {/* 재무 항목 요약 - 항상 렌더링하여 레이아웃 시프트 방지 */}
-        <ProfileSummary
-          incomes={incomes}
-          expenses={expenses}
-          savings={savings}
-          pensions={pensions}
-          realEstates={realEstates}
-          assets={assets}
-          debts={debts}
-          onItemClick={handleProfileSummaryItemClick}
-          onDelete={handleProfileSummaryDelete}
-          onOpenFinancialModal={handleOpenFinancialModal}
-          isLoading={isFinancialDataLoading}
-          isReadOnly={false}
-        />
+        {/* 프로필 하단 빈 공간 */}
+        <ProfileSummary />
       </div>
 
       {/* 메인 대시보드 */}
@@ -2481,6 +2616,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   data={simulationData.cashflow}
                   retirementAge={profileData.retirementAge}
                   detailedData={simulationData.cashflowDetailed}
+                  profileData={profileData} // 배우자 은퇴 정보를 위해 전체 프로필 데이터 전달
                   incomes={incomes}
                   expenses={expenses}
                   savings={savings}
@@ -2508,12 +2644,22 @@ ${JSON.stringify(analysisData, null, 2)}`;
         </div>
       </div>
 
+      {/* 프로필 패널 오버레이 */}
       {isProfilePanelOpen && (
         <div
           className={styles.profilePanelOverlay}
           onClick={closeProfilePanel}
         />
       )}
+      {/* 재무 라이브러리 패널 오버레이 */}
+      {isDataStorePanelOpen && (
+        <div
+          className={styles.profilePanelOverlay}
+          onClick={closeDataStorePanel}
+        />
+      )}
+
+      {/* 프로필 패널 */}
       <div
         className={`${styles.profileSidePanel} ${
           isProfilePanelOpen ? styles.open : ""
@@ -2563,8 +2709,36 @@ ${JSON.stringify(analysisData, null, 2)}`;
               isLoading={isChecklistLoading}
               isSaving={isChecklistSaving}
               disabled={isChecklistSaving || !hasEditPermission}
+              isAdmin={isAdmin}
+              onOpenTemplateModal={() => setIsTemplateModalOpen(true)}
             />
           )}
+        </div>
+      </div>
+
+      {/* 재무 라이브러리 패널 */}
+      <div
+        className={`${styles.profileSidePanel} ${
+          isDataStorePanelOpen ? styles.open : ""
+        }`}
+      >
+        <div className={styles.profileSidePanelHeader}>
+          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600 }}>
+            재무 라이브러리
+          </h3>
+          <button
+            className={styles.profilePanelClose}
+            onClick={closeDataStorePanel}
+            type="button"
+          >
+            →
+          </button>
+        </div>
+        <div className={styles.profileSidePanelContent}>
+          <FinancialDataStorePanel
+            onAddItems={handleAddDataStoreItems}
+            profileData={profileData}
+          />
         </div>
       </div>
 
@@ -2694,6 +2868,12 @@ ${JSON.stringify(analysisData, null, 2)}`;
         defaultData={comparisonData.defaultData}
         targetData={comparisonData.targetData}
         profileData={profileData}
+      />
+
+      {/* 체크리스트 템플릿 수정 모달 (관리자 전용) */}
+      <ChecklistTemplateModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
       />
     </div>
   );

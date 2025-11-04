@@ -18,9 +18,41 @@
   color: #111827;
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .savingBadge {
   font-size: 0.8rem;
   color: #6366f1;
+}
+
+.settingsButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #5e6166;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.settingsButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #111827;
+}
+
+.settingsButton:focus,
+.settingsButton:active {
+  outline: none;
 }
 
 .list {

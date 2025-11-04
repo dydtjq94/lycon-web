@@ -95,8 +95,16 @@
 
 /* 필드 그리드 */
 .fieldGrid {
+  margin-bottom: 24px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+/* 3개 필드 그리드 */
+.fieldGrid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
 
@@ -156,6 +164,13 @@
   font-size: 0.875rem;
 }
 
+.amountPreview {
+  font-size: 0.7rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-left: 12px;
+}
+
 .hint {
   font-size: 0.8125rem;
   color: #6b7280;
@@ -168,6 +183,7 @@
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+  margin-bottom: 1rem;
 }
 
 .checkbox {
@@ -181,11 +197,6 @@
   font-size: 0.875rem;
   color: #374151;
   font-weight: 500;
-}
-
-/* 배우자 섹션 */
-.spouseSection {
-  margin-top: 1rem;
 }
 
 /* 가구 구성원 */
@@ -338,7 +349,8 @@
   }
 
   /* 모바일에서는 1열로 */
-  .fieldGrid {
+  .fieldGrid,
+  .fieldGrid3 {
     grid-template-columns: 1fr;
   }
 

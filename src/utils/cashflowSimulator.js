@@ -4,6 +4,113 @@
 import { calculateKoreanAge } from "./koreanAge";
 
 /**
+ * 부동산 취득세 계산 함수
+ * @param {number} propertyValue - 부동산 가치 (만원 단위)
+ * @returns {number} 취득세 (만원 단위)
+ */
+function calculateAcquisitionTax(propertyValue) {
+  // 6억원 = 60000만원
+  // 9억원 = 90000만원
+  if (propertyValue <= 60000) {
+    // 6억원 이하: 1.1%
+    return propertyValue * 0.011;
+  } else if (propertyValue <= 90000) {
+    // 6억원 초과 9억원 이하: 2.2%
+    return propertyValue * 0.022;
+  } else {
+    // 9억원 초과: 3.3%
+    return propertyValue * 0.033;
+  }
+}
+
+/**
+ * 보유기간에 따른 장기보유특별공제율 계산
+ * @param {number} holdingYears - 보유기간 (년)
+ * @returns {number} 공제율 (0~0.8)
+ */
+function getLongTermDeductionRate(holdingYears) {
+  if (holdingYears <= 4) return 0.24;
+  if (holdingYears === 5) return 0.32;
+  if (holdingYears === 6) return 0.40;
+  if (holdingYears === 7) return 0.48;
+  if (holdingYears === 8) return 0.56;
+  if (holdingYears === 9) return 0.64;
+  if (holdingYears === 10) return 0.72;
+  return 0.8; // 10년 초과
+}
+
+/**
+ * 과세표준에 따른 양도소득세율 및 누진공제 계산
+ * @param {number} taxableIncome - 과세표준 (만원 단위)
+ * @returns {Object} {taxRate: 세율, deduction: 누진공제}
+ */
+function getCapitalGainsTaxRate(taxableIncome) {
+  if (taxableIncome <= 1400) {
+    return { taxRate: 0.06, deduction: 0 };
+  } else if (taxableIncome <= 5000) {
+    return { taxRate: 0.15, deduction: 126 };
+  } else if (taxableIncome <= 8800) {
+    return { taxRate: 0.24, deduction: 576 };
+  } else if (taxableIncome <= 15000) {
+    return { taxRate: 0.35, deduction: 1544 };
+  } else if (taxableIncome <= 30000) {
+    return { taxRate: 0.38, deduction: 1994 };
+  } else if (taxableIncome <= 50000) {
+    return { taxRate: 0.40, deduction: 2594 };
+  } else if (taxableIncome <= 100000) {
+    return { taxRate: 0.42, deduction: 3594 };
+  } else {
+    // 10억원 초과
+    return { taxRate: 0.45, deduction: 6594 };
+  }
+}
+
+/**
+ * 부동산 양도소득세 계산 함수 (거주용 1주택)
+ * @param {number} salePrice - 양도가액 (만원 단위)
+ * @param {number} acquisitionPrice - 취득가액 (만원 단위)
+ * @param {number} holdingYears - 보유기간 (년)
+ * @returns {Object} {capitalGainsTax: 양도소득세, totalTax: 총납부금액}
+ */
+function calculateCapitalGainsTax(salePrice, acquisitionPrice, holdingYears) {
+  // 12억원 = 120000만원
+  const EXEMPTION_THRESHOLD = 120000;
+
+  // 양도가액이 12억원 이하면 양도세 없음
+  if (salePrice <= EXEMPTION_THRESHOLD) {
+    return { capitalGainsTax: 0, totalTax: 0 };
+  }
+
+  // 양도차익 = 양도가액 - 취득가액
+  const capitalGain = salePrice - acquisitionPrice;
+
+  // 1. 과세 대상 양도차익 = 양도차익 × (양도가액 - 12억원) / 양도가액
+  const taxableCapitalGain =
+    capitalGain * ((salePrice - EXEMPTION_THRESHOLD) / salePrice);
+
+  // 2. 장기보유특별공제액 = 과세 대상 양도차익 × 공제율
+  const deductionRate = getLongTermDeductionRate(holdingYears);
+  const longTermDeduction = taxableCapitalGain * deductionRate;
+
+  // 3. 과세표준 = (과세 대상 양도차익 - 장기보유특별공제액) - 250만원
+  const taxableIncome = taxableCapitalGain - longTermDeduction - 250;
+
+  // 과세표준이 음수면 세금 없음
+  if (taxableIncome <= 0) {
+    return { capitalGainsTax: 0, totalTax: 0 };
+  }
+
+  // 4. 양도소득세 = (과세표준 × 세율) - 누진공제
+  const { taxRate, deduction } = getCapitalGainsTaxRate(taxableIncome);
+  const capitalGainsTax = taxableIncome * taxRate - deduction;
+
+  // 5. 총 납부금액 = 양도소득세 × 1.1 (지방소득세 10% 포함)
+  const totalTax = capitalGainsTax * 1.1;
+
+  return { capitalGainsTax, totalTax };
+}
+
+/**
  * 소득 데이터를 기반으로 현금흐름 시뮬레이션을 계산합니다.
  * @param {Object} profileData - 프로필 데이터
  * @param {Array} incomes - 소득 데이터 배열
@@ -616,8 +723,12 @@ export function calculateCashflowSimulation(
     let totalRealEstatePension = 0; // 주택연금 수령액
     let totalRealEstateSale = 0; // 부동산 매각 수입
     let totalRealEstatePurchase = 0; // 부동산 구매 비용
+    let totalRealEstateTax = 0; // 부동산 취득세
+    let totalCapitalGainsTax = 0; // 부동산 양도소득세
     const realEstatePurchases = []; // 부동산 구매 상세 정보
     const realEstateSales = []; // 부동산 매각 상세 정보
+    const realEstateTaxes = []; // 부동산 취득세 상세 정보
+    const capitalGainsTaxes = []; // 부동산 양도소득세 상세 정보
 
     const normalizeYear = (value) => {
       if (value === null || value === undefined || value === "") {
@@ -658,6 +769,26 @@ export function calculateCashflowSimulation(
           purchaseAmount,
           "부동산 구매",
           `realestate-purchase-${realEstate.id || realEstate.title}`
+        );
+
+        // 부동산 취득세 계산 및 적용
+        const acquisitionTax = calculateAcquisitionTax(purchaseAmount);
+        totalRealEstateTax += acquisitionTax;
+        realEstateTaxes.push({
+          title: realEstate.title,
+          amount: acquisitionTax,
+          taxRate:
+            purchaseAmount <= 60000
+              ? "1.1%"
+              : purchaseAmount <= 90000
+              ? "2.2%"
+              : "3.3%",
+        });
+        addNegative(
+          `${realEstate.title} (취득세)`,
+          acquisitionTax,
+          "부동산 취득세",
+          `realestate-tax-${realEstate.id || realEstate.title}`
         );
       }
 
@@ -720,6 +851,47 @@ export function calculateCashflowSimulation(
           "부동산 매각",
           `realestate-sale-${realEstate.id || realEstate.title}`
         );
+
+        // 거주용 부동산의 경우 양도소득세 계산
+        if (realEstate.isResidential) {
+          // 취득가액 결정: acquisitionPrice가 있으면 사용, 없으면 currentValue 사용
+          const acquisitionPrice = realEstate.acquisitionPrice
+            ? Number(realEstate.acquisitionPrice)
+            : purchaseAmount;
+
+          // 취득년도 결정: acquisitionYear가 있으면 사용, 없으면 startYear 사용
+          const acquisitionYear = realEstate.acquisitionYear
+            ? Number(realEstate.acquisitionYear)
+            : startYear;
+
+          // 보유기간 계산: 양도년도(endYear + 1) - 취득년도
+          const holdingYears = year - acquisitionYear;
+
+          // 양도소득세 계산 (양도가액 = 매각 시 최종 가치)
+          const { totalTax } = calculateCapitalGainsTax(
+            finalValue,
+            acquisitionPrice,
+            holdingYears
+          );
+
+          // 양도소득세가 있으면 차감
+          if (totalTax > 0) {
+            totalCapitalGainsTax += totalTax;
+            capitalGainsTaxes.push({
+              title: realEstate.title,
+              amount: totalTax,
+              salePrice: finalValue,
+              acquisitionPrice: acquisitionPrice,
+              holdingYears: holdingYears,
+            });
+            addNegative(
+              `${realEstate.title} (양도세)`,
+              totalTax,
+              "양도소득세",
+              `realestate-capitalgains-${realEstate.id || realEstate.title}`
+            );
+          }
+        }
       }
     });
 
@@ -799,7 +971,7 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 현금흐름 = 소득 - 지출 - 저축 + 연금 + 임대소득 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 + 대출 현금 유입 - 부채이자 - 부채원금상환 - 자산구매 - 부동산구매 (각 년도별 순현금흐름)
+    // 현금흐름 = 소득 - 지출 - 저축 + 연금 + 임대소득 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 + 대출 현금 유입 - 부채이자 - 부채원금상환 - 자산구매 - 부동산구매 - 부동산취득세 - 양도소득세 (각 년도별 순현금흐름)
     const netCashflow =
       totalIncome -
       totalExpense -
@@ -815,7 +987,9 @@ export function calculateCashflowSimulation(
       totalDebtInterest -
       totalDebtPrincipal -
       totalAssetPurchase -
-      totalRealEstatePurchase;
+      totalRealEstatePurchase -
+      totalRealEstateTax -
+      totalCapitalGainsTax;
 
     cashflowData.push({
       year,
@@ -837,6 +1011,10 @@ export function calculateCashflowSimulation(
       debtPrincipal: totalDebtPrincipal,
       debtInterests: debtInterestDetails,
       debtPrincipals: debtPrincipalDetails,
+      realEstateTax: totalRealEstateTax, // 부동산 취득세
+      realEstateTaxes: realEstateTaxes, // 부동산 취득세 상세 정보
+      capitalGainsTax: totalCapitalGainsTax, // 부동산 양도소득세
+      capitalGainsTaxes: capitalGainsTaxes, // 부동산 양도소득세 상세 정보
       // 구매와 매각 상세 정보 추가
       assetPurchases: assetPurchases,
       realEstatePurchases: realEstatePurchases,

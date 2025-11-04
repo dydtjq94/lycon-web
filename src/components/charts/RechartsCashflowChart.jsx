@@ -21,6 +21,7 @@ function RechartsCashflowChart({
   data,
   retirementAge,
   deathAge = 90,
+  profileData = null, // 배우자 은퇴 정보를 위해 프로필 데이터 추가
   detailedData = [],
   incomes = [],
   expenses = [],
@@ -38,6 +39,26 @@ function RechartsCashflowChart({
       </div>
     );
   }
+
+  // 배우자 은퇴 시점 계산 (본인의 나이 기준으로)
+  const spouseRetirementAge = (() => {
+    if (!profileData?.hasSpouse || !profileData?.spouseIsWorking) {
+      return null;
+    }
+    
+    const currentYear = new Date().getFullYear();
+    const spouseBirthYear = parseInt(profileData.spouseBirthYear);
+    const spouseRetirement = parseInt(profileData.spouseRetirementAge);
+    
+    // 배우자가 은퇴하는 년도 계산
+    const spouseRetirementYear = spouseBirthYear + spouseRetirement;
+    
+    // 그 년도에 본인의 나이 계산
+    const ownerBirthYear = parseInt(profileData.birthYear);
+    const ownerAgeAtSpouseRetirement = spouseRetirementYear - ownerBirthYear;
+    
+    return ownerAgeAtSpouseRetirement;
+  })();
 
   // 소득 이벤트 추출 (시작/종료 이벤트)
   const getIncomeEvents = () => {
@@ -395,6 +416,8 @@ function RechartsCashflowChart({
     formattedAmount: formatAmountForChart(item.amount),
     assetPurchases: item.assetPurchases || [],
     realEstatePurchases: item.realEstatePurchases || [],
+    realEstateTaxes: item.realEstateTaxes || [], // 부동산 취득세 추가
+    capitalGainsTaxes: item.capitalGainsTaxes || [], // 부동산 양도소득세 추가
     assetSales: item.assetSales || [],
     realEstateSales: item.realEstateSales || [],
     debtInjections: item.debtInjections || [],
@@ -552,6 +575,12 @@ function RechartsCashflowChart({
                 const totalRealEstatePurchaseExpense = (
                   data.realEstatePurchases || []
                 ).reduce((sum, purchase) => sum + (purchase.amount || 0), 0);
+                const totalRealEstateTaxExpense = (
+                  data.realEstateTaxes || []
+                ).reduce((sum, tax) => sum + (tax.amount || 0), 0);
+                const totalCapitalGainsTaxExpense = (
+                  data.capitalGainsTaxes || []
+                ).reduce((sum, tax) => sum + (tax.amount || 0), 0);
 
                 const totalIncome =
                   yearData.income +
@@ -569,7 +598,9 @@ function RechartsCashflowChart({
                   (yearData.debtInterest || 0) +
                   (yearData.debtPrincipal || 0) +
                   totalAssetPurchaseExpense +
-                  totalRealEstatePurchaseExpense;
+                  totalRealEstatePurchaseExpense +
+                  totalRealEstateTaxExpense +
+                  totalCapitalGainsTaxExpense;
 
                 return (
                   <div
@@ -933,6 +964,36 @@ function RechartsCashflowChart({
                           );
                         }
 
+                        // 부동산 취득세 (지출)
+                        if (
+                          data.realEstateTaxes &&
+                          data.realEstateTaxes.length > 0
+                        ) {
+                          data.realEstateTaxes.forEach((tax, index) => {
+                            allItems.push({
+                              key: `realEstateTax-${index}`,
+                              label: `${tax.title} (취득세 ${tax.taxRate})`,
+                              value: tax.amount,
+                              type: "negative",
+                            });
+                          });
+                        }
+
+                        // 부동산 양도소득세 (지출)
+                        if (
+                          data.capitalGainsTaxes &&
+                          data.capitalGainsTaxes.length > 0
+                        ) {
+                          data.capitalGainsTaxes.forEach((tax, index) => {
+                            allItems.push({
+                              key: `capitalGainsTax-${index}`,
+                              label: `${tax.title} (양도세, 보유 ${tax.holdingYears}년)`,
+                              value: tax.amount,
+                              type: "negative",
+                            });
+                          });
+                        }
+
                         // 자산 구매 (지출)
                         if (
                           data.assetPurchases &&
@@ -1118,6 +1179,21 @@ function RechartsCashflowChart({
               value: "은퇴",
               position: "top",
               style: { fill: "#9ca3af", fontSize: "12px" },
+            }}
+          />
+        )}
+
+        {/* 배우자 은퇴 시점 표시 */}
+        {spouseRetirementAge && (
+          <ReferenceLine
+            x={spouseRetirementAge}
+            stroke="#a78bfa"
+            strokeWidth={1.5}
+            strokeDasharray="10 5"
+            label={{
+              value: "배우자 은퇴",
+              position: "top",
+              style: { fill: "#a78bfa", fontSize: "12px" },
             }}
           />
         )}

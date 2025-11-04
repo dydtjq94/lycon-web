@@ -64,12 +64,59 @@
   margin-bottom: 20px;
 }
 
+/* 2개 필드 그리드 */
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.fieldGrid .field {
+  margin-bottom: 0;
+}
+
+/* 체크박스 가로 배치 */
+.checkboxRow {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* 선택사항 섹션 */
+.optionalSection {
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+}
+
+.optionalSectionHeader {
+  margin-bottom: 12px;
+}
+
+.optionalSectionLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  display: inline-block;
+}
+
 .label {
   display: block;
   font-size: 14px;
   font-weight: 500;
   color: #374151;
   margin-bottom: 6px;
+}
+
+.optionalLabel {
+  font-size: 12px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-left: 4px;
 }
 
 .input {
@@ -269,6 +316,16 @@
 
   .form {
     padding: 20px;
+  }
+
+  /* 모바일에서는 1열로 */
+  .fieldGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .fieldGrid .field {
+    margin-bottom: 0;
   }
 
   .buttonGroup {

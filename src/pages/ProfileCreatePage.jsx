@@ -8,6 +8,7 @@ import {
   pensionService,
   realEstateService,
   checklistService,
+  checklistTemplateService,
 } from "../services/firestoreService";
 import { simulationService } from "../services/simulationService";
 import { formatAmountForChart } from "../utils/format";
@@ -24,65 +25,225 @@ function ProfileCreatePage() {
     name: "",
     birthYear: "",
     retirementAge: 55,
+    currentSalary: "", // 본인 현재 급여 (월)
     currentLivingExpenses: "", // 은퇴 후 생활비 → 현재 생활비로 변경
     targetAssets: "",
     currentCash: "", // 현재 현금 추가
     hasSpouse: false,
     spouseName: "",
     spouseBirthYear: "",
+    spouseIsWorking: false, // 배우자가 일하고 있는지
+    spouseCurrentSalary: "", // 배우자 현재 급여 (월)
+    spouseRetirementAge: "", // 배우자 은퇴 예상 나이
     familyMembers: [],
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 기본 소득 데이터 생성 함수
+  // 기본 소득 데이터 생성 함수 (본인)
   const createDefaultIncomes = async (
     profileId,
     simulationId,
     birthYear,
-    retirementAge
+    retirementAge,
+    currentSalary = 450 // 입력받은 현재 급여 (기본값 450)
   ) => {
     const currentYear = new Date().getFullYear();
     const currentAge = currentYear - birthYear; // 현재 만 나이 계산
     const yearsToRetirement = retirementAge - currentAge; // 은퇴까지 남은 년수
-    const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도 (예: 1994년생 55살 은퇴 = 2049년)
-    const yearsToDeath = 90 - currentAge; // 죽을 때까지 남은 년수
-    const deathYear = currentYear + yearsToDeath; // 죽을 년도
+    const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도
 
-    const defaultIncomes = [
-      {
-        title: "근로소득",
-        amount: 450, // 월 450만원
-        originalAmount: 450, // 원본 금액 (리스트 표시용)
-        frequency: "monthly",
-        originalFrequency: "monthly", // 원본 빈도 (리스트 표시용)
-        startYear: currentYear,
-        endYear: retirementYear,
-        growthRate: 3.3, // 임금상승률 3%
-        memo: "2014년부터 2024년까지의 10년간 평균",
-        category: "income",
-      },
-      {
-        title: "사업소득",
-        amount: 0,
-        originalAmount: 0, // 원본 금액 (리스트 표시용)
-        frequency: "monthly",
-        originalFrequency: "monthly", // 원본 빈도 (리스트 표시용)
-        startYear: currentYear,
-        endYear: deathYear,
-        growthRate: 3.3, // 소득 상승률 3%
-        memo: "2014년부터 2024년까지의 10년간 평균",
-        category: "income",
-      },
-    ];
+    // 나이대별 소득 데이터를 최대 3개로 분할
+    // ~50세: 3.3%, 50~60세: 0%, 60세~: -3.3%
 
-    // 각 기본 소득 데이터를 Firebase에 저장
-    for (const income of defaultIncomes) {
+    const incomes = [];
+    let segmentStartYear = currentYear;
+    let segmentStartAge = currentAge;
+    let segmentSalary = currentSalary;
+
+    // 1. ~50세 구간 (3.3% 상승)
+    if (currentAge <= 50 && retirementAge > currentAge) {
+      const segmentEndAge = Math.min(50, retirementAge);
+      const segmentEndYear = birthYear + segmentEndAge;
+
+      incomes.push({
+        title: "근로소득 (본인, ~50세)",
+        amount: segmentSalary,
+        originalAmount: segmentSalary,
+        frequency: "monthly",
+        originalFrequency: "monthly",
+        startYear: segmentStartYear,
+        endYear: segmentEndYear,
+        growthRate: 3.3, // 50세까지 상승률 3.3%
+        memo: `프로필 생성 시 입력한 현재 급여 기반 (만 ${currentAge}~${segmentEndAge}세, 상승률 3.3%)`,
+        category: "income",
+      });
+
+      // 다음 구간 준비: 51세 시점의 급여 계산 (50세까지 상승 적용)
+      const yearsInSegment = segmentEndAge - currentAge;
+      segmentSalary = Math.round(
+        segmentSalary * Math.pow(1.033, yearsInSegment)
+      );
+      segmentStartYear = segmentEndYear + 1; // 51세부터
+      segmentStartAge = segmentEndAge + 1; // 51세
+    }
+
+    // 2. 51~60세 구간 (0% 유지)
+    if (segmentStartAge <= 60 && retirementAge >= segmentStartAge) {
+      const segmentEndAge = Math.min(60, retirementAge);
+      const segmentEndYear = birthYear + segmentEndAge;
+
+      incomes.push({
+        title: "근로소득 (본인, 51~60세)",
+        amount: segmentSalary,
+        originalAmount: segmentSalary,
+        frequency: "monthly",
+        originalFrequency: "monthly",
+        startYear: segmentStartYear,
+        endYear: segmentEndYear,
+        growthRate: 0, // 51~60세 상승률 0%
+        memo: `프로필 생성 시 입력한 현재 급여 기반 (만 ${segmentStartAge}~${segmentEndAge}세, 상승률 0%)`,
+        category: "income",
+      });
+
+      // 다음 구간 준비 (금액 변화 없음)
+      segmentStartYear = segmentEndYear + 1; // 61세부터
+      segmentStartAge = segmentEndAge + 1; // 61세
+    }
+
+    // 3. 61세~ 구간 (-3.3% 하락)
+    if (segmentStartAge <= retirementAge) {
+      const segmentEndYear = retirementYear;
+
+      incomes.push({
+        title: "근로소득 (본인, 61세~)",
+        amount: segmentSalary,
+        originalAmount: segmentSalary,
+        frequency: "monthly",
+        originalFrequency: "monthly",
+        startYear: segmentStartYear,
+        endYear: segmentEndYear,
+        growthRate: -3.3, // 61세 이후 하락률 -3.3%
+        memo: `프로필 생성 시 입력한 현재 급여 기반 (만 ${segmentStartAge}~${retirementAge}세, 하락률 -3.3%)`,
+        category: "income",
+      });
+    }
+
+    // 모든 소득 데이터를 Firebase에 저장
+    for (const incomeData of incomes) {
       try {
-        await incomeService.createIncome(profileId, simulationId, income);
+        await incomeService.createIncome(profileId, simulationId, incomeData);
+        console.log(
+          `소득 데이터 생성 완료: ${incomeData.startYear}~${incomeData.endYear}년 (${incomeData.growthRate}%)`
+        );
       } catch (error) {
-        console.error(`기본 소득 데이터 생성 오류 (${income.title}):`, error);
+        console.error(`소득 데이터 생성 오류 (${incomeData.title}):`, error);
+      }
+    }
+  };
+
+  // 배우자 소득 데이터 생성 함수
+  const createSpouseIncome = async (
+    profileId,
+    simulationId,
+    spouseBirthYear,
+    spouseRetirementAge,
+    spouseCurrentSalary
+  ) => {
+    const currentYear = new Date().getFullYear();
+    const spouseCurrentAge = currentYear - spouseBirthYear; // 배우자 현재 만 나이
+    const yearsToRetirement = spouseRetirementAge - spouseCurrentAge; // 은퇴까지 남은 년수
+    const retirementYear = currentYear + yearsToRetirement; // 은퇴 년도
+
+    // 나이대별 소득 데이터를 최대 3개로 분할
+    // ~50세: 3.3%, 50~60세: 0%, 60세~: -3.3%
+
+    const incomes = [];
+    let segmentStartYear = currentYear;
+    let segmentStartAge = spouseCurrentAge;
+    let segmentSalary = spouseCurrentSalary;
+
+    // 1. ~50세 구간 (3.3% 상승)
+    if (spouseCurrentAge <= 50 && spouseRetirementAge > spouseCurrentAge) {
+      const segmentEndAge = Math.min(50, spouseRetirementAge);
+      const segmentEndYear = spouseBirthYear + segmentEndAge;
+
+      incomes.push({
+        title: "근로소득 (배우자, ~50세)",
+        amount: segmentSalary,
+        originalAmount: segmentSalary,
+        frequency: "monthly",
+        originalFrequency: "monthly",
+        startYear: segmentStartYear,
+        endYear: segmentEndYear,
+        growthRate: 3.3, // 50세까지 상승률 3.3%
+        memo: `프로필 생성 시 입력한 배우자 현재 급여 기반 (만 ${spouseCurrentAge}~${segmentEndAge}세, 상승률 3.3%)`,
+        category: "income",
+      });
+
+      // 다음 구간 준비: 51세 시점의 급여 계산 (50세까지 상승 적용)
+      const yearsInSegment = segmentEndAge - spouseCurrentAge;
+      segmentSalary = Math.round(
+        segmentSalary * Math.pow(1.033, yearsInSegment)
+      );
+      segmentStartYear = segmentEndYear + 1; // 51세부터
+      segmentStartAge = segmentEndAge + 1; // 51세
+    }
+
+    // 2. 51~60세 구간 (0% 유지)
+    if (segmentStartAge <= 60 && spouseRetirementAge >= segmentStartAge) {
+      const segmentEndAge = Math.min(60, spouseRetirementAge);
+      const segmentEndYear = spouseBirthYear + segmentEndAge;
+
+      incomes.push({
+        title: "근로소득 (배우자, 51~60세)",
+        amount: segmentSalary,
+        originalAmount: segmentSalary,
+        frequency: "monthly",
+        originalFrequency: "monthly",
+        startYear: segmentStartYear,
+        endYear: segmentEndYear,
+        growthRate: 0, // 51~60세 상승률 0%
+        memo: `프로필 생성 시 입력한 배우자 현재 급여 기반 (만 ${segmentStartAge}~${segmentEndAge}세, 상승률 0%)`,
+        category: "income",
+      });
+
+      // 다음 구간 준비 (금액 변화 없음)
+      segmentStartYear = segmentEndYear + 1; // 61세부터
+      segmentStartAge = segmentEndAge + 1; // 61세
+    }
+
+    // 3. 61세~ 구간 (-3.3% 하락)
+    if (segmentStartAge <= spouseRetirementAge) {
+      const segmentEndYear = retirementYear;
+
+      incomes.push({
+        title: "근로소득 (배우자, 61세~)",
+        amount: segmentSalary,
+        originalAmount: segmentSalary,
+        frequency: "monthly",
+        originalFrequency: "monthly",
+        startYear: segmentStartYear,
+        endYear: segmentEndYear,
+        growthRate: -3.3, // 61세 이후 하락률 -3.3%
+        memo: `프로필 생성 시 입력한 배우자 현재 급여 기반 (만 ${segmentStartAge}~${spouseRetirementAge}세, 하락률 -3.3%)`,
+        category: "income",
+      });
+    }
+
+    // 모든 소득 데이터를 Firebase에 저장
+    for (const incomeData of incomes) {
+      try {
+        await incomeService.createIncome(profileId, simulationId, incomeData);
+        console.log(
+          `배우자 소득 데이터 생성 완료: ${incomeData.startYear}~${incomeData.endYear}년 (${incomeData.growthRate}%)`
+        );
+      } catch (error) {
+        console.error(
+          `배우자 소득 데이터 생성 오류 (${incomeData.title}):`,
+          error
+        );
       }
     }
   };
@@ -120,6 +281,7 @@ function ProfileCreatePage() {
       growthRate: 2.4, // 상승률 2.5%
       startYear: currentYear,
       endYear: 2099, // 보유 연도 2099년까지
+      isResidential: true, // 거주용으로 기본 설정
       hasRentalIncome: false,
       monthlyRentalIncome: null,
       rentalIncomeStartYear: null,
@@ -216,10 +378,10 @@ function ProfileCreatePage() {
 
   // 배우자 정보 핸들러
   const handleSpouseChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -274,6 +436,11 @@ function ProfileCreatePage() {
       newErrors.retirementAge = "은퇴 나이는 30세에서 80세 사이여야 합니다.";
     }
 
+    // 본인 현재 급여 검증
+    if (!formData.currentSalary || formData.currentSalary < 0) {
+      newErrors.currentSalary = "현재 급여를 입력해주세요.";
+    }
+
     if (!formData.currentLivingExpenses || formData.currentLivingExpenses < 0) {
       newErrors.currentLivingExpenses = "현재 생활비를 입력해주세요.";
     }
@@ -294,6 +461,21 @@ function ProfileCreatePage() {
         const currentYear = new Date().getFullYear();
         if (spouseBirthYear < 1900 || spouseBirthYear > currentYear) {
           newErrors.spouseBirthYear = "올바른 배우자 출생년도를 입력해주세요.";
+        }
+      }
+
+      // 배우자 근로 정보 검증
+      if (formData.spouseIsWorking) {
+        if (!formData.spouseCurrentSalary || formData.spouseCurrentSalary < 0) {
+          newErrors.spouseCurrentSalary = "배우자 현재 급여를 입력해주세요.";
+        }
+        if (
+          !formData.spouseRetirementAge ||
+          formData.spouseRetirementAge < 30 ||
+          formData.spouseRetirementAge > 80
+        ) {
+          newErrors.spouseRetirementAge =
+            "배우자 은퇴 예상 나이는 30세에서 80세 사이여야 합니다.";
         }
       }
     }
@@ -360,12 +542,20 @@ function ProfileCreatePage() {
         currentKoreanAge,
         retirementAge: parseInt(formData.retirementAge),
         retirementYear,
+        currentSalary: parseInt(formData.currentSalary), // 본인 현재 급여
         currentLivingExpenses: parseInt(formData.currentLivingExpenses), // 현재 생활비로 변경
         targetAssets: parseInt(formData.targetAssets),
         currentCash: parseInt(formData.currentCash) || 0, // 현재 현금 추가
         hasSpouse: formData.hasSpouse,
         spouseName: formData.spouseName || "",
         spouseBirthYear: formData.spouseBirthYear || "",
+        spouseIsWorking: formData.spouseIsWorking || false, // 배우자 근로 여부
+        spouseCurrentSalary: formData.spouseIsWorking
+          ? parseInt(formData.spouseCurrentSalary)
+          : 0, // 배우자 현재 급여
+        spouseRetirementAge: formData.spouseIsWorking
+          ? parseInt(formData.spouseRetirementAge)
+          : 0, // 배우자 은퇴 예상 나이
         familyMembers,
         createdAt: new Date().toISOString(),
       };
@@ -375,10 +565,31 @@ function ProfileCreatePage() {
       const createdProfile = await profileService.createProfile(profileData);
       console.log("생성된 프로필:", createdProfile);
 
+      // Firebase에서 체크리스트 템플릿 가져오기
       try {
+        let templateItems = [];
+
+        // Firebase에서 템플릿 조회
+        const template = await checklistTemplateService.getTemplate();
+
+        if (template && template.items) {
+          // Firebase 템플릿이 있으면 사용
+          templateItems = template.items;
+          console.log("Firebase 템플릿을 사용합니다:", template);
+        } else {
+          // 템플릿이 없으면 기본 템플릿으로 초기화 후 사용
+          console.log("Firebase 템플릿이 없어서 기본 템플릿으로 초기화합니다.");
+          const defaultItems = buildChecklistTemplateItems();
+          await checklistTemplateService.initializeDefaultTemplate(
+            defaultItems
+          );
+          templateItems = defaultItems;
+        }
+
+        // 프로필에 체크리스트 생성
         await checklistService.createChecklist(createdProfile.id, {
           title: "체크리스트",
-          items: buildChecklistTemplateItems(),
+          items: templateItems,
         });
       } catch (error) {
         console.error("기본 체크리스트 생성 오류:", error);
@@ -400,18 +611,35 @@ function ProfileCreatePage() {
         throw new Error("기본 시뮬레이션 생성에 실패했습니다.");
       }
 
-      // 기본 소득 데이터 생성
+      // 기본 소득 데이터 생성 (본인)
       try {
         await createDefaultIncomes(
           createdProfile.id,
           defaultSimulationId,
           birthYear,
-          formData.retirementAge
+          formData.retirementAge,
+          parseInt(formData.currentSalary) // 입력받은 현재 급여
         );
-        console.log("기본 소득 데이터 생성 완료");
+        console.log("기본 소득 데이터 생성 완료 (본인)");
       } catch (error) {
-        console.error("기본 소득 데이터 생성 오류:", error);
+        console.error("기본 소득 데이터 생성 오류 (본인):", error);
         // 기본 소득 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
+      }
+
+      // 배우자 소득 데이터 생성
+      if (formData.hasSpouse && formData.spouseIsWorking) {
+        try {
+          await createSpouseIncome(
+            createdProfile.id,
+            defaultSimulationId,
+            parseInt(formData.spouseBirthYear),
+            parseInt(formData.spouseRetirementAge),
+            parseInt(formData.spouseCurrentSalary)
+          );
+          console.log("배우자 소득 데이터 생성 완료");
+        } catch (error) {
+          console.error("배우자 소득 데이터 생성 오류:", error);
+        }
       }
 
       // 기본 지출 데이터 생성
@@ -485,6 +713,8 @@ function ProfileCreatePage() {
           {/* 기본 정보 섹션 */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>기본 정보</h3>
+
+            {/* 이름, 출생년도 (2개) */}
             <div className={styles.fieldGrid}>
               <div className={styles.field}>
                 <label htmlFor="name" className={styles.label}>
@@ -536,7 +766,10 @@ function ProfileCreatePage() {
                   <span className={styles.errorText}>{errors.birthYear}</span>
                 )}
               </div>
+            </div>
 
+            {/* 은퇴 목표 연령, 은퇴 시점 목표 자산 규모 (2개) */}
+            <div className={styles.fieldGrid}>
               <div className={styles.field}>
                 <label htmlFor="retirementAge" className={styles.label}>
                   은퇴 목표 연령 * (은퇴년도:{" "}
@@ -586,34 +819,6 @@ function ProfileCreatePage() {
               </div>
 
               <div className={styles.field}>
-                <label htmlFor="currentLivingExpenses" className={styles.label}>
-                  현재 생활비 (만원/월) *
-                </label>
-                <input
-                  type="text"
-                  id="currentLivingExpenses"
-                  name="currentLivingExpenses"
-                  value={formData.currentLivingExpenses}
-                  onChange={handleChange}
-                  className={`${styles.input} ${
-                    errors.currentLivingExpenses ? styles.inputError : ""
-                  }`}
-                  placeholder="300"
-                  disabled={isSubmitting}
-                  onKeyPress={(e) => {
-                    if (!/[0-9]/.test(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                />
-                {errors.currentLivingExpenses && (
-                  <span className={styles.errorText}>
-                    {errors.currentLivingExpenses}
-                  </span>
-                )}
-              </div>
-
-              <div className={styles.field}>
                 <label htmlFor="targetAssets" className={styles.label}>
                   은퇴 시점 목표 자산 규모 (만원) *
                 </label>
@@ -646,8 +851,10 @@ function ProfileCreatePage() {
                   </span>
                 )}
               </div>
+            </div>
 
-              {/* 현재 현금 */}
+            {/* 현재 현금, 현재 생활비, 현재 급여 (3개) */}
+            <div className={styles.fieldGrid3}>
               <div className={styles.field}>
                 <label htmlFor="currentCash" className={styles.label}>
                   현재 현금 (만원)
@@ -677,6 +884,76 @@ function ProfileCreatePage() {
                   )}
                 {errors.currentCash && (
                   <span className={styles.errorText}>{errors.currentCash}</span>
+                )}
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="currentLivingExpenses" className={styles.label}>
+                  현재 생활비 (만원/월) *
+                </label>
+                <input
+                  type="text"
+                  id="currentLivingExpenses"
+                  name="currentLivingExpenses"
+                  value={formData.currentLivingExpenses}
+                  onChange={handleChange}
+                  className={`${styles.input} ${
+                    errors.currentLivingExpenses ? styles.inputError : ""
+                  }`}
+                  placeholder="300"
+                  disabled={isSubmitting}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+                {formData.currentLivingExpenses &&
+                  !isNaN(parseInt(formData.currentLivingExpenses)) && (
+                    <div className={styles.amountPreview}>
+                      {formatAmountForChart(
+                        parseInt(formData.currentLivingExpenses)
+                      )}
+                    </div>
+                  )}
+                {errors.currentLivingExpenses && (
+                  <span className={styles.errorText}>
+                    {errors.currentLivingExpenses}
+                  </span>
+                )}
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="currentSalary" className={styles.label}>
+                  현재 급여 (만원/월) *
+                </label>
+                <input
+                  type="text"
+                  id="currentSalary"
+                  name="currentSalary"
+                  value={formData.currentSalary}
+                  onChange={handleChange}
+                  className={`${styles.input} ${
+                    errors.currentSalary ? styles.inputError : ""
+                  }`}
+                  placeholder="450"
+                  disabled={isSubmitting}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+                {formData.currentSalary &&
+                  !isNaN(parseInt(formData.currentSalary)) && (
+                    <div className={styles.amountPreview}>
+                      {formatAmountForChart(parseInt(formData.currentSalary))}
+                    </div>
+                  )}
+                {errors.currentSalary && (
+                  <span className={styles.errorText}>
+                    {errors.currentSalary}
+                  </span>
                 )}
               </div>
             </div>
@@ -758,6 +1035,97 @@ function ProfileCreatePage() {
                     )}
                   </div>
                 </div>
+
+                {/* 배우자 근로 정보 */}
+                <div
+                  className={`${styles.field} ${styles.fieldFullWidth}`}
+                  style={{ marginTop: "1.5rem" }}
+                >
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      name="spouseIsWorking"
+                      checked={formData.spouseIsWorking}
+                      onChange={handleSpouseChange}
+                      disabled={isSubmitting}
+                    />
+                    배우자가 현재 일하고 있습니다
+                  </label>
+                </div>
+
+                {formData.spouseIsWorking && (
+                  <div className={styles.fieldGrid}>
+                    <div className={styles.field}>
+                      <label
+                        htmlFor="spouseCurrentSalary"
+                        className={styles.label}
+                      >
+                        배우자 현재 급여 (만원/월) *
+                      </label>
+                      <input
+                        type="text"
+                        id="spouseCurrentSalary"
+                        name="spouseCurrentSalary"
+                        value={formData.spouseCurrentSalary}
+                        onChange={handleSpouseChange}
+                        className={`${styles.input} ${
+                          errors.spouseCurrentSalary ? styles.inputError : ""
+                        }`}
+                        placeholder="350"
+                        disabled={isSubmitting}
+                        onKeyPress={(e) => {
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                      {formData.spouseCurrentSalary &&
+                        !isNaN(parseInt(formData.spouseCurrentSalary)) && (
+                          <div className={styles.amountPreview}>
+                            {formatAmountForChart(
+                              parseInt(formData.spouseCurrentSalary)
+                            )}
+                          </div>
+                        )}
+                      {errors.spouseCurrentSalary && (
+                        <span className={styles.errorText}>
+                          {errors.spouseCurrentSalary}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className={styles.field}>
+                      <label
+                        htmlFor="spouseRetirementAge"
+                        className={styles.label}
+                      >
+                        배우자 은퇴 예상 나이 (만 나이) *
+                      </label>
+                      <input
+                        type="text"
+                        id="spouseRetirementAge"
+                        name="spouseRetirementAge"
+                        value={formData.spouseRetirementAge}
+                        onChange={handleSpouseChange}
+                        className={`${styles.input} ${
+                          errors.spouseRetirementAge ? styles.inputError : ""
+                        }`}
+                        placeholder="60"
+                        disabled={isSubmitting}
+                        onKeyPress={(e) => {
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                      {errors.spouseRetirementAge && (
+                        <span className={styles.errorText}>
+                          {errors.spouseRetirementAge}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

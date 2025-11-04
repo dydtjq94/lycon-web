@@ -5,6 +5,7 @@ import { profileService } from "../services/firestoreService";
 import { calculateKoreanAge } from "../utils/koreanAge";
 import { formatAmount } from "../utils/format";
 import { trackPageView, trackEvent } from "../libs/mixpanel";
+import TrashModal from "../components/trash/TrashModal";
 import styles from "./ProfileListPage.module.css";
 
 /**
@@ -17,6 +18,7 @@ function ProfileListPage() {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isTrashModalOpen, setIsTrashModalOpen] = useState(false); // 휴지통 모달
 
   // 프로필 목록 로드
   useEffect(() => {
@@ -62,18 +64,15 @@ function ProfileListPage() {
     navigate("/login");
   };
 
-  // 프로필 완전 삭제 (모든 관련 데이터 포함)
+  // 프로필 휴지통으로 이동 (soft delete)
   const handleDeleteProfile = async (profileId, profileName) => {
-    if (
-      !confirm(
-        `"${profileName}" 프로필을 완전히 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 모든 관련 데이터(수입, 지출, 저축, 연금, 부동산, 자산, 부채)가 함께 삭제됩니다.`
-      )
-    ) {
+    if (!confirm(`"${profileName}" 프로필을 삭제하시겠습니까?\n\n휴지통으로 이동되며, 나중에 복구할 수 있습니다.`)) {
       return;
     }
 
     try {
-      await profileService.deleteProfileWithAllData(profileId);
+      await profileService.moveToTrash(profileId);
+      trackEvent("프로필 삭제 (휴지통 이동)", { profileId, profileName });
       await loadProfiles(); // 목록 새로고침
     } catch (error) {
       console.error("프로필 삭제 오류:", error);
@@ -133,6 +132,12 @@ function ProfileListPage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Lycon Planning</h1>
         <div className={styles.headerActions}>
+          <button
+            className={styles.trashButton}
+            onClick={() => setIsTrashModalOpen(true)}
+          >
+            휴지통
+          </button>
           <button
             className={styles.createButton}
             onClick={() => navigate("/consult/create")}
@@ -221,6 +226,13 @@ function ProfileListPage() {
           </div>
         </div>
       </div>
+
+      {/* 휴지통 모달 */}
+      <TrashModal
+        isOpen={isTrashModalOpen}
+        onClose={() => setIsTrashModalOpen(false)}
+        onUpdate={loadProfiles}
+      />
     </div>
   );
 }

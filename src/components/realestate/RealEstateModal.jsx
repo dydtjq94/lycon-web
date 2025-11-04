@@ -16,7 +16,11 @@ const RealEstateModal = ({
 }) => {
   const [formData, setFormData] = useState({
     title: "",
+    isResidential: false, // 거주용 여부
+    hasAcquisitionInfo: false, // 올해 이전에 취득 여부
     currentValue: "",
+    acquisitionPrice: "", // 취득가액 (양도세 계산용)
+    acquisitionYear: "", // 취득일자 (양도세 계산용)
     growthRate: "2.4",
     startYear: new Date().getFullYear(),
     endYear: new Date().getFullYear() + 30, // 종료년도 추가
@@ -117,7 +121,11 @@ const RealEstateModal = ({
       if (editData) {
         setFormData({
           title: editData.title || "",
+          isResidential: editData.isResidential || false,
+          hasAcquisitionInfo: editData.hasAcquisitionInfo || false,
           currentValue: editData.currentValue || "",
+          acquisitionPrice: editData.acquisitionPrice || "",
+          acquisitionYear: editData.acquisitionYear || "",
           growthRate: editData.growthRate
             ? editData.growthRate.toFixed(2)
             : "2.4",
@@ -138,7 +146,11 @@ const RealEstateModal = ({
       } else {
         setFormData({
           title: "",
+          isResidential: false,
+          hasAcquisitionInfo: false,
           currentValue: "",
+          acquisitionPrice: "",
+          acquisitionYear: "",
           growthRate: "2.4",
           startYear: new Date().getFullYear(),
           endYear: new Date().getFullYear() + 30,
@@ -278,7 +290,17 @@ const RealEstateModal = ({
 
     const realEstateData = {
       title: formData.title.trim(),
+      isResidential: formData.isResidential, // 거주용 여부
+      hasAcquisitionInfo: formData.hasAcquisitionInfo, // 올해 이전에 취득 여부
       currentValue: parseInt(formData.currentValue),
+      acquisitionPrice:
+        formData.hasAcquisitionInfo && formData.acquisitionPrice
+          ? parseInt(formData.acquisitionPrice)
+          : null, // 취득가액 (양도세 계산용)
+      acquisitionYear:
+        formData.hasAcquisitionInfo && formData.acquisitionYear
+          ? parseInt(formData.acquisitionYear)
+          : null, // 취득일자 (양도세 계산용)
       growthRate: parseFloat(formData.growthRate), // 백분율 그대로 저장
       startYear: parseInt(formData.startYear),
       endYear: parseInt(formData.endYear),
@@ -348,6 +370,82 @@ const RealEstateModal = ({
               <span className={styles.errorText}>{errors.title}</span>
             )}
           </div>
+
+          {/* 거주용 여부 & 올해 이전에 취득 */}
+          <div className={styles.checkboxRow}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={formData.isResidential}
+                onChange={(e) =>
+                  setFormData({ ...formData, isResidential: e.target.checked })
+                }
+                className={styles.checkbox}
+              />
+              <span className={styles.checkboxText}>거주용</span>
+            </label>
+
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={formData.hasAcquisitionInfo}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    hasAcquisitionInfo: e.target.checked,
+                  })
+                }
+                className={styles.checkbox}
+              />
+              <span className={styles.checkboxText}>올해 이전에 취득</span>
+            </label>
+          </div>
+
+          {/* 취득가액, 취득일자 (양도세 계산용) - 올해 이전에 취득 체크 시 표시 */}
+          {formData.hasAcquisitionInfo && (
+            <div className={styles.optionalSection}>
+            <div className={styles.optionalSectionHeader}>
+              <span className={styles.optionalSectionLabel}>양도세 계산용 (선택사항)</span>
+            </div>
+            <div className={styles.fieldGrid}>
+              {/* 취득가액 */}
+              <div className={styles.field}>
+                <label className={styles.label}>취득가액 (만원)</label>
+                <input
+                  type="text"
+                  value={formData.acquisitionPrice}
+                  onChange={(e) =>
+                    setFormData({ ...formData, acquisitionPrice: e.target.value })
+                  }
+                  onKeyPress={handleKeyPress}
+                  className={styles.input}
+                  placeholder="예: 40000"
+                />
+                {formData.acquisitionPrice &&
+                  !isNaN(parseInt(formData.acquisitionPrice)) && (
+                    <div className={styles.amountPreview}>
+                      {formatAmountForChart(parseInt(formData.acquisitionPrice))}
+                    </div>
+                  )}
+              </div>
+
+              {/* 취득일자 */}
+              <div className={styles.field}>
+                <label className={styles.label}>취득일자 (년도)</label>
+                <input
+                  type="text"
+                  value={formData.acquisitionYear}
+                  onChange={(e) =>
+                    setFormData({ ...formData, acquisitionYear: e.target.value })
+                  }
+                  onKeyPress={handleKeyPress}
+                  className={styles.input}
+                  placeholder="예: 2020"
+                />
+              </div>
+            </div>
+            </div>
+          )}
 
           {/* 가치 */}
           <div className={styles.field}>

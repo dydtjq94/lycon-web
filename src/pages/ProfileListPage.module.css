@@ -28,6 +28,30 @@
   align-items: center;
 }
 
+.trashButton {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #d1d5db;
+  outline: none;
+  background: #ffffff;
+  color: #6b7280;
+}
+
+.trashButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.trashButton:focus,
+.trashButton:active {
+  outline: none;
+}
+
 .createButton {
   padding: 0.5rem 1rem;
   border-radius: 6px;

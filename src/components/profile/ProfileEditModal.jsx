@@ -24,6 +24,9 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
     hasSpouse: false,
     spouseName: "",
     spouseBirthYear: "",
+    spouseIsWorking: false, // 배우자 근로 여부
+    spouseCurrentSalary: "", // 배우자 현재 급여
+    spouseRetirementAge: "", // 배우자 은퇴 예상 나이
     familyMembers: [],
   });
 
@@ -38,6 +41,7 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
   // 모달이 열릴 때 프로필 데이터 로드
   useEffect(() => {
     if (isOpen && profileData) {
+      console.log("프로필 데이터 로드:", profileData); // 디버깅용
       setFormData({
         name: profileData.name || "",
         birthYear: profileData.birthYear || "",
@@ -47,6 +51,9 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         hasSpouse: profileData.hasSpouse || false,
         spouseName: profileData.spouseName || "",
         spouseBirthYear: profileData.spouseBirthYear || "",
+        spouseIsWorking: Boolean(profileData.spouseIsWorking), // 배우자 근로 여부
+        spouseCurrentSalary: profileData.spouseCurrentSalary || 0, // 배우자 현재 급여
+        spouseRetirementAge: profileData.spouseRetirementAge || "", // 배우자 은퇴 예상 나이
         familyMembers: profileData.familyMembers || [],
       });
     }
@@ -113,6 +120,18 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         formData.spouseBirthYear > new Date().getFullYear()
       ) {
         newErrors.spouseBirthYear = "올바른 배우자 출생년도를 입력해주세요.";
+      }
+
+      // 배우자 근로 정보 검증
+      if (formData.spouseIsWorking) {
+        if (
+          !formData.spouseRetirementAge ||
+          formData.spouseRetirementAge < 30 ||
+          formData.spouseRetirementAge > 80
+        ) {
+          newErrors.spouseRetirementAge =
+            "배우자 은퇴 예상 나이는 30세에서 80세 사이여야 합니다.";
+        }
       }
     }
 
@@ -207,6 +226,11 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         spouseKoreanAge: formData.hasSpouse
           ? calculateKoreanAge(formData.spouseBirthYear)
           : null,
+        spouseIsWorking: formData.hasSpouse ? formData.spouseIsWorking : false,
+        spouseRetirementAge:
+          formData.hasSpouse && formData.spouseIsWorking
+            ? parseInt(formData.spouseRetirementAge) || 0
+            : 0,
         updatedAt: new Date().toISOString(),
       };
 
@@ -498,6 +522,60 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                   </span>
                 )}
               </div>
+            </>
+          )}
+
+          {/* 배우자 근로 정보 */}
+          {formData.hasSpouse && (
+            <>
+              <div className={`${styles.field} ${styles.fullWidth}`}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={formData.spouseIsWorking}
+                    onChange={(e) => {
+                      const isWorking = e.target.checked;
+                      setFormData({
+                        ...formData,
+                        spouseIsWorking: isWorking,
+                        spouseRetirementAge: isWorking
+                          ? formData.spouseRetirementAge
+                          : "",
+                      });
+                    }}
+                    className={styles.checkbox}
+                  />
+                  배우자가 현재 일하고 있습니다
+                </label>
+              </div>
+
+              {formData.spouseIsWorking && (
+                <div className={styles.field}>
+                  <label className={styles.label}>
+                    배우자 은퇴 예상 나이 (만 나이) *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.spouseRetirementAge}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        spouseRetirementAge: e.target.value,
+                      })
+                    }
+                    onKeyPress={handleKeyPress}
+                    className={`${styles.input} ${
+                      errors.spouseRetirementAge ? styles.error : ""
+                    }`}
+                    placeholder="예: 60"
+                  />
+                  {errors.spouseRetirementAge && (
+                    <span className={styles.errorText}>
+                      {errors.spouseRetirementAge}
+                    </span>
+                  )}
+                </div>
+              )}
             </>
           )}
 

@@ -10,6 +10,8 @@ function ProfileChecklistPanel({
   isLoading,
   isSaving,
   disabled,
+  isAdmin = false, // 관리자 여부
+  onOpenTemplateModal = null, // 템플릿 설정 모달 열기 콜백
 }) {
   const [editingState, setEditingState] = useState(null);
   const skipNextBlurCommitRef = useRef(false);
@@ -266,6 +268,21 @@ function ProfileChecklistPanel({
         }}
       >
         <div className={styles.itemRow}>
+          <button
+            type="button"
+            className={styles.dragHandle}
+            draggable={!isInteractionDisabled}
+            onDragStart={() => setDragState({ type: "top", id: item.id })}
+            onDragEnd={() => {
+              setDragState(null);
+              setDropTarget(null);
+            }}
+            onClick={(e) => e.preventDefault()}
+            aria-label="드래그하여 순서 변경"
+            title="드래그하여 순서 변경"
+          >
+            ≡
+          </button>
           <label className={styles.checkboxLabel}>
             <input
               type="checkbox"
@@ -297,21 +314,6 @@ function ProfileChecklistPanel({
             title="체크리스트 삭제"
           >
             ×
-          </button>
-          <button
-            type="button"
-            className={styles.dragHandle}
-            draggable={!isInteractionDisabled}
-            onDragStart={() => setDragState({ type: "top", id: item.id })}
-            onDragEnd={() => {
-              setDragState(null);
-              setDropTarget(null);
-            }}
-            onClick={(e) => e.preventDefault()}
-            aria-label="드래그하여 순서 변경"
-            title="드래그하여 순서 변경"
-          >
-            ≡
           </button>
         </div>
         {(item.children || []).map((child) => renderChildItem(item.id, child))}
@@ -377,6 +379,23 @@ function ProfileChecklistPanel({
           setDropTarget(null);
         }}
       >
+        <button
+          type="button"
+          className={styles.dragHandle}
+          draggable={!isInteractionDisabled}
+          onDragStart={() =>
+            setDragState({ type: "child", id: child.id, parentId })
+          }
+          onDragEnd={() => {
+            setDragState(null);
+            setDropTarget(null);
+          }}
+          onClick={(e) => e.preventDefault()}
+          aria-label="드래그하여 순서 변경"
+          title="드래그하여 순서 변경"
+        >
+          ≡
+        </button>
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"
@@ -409,23 +428,6 @@ function ProfileChecklistPanel({
         >
           ×
         </button>
-        <button
-          type="button"
-          className={styles.dragHandle}
-          draggable={!isInteractionDisabled}
-          onDragStart={() =>
-            setDragState({ type: "child", id: child.id, parentId })
-          }
-          onDragEnd={() => {
-            setDragState(null);
-            setDropTarget(null);
-          }}
-          onClick={(e) => e.preventDefault()}
-          aria-label="드래그하여 순서 변경"
-          title="드래그하여 순서 변경"
-        >
-          ≡
-        </button>
       </div>
     );
   };
@@ -442,7 +444,19 @@ function ProfileChecklistPanel({
     <div className={styles.container}>
       <div className={styles.header}>
         <h3>체크리스트</h3>
-        {isSaving && <span className={styles.savingBadge}>저장 중…</span>}
+        <div className={styles.headerRight}>
+          {isSaving && <span className={styles.savingBadge}>저장 중…</span>}
+          {isAdmin && onOpenTemplateModal && (
+            <button
+              type="button"
+              className={styles.settingsButton}
+              onClick={onOpenTemplateModal}
+              title="템플릿 설정 (관리자)"
+            >
+              ⚙
+            </button>
+          )}
+        </div>
       </div>
       <div className={styles.list}>{topLevelItems.map(renderTopLevelItem)}</div>
       <button

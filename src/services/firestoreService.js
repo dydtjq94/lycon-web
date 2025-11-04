@@ -90,6 +90,61 @@ export const profileService = {
     }
   },
 
+  // 삭제된 프로필만 조회 (휴지통)
+  async getDeletedProfiles() {
+    try {
+      console.log("삭제된 프로필 조회 시작");
+      const querySnapshot = await getDocs(
+        query(collection(db, "profiles"), orderBy("deletedAt", "desc"))
+      );
+      const deletedProfiles = querySnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((profile) => profile.isActive === false); // isActive가 false인 것만
+      console.log("조회된 삭제 프로필 수:", deletedProfiles.length);
+      return deletedProfiles;
+    } catch (error) {
+      console.error("삭제 프로필 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 프로필 휴지통으로 이동 (soft delete)
+  async moveToTrash(profileId) {
+    try {
+      console.log("프로필 휴지통 이동:", profileId);
+      const docRef = doc(db, "profiles", profileId);
+      await updateDoc(docRef, {
+        isActive: false,
+        deletedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("프로필 휴지통 이동 완료:", profileId);
+    } catch (error) {
+      console.error("프로필 휴지통 이동 오류:", error);
+      throw error;
+    }
+  },
+
+  // 프로필 복구 (휴지통에서 복원)
+  async restoreFromTrash(profileId) {
+    try {
+      console.log("프로필 복구:", profileId);
+      const docRef = doc(db, "profiles", profileId);
+      await updateDoc(docRef, {
+        isActive: true,
+        deletedAt: null,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("프로필 복구 완료:", profileId);
+    } catch (error) {
+      console.error("프로필 복구 오류:", error);
+      throw error;
+    }
+  },
+
   // 프로필 조회
   async getProfile(profileId) {
     try {
@@ -1684,6 +1739,93 @@ export const checklistService = {
       await deleteDoc(docRef);
     } catch (error) {
       console.error("체크리스트 삭제 오류:", error);
+      throw error;
+    }
+  },
+};
+
+/**
+ * 체크리스트 템플릿 서비스
+ * Firebase의 checklistTemplates 컬렉션에 전역 템플릿을 저장하고 관리합니다.
+ * 관리자만 수정 가능하며, 프로필 생성 시 이 템플릿을 기반으로 체크리스트를 생성합니다.
+ */
+export const checklistTemplateService = {
+  // 체크리스트 템플릿 조회
+  async getTemplate() {
+    try {
+      const querySnapshot = await getDocs(
+        collection(db, "checklistTemplates")
+      );
+      
+      // 가장 최신 템플릿 하나만 사용 (createdAt 기준 정렬)
+      const templates = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      if (templates.length === 0) {
+        return null;
+      }
+
+      // 가장 최신 템플릿 반환
+      templates.sort((a, b) => 
+        new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)
+      );
+      
+      return templates[0];
+    } catch (error) {
+      console.error("체크리스트 템플릿 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  // 체크리스트 템플릿 생성 (최초 1회)
+  async createTemplate(templateData) {
+    try {
+      const docRef = await addDoc(collection(db, "checklistTemplates"), {
+        title: templateData.title || "상담 체크리스트 템플릿",
+        items: templateData.items || [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      return { id: docRef.id, ...templateData };
+    } catch (error) {
+      console.error("체크리스트 템플릿 생성 오류:", error);
+      throw error;
+    }
+  },
+
+  // 체크리스트 템플릿 업데이트
+  async updateTemplate(templateId, templateData) {
+    try {
+      const docRef = doc(db, "checklistTemplates", templateId);
+      await updateDoc(docRef, {
+        title: templateData.title,
+        items: templateData.items,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("체크리스트 템플릿 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  // 기본 템플릿 초기화 (Firebase에 템플릿이 없을 때)
+  async initializeDefaultTemplate(defaultItems) {
+    try {
+      const existing = await this.getTemplate();
+      if (existing) {
+        console.log("템플릿이 이미 존재합니다:", existing.id);
+        return existing;
+      }
+
+      console.log("기본 템플릿 생성 중...");
+      return await this.createTemplate({
+        title: "상담 체크리스트 템플릿",
+        items: defaultItems,
+      });
+    } catch (error) {
+      console.error("기본 템플릿 초기화 오류:", error);
       throw error;
     }
   },
