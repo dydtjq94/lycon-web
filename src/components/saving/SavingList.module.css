@@ -52,6 +52,19 @@
   margin-bottom: 0.25rem;
 }
 
+/* 현재 보유액 스타일 */
+.savingCurrent {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2563eb;
+  margin-left: 0;
+  margin-bottom: 0.25rem;
+  background: #eff6ff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+
 .savingPeriod {
   font-size: 0.8rem;
   color: #6b7280;
@@ -124,6 +137,10 @@
   }
 
   .savingAmount {
+    font-size: 0.8rem;
+  }
+
+  .savingCurrent {
     font-size: 0.8rem;
   }
 

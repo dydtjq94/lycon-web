@@ -55,6 +55,15 @@ function SavingList({
                 : "일회성"}
             </div>
 
+            {/* 현재 보유액 표시 */}
+            {saving.currentAmount !== undefined && 
+             saving.currentAmount !== null && 
+             saving.currentAmount > 0 && (
+              <div className={styles.savingCurrent}>
+                현재 보유: {formatAmount(saving.currentAmount)}
+              </div>
+            )}
+
             <div className={styles.savingPeriod}>
               {saving.startYear}년 - {saving.endYear}년
               <br />

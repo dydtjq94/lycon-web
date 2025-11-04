@@ -44,6 +44,7 @@ function SavingModal({
     memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
     interestRate: "2.86", // 기본 수익률 2.86%
     yearlyGrowthRate: "1.89", // 연간 저축/투자금액 증가율 1.89%
+    capitalGainsTaxRate: "", // 양도세율 (%)
     isFixedToRetirementYear: false, // 은퇴년도 고정 여부
   });
 
