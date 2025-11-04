@@ -32,50 +32,51 @@ function SavingList({
           <div className={styles.savingInfo}>
             <div className={styles.savingHeader}>
               <h4 className={styles.savingTitle}>{saving.title}</h4>
-              <div className={styles.savingActions}>
-                <button
-                  className={styles.deleteButton}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(saving.id);
-                  }}
-                  title="삭제"
-                >
-                  ×
-                </button>
+              <button
+                className={styles.deleteButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(saving.id);
+                }}
+                title="삭제"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={styles.savingContent}>
+              {/* 현재 보유액 표시 */}
+              {saving.currentAmount !== undefined && 
+               saving.currentAmount !== null && 
+               saving.currentAmount > 0 && (
+                <div className={styles.savingCurrent}>
+                  현재 보유: {formatAmount(saving.currentAmount)}
+                </div>
+              )}
+
+              {/* 납입 주기 및 금액 */}
+              <div className={styles.savingFrequency}>
+                {formatAmount(saving.originalAmount)}/
+                {saving.originalFrequency === "monthly"
+                  ? "월"
+                  : saving.originalFrequency === "yearly"
+                  ? "년"
+                  : "일회성"}
               </div>
-            </div>
 
-            <div className={styles.savingAmount}>
-              {formatAmount(saving.originalAmount)}/
-              {saving.originalFrequency === "monthly"
-                ? "월"
-                : saving.originalFrequency === "yearly"
-                ? "년"
-                : "일회성"}
-            </div>
-
-            {/* 현재 보유액 표시 */}
-            {saving.currentAmount !== undefined && 
-             saving.currentAmount !== null && 
-             saving.currentAmount > 0 && (
-              <div className={styles.savingCurrent}>
-                현재 보유: {formatAmount(saving.currentAmount)}
+              <div className={styles.savingPeriod}>
+                {saving.startYear}년 - {saving.endYear}년
+                <br />
+                (연평균 수익률 {(saving.interestRate * 100).toFixed(2)}% 적용
+                {saving.yearlyGrowthRate > 0 &&
+                  `, 년간 상승률 ${(saving.yearlyGrowthRate * 100).toFixed(2)}%`}
+                )
               </div>
-            )}
 
-            <div className={styles.savingPeriod}>
-              {saving.startYear}년 - {saving.endYear}년
-              <br />
-              (연평균 수익률 {(saving.interestRate * 100).toFixed(2)}% 적용
-              {saving.yearlyGrowthRate > 0 &&
-                `, 년간 상승률 ${(saving.yearlyGrowthRate * 100).toFixed(2)}%`}
-              )
+              {saving.memo && (
+                <div className={styles.savingMemo}>{saving.memo}</div>
+              )}
             </div>
-
-            {saving.memo && (
-              <div className={styles.savingMemo}>{saving.memo}</div>
-            )}
           </div>
         </div>
       ))}

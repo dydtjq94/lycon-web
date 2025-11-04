@@ -42,34 +42,38 @@
   font-weight: 600;
   color: #111827;
   margin: 0;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
 }
 
-.savingAmount {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #059669;
-  margin-left: 0;
-  margin-bottom: 0.25rem;
+/* 저축 컨텐츠 영역 */
+.savingContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-/* 현재 보유액 스타일 */
+/* 현재 보유액 스타일 (최상단, 초록색) */
 .savingCurrent {
   font-size: 0.85rem;
-  font-weight: 600;
-  color: #2563eb;
-  margin-left: 0;
+  font-weight: 700;
+  color: #059669;
   margin-bottom: 0.25rem;
-  background: #eff6ff;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  display: inline-block;
+}
+
+/* 납입 주기 스타일 (하단, 파란색) */
+.savingFrequency {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-bottom: 0.25rem;
 }
 
 .savingPeriod {
   font-size: 0.8rem;
   color: #6b7280;
-  line-height: 1.4;
-  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .savingMemo {
@@ -82,12 +86,6 @@
   margin-top: 0.5rem;
 }
 
-.savingActions {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.editButton,
 .deleteButton {
   background: none;
   border: none;
@@ -124,32 +122,33 @@
 
 /* 반응형 디자인 */
 @media (max-width: 640px) {
-  .savingList {
-    gap: 0.5rem;
+  .savingItem {
+    padding: 12px;
   }
 
-  .savingItem {
-    padding: 0.75rem;
+  .savingHeader {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
   }
 
   .savingTitle {
-    font-size: 0.85rem;
+    width: 100%;
   }
 
-  .savingAmount {
-    font-size: 0.8rem;
+  .deleteButton {
+    align-self: flex-end;
   }
 
   .savingCurrent {
-    font-size: 0.8rem;
+    font-size: 16px;
+  }
+
+  .savingFrequency {
+    font-size: 16px;
   }
 
   .savingPeriod {
-    font-size: 0.75rem;
-  }
-
-  .savingMemo {
-    font-size: 0.75rem;
-    padding: 0.375rem;
+    font-size: 13px;
   }
 }

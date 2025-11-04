@@ -552,6 +552,10 @@ export function calculateCashflowSimulation(
       }
     });
 
+    // 양도소득세 관련 변수 (저축 + 부동산)
+    let totalCapitalGainsTax = 0; // 양도소득세 총액
+    const capitalGainsTaxes = []; // 양도소득세 상세 정보
+
     // 저축 계산 (현금흐름에서는 년간 저축 상승률만 적용, 이자율 적용 안함)
     let totalSavingMaturity = 0; // 저축 만료 수입 (별도 변수)
     let savingMaturities = []; // 저축 만료 상세 정보
@@ -638,7 +642,7 @@ export function calculateCashflowSimulation(
           finalAmount = accumulated;
         }
 
-        // 저축 만료 수입에 추가 (현금흐름에서 플러스로 처리)
+        // 저축 만료 수입에 추가 (전액 수령 - 양도세 차감 전)
         totalSavingMaturity += finalAmount;
 
         // 저축 만료 상세 정보 추가
@@ -653,6 +657,55 @@ export function calculateCashflowSimulation(
           "저축 만료",
           `saving-maturity-${saving.id || saving.title}`
         );
+
+        // 양도세 계산 및 별도 지출로 처리
+        const taxRate = saving.capitalGainsTaxRate || 0;
+        if (taxRate > 0) {
+          let capitalGainsTax = 0;
+
+          if (saving.frequency !== "one_time") {
+            // 월간/연간 저축: 총 적립금 계산
+            const monthlyAmount =
+              saving.frequency === "monthly"
+                ? saving.amount
+                : saving.amount / 12;
+
+            let totalContribution = currentAmount || 0;
+            for (let i = 0; i <= yearsElapsed; i++) {
+              const adjustedMonthlyAmount =
+                monthlyAmount * Math.pow(1 + yearlyGrowthRate, i);
+              const yearlyAmount = adjustedMonthlyAmount * 12;
+              totalContribution += yearlyAmount;
+            }
+
+            // 양도소득 = 최종가치 - 총 적립금
+            const capitalGain = Math.max(0, finalAmount - totalContribution);
+            capitalGainsTax = capitalGain * taxRate;
+          } else {
+            // 일회성 저축: 수익 = 최종가치 - 원금
+            const principal =
+              (Number(currentAmount) || 0) + (Number(saving.amount) || 0);
+            const capitalGain = Math.max(0, finalAmount - principal);
+            capitalGainsTax = capitalGain * taxRate;
+          }
+
+          // 양도세를 별도 비용으로 추가
+          if (capitalGainsTax > 0) {
+            totalCapitalGainsTax += capitalGainsTax;
+            const taxRatePercent = (taxRate * 100).toFixed(0);
+            // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
+            capitalGainsTaxes.push({
+              title: `${saving.title} (양도세, ${taxRatePercent}%)`,
+              amount: capitalGainsTax,
+            });
+            addNegative(
+              `${saving.title} (양도세, ${taxRatePercent}%)`,
+              capitalGainsTax,
+              "양도세",
+              `saving-tax-${saving.id || saving.title}`
+            );
+          }
+        }
       }
     });
 
@@ -935,11 +988,10 @@ export function calculateCashflowSimulation(
     let totalRealEstateSale = 0; // 부동산 매각 수입
     let totalRealEstatePurchase = 0; // 부동산 구매 비용
     let totalRealEstateTax = 0; // 부동산 취득세
-    let totalCapitalGainsTax = 0; // 부동산 양도소득세
+    // totalCapitalGainsTax와 capitalGainsTaxes는 이미 위에서 선언됨 (저축 + 부동산 공통 사용)
     const realEstatePurchases = []; // 부동산 구매 상세 정보
     const realEstateSales = []; // 부동산 매각 상세 정보
     const realEstateTaxes = []; // 부동산 취득세 상세 정보
-    const capitalGainsTaxes = []; // 부동산 양도소득세 상세 정보
 
     const normalizeYear = (value) => {
       if (value === null || value === undefined || value === "") {

@@ -1037,15 +1037,19 @@ function RechartsCashflowChart({
                           });
                         }
 
-                        // 부동산 양도소득세 (지출)
+                        // 양도소득세 (지출) - 부동산 + 저축
                         if (
                           data.capitalGainsTaxes &&
                           data.capitalGainsTaxes.length > 0
                         ) {
                           data.capitalGainsTaxes.forEach((tax, index) => {
+                            // holdingYears가 있으면 보유년수 표시 (부동산), 없으면 간단히 표시 (저축)
+                            const label = tax.holdingYears
+                              ? `${tax.title} (양도세, 보유 ${tax.holdingYears}년)`
+                              : `${tax.title}`;
                             allItems.push({
                               key: `capitalGainsTax-${index}`,
-                              label: `${tax.title} (양도세, 보유 ${tax.holdingYears}년)`,
+                              label: label,
                               value: tax.amount,
                               type: "negative",
                             });

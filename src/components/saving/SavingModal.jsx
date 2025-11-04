@@ -145,7 +145,7 @@ function SavingModal({
           title: editData.title || "",
           frequency:
             editData.originalFrequency || editData.frequency || "monthly",
-          amount: editData.originalAmount || editData.amount || "",
+          amount: editData.originalAmount ?? editData.amount ?? "",
           currentAmount: editData.currentAmount ?? "",
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
           endYear: parseInt(editData.endYear) || getRetirementYear(),
@@ -156,6 +156,9 @@ function SavingModal({
           yearlyGrowthRate: editData.yearlyGrowthRate !== undefined && editData.yearlyGrowthRate !== null
             ? (editData.yearlyGrowthRate * 100).toFixed(2)
             : "1.89",
+          capitalGainsTaxRate: editData.capitalGainsTaxRate !== undefined && editData.capitalGainsTaxRate !== null
+            ? (editData.capitalGainsTaxRate * 100).toFixed(2)
+            : "",
           isFixedToRetirementYear: editData.isFixedToRetirementYear || false,
         });
       } else {
@@ -170,6 +173,7 @@ function SavingModal({
           memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
           interestRate: "2.86",
           yearlyGrowthRate: "1.89",
+          capitalGainsTaxRate: "",
           isFixedToRetirementYear: false,
         });
       }
@@ -241,6 +245,9 @@ function SavingModal({
       endYear: parseInt(formData.endYear), // 문자열을 숫자로 변환
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
       yearlyGrowthRate: parseFloat(formData.yearlyGrowthRate) / 100, // 백분율을 소수로 변환
+      capitalGainsTaxRate: formData.capitalGainsTaxRate 
+        ? parseFloat(formData.capitalGainsTaxRate) / 100 
+        : 0, // 양도세율 (백분율을 소수로 변환)
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
       isFixedToRetirementYear: formData.isFixedToRetirementYear || false,
@@ -346,7 +353,7 @@ function SavingModal({
                 }`}
                 placeholder="예: 100"
               />
-              {formData.amount && !isNaN(parseInt(formData.amount)) && (
+              {formData.amount !== "" && !isNaN(parseInt(formData.amount)) && (
                 <div className={styles.amountPreview}>
                   {formatAmountForChart(parseInt(formData.amount))}
                 </div>
@@ -373,7 +380,7 @@ function SavingModal({
               className={styles.input}
               placeholder="예: 500"
             />
-            {formData.currentAmount &&
+            {formData.currentAmount !== "" &&
               !isNaN(parseInt(formData.currentAmount)) && (
                 <div className={styles.amountPreview}>
                   {formatAmountForChart(parseInt(formData.currentAmount))}
@@ -528,6 +535,34 @@ function SavingModal({
                 />
               </div>
             )}
+
+            {/* 양도세율 */}
+            <div className={styles.field}>
+              <label htmlFor="capitalGainsTaxRate" className={styles.label}>
+                양도세율 (%) <span className={styles.optional}>- 선택</span>
+              </label>
+              <input
+                type="text"
+                id="capitalGainsTaxRate"
+                value={formData.capitalGainsTaxRate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // 숫자와 소수점만 허용 (0-100)
+                  if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                    setFormData({
+                      ...formData,
+                      capitalGainsTaxRate: value,
+                    });
+                  }
+                }}
+                onKeyPress={handleKeyPress}
+                className={styles.input}
+                placeholder="예: 22 (수익의 22%를 세금으로 납부)"
+              />
+              <div className={styles.fieldHelper}>
+                만기 시 (최종가치 - 원금) × 양도세율을 세금으로 납부합니다.
+              </div>
+            </div>
           </div>
 
           {/* 메모 */}
