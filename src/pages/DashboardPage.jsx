@@ -2631,6 +2631,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                 <RechartsAssetChart
                   data={simulationData.assets}
                   retirementAge={profileData.retirementAge}
+                  spouseRetirementAge={profileData.spouseRetirementAge}
                   targetAssets={profileData.targetAssets}
                   savings={savings}
                   pensions={pensions}

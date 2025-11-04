@@ -145,14 +145,14 @@ function SavingModal({
           frequency:
             editData.originalFrequency || editData.frequency || "monthly",
           amount: editData.originalAmount || editData.amount || "",
-          currentAmount: editData.currentAmount || "",
+          currentAmount: editData.currentAmount ?? "",
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
           endYear: parseInt(editData.endYear) || getRetirementYear(),
           memo: editData.memo || "",
-          interestRate: editData.interestRate
+          interestRate: editData.interestRate !== undefined && editData.interestRate !== null
             ? (editData.interestRate * 100).toFixed(2)
             : "2.86",
-          yearlyGrowthRate: editData.yearlyGrowthRate
+          yearlyGrowthRate: editData.yearlyGrowthRate !== undefined && editData.yearlyGrowthRate !== null
             ? (editData.yearlyGrowthRate * 100).toFixed(2)
             : "1.89",
           isFixedToRetirementYear: editData.isFixedToRetirementYear || false,

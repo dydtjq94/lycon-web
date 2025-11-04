@@ -21,11 +21,17 @@
   background: white;
 }
 
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .chartTitleWrapper {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 1rem;
+  gap: 4px;
 }
 
 .chartTitle {

@@ -31,7 +31,7 @@ function calculateAcquisitionTax(propertyValue) {
 function getLongTermDeductionRate(holdingYears) {
   if (holdingYears <= 4) return 0.24;
   if (holdingYears === 5) return 0.32;
-  if (holdingYears === 6) return 0.40;
+  if (holdingYears === 6) return 0.4;
   if (holdingYears === 7) return 0.48;
   if (holdingYears === 8) return 0.56;
   if (holdingYears === 9) return 0.64;
@@ -56,7 +56,7 @@ function getCapitalGainsTaxRate(taxableIncome) {
   } else if (taxableIncome <= 30000) {
     return { taxRate: 0.38, deduction: 1994 };
   } else if (taxableIncome <= 50000) {
-    return { taxRate: 0.40, deduction: 2594 };
+    return { taxRate: 0.4, deduction: 2594 };
   } else if (taxableIncome <= 100000) {
     return { taxRate: 0.42, deduction: 3594 };
   } else {
@@ -133,6 +133,9 @@ export function calculateCashflowSimulation(
   const startAge = calculateKoreanAge(profileData.birthYear, currentYear); // 만 나이로 실시간 계산
   const deathAge = 90;
   const simulationYears = deathAge - startAge + 1;
+
+  // 은퇴년도 가져오기
+  const retirementYear = profileData.retirementYear || currentYear;
 
   const cashflowData = [];
 
@@ -555,7 +558,8 @@ export function calculateCashflowSimulation(
           ? parseInt(saving.endYear, 10)
           : saving.endYear;
 
-      if (year >= sStartYear && year <= sEndYear) {
+      if (year >= sStartYear && year < sEndYear) {
+        // 종료년도 전까지만 적립
         const yearsElapsed = year - sStartYear;
         const yearlyGrowthRate = saving.yearlyGrowthRate || 0; // 이미 소수로 저장됨
 
@@ -588,9 +592,8 @@ export function calculateCashflowSimulation(
             `saving-contrib-${saving.id || saving.title}`
           );
         }
-      } else if (year === sEndYear + 1) {
-        // 저축 만료 다음 해: 만료된 저축 금액을 현금흐름에 추가
-        // 이자율을 적용한 최종 금액 계산
+      } else if (year === sEndYear) {
+        // 종료년도: 종료년도까지 수익률 계산하고 현금흐름에 추가
         const yearsElapsed = sEndYear - sStartYear;
         const interestRate = saving.interestRate || 0;
         const yearlyGrowthRate = saving.yearlyGrowthRate || 0;
@@ -599,22 +602,29 @@ export function calculateCashflowSimulation(
         const currentAmount = Number(saving.currentAmount) || 0; // 현재 보유 금액 포함
 
         if (saving.frequency === "one_time") {
-          // 일회성 저축: (현재 보유 + 일회성 적립 원금)에 해당 연도 수익률까지 포함하여 연말 평가
-          // 예: 2025-2025라면 1년치 이자 적용 필요 → yearsElapsed + 1
+          // 일회성 저축: 시작년도에 원금, 다음 해부터 수익률 적용
+          // 예: 2025-2030이라면 5년치 이자 (2026~2030)
           finalAmount =
             (currentAmount + (Number(saving.amount) || 0)) *
-            Math.pow(1 + interestRate, yearsElapsed + 1);
+            Math.pow(1 + interestRate, yearsElapsed);
         } else {
-          // 월간/연간 저축: 복리 계산
+          // 월간/연간 저축: 각 년도에 적립, 다음 해부터 수익률 적용
           const monthlyAmount =
             saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
-          // 현재 보유 금액으로 시작하여 매년 [보유 + 해당 해 적립]에 이자 적용 (연말 평가)
+
           let accumulated = currentAmount;
           for (let i = 0; i <= yearsElapsed; i++) {
             const adjustedMonthlyAmount =
               monthlyAmount * Math.pow(1 + yearlyGrowthRate, i);
             const yearlyAmount = adjustedMonthlyAmount * 12;
-            accumulated = (accumulated + yearlyAmount) * (1 + interestRate);
+
+            if (i === 0) {
+              // 시작년도: 적립금만 (수익률 X)
+              accumulated = accumulated + yearlyAmount;
+            } else {
+              // 다음 해부터: 작년 말 잔액에 수익률 + 올해 적립금
+              accumulated = accumulated * (1 + interestRate) + yearlyAmount;
+            }
           }
           finalAmount = accumulated;
         }
@@ -661,19 +671,63 @@ export function calculateCashflowSimulation(
         const paymentStartYear = pension.paymentStartYear;
         const paymentEndYear = pension.paymentEndYear;
 
-        // 적립 기간 처리: 퇴직연금은 현금흐름에 영향 없음, 개인연금은 현금이 빠져나감
+        // 퇴직금/DB인 경우, 은퇴년도 처리
         if (
+          pension.type === "severance" &&
+          year === retirementYear &&
+          year === paymentStartYear &&
+          year === paymentEndYear
+        ) {
+          // 은퇴년도 = 수령년도 (바로 현금 수령)
+          const currentAmount = pension.currentAmount || 0;
+          totalPension += currentAmount;
+          addPositive(
+            pension.title,
+            currentAmount,
+            "퇴직금 IRP",
+            `pension-payment-${pension.id || pension.title}`
+          );
+        } else if (
+          pension.type === "severance" &&
+          year === retirementYear &&
+          year !== paymentStartYear
+        ) {
+          // 은퇴년도: 현금흐름에 추가 안함 (자산으로만 표시, 나중에 수령)
+        } else if (
           year >= pension.contributionStartYear &&
           year <= pension.contributionEndYear
         ) {
-          // 개인연금만 적립 시 현금이 빠져나감
-          if (pension.type === "personal") {
+          // 적립 기간 처리
+          // 퇴직금/DB - IRP만 추가 적립 시 현금이 빠져나감 (실제 내 현금을 사용)
+          // 단, "추가 적립 안함"이 체크되지 않은 경우만
+          if (
+            pension.type === "severance" &&
+            !pension.noAdditionalContribution &&
+            pension.contributionAmount &&
+            pension.contributionAmount > 0
+          ) {
             const monthlyAmount =
               pension.contributionFrequency === "monthly"
                 ? pension.contributionAmount
                 : pension.contributionAmount / 12;
             const yearlyContribution = monthlyAmount * 12;
-            // 개인연금 적립액을 음수로 현금흐름에 반영 (현금이 빠져나감)
+            // 적립액을 음수로 현금흐름에 반영 (현금이 빠져나감)
+            totalExpense += yearlyContribution;
+            addNegative(
+              `${pension.title} (추가 적립)`,
+              yearlyContribution,
+              "퇴직금 IRP 적립",
+              `pension-contrib-${pension.id || pension.title}`
+            );
+          }
+          // 개인연금은 적립 시 현금이 빠져나감
+          else if (pension.type === "personal") {
+            const monthlyAmount =
+              pension.contributionFrequency === "monthly"
+                ? pension.contributionAmount
+                : pension.contributionAmount / 12;
+            const yearlyContribution = monthlyAmount * 12;
+            // 적립액을 음수로 현금흐름에 반영 (현금이 빠져나감)
             totalExpense += yearlyContribution;
             addNegative(
               `${pension.title} (적립)`,
@@ -682,36 +736,184 @@ export function calculateCashflowSimulation(
               `pension-contrib-${pension.id || pension.title}`
             );
           }
-          // 퇴직연금은 적립 시 현금이 빠져나가지 않음
+          // 퇴직연금은 적립 시 현금이 빠져나가지 않음 (회사에서 적립)
         } else if (year >= paymentStartYear && year <= paymentEndYear) {
-          // 수령 기간: 현금흐름에 추가 (플러스)
-          // 적립 완료 시점의 총 금액을 직접 계산
-          const monthlyAmount =
-            pension.contributionFrequency === "monthly"
-              ? pension.contributionAmount
-              : pension.contributionAmount / 12;
-          const yearlyContribution = monthlyAmount * 12;
-          const returnRate = pension.returnRate / 100;
-
-          // 현재 보유액을 포함한 총 적립액 계산 (복리 적용)
-          let totalAccumulated = pension.currentAmount || 0; // 현재 보유액으로 시작
-          for (
-            let i = 0;
-            i < pension.contributionEndYear - pension.contributionStartYear + 1;
-            i++
+          // 수령 기간 중 (종료년도까지 수령)
+          // 퇴직금/DB인 경우, 은퇴년도에는 수령 처리 안함
+          if (
+            pension.type === "severance" &&
+            year === retirementYear &&
+            year === paymentStartYear
           ) {
-            totalAccumulated =
-              totalAccumulated * (1 + returnRate) + yearlyContribution;
+            // 은퇴년도: 현금흐름에 추가 안함 (자산으로만 표시)
+            // 다음 해부터 수령 시작
+          } else {
+            // 수령 기간: 현금흐름에 추가 (플러스)
+            // 수령 중에도 남은 금액에 수익률 적용하고, 남은 년수로 나눔
+
+            const returnRate = pension.returnRate / 100;
+
+            // 적립 완료 시점의 총 금액 계산
+            let totalAccumulated = pension.currentAmount || 0;
+
+            // 추가 적립이 있는 경우에만 적립액 계산 (연말 기준)
+            if (
+              !pension.noAdditionalContribution &&
+              pension.contributionAmount &&
+              pension.contributionAmount > 0
+            ) {
+              const monthlyAmount =
+                pension.contributionFrequency === "monthly"
+                  ? pension.contributionAmount
+                  : pension.contributionAmount / 12;
+              const yearlyContribution = monthlyAmount * 12;
+
+              const contributionYears =
+                pension.contributionEndYear - pension.contributionStartYear + 1;
+              for (let i = 0; i < contributionYears; i++) {
+                if (i === 0) {
+                  // 시작년도: 적립금만 (수익률 X)
+                  totalAccumulated = totalAccumulated + yearlyContribution;
+                } else {
+                  // 다음 해부터: 수익률 + 적립금
+                  totalAccumulated =
+                    totalAccumulated * (1 + returnRate) + yearlyContribution;
+                }
+              }
+            }
+
+            // 적립 종료 후 ~ 수령 시작 전 공백 기간의 수익률 적용
+            const gapYears = paymentStartYear - pension.contributionEndYear - 1;
+            for (let i = 0; i < gapYears; i++) {
+              totalAccumulated = totalAccumulated * (1 + returnRate);
+            }
+
+            // 현재가 수령 몇 년째인지 계산
+            const paymentYears = paymentEndYear - paymentStartYear + 1;
+            const yearsSincePaymentStart = year - paymentStartYear;
+
+            // 이전 년도까지 수령하고 남은 금액 계산
+            // 매년: (남은 금액 / 남은 년수) 수령, 남은 금액에 수익률 적용
+            let remainingAmount = totalAccumulated;
+
+            // 퇴직금/DB이고 은퇴 다음해에 수령하는 경우는 수익률 적용 안함
+            const shouldApplyReturnRate = !(
+              pension.type === "severance" &&
+              year === retirementYear + 1 &&
+              year === paymentStartYear
+            );
+
+            for (let i = 0; i < yearsSincePaymentStart; i++) {
+              const yearsLeft = paymentYears - i;
+              const payment = remainingAmount / yearsLeft;
+              if (shouldApplyReturnRate || i < yearsSincePaymentStart - 1) {
+                remainingAmount =
+                  (remainingAmount - payment) * (1 + returnRate);
+              } else {
+                remainingAmount = remainingAmount - payment;
+              }
+            }
+
+            // 올해 수령액 = 현재 남은 금액 / 남은 년수
+            const yearsLeft = paymentYears - yearsSincePaymentStart;
+            const yearlyPayment = remainingAmount / yearsLeft;
+
+            totalPension += yearlyPayment;
+
+            const pensionTypeLabel =
+              pension.type === "retirement"
+                ? "퇴직연금"
+                : pension.type === "severance"
+                ? "퇴직금 IRP"
+                : "개인연금";
+
+            addPositive(
+              pension.title,
+              yearlyPayment,
+              pensionTypeLabel,
+              `pension-payment-${pension.id || pension.title}`
+            );
+          }
+        } else if (year === paymentEndYear) {
+          // 수령 종료년도: 최종 수령
+          const returnRate = pension.returnRate / 100;
+          const paymentStartYear = pension.paymentStartYear;
+          const paymentEndYear = pension.paymentEndYear;
+
+          // 적립 완료 시점의 총 금액 계산
+          let totalAccumulated = pension.currentAmount || 0;
+
+          // 추가 적립이 있는 경우에만 적립액 계산 (연말 기준)
+          if (
+            !pension.noAdditionalContribution &&
+            pension.contributionAmount &&
+            pension.contributionAmount > 0
+          ) {
+            const monthlyAmount =
+              pension.contributionFrequency === "monthly"
+                ? pension.contributionAmount
+                : pension.contributionAmount / 12;
+            const yearlyContribution = monthlyAmount * 12;
+
+            const contributionYears =
+              pension.contributionEndYear - pension.contributionStartYear + 1;
+            for (let i = 0; i < contributionYears; i++) {
+              if (i === 0) {
+                // 시작년도: 적립금만 (수익률 X)
+                totalAccumulated = totalAccumulated + yearlyContribution;
+              } else {
+                // 다음 해부터: 수익률 + 적립금
+                totalAccumulated =
+                  totalAccumulated * (1 + returnRate) + yearlyContribution;
+              }
+            }
           }
 
-          // 월 수령액 계산 (총 적립액 ÷ 수령 년수 ÷ 12)
+          // 적립 종료 후 ~ 수령 시작 전 공백 기간의 수익률 적용
+          const gapYears = paymentStartYear - pension.contributionEndYear - 1;
+          for (let i = 0; i < gapYears; i++) {
+            totalAccumulated = totalAccumulated * (1 + returnRate);
+          }
+
+          // 현재가 수령 몇 년째인지 계산
           const paymentYears = paymentEndYear - paymentStartYear + 1;
-          const monthlyPayment = totalAccumulated / paymentYears / 12;
-          totalPension += monthlyPayment * 12; // 플러스로 추가
+          const yearsSincePaymentStart = year - paymentStartYear;
+
+          // 이전 년도까지 수령하고 남은 금액 계산
+          let remainingAmount = totalAccumulated;
+
+          const shouldApplyReturnRate = !(
+            pension.type === "severance" &&
+            year === retirementYear + 1 &&
+            year === paymentStartYear
+          );
+
+          for (let i = 0; i < yearsSincePaymentStart; i++) {
+            const yearsLeft = paymentYears - i;
+            const payment = remainingAmount / yearsLeft;
+            if (shouldApplyReturnRate || i < yearsSincePaymentStart - 1) {
+              remainingAmount = (remainingAmount - payment) * (1 + returnRate);
+            } else {
+              remainingAmount = remainingAmount - payment;
+            }
+          }
+
+          // 올해 수령액 = 현재 남은 금액 (전액 수령)
+          const yearlyPayment = remainingAmount;
+
+          totalPension += yearlyPayment;
+
+          const pensionTypeLabel =
+            pension.type === "retirement"
+              ? "퇴직연금"
+              : pension.type === "severance"
+              ? "퇴직금 IRP"
+              : "개인연금";
+
           addPositive(
             pension.title,
-            monthlyPayment * 12,
-            pension.type === "retirement" ? "퇴직연금" : "개인연금",
+            yearlyPayment,
+            pensionTypeLabel,
             `pension-payment-${pension.id || pension.title}`
           );
         }
@@ -828,14 +1030,15 @@ export function calculateCashflowSimulation(
         );
       }
 
-      // 부동산 매각 수입 계산 (만료 다음 해)
+      // 부동산 매각 수입 계산 (연말 기준: endYear에 매각)
       if (
         Number.isFinite(endYear) &&
         Number.isFinite(startYear) &&
-        year === endYear + 1 &&
+        year === endYear &&
         purchaseAmount > 0
       ) {
         // 부동산 가치에 상승률을 적용한 최종 가치 계산
+        // 연말 기준: startYear부터 endYear까지 yearsElapsed년 보유
         const yearsElapsed = endYear - startYear;
         const growthRate = (realEstate.growthRate || 0) / 100;
         const finalValue =
@@ -864,7 +1067,7 @@ export function calculateCashflowSimulation(
             ? Number(realEstate.acquisitionYear)
             : startYear;
 
-          // 보유기간 계산: 양도년도(endYear + 1) - 취득년도
+          // 보유기간 계산: 양도년도(endYear) - 취득년도
           const holdingYears = year - acquisitionYear;
 
           // 양도소득세 계산 (양도가액 = 매각 시 최종 가치)
@@ -932,9 +1135,9 @@ export function calculateCashflowSimulation(
         asset.assetType === "income" &&
         asset.incomeRate > 0 &&
         year > startYear &&
-        year <= endYear
+        year < endYear
       ) {
-        // 연말 기준: 수익은 시작 다음 해부터 발생하며, 전년도 말 자산 가치 기준으로 계산
+        // 연말 기준: 수익은 시작 다음 해부터 종료 전까지 발생
         // 전년도 말 자산 가치 = currentValue * (1 + growthRate)^(year - startYear - 1)
         // 수익 = 전년도 말 자산 가치 * 수익률
         const yearsElapsed = year - startYear; // 시작부터 현재 해까지 경과 년수
@@ -950,9 +1153,10 @@ export function calculateCashflowSimulation(
         );
       }
 
-      // 자산 매각 수입 계산 (만료 다음 해)
-      if (year === endYear + 1) {
+      // 자산 매각 수입 계산 (종료년도에 매각)
+      if (year === endYear) {
         // 자산 가치에 상승률을 적용한 최종 가치 계산
+        // 시작년도: 원금, 다음 해부터 상승률 적용
         const yearsElapsed = endYear - startYear;
         const growthRate = asset.growthRate || 0;
         const finalValue =
@@ -1091,13 +1295,20 @@ export function calculateAssetSimulation(
     });
   }
 
+  // 은퇴년도 가져오기
+  const retirementYear = profileData.retirementYear || currentYear;
+
   // 연금별 누적 자산 (제목별로 분리)
   const pensionsByTitle = {};
   pensions.forEach((pension) => {
     if (pension.type !== "national") {
       // 퇴직연금/개인연금만 자산으로 관리
+
+      const isActive = pension.type !== "severance";
+
       pensionsByTitle[pension.title] = {
-        amount: pension.currentAmount || 0, // 현재 보유액으로 시작
+        amount: pension.currentAmount || 0,
+        initialAmount: pension.currentAmount || 0, // 원래 보유액 저장
         contributionStartYear: pension.contributionStartYear,
         contributionEndYear: pension.contributionEndYear,
         paymentStartYear: pension.paymentStartYear,
@@ -1105,8 +1316,13 @@ export function calculateAssetSimulation(
         returnRate: pension.returnRate !== undefined ? pension.returnRate : 5.0,
         contributionAmount: pension.contributionAmount,
         contributionFrequency: pension.contributionFrequency,
+        noAdditionalContribution: pension.noAdditionalContribution || false, // 추가 적립 안함 여부
+        type: pension.type, // 연금 타입 저장
         monthlyPayment: 0, // 월 수령액 (적립 종료 후 계산)
-        isActive: true,
+        retirementYear: retirementYear, // 은퇴년도 저장
+        // 퇴직금/DB - IRP는 은퇴년도 전까지 자산 차트에 표시 안함
+        // 퇴직연금/개인연금은 처음부터 자산 차트에 표시
+        isActive: isActive,
       };
     }
   });
@@ -1211,8 +1427,9 @@ export function calculateAssetSimulation(
         return; // 비활성 저축은 건너뛰기
       }
 
-      // endYear + 1년에 저축을 현금으로 전환 (현금흐름 시뮬레이션에서만 처리)
-      if (year === saving.endYear + 1) {
+      // endYear 이상이면 저축을 비활성화 (자산 차트에서 제거)
+      // 종료년도부터는 현금으로 전환되므로 자산에서 제거
+      if (year >= saving.endYear) {
         // 현금흐름 시뮬레이션에서 이미 계산된 저축 만료 금액이 netCashflow에 포함되어 있으므로
         // 여기서 추가로 currentCash에 더하지 않음 (중복 방지)
 
@@ -1223,19 +1440,19 @@ export function calculateAssetSimulation(
         return; // 전환 후 더 이상 처리하지 않음
       }
 
-      if (year >= saving.startYear && year <= saving.endYear) {
-        // 저축 기간 중 (endYear 포함)
+      if (year >= saving.startYear && year < saving.endYear) {
+        // 저축 기간 중 (endYear 전까지만 - 종료년도에는 자산에서 제거)
         const yearsElapsed = year - saving.startYear;
         const interestRate = saving.interestRate; // 이미 소수로 저장됨
         const yearlyGrowthRate = saving.yearlyGrowthRate; // 이미 소수로 저장됨
 
         if (saving.frequency === "one_time") {
-          // 일회성 저축 (정기예금 등): 시작년도에는 (보유+일회성 적립) 후 해당 연도 수익률 적용(연말 평가)
+          // 일회성 저축 (정기예금 등)
           if (year === saving.startYear) {
-            saving.amount =
-              (saving.amount + saving.originalAmount) * (1 + interestRate);
+            // 시작년도: 원금만 (수익률 적용 X)
+            saving.amount = saving.amount + saving.originalAmount;
           } else if (year > saving.startYear) {
-            // 이후 해에는 이자만 적용 (추가 적립 없음)
+            // 다음 해부터 수익률 적용
             saving.amount = saving.amount * (1 + interestRate);
           }
         } else {
@@ -1250,12 +1467,14 @@ export function calculateAssetSimulation(
             monthlyAmount * Math.pow(1 + yearlyGrowthRate, yearsElapsed);
           const yearlyAmount = adjustedMonthlyAmount * 12;
 
-          // 모든 해에 대해 연말 평가 기준 적용: (보유 + 올해 적립) × (1 + 수익률)
-          saving.amount = (saving.amount + yearlyAmount) * (1 + interestRate);
+          if (year === saving.startYear) {
+            // 시작년도: 적립금만 (수익률 적용 X)
+            saving.amount = saving.amount + yearlyAmount;
+          } else {
+            // 다음 해부터: 작년 말 잔액에 수익률 적용 + 올해 적립금
+            saving.amount = saving.amount * (1 + interestRate) + yearlyAmount;
+          }
         }
-      } else if (year > saving.endYear + 1) {
-        // endYear + 1 이후: 이미 비활성화된 저축은 건너뛰기
-        return;
       }
     });
 
@@ -1263,14 +1482,93 @@ export function calculateAssetSimulation(
     Object.keys(pensionsByTitle).forEach((title) => {
       const pension = pensionsByTitle[title];
 
+      // 퇴직금/DB - IRP: 은퇴년도 처리
+      if (
+        !pension.isActive &&
+        pension.type === "severance" &&
+        year === pension.retirementYear
+      ) {
+        // 은퇴년도 = 수령년도인 경우: 바로 현금화되므로 자산에 표시 안 함
+        if (
+          year === pension.paymentStartYear &&
+          year === pension.paymentEndYear
+        ) {
+          pension.isActive = false;
+          pension.amount = 0;
+          return;
+        }
+        // 은퇴년도 ≠ 수령년도: 자산에 표시
+        pension.isActive = true;
+      }
+
       if (!pension.isActive) return; // 비활성 연금은 건너뛰기
 
+      // 퇴직금/DB - IRP인 경우: 은퇴년도에는 아무것도 안함
+      if (pension.type === "severance" && year === pension.retirementYear) {
+        // 은퇴년도: 퇴직금 그대로 자산으로만 표시
+        // 수익률 X, 적립 X, 수령 X
+        // 다음 해부터 계산 시작
+        return;
+      }
+
+      // 퇴직금/DB - IRP인 경우: 적립 기간 처리 (은퇴 다음해부터)
       if (
+        pension.type === "severance" &&
+        year > pension.retirementYear && // 은퇴 다음해부터만
+        year >= pension.contributionStartYear && // 적립 시작년도부터
+        year <= pension.contributionEndYear && // 적립 종료년도까지
+        year < pension.paymentStartYear // 수령 시작 전까지
+      ) {
+        // 적립 기간 동안 처리
+        const returnRate = pension.returnRate / 100;
+        const isFirstContributionYear = year === pension.contributionStartYear;
+
+        // 추가 적립이 있는 경우
+        if (
+          !pension.noAdditionalContribution &&
+          pension.contributionAmount &&
+          pension.contributionAmount > 0
+        ) {
+          const monthlyAmount =
+            pension.contributionFrequency === "monthly"
+              ? pension.contributionAmount
+              : pension.contributionAmount / 12;
+          const yearlyAmount = monthlyAmount * 12;
+
+          if (isFirstContributionYear) {
+            // 첫 적립년도: 보유액 + 적립금 (수익률 X)
+            pension.amount = pension.amount + yearlyAmount;
+          } else {
+            // 다음 해부터: 보유액 × 수익률 + 적립금
+            pension.amount = pension.amount * (1 + returnRate) + yearlyAmount;
+          }
+        } else {
+          // 추가 적립 없으면 수익률만 적용
+          if (!isFirstContributionYear) {
+            pension.amount = pension.amount * (1 + returnRate);
+          }
+        }
+      } else if (
+        pension.type === "severance" &&
+        year > pension.retirementYear && // 은퇴 다음해부터
+        year < pension.contributionStartYear // 적립 시작 전까지
+      ) {
+        // 은퇴 후 ~ 적립 시작 전: 보유액에만 수익률 적용 (단, 은퇴 다음해는 첫 해이므로 수익률 X)
+        if (year > pension.retirementYear + 1) {
+          const returnRate = pension.returnRate / 100;
+          pension.amount = pension.amount * (1 + returnRate);
+        }
+      }
+
+      // 퇴직연금/개인연금: 적립 기간 처리
+      if (
+        pension.type !== "severance" && // 퇴직금/DB는 위에서 이미 처리
         year >= pension.contributionStartYear &&
-        year <= pension.contributionEndYear
+        year <= pension.contributionEndYear &&
+        pension.contributionAmount &&
+        pension.contributionAmount > 0
       ) {
         // 적립 기간: 연금 자산에 추가
-        const yearsElapsed = year - pension.contributionStartYear;
         const returnRate = pension.returnRate / 100;
 
         // 월간/연간 적립 금액 계산
@@ -1280,24 +1578,91 @@ export function calculateAssetSimulation(
             : pension.contributionAmount / 12;
         const yearlyAmount = monthlyAmount * 12;
 
-        // 작년 자산에 수익률 적용 + 올해 적립 추가
-        pension.amount = pension.amount * (1 + returnRate) + yearlyAmount;
-      } else if (year === pension.paymentStartYear) {
-        // 수령 시작년도: 월 수령액 계산
-        pension.monthlyPayment =
-          pension.amount /
-          (pension.paymentEndYear - pension.paymentStartYear + 1) /
-          12;
-        pension.amount -= pension.monthlyPayment * 12; // 첫 해 수령액 차감
+        if (year === pension.contributionStartYear) {
+          // 시작년도: 적립금만 (수익률 X)
+          pension.amount = pension.amount + yearlyAmount;
+        } else {
+          // 다음 해부터: 작년 말 잔액에 수익률 적용 + 올해 적립금
+          pension.amount = pension.amount * (1 + returnRate) + yearlyAmount;
+        }
       } else if (
-        year > pension.paymentStartYear &&
+        pension.type !== "severance" &&
+        year > pension.contributionEndYear &&
+        year < pension.paymentStartYear
+      ) {
+        // 적립 종료 후 ~ 수령 시작 전: 수익률만 적용 (공백 기간)
+        const returnRate = pension.returnRate / 100;
+        pension.amount = pension.amount * (1 + returnRate);
+      } else if (
+        year >= pension.paymentStartYear &&
         year <= pension.paymentEndYear
       ) {
-        // 수령 기간: 자산에서 월 수령액만큼 차감
-        pension.amount -= pension.monthlyPayment * 12;
+        // 수령 기간 중 (종료년도까지 수령)
+        // 퇴직금/DB인 경우, 은퇴년도에는 수령 처리 안함 (자산으로만 표시)
+        if (
+          pension.type === "severance" &&
+          year === pension.retirementYear &&
+          year === pension.paymentStartYear
+        ) {
+          // 은퇴년도: 퇴직금 그대로 자산으로 표시 (수익률 X, 수령 X)
+          // 다음 해부터 수익률 적용 및 수령 시작
+        } else if (year === pension.paymentEndYear) {
+          // 수령 종료년도: 최종 수령
+          const returnRate = pension.returnRate / 100;
+          const paymentYears =
+            pension.paymentEndYear - pension.paymentStartYear + 1;
+          const yearsSincePaymentStart = year - pension.paymentStartYear;
+
+          // 퇴직금/DB이고 은퇴 다음해에 수령하는 경우, 수익률 적용 안함
+          if (
+            !(
+              pension.type === "severance" &&
+              year === pension.retirementYear + 1 &&
+              year === pension.paymentStartYear
+            )
+          ) {
+            // 수령 전 남은 금액에 수익률 적용
+            pension.amount = pension.amount * (1 + returnRate);
+          }
+
+          // 마지막 수령: 남은 금액 전부 수령
+          const yearsLeft = paymentYears - yearsSincePaymentStart;
+          const yearlyPayment = pension.amount / yearsLeft;
+          pension.amount -= yearlyPayment;
+
+          // 수령 완료 후 비활성화
+          pension.isActive = false;
+          pension.amount = 0;
+        } else {
+          // 수령 기간 중: 수익률 적용하면서 남은 년수로 나눔
+          const returnRate = pension.returnRate / 100;
+          const paymentYears =
+            pension.paymentEndYear - pension.paymentStartYear + 1;
+          const yearsSincePaymentStart = year - pension.paymentStartYear;
+
+          // 퇴직금/DB이고 은퇴 다음해에 수령하는 경우, 수익률 적용 안함
+          if (
+            !(
+              pension.type === "severance" &&
+              year === pension.retirementYear + 1 &&
+              year === pension.paymentStartYear
+            )
+          ) {
+            // 수령 전 남은 금액에 수익률 적용
+            pension.amount = pension.amount * (1 + returnRate);
+          }
+
+          // 올해 수령액 = 현재 금액 / 남은 년수
+          const yearsLeft = paymentYears - yearsSincePaymentStart;
+          const yearlyPayment = pension.amount / yearsLeft;
+
+          // 수령 후 남은 금액
+          pension.amount -= yearlyPayment;
+        }
       } else if (year > pension.paymentEndYear) {
-        // 수령 종료: 연금 비활성화
+        // 수령 종료 이후: 연금 비활성화
         pension.isActive = false;
+        pension.amount = 0;
       }
     });
 
@@ -1309,16 +1674,20 @@ export function calculateAssetSimulation(
         // 보유 시작 전: 부동산 비활성화
         realEstate.isActive = false;
         realEstate.amount = 0;
-      } else if (year >= realEstate.startYear && year <= realEstate.endYear) {
-        // 보유 기간 중: 부동산 활성화
+      } else if (year >= realEstate.endYear) {
+        // 연말 기준: endYear에 매각하므로 endYear부터 비활성화
+        realEstate.isActive = false;
+        realEstate.amount = 0;
+      } else if (year >= realEstate.startYear && year < realEstate.endYear) {
+        // 보유 기간 중 (endYear 전까지만): 부동산 활성화
         realEstate.isActive = true;
 
         if (year === realEstate.startYear) {
-          // 첫 해: 현재 가치로 시작
+          // 첫 해: 현재 가치로 시작 (상승률 적용 X)
           realEstate.amount =
             realEstate._initialValue || realEstate.amount || 0;
         } else {
-          const growthRate = realEstate.growthRate / 100; // 월 상승률을 소수로 변환
+          const growthRate = realEstate.growthRate / 100; // 상승률을 소수로 변환
 
           const isPensionActive =
             realEstate.convertToPension &&
@@ -1350,17 +1719,10 @@ export function calculateAssetSimulation(
               realEstate.isActive = false;
             }
           } else {
+            // 다음 해부터: 작년 말 잔액에 상승률 적용
             realEstate.amount = realEstate.amount * (1 + growthRate);
           }
         }
-      } else if (year === realEstate.endYear + 1) {
-        // 보유 종료 다음 해: 부동산 자산을 비활성화
-        realEstate.isActive = false;
-        realEstate.amount = 0;
-      } else if (year > realEstate.endYear + 1) {
-        // 보유 종료 이후: 부동산 비활성화
-        realEstate.isActive = false;
-        realEstate.amount = 0;
       }
     });
 
@@ -1368,19 +1730,26 @@ export function calculateAssetSimulation(
     Object.keys(assetsByTitle).forEach((title) => {
       const asset = assetsByTitle[title];
 
-      // 보유 기간에만 활성화
-      if (year >= asset.startYear && year <= asset.endYear) {
+      // endYear 이상이면 자산 비활성화 (현금으로 전환)
+      if (year >= asset.endYear) {
+        asset.isActive = false;
+        asset.amount = 0;
+        return;
+      }
+
+      // 보유 기간 중 (endYear 전까지만)
+      if (year >= asset.startYear && year < asset.endYear) {
         asset.isActive = true;
 
         if (year === asset.startYear) {
-          // 첫 해: 현재 가치로 시작
+          // 첫 해: 현재 가치로 시작 (상승률 적용 X)
           asset.amount = asset._initialValue || asset.amount || 0;
         } else {
-          // 상승률 적용 (이전 년도의 금액에 적용)
+          // 다음 해부터: 상승률 적용
           asset.amount = asset.amount * (1 + asset.growthRate);
         }
       } else {
-        // 보유 기간 외: 자산 비활성화
+        // 보유 시작 전: 자산 비활성화
         asset.isActive = false;
         asset.amount = 0;
       }

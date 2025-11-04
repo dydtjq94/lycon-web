@@ -62,6 +62,7 @@ OptimizedPieChart.displayName = "OptimizedPieChart";
 function RechartsAssetChart({
   data,
   retirementAge,
+  spouseRetirementAge,
   deathAge = 90,
   targetAssets = 50000,
   savings = [],
@@ -705,7 +706,7 @@ function RechartsAssetChart({
         data={chartData}
         stackOffset="sign"
         margin={{
-          top: 20,
+          top: 40,
           right: 30,
           left: 40,
           bottom: 120,
@@ -962,6 +963,22 @@ function RechartsAssetChart({
               value: "은퇴",
               position: "top",
               style: { fill: "#9ca3af", fontSize: "12px" },
+            }}
+          />
+        )}
+
+        {/* 배우자 은퇴 시점 표시 */}
+        {spouseRetirementAge && (
+          <ReferenceLine
+            x={spouseRetirementAge}
+            stroke="#a78bfa"
+            strokeWidth={1.5}
+            strokeDasharray="10 5"
+            label={{
+              value: "배우자 은퇴",
+              position: "top",
+              offset: spouseRetirementAge === retirementAge ? 20 : 0, // 은퇴 나이가 같으면 위로 15px 올림
+              style: { fill: "#a78bfa", fontSize: "12px" },
             }}
           />
         )}

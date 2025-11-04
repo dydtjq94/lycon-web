@@ -16,7 +16,7 @@ const RealEstateModal = ({
 }) => {
   const [formData, setFormData] = useState({
     title: "",
-    isResidential: false, // 거주용 여부
+    isResidential: true, // 거주용 여부 (기본값: 체크됨)
     hasAcquisitionInfo: false, // 올해 이전에 취득 여부
     currentValue: "",
     acquisitionPrice: "", // 취득가액 (양도세 계산용)
@@ -121,7 +121,7 @@ const RealEstateModal = ({
       if (editData) {
         setFormData({
           title: editData.title || "",
-          isResidential: editData.isResidential || false,
+          isResidential: editData.isResidential !== undefined ? editData.isResidential : true,
           hasAcquisitionInfo: editData.hasAcquisitionInfo || false,
           currentValue: editData.currentValue || "",
           acquisitionPrice: editData.acquisitionPrice || "",

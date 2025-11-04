@@ -18,6 +18,8 @@ function PensionList({
         return "퇴직연금";
       case "personal":
         return "개인연금";
+      case "severance":
+        return "퇴직금/DB - IRP";
       default:
         return "연금";
     }
@@ -31,6 +33,8 @@ function PensionList({
         return "#10b981"; // 초록색
       case "personal":
         return "#f59e0b"; // 주황색
+      case "severance":
+        return "#8b5cf6"; // 보라색
       default:
         return "#6b7280"; // 회색
     }
@@ -99,21 +103,35 @@ function PensionList({
                 </div>
               </>
             ) : (
-              // 퇴직연금/개인연금 정보
+              // 퇴직연금/개인연금/퇴직금 정보
               <>
                 {pension.currentAmount > 0 && (
                   <div className={styles.pensionCurrentAmount}>
-                    현재 보유: {formatAmount(pension.currentAmount)}
+                    {pension.type === "severance" ? "퇴직금" : "현재 보유"}:{" "}
+                    {formatAmount(pension.currentAmount)}
                   </div>
                 )}
-                <div className={styles.pensionAmount}>
-                  {formatAmount(pension.contributionAmount)}/
-                  {pension.contributionFrequency === "monthly" ? "월" : "년"}
-                </div>
+                {pension.contributionAmount > 0 && (
+                  <div className={styles.pensionAmount}>
+                    {formatAmount(pension.contributionAmount)}/
+                    {pension.contributionFrequency === "monthly" ? "월" : "년"}
+                  </div>
+                )}
                 <div className={styles.pensionPeriod}>
-                  적립: {pension.contributionStartYear}년 -{" "}
-                  {pension.contributionEndYear}년
-                  <br />
+                  {pension.type === "severance" &&
+                  !pension.noAdditionalContribution ? (
+                    <>
+                      적립: {pension.contributionStartYear}년 -{" "}
+                      {pension.contributionEndYear}년
+                      <br />
+                    </>
+                  ) : pension.type !== "severance" ? (
+                    <>
+                      적립: {pension.contributionStartYear}년 -{" "}
+                      {pension.contributionEndYear}년
+                      <br />
+                    </>
+                  ) : null}
                   수령: {pension.paymentStartYear}년 - {pension.paymentEndYear}
                   년
                   <br />

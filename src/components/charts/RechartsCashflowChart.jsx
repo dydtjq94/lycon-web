@@ -40,23 +40,27 @@ function RechartsCashflowChart({
     );
   }
 
+  // 은퇴년도 계산
+  const retirementYear =
+    profileData?.retirementYear || new Date().getFullYear();
+
   // 배우자 은퇴 시점 계산 (본인의 나이 기준으로)
   const spouseRetirementAge = (() => {
     if (!profileData?.hasSpouse || !profileData?.spouseIsWorking) {
       return null;
     }
-    
+
     const currentYear = new Date().getFullYear();
     const spouseBirthYear = parseInt(profileData.spouseBirthYear);
     const spouseRetirement = parseInt(profileData.spouseRetirementAge);
-    
+
     // 배우자가 은퇴하는 년도 계산
     const spouseRetirementYear = spouseBirthYear + spouseRetirement;
-    
+
     // 그 년도에 본인의 나이 계산
     const ownerBirthYear = parseInt(profileData.birthYear);
     const ownerAgeAtSpouseRetirement = spouseRetirementYear - ownerBirthYear;
-    
+
     return ownerAgeAtSpouseRetirement;
   })();
 
@@ -454,7 +458,7 @@ function RechartsCashflowChart({
       <BarChart
         data={chartData}
         margin={{
-          top: 20,
+          top: 40,
           right: 30,
           left: 40,
           bottom: 120,
@@ -519,13 +523,16 @@ function RechartsCashflowChart({
                       totalPensionIncome += adjustedAmount;
                     }
                   } else {
-                    // 개인연금/퇴직연금
+                    // 개인연금/퇴직연금/퇴직금 IRP
                     if (
-                      pension.type === "personal" &&
+                      (pension.type === "personal" ||
+                        (pension.type === "severance" &&
+                          !pension.noAdditionalContribution)) &&
+                      pension.contributionAmount > 0 &&
                       data.year >= pension.contributionStartYear &&
                       data.year <= pension.contributionEndYear
                     ) {
-                      // 개인연금 적립 기간: 지출
+                      // 개인연금 & 퇴직금 IRP 적립 기간: 지출
                       const monthlyAmount =
                         pension.contributionFrequency === "monthly"
                           ? pension.contributionAmount
@@ -535,35 +542,55 @@ function RechartsCashflowChart({
                       data.year >= pension.paymentStartYear &&
                       data.year <= pension.paymentEndYear
                     ) {
-                      // 수령 기간: 수입
-                      const monthlyAmount =
-                        pension.contributionFrequency === "monthly"
-                          ? pension.contributionAmount
-                          : pension.contributionAmount / 12;
-                      const yearlyContribution = monthlyAmount * 12;
+                      // 수령 기간: 수입 (수익률 적용하면서 남은 년수로 나눔)
                       const returnRate = pension.returnRate / 100;
 
-                      // 현재 보유액을 포함한 총 적립액 계산
+                      // 적립 완료 시점의 총 금액 계산
                       let totalAccumulated = pension.currentAmount || 0;
-                      for (
-                        let i = 0;
-                        i <
-                        pension.contributionEndYear -
+
+                      // 추가 적립이 있는 경우에만 적립액 계산
+                      if (
+                        !pension.noAdditionalContribution &&
+                        pension.contributionAmount &&
+                        pension.contributionAmount > 0
+                      ) {
+                        const monthlyAmount =
+                          pension.contributionFrequency === "monthly"
+                            ? pension.contributionAmount
+                            : pension.contributionAmount / 12;
+                        const yearlyContribution = monthlyAmount * 12;
+
+                        const contributionYears =
+                          pension.contributionEndYear -
                           pension.contributionStartYear +
                           1;
-                        i++
-                      ) {
-                        totalAccumulated =
-                          totalAccumulated * (1 + returnRate) +
-                          yearlyContribution;
+                        for (let i = 0; i < contributionYears; i++) {
+                          totalAccumulated =
+                            totalAccumulated * (1 + returnRate) +
+                            yearlyContribution;
+                        }
                       }
 
-                      // 월 수령액 계산
+                      // 수령 중에도 남은 금액에 수익률 적용
                       const paymentYears =
                         pension.paymentEndYear - pension.paymentStartYear + 1;
-                      const monthlyPayment =
-                        totalAccumulated / paymentYears / 12;
-                      totalPensionIncome += monthlyPayment * 12;
+                      const yearsSincePaymentStart =
+                        data.year - pension.paymentStartYear;
+
+                      // 이전 년도까지 수령하고 남은 금액 계산
+                      let remainingAmount = totalAccumulated;
+                      for (let i = 0; i < yearsSincePaymentStart; i++) {
+                        const yearsLeft = paymentYears - i;
+                        const payment = remainingAmount / yearsLeft;
+                        remainingAmount =
+                          (remainingAmount - payment) * (1 + returnRate);
+                      }
+
+                      // 올해 수령액 = 현재 남은 금액 / 남은 년수
+                      const yearsLeft = paymentYears - yearsSincePaymentStart;
+                      const yearlyPayment = remainingAmount / yearsLeft;
+
+                      totalPensionIncome += yearlyPayment;
                     }
                   }
                 });
@@ -727,9 +754,12 @@ function RechartsCashflowChart({
                               shouldShow = true;
                             }
                           } else {
-                            // 개인연금/퇴직연금: 적립 기간과 수령 기간 모두 표시
+                            // 개인연금/퇴직연금/퇴직금 IRP: 적립 기간과 수령 기간 모두 표시
                             if (
-                              pension.type === "personal" &&
+                              (pension.type === "personal" ||
+                                (pension.type === "severance" &&
+                                  !pension.noAdditionalContribution)) &&
+                              pension.contributionAmount > 0 &&
                               data.year >= pension.contributionStartYear &&
                               data.year <= pension.contributionEndYear
                             ) {
@@ -741,53 +771,81 @@ function RechartsCashflowChart({
                               const yearlyContribution = monthlyAmount * 12;
 
                               displayAmount = yearlyContribution; // 양수로 설정 (툴팁에서 - 붙임)
-                              displayLabel = `${pension.title} (적립)`;
+                              displayLabel =
+                                pension.type === "severance"
+                                  ? `${pension.title} (추가 적립)`
+                                  : `${pension.title} (적립)`;
                               shouldShow = true;
                             } else if (
                               data.year >= pension.paymentStartYear &&
                               data.year <= pension.paymentEndYear
                             ) {
                               // 수령 기간: 수령액 표시 (플러스)
-                              const monthlyAmount =
-                                pension.contributionFrequency === "monthly"
-                                  ? pension.contributionAmount
-                                  : pension.contributionAmount / 12;
-                              const yearlyContribution = monthlyAmount * 12;
+                              // 수령 중에도 남은 금액에 수익률 적용하고, 남은 년수로 나눔
                               const returnRate = pension.returnRate / 100;
 
-                              // 현재 보유액을 포함한 총 적립액 계산
+                              // 적립 완료 시점의 총 금액 계산
                               let totalAccumulated = pension.currentAmount || 0;
-                              for (
-                                let i = 0;
-                                i <
-                                pension.contributionEndYear -
+
+                              // 추가 적립이 있는 경우에만 적립액 계산
+                              if (
+                                !pension.noAdditionalContribution &&
+                                pension.contributionAmount &&
+                                pension.contributionAmount > 0
+                              ) {
+                                const monthlyAmount =
+                                  pension.contributionFrequency === "monthly"
+                                    ? pension.contributionAmount
+                                    : pension.contributionAmount / 12;
+                                const yearlyContribution = monthlyAmount * 12;
+
+                                const contributionYears =
+                                  pension.contributionEndYear -
                                   pension.contributionStartYear +
                                   1;
-                                i++
-                              ) {
-                                totalAccumulated =
-                                  totalAccumulated * (1 + returnRate) +
-                                  yearlyContribution;
+                                for (let i = 0; i < contributionYears; i++) {
+                                  totalAccumulated =
+                                    totalAccumulated * (1 + returnRate) +
+                                    yearlyContribution;
+                                }
                               }
 
-                              // 월 수령액 계산
+                              // 수령 중에도 남은 금액에 수익률 적용
                               const paymentYears =
                                 pension.paymentEndYear -
                                 pension.paymentStartYear +
                                 1;
-                              const monthlyPayment =
-                                totalAccumulated / paymentYears / 12;
-                              displayAmount = monthlyPayment * 12;
+                              const yearsSincePaymentStart =
+                                data.year - pension.paymentStartYear;
+
+                              // 이전 년도까지 수령하고 남은 금액 계산
+                              let remainingAmount = totalAccumulated;
+                              for (let i = 0; i < yearsSincePaymentStart; i++) {
+                                const yearsLeft = paymentYears - i;
+                                const payment = remainingAmount / yearsLeft;
+                                remainingAmount =
+                                  (remainingAmount - payment) *
+                                  (1 + returnRate);
+                              }
+
+                              // 올해 수령액 = 현재 남은 금액 / 남은 년수
+                              const yearsLeft =
+                                paymentYears - yearsSincePaymentStart;
+                              const yearlyPayment = remainingAmount / yearsLeft;
+
+                              displayAmount = yearlyPayment;
                               displayLabel = `${pension.title} (수령)`;
                               shouldShow = true;
                             }
                           }
 
                           if (shouldShow) {
-                            // 연금 적립은 항상 negative, 수령은 항상 positive
-                            const itemType = displayLabel.includes("(적립)")
-                              ? "negative"
-                              : "positive";
+                            // 연금 적립(개인연금, 퇴직금 IRP 추가 적립)은 항상 negative, 수령은 항상 positive
+                            const itemType =
+                              displayLabel.includes("(적립)") ||
+                              displayLabel.includes("(추가 적립)")
+                                ? "negative"
+                                : "positive";
 
                             allItems.push({
                               key: `pension-${index}`,
@@ -1193,6 +1251,7 @@ function RechartsCashflowChart({
             label={{
               value: "배우자 은퇴",
               position: "top",
+              offset: spouseRetirementAge === retirementAge ? 20 : 0, // 은퇴 나이가 같으면 위로 15px 올림
               style: { fill: "#a78bfa", fontSize: "12px" },
             }}
           />
@@ -1268,27 +1327,29 @@ function RechartsCashflowChart({
   return (
     <>
       <div className={styles.chartContainer}>
-        <div className={styles.chartTitleWrapper}>
-          <h3 className={styles.chartTitle}>가계 현금흐름</h3>
-          <button
-            className={styles.zoomButton}
-            onClick={() => setIsZoomed(true)}
-            title="크게 보기"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        <div className={styles.chartHeader}>
+          <div className={styles.chartTitleWrapper}>
+            <h3 className={styles.chartTitle}>가계 현금흐름</h3>
+            <button
+              className={styles.zoomButton}
+              onClick={() => setIsZoomed(true)}
+              title="크게 보기"
             >
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-          </button>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div className={styles.chartWrapper}>{renderChart()}</div>
       </div>
