@@ -272,9 +272,14 @@ export function calculateCashflowSimulation(
         return;
       }
 
-      if (year >= debtStartYear && year <= debtEndYear) {
-        const yearsElapsed = year - debtStartYear;
-        const totalYears = debtEndYear - debtStartYear + 1;
+      // 연말 기준: 대출 받은 첫 해는 이자 없음
+      if (year === debtStartYear) {
+        // 첫 해: 대출만 받고 이자 발생 안 함
+        debt.amount = -debtAmount;
+        debt.isActive = true;
+      } else if (year > debtStartYear && year <= debtEndYear) {
+        const yearsElapsed = year - debtStartYear; // 1년부터 시작
+        const totalYears = debtEndYear - debtStartYear; // 총 이자 발생 기간
         const interestRate = debt.interestRate || 0; // 이미 소수로 저장됨
 
         if (debt.debtType === "bullet") {
@@ -340,8 +345,9 @@ export function calculateCashflowSimulation(
             const yearlyPayment = pmt;
 
             // 이자 부분 계산: 남은 원금 * 이자율
+            // yearsElapsed는 1부터 시작 (첫 해는 이자 없음)
             let remainingPrincipal = principal;
-            for (let i = 0; i < yearsElapsed; i++) {
+            for (let i = 1; i < yearsElapsed; i++) {
               const interestPayment = remainingPrincipal * r;
               const principalPayment = yearlyPayment - interestPayment;
               remainingPrincipal -= principalPayment;
@@ -415,8 +421,9 @@ export function calculateCashflowSimulation(
           const yearlyPrincipalPayment = n > 0 ? principal / n : 0;
 
           // 이자 부분 계산: 남은 원금 * 이자율
+          // yearsElapsed는 1부터 시작 (첫 해는 이자 없음)
           let remainingPrincipal = principal;
-          for (let i = 0; i < yearsElapsed; i++) {
+          for (let i = 1; i < yearsElapsed; i++) {
             remainingPrincipal -= yearlyPrincipalPayment;
           }
 
@@ -461,10 +468,12 @@ export function calculateCashflowSimulation(
           }
         } else if (debt.debtType === "grace") {
           // 거치식상환: 거치기간 동안 이자만 지불, 이후 원금 균등상환 + 남은 원금의 이자
+          // 연말 기준: 대출 첫 해는 이자 없으므로 gracePeriod 조정
           const principal = debtAmount;
           const r = interestRate;
           const gracePeriod = parseInt(debt.gracePeriod, 10) || 0;
-          const graceEndYear = debtStartYear + gracePeriod - 1; // 거치기간 마지막 년도
+          // 연말 기준: 대출년도(이자 없음) + 거치기간
+          const graceEndYear = debtStartYear + gracePeriod; // 거치기간 마지막 년도
           const repaymentYears = debtEndYear - graceEndYear; // 상환기간 = 종료년도 - 거치기간종료년도
 
           if (year <= graceEndYear) {
@@ -1038,11 +1047,58 @@ export function calculateCashflowSimulation(
         purchaseAmount > 0
       ) {
         // 부동산 가치에 상승률을 적용한 최종 가치 계산
-        // 연말 기준: startYear부터 endYear까지 yearsElapsed년 보유
-        const yearsElapsed = endYear - startYear;
         const growthRate = (realEstate.growthRate || 0) / 100;
-        const finalValue =
-          purchaseAmount * Math.pow(1 + growthRate, yearsElapsed);
+        let finalValue;
+
+        // 주택연금을 받았다면, 연말 기준으로 매년 상승하고 차감
+        if (
+          realEstate.convertToPension &&
+          Number.isFinite(pensionStartYear) &&
+          pensionStartYear <= endYear &&
+          pensionMonthly > 0
+        ) {
+          const yearlyPensionAmount = pensionMonthly * 12;
+
+          // 1. 주택연금 시작 전까지 상승
+          let currentValue = purchaseAmount;
+          for (let y = startYear + 1; y < pensionStartYear; y++) {
+            currentValue = currentValue * (1 + growthRate);
+          }
+
+          // 2. 주택연금 시작부터 매각 전까지: 매년 상승 후 주택연금 차감
+          const actualPensionEndYear = pensionEndYear || endYear;
+          for (let y = pensionStartYear; y < endYear; y++) {
+            currentValue = currentValue * (1 + growthRate);
+            // 주택연금 수령 중이면 차감
+            if (y >= pensionStartYear && y <= actualPensionEndYear) {
+              currentValue = currentValue - yearlyPensionAmount;
+            }
+            // 자산이 0 이하가 되면 0으로 설정
+            if (currentValue < 0) {
+              currentValue = 0;
+              break;
+            }
+          }
+
+          // 3. 매각년도의 상승률 적용
+          if (currentValue > 0) {
+            currentValue = currentValue * (1 + growthRate);
+            // 매각년도에도 주택연금 수령 중이면 차감
+            if (
+              endYear >= pensionStartYear &&
+              endYear <= actualPensionEndYear
+            ) {
+              currentValue = currentValue - yearlyPensionAmount;
+            }
+          }
+
+          finalValue = Math.max(0, currentValue);
+        } else {
+          // 주택연금 없는 경우: 단순 상승률 적용
+          const yearsElapsed = endYear - startYear;
+          finalValue = purchaseAmount * Math.pow(1 + growthRate, yearsElapsed);
+        }
+
         totalRealEstateSale += finalValue;
         realEstateSales.push({
           title: realEstate.title,
@@ -1695,31 +1751,26 @@ export function calculateAssetSimulation(
             year <= (realEstate.pensionEndYear || 9999);
 
           if (isPensionActive) {
-            // 주택연금 시작 해에 기준 값을 저장 (직전 연도까지 상승률 적용)
+            // 연말 기준: 매년 상승률 적용 후 주택연금 차감
+            const yearlyPensionAmount = realEstate.monthlyPensionAmount * 12;
+
             if (year === realEstate.pensionStartYear) {
-              const yearsElapsed =
-                realEstate.pensionStartYear - 1 - realEstate.startYear;
-              realEstate._pensionBaseValue =
-                realEstate._initialValue *
-                Math.pow(1 + growthRate, yearsElapsed);
+              // 주택연금 시작 년도: 작년 말 잔액에 상승률 적용 후 주택연금 차감
+              realEstate.amount =
+                realEstate.amount * (1 + growthRate) - yearlyPensionAmount;
+            } else {
+              // 주택연금 수령 중: 작년 말 잔액(이미 주택연금 차감된 상태)에 상승률 적용 후 주택연금 차감
+              realEstate.amount =
+                realEstate.amount * (1 + growthRate) - yearlyPensionAmount;
             }
 
-            const yearsSinceStart = year - realEstate.pensionStartYear;
-            const grownValue =
-              realEstate._pensionBaseValue *
-              Math.pow(1 + growthRate, yearsSinceStart + 1);
-
-            const yearlyPensionAmount = realEstate.monthlyPensionAmount * 12;
-            const totalPensionPaid =
-              yearlyPensionAmount * (yearsSinceStart + 1);
-
-            realEstate.amount = Math.max(0, grownValue - totalPensionPaid);
-
+            // 자산이 0 이하가 되면 비활성화
             if (realEstate.amount <= 0) {
+              realEstate.amount = 0;
               realEstate.isActive = false;
             }
           } else {
-            // 다음 해부터: 작년 말 잔액에 상승률 적용
+            // 주택연금 없는 경우: 작년 말 잔액에 상승률 적용
             realEstate.amount = realEstate.amount * (1 + growthRate);
           }
         }
@@ -1764,9 +1815,13 @@ export function calculateAssetSimulation(
 
       let outstanding = 0;
 
-      if (year >= startYear && year <= endYear) {
-        const yearsElapsed = year - startYear;
-        const totalYears = endYear - startYear + 1;
+      // 연말 기준: 첫 해는 대출만, 다음 해부터 이자 발생
+      if (year === startYear) {
+        // 첫 해: 원금만 (이자 미발생)
+        outstanding = -originalAmount;
+      } else if (year > startYear && year <= endYear) {
+        const yearsElapsed = year - startYear; // 1년부터 시작
+        const totalYears = endYear - startYear; // 총 이자 발생 기간
 
         if (debtType === "bullet") {
           outstanding = year < endYear ? -originalAmount : 0;
@@ -1781,19 +1836,18 @@ export function calculateAssetSimulation(
                 : 0;
 
             let remainingPrincipal = originalAmount;
-            for (let i = 0; i <= yearsElapsed; i++) {
-              if (i > 0) {
-                const interestPayment = remainingPrincipal * interestRate;
-                const principalPayment = pmt - interestPayment;
-                remainingPrincipal -= principalPayment;
-              }
+            // yearsElapsed는 1부터 시작하므로 1부터 yearsElapsed까지 반복
+            for (let i = 1; i <= yearsElapsed; i++) {
+              const interestPayment = remainingPrincipal * interestRate;
+              const principalPayment = pmt - interestPayment;
+              remainingPrincipal -= principalPayment;
             }
 
             remainingPrincipal = Math.max(remainingPrincipal, 0);
             outstanding = -remainingPrincipal;
           } else if (totalYears > 0) {
             const yearlyPrincipalPayment = originalAmount / totalYears;
-            const paidPrincipal = yearlyPrincipalPayment * (yearsElapsed + 1);
+            const paidPrincipal = yearlyPrincipalPayment * yearsElapsed;
             const remainingPrincipal = Math.max(
               originalAmount - paidPrincipal,
               0
@@ -1803,7 +1857,7 @@ export function calculateAssetSimulation(
         } else if (debtType === "principal") {
           if (totalYears > 0) {
             const yearlyPrincipalPayment = originalAmount / totalYears;
-            const paidPrincipal = yearlyPrincipalPayment * (yearsElapsed + 1);
+            const paidPrincipal = yearlyPrincipalPayment * yearsElapsed;
             const remainingPrincipal = Math.max(
               originalAmount - paidPrincipal,
               0
@@ -1811,7 +1865,8 @@ export function calculateAssetSimulation(
             outstanding = -remainingPrincipal;
           }
         } else if (debtType === "grace") {
-          const graceEndYear = startYear + gracePeriod - 1;
+          // 연말 기준: 대출년도(이자 없음) + 거치기간
+          const graceEndYear = startYear + gracePeriod;
           const repaymentYears = endYear - graceEndYear;
 
           if (year <= graceEndYear) {

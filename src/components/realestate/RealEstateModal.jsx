@@ -573,12 +573,20 @@ const RealEstateModal = ({
               <input
                 type="checkbox"
                 checked={formData.hasRentalIncome}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const isChecked = e.target.checked;
                   setFormData({
                     ...formData,
-                    hasRentalIncome: e.target.checked,
-                  })
-                }
+                    hasRentalIncome: isChecked,
+                    // 체크 시 자동으로 임대 시작/종료년도를 부동산 보유 기간으로 설정
+                    rentalIncomeStartYear: isChecked && !formData.rentalIncomeStartYear
+                      ? formData.startYear || new Date().getFullYear()
+                      : formData.rentalIncomeStartYear,
+                    rentalIncomeEndYear: isChecked && !formData.rentalIncomeEndYear
+                      ? formData.endYear || new Date().getFullYear() + 30
+                      : formData.rentalIncomeEndYear,
+                  });
+                }}
                 className={styles.checkbox}
               />
               <span className={styles.checkboxText}>임대 소득 있음</span>
