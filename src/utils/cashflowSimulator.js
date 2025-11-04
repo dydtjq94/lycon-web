@@ -658,7 +658,7 @@ export function calculateCashflowSimulation(
           `saving-maturity-${saving.id || saving.title}`
         );
 
-        // 양도세 계산 및 별도 지출로 처리
+        // 양도세 계산 (다음해 처리를 위해 저장)
         const taxRate = saving.capitalGainsTaxRate || 0;
         if (taxRate > 0) {
           let capitalGainsTax = 0;
@@ -689,22 +689,36 @@ export function calculateCashflowSimulation(
             capitalGainsTax = capitalGain * taxRate;
           }
 
-          // 양도세를 별도 비용으로 추가
+          // 양도세 정보를 저축 객체에 임시 저장 (다음해 처리용)
           if (capitalGainsTax > 0) {
-            totalCapitalGainsTax += capitalGainsTax;
-            const taxRatePercent = (taxRate * 100).toFixed(0);
-            // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
-            capitalGainsTaxes.push({
-              title: `${saving.title} (양도세, ${taxRatePercent}%)`,
+            saving._pendingTax = {
               amount: capitalGainsTax,
-            });
-            addNegative(
-              `${saving.title} (양도세, ${taxRatePercent}%)`,
-              capitalGainsTax,
-              "양도세",
-              `saving-tax-${saving.id || saving.title}`
-            );
+              taxRatePercent: (taxRate * 100).toFixed(0),
+            };
           }
+        }
+      } else if (year === sEndYear + 1) {
+        // 저축 종료 다음해: 양도세 처리
+        if (saving._pendingTax) {
+          const { amount, taxRatePercent } = saving._pendingTax;
+
+          totalCapitalGainsTax += amount;
+
+          // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
+          capitalGainsTaxes.push({
+            title: `${saving.title} (양도세, ${taxRatePercent}%)`,
+            amount: amount,
+          });
+
+          addNegative(
+            `${saving.title} (양도세, ${taxRatePercent}%)`,
+            amount,
+            "양도세",
+            `saving-tax-${saving.id || saving.title}`
+          );
+
+          // 처리 완료 후 삭제
+          delete saving._pendingTax;
         }
       }
     });
