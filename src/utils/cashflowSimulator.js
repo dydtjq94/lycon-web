@@ -2196,8 +2196,128 @@ export function calculateDebtSimulation(profileData, debts = []) {
 }
 
 /**
+ * AI 분석에 필요한 핵심 필드만 추출하는 헬퍼 함수들
+ * createdAt, updatedAt 등 메타데이터는 제외
+ */
+
+// 소득 데이터 정제
+function cleanIncomeData(incomes) {
+  return incomes.map((income) => ({
+    name: income.name,
+    amount: income.amount,
+    frequency: income.frequency,
+    startYear: income.startYear,
+    endYear: income.endYear,
+    yearlyGrowthRate: income.yearlyGrowthRate,
+    fixedToRetirement: income.fixedToRetirement,
+  }));
+}
+
+// 지출 데이터 정제
+function cleanExpenseData(expenses) {
+  return expenses.map((expense) => ({
+    name: expense.name,
+    amount: expense.amount,
+    frequency: expense.frequency,
+    startYear: expense.startYear,
+    endYear: expense.endYear,
+    yearlyGrowthRate: expense.yearlyGrowthRate,
+    fixedToRetirement: expense.fixedToRetirement,
+  }));
+}
+
+// 저축/투자 데이터 정제
+function cleanSavingData(savings) {
+  return savings.map((saving) => ({
+    name: saving.name,
+    amount: saving.amount,
+    frequency: saving.frequency,
+    currentAmount: saving.currentAmount,
+    startYear: saving.startYear,
+    endYear: saving.endYear,
+    interestRate: saving.interestRate,
+    yearlyGrowthRate: saving.yearlyGrowthRate,
+    capitalGainsTaxRate: saving.capitalGainsTaxRate,
+    treatAsPurchase: saving.treatAsPurchase,
+    savingType: saving.savingType,
+    incomeRate: saving.incomeRate,
+    fixedToRetirement: saving.fixedToRetirement,
+  }));
+}
+
+// 연금 데이터 정제
+function cleanPensionData(pensions) {
+  return pensions.map((pension) => ({
+    name: pension.name,
+    type: pension.type,
+    currentAmount: pension.currentAmount,
+    contributionAmount: pension.contributionAmount,
+    frequency: pension.frequency,
+    interestRate: pension.interestRate,
+    contributionStartYear: pension.contributionStartYear,
+    contributionEndYear: pension.contributionEndYear,
+    paymentStartYear: pension.paymentStartYear,
+    paymentYears: pension.paymentYears,
+    monthlyPayment: pension.monthlyPayment,
+    averageMonthlyWage: pension.averageMonthlyWage,
+    yearsOfService: pension.yearsOfService,
+    noAdditionalContribution: pension.noAdditionalContribution,
+    fixedContributionEndToRetirement: pension.fixedContributionEndToRetirement,
+  }));
+}
+
+// 부동산 데이터 정제
+function cleanRealEstateData(realEstates) {
+  return realEstates.map((realEstate) => ({
+    name: realEstate.name,
+    currentValue: realEstate.currentValue,
+    annualAppreciationRate: realEstate.annualAppreciationRate,
+    startYear: realEstate.startYear,
+    endYear: realEstate.endYear,
+    monthlyRentalIncome: realEstate.monthlyRentalIncome,
+    rentalIncomeStartYear: realEstate.rentalIncomeStartYear,
+    rentalIncomeEndYear: realEstate.rentalIncomeEndYear,
+    reverseMonthlyPayment: realEstate.reverseMonthlyPayment,
+    reverseMortgageStartYear: realEstate.reverseMortgageStartYear,
+    reverseMortgageEndYear: realEstate.reverseMortgageEndYear,
+    isResidential: realEstate.isResidential,
+    purchasePrice: realEstate.purchasePrice,
+    purchaseDate: realEstate.purchaseDate,
+    acquisitionBeforeThisYear: realEstate.acquisitionBeforeThisYear,
+  }));
+}
+
+// 자산 데이터 정제
+function cleanAssetData(assets) {
+  return assets.map((asset) => ({
+    name: asset.name,
+    currentValue: asset.currentValue,
+    annualAppreciationRate: asset.annualAppreciationRate,
+    startYear: asset.startYear,
+    endYear: asset.endYear,
+    assetType: asset.assetType,
+    incomeRate: asset.incomeRate,
+    capitalGainsTaxRate: asset.capitalGainsTaxRate,
+  }));
+}
+
+// 부채 데이터 정제
+function cleanDebtData(debts) {
+  return debts.map((debt) => ({
+    name: debt.name,
+    debtAmount: debt.debtAmount,
+    annualInterestRate: debt.annualInterestRate,
+    startYear: debt.startYear,
+    endYear: debt.endYear,
+    repaymentType: debt.repaymentType,
+    graceYears: debt.graceYears,
+  }));
+}
+
+/**
  * AI 봇을 위한 시뮬레이션 데이터 추출
  * 현금흐름과 자산 시뮬레이션 데이터를 AI가 분석하기 쉬운 형태로 변환
+ * createdAt, updatedAt 등 메타데이터는 제외하고 핵심 필드만 추출
  */
 export function extractAIAnalysisData(
   profileData,
@@ -2234,7 +2354,7 @@ export function extractAIAnalysisData(
     debts
   );
 
-  // AI 분석용 데이터 구성 (원시 데이터만)
+  // AI 분석용 데이터 구성 (핵심 필드만 추출)
   const aiAnalysisData = {
     // 기본 정보
     profile: {
@@ -2255,15 +2375,15 @@ export function extractAIAnalysisData(
       assets: assetData.slice(0, 20), // 최대 20년간
     },
 
-    // 원시 데이터
+    // 원시 데이터 (핵심 필드만 포함, 메타데이터 제외)
     rawData: {
-      incomes,
-      expenses,
-      savings,
-      pensions,
-      realEstates,
-      assets,
-      debts,
+      incomes: cleanIncomeData(incomes),
+      expenses: cleanExpenseData(expenses),
+      savings: cleanSavingData(savings),
+      pensions: cleanPensionData(pensions),
+      realEstates: cleanRealEstateData(realEstates),
+      assets: cleanAssetData(assets),
+      debts: cleanDebtData(debts),
     },
 
     // 데이터 생성 시간
