@@ -19,7 +19,7 @@ function PensionList({
       case "personal":
         return "개인연금";
       case "severance":
-        return "퇴직금/DB - IRP";
+        return "퇴직금/DB";
       default:
         return "연금";
     }

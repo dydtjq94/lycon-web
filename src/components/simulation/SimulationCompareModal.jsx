@@ -293,7 +293,8 @@ function SimulationCompareModal({
       name.includes("부채") ||
       name.includes("대출") ||
       name.includes("빚") ||
-      name.includes("이자")
+      name.includes("이자") ||
+      name.includes("원금")
     ) {
       return "debt";
     }
@@ -324,7 +325,8 @@ function SimulationCompareModal({
     defaultItems,
     targetItems,
     prefix,
-    gridTemplateColumns
+    gridTemplateColumns,
+    context = "supply"
   ) => {
     // 시스템 필드들을 제외하고 필터링
     const systemFields = ["totalAmount", "year", "age"];
@@ -448,7 +450,7 @@ function SimulationCompareModal({
                         {renderDifference(
                           defaultItem.amount,
                           targetItem.amount,
-                          "supply"
+                          context
                         )}
                       </span>
                     )}
@@ -925,7 +927,8 @@ function SimulationCompareModal({
                             row.defaultBreakdown,
                             row.targetBreakdown,
                             `comparison-${row.key}`,
-                            gridTemplateColumns
+                            gridTemplateColumns,
+                            row.key === "demand" ? "demand" : "supply"
                           )}
                       </React.Fragment>
                     ))}

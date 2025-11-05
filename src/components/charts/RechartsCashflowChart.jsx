@@ -502,98 +502,30 @@ function RechartsCashflowChart({
               );
 
               if (yearData) {
-                // 연금 항목들 계산 (개별 표시용)
+                // breakdown 데이터에서 연금 항목들 추출
                 let totalPensionIncome = 0;
                 let totalPensionExpense = 0;
 
-                pensions.forEach((pension) => {
-                  if (pension.type === "national") {
-                    // 국민연금: 수령 기간 동안 수입
+                if (yearData.breakdown) {
+                  // 연금 수입 (국민연금, 퇴직연금, 개인연금, 퇴직금 IRP 수령)
+                  (yearData.breakdown.positives || []).forEach((item) => {
                     if (
-                      data.year >= pension.startYear &&
-                      data.year <= pension.endYear
+                      item.category === "국민연금" ||
+                      item.category === "퇴직연금" ||
+                      item.category === "개인연금" ||
+                      item.category === "퇴직금 IRP"
                     ) {
-                      const yearsElapsed = data.year - pension.startYear;
-                      const inflationRate =
-                        (pension.inflationRate || 2.5) / 100;
-                      const adjustedAmount =
-                        pension.monthlyAmount *
-                        12 *
-                        Math.pow(1 + inflationRate, yearsElapsed);
-                      totalPensionIncome += adjustedAmount;
+                      totalPensionIncome += item.amount || 0;
                     }
-                  } else {
-                    // 개인연금/퇴직연금/퇴직금 IRP
-                    if (
-                      (pension.type === "personal" ||
-                        (pension.type === "severance" &&
-                          !pension.noAdditionalContribution)) &&
-                      pension.contributionAmount > 0 &&
-                      data.year >= pension.contributionStartYear &&
-                      data.year <= pension.contributionEndYear
-                    ) {
-                      // 개인연금 & 퇴직금 IRP 적립 기간: 지출
-                      const monthlyAmount =
-                        pension.contributionFrequency === "monthly"
-                          ? pension.contributionAmount
-                          : pension.contributionAmount / 12;
-                      totalPensionExpense += monthlyAmount * 12;
-                    } else if (
-                      data.year >= pension.paymentStartYear &&
-                      data.year <= pension.paymentEndYear
-                    ) {
-                      // 수령 기간: 수입 (수익률 적용하면서 남은 년수로 나눔)
-                      const returnRate = pension.returnRate / 100;
+                  });
 
-                      // 적립 완료 시점의 총 금액 계산
-                      let totalAccumulated = pension.currentAmount || 0;
-
-                      // 추가 적립이 있는 경우에만 적립액 계산
-                      if (
-                        !pension.noAdditionalContribution &&
-                        pension.contributionAmount &&
-                        pension.contributionAmount > 0
-                      ) {
-                        const monthlyAmount =
-                          pension.contributionFrequency === "monthly"
-                            ? pension.contributionAmount
-                            : pension.contributionAmount / 12;
-                        const yearlyContribution = monthlyAmount * 12;
-
-                        const contributionYears =
-                          pension.contributionEndYear -
-                          pension.contributionStartYear +
-                          1;
-                        for (let i = 0; i < contributionYears; i++) {
-                          totalAccumulated =
-                            totalAccumulated * (1 + returnRate) +
-                            yearlyContribution;
-                        }
-                      }
-
-                      // 수령 중에도 남은 금액에 수익률 적용
-                      const paymentYears =
-                        pension.paymentEndYear - pension.paymentStartYear + 1;
-                      const yearsSincePaymentStart =
-                        data.year - pension.paymentStartYear;
-
-                      // 이전 년도까지 수령하고 남은 금액 계산
-                      let remainingAmount = totalAccumulated;
-                      for (let i = 0; i < yearsSincePaymentStart; i++) {
-                        const yearsLeft = paymentYears - i;
-                        const payment = remainingAmount / yearsLeft;
-                        remainingAmount =
-                          (remainingAmount - payment) * (1 + returnRate);
-                      }
-
-                      // 올해 수령액 = 현재 남은 금액 / 남은 년수
-                      const yearsLeft = paymentYears - yearsSincePaymentStart;
-                      const yearlyPayment = remainingAmount / yearsLeft;
-
-                      totalPensionIncome += yearlyPayment;
+                  // 연금 적립 (개인연금, 퇴직금 IRP 적립)
+                  (yearData.breakdown.negatives || []).forEach((item) => {
+                    if (item.category === "연금 적립") {
+                      totalPensionExpense += item.amount || 0;
                     }
-                  }
-                });
+                  });
+                }
 
                 // 총 수입과 총 지출 계산
                 const totalAssetPurchaseExpense = (
@@ -729,132 +661,45 @@ function RechartsCashflowChart({
                             });
                           });
 
-                        // 연금 항목들
-                        pensions.forEach((pension, index) => {
-                          let displayAmount = 0;
-                          let displayLabel = pension.title;
-                          let shouldShow = false;
-
-                          if (pension.type === "national") {
-                            // 국민연금: 수령 기간 동안만 표시
-                            if (
-                              data.year >= pension.startYear &&
-                              data.year <= pension.endYear
-                            ) {
-                              const yearsElapsed =
-                                data.year - pension.startYear;
-                              const inflationRate =
-                                (pension.inflationRate || 2.5) / 100;
-                              const adjustedAmount =
-                                pension.monthlyAmount *
-                                12 *
-                                Math.pow(1 + inflationRate, yearsElapsed);
-                              displayAmount = adjustedAmount;
-                              displayLabel = "국민연금";
-                              shouldShow = true;
-                            }
-                          } else {
-                            // 개인연금/퇴직연금/퇴직금 IRP: 적립 기간과 수령 기간 모두 표시
-                            if (
-                              (pension.type === "personal" ||
-                                (pension.type === "severance" &&
-                                  !pension.noAdditionalContribution)) &&
-                              pension.contributionAmount > 0 &&
-                              data.year >= pension.contributionStartYear &&
-                              data.year <= pension.contributionEndYear
-                            ) {
-                              // 적립 기간: 적립액 표시 (마이너스)
-                              const monthlyAmount =
-                                pension.contributionFrequency === "monthly"
-                                  ? pension.contributionAmount
-                                  : pension.contributionAmount / 12;
-                              const yearlyContribution = monthlyAmount * 12;
-
-                              displayAmount = yearlyContribution; // 양수로 설정 (툴팁에서 - 붙임)
-                              displayLabel =
-                                pension.type === "severance"
-                                  ? `${pension.title} (추가 적립)`
-                                  : `${pension.title} (적립)`;
-                              shouldShow = true;
-                            } else if (
-                              data.year >= pension.paymentStartYear &&
-                              data.year <= pension.paymentEndYear
-                            ) {
-                              // 수령 기간: 수령액 표시 (플러스)
-                              // 수령 중에도 남은 금액에 수익률 적용하고, 남은 년수로 나눔
-                              const returnRate = pension.returnRate / 100;
-
-                              // 적립 완료 시점의 총 금액 계산
-                              let totalAccumulated = pension.currentAmount || 0;
-
-                              // 추가 적립이 있는 경우에만 적립액 계산
+                        // 연금 항목들 (breakdown 데이터에서 추출)
+                        if (yearData.breakdown) {
+                          // 연금 수입 (국민연금, 퇴직연금, 개인연금, 퇴직금 IRP 수령)
+                          (yearData.breakdown.positives || []).forEach(
+                            (item) => {
                               if (
-                                !pension.noAdditionalContribution &&
-                                pension.contributionAmount &&
-                                pension.contributionAmount > 0
+                                item.category === "국민연금" ||
+                                item.category === "퇴직연금" ||
+                                item.category === "개인연금" ||
+                                item.category === "퇴직금 IRP"
                               ) {
-                                const monthlyAmount =
-                                  pension.contributionFrequency === "monthly"
-                                    ? pension.contributionAmount
-                                    : pension.contributionAmount / 12;
-                                const yearlyContribution = monthlyAmount * 12;
-
-                                const contributionYears =
-                                  pension.contributionEndYear -
-                                  pension.contributionStartYear +
-                                  1;
-                                for (let i = 0; i < contributionYears; i++) {
-                                  totalAccumulated =
-                                    totalAccumulated * (1 + returnRate) +
-                                    yearlyContribution;
-                                }
+                                allItems.push({
+                                  key:
+                                    item.key ||
+                                    `pension-positive-${item.label}`,
+                                  label: item.label,
+                                  value: item.amount || 0,
+                                  type: "positive",
+                                });
                               }
-
-                              // 수령 중에도 남은 금액에 수익률 적용
-                              const paymentYears =
-                                pension.paymentEndYear -
-                                pension.paymentStartYear +
-                                1;
-                              const yearsSincePaymentStart =
-                                data.year - pension.paymentStartYear;
-
-                              // 이전 년도까지 수령하고 남은 금액 계산
-                              let remainingAmount = totalAccumulated;
-                              for (let i = 0; i < yearsSincePaymentStart; i++) {
-                                const yearsLeft = paymentYears - i;
-                                const payment = remainingAmount / yearsLeft;
-                                remainingAmount =
-                                  (remainingAmount - payment) *
-                                  (1 + returnRate);
-                              }
-
-                              // 올해 수령액 = 현재 남은 금액 / 남은 년수
-                              const yearsLeft =
-                                paymentYears - yearsSincePaymentStart;
-                              const yearlyPayment = remainingAmount / yearsLeft;
-
-                              displayAmount = yearlyPayment;
-                              displayLabel = `${pension.title} (수령)`;
-                              shouldShow = true;
                             }
-                          }
+                          );
 
-                          if (shouldShow) {
-                            // 연금 적립(개인연금, 퇴직금 IRP 추가 적립)은 항상 negative, 수령은 항상 positive
-                            const itemType =
-                              displayLabel.includes("(적립)") ||
-                              displayLabel.includes("(추가 적립)")
-                                ? "negative"
-                                : "positive";
-
-                            allItems.push({
-                              key: `pension-${index}`,
-                              label: displayLabel,
-                              value: Math.abs(displayAmount), // 절댓값으로 저장
-                              type: itemType,
-                            });
-                          }
-                        });
+                          // 연금 적립 (개인연금, 퇴직금 IRP 적립)
+                          (yearData.breakdown.negatives || []).forEach(
+                            (item) => {
+                              if (item.category === "연금 적립") {
+                                allItems.push({
+                                  key:
+                                    item.key ||
+                                    `pension-negative-${item.label}`,
+                                  label: item.label,
+                                  value: item.amount || 0,
+                                  type: "negative",
+                                });
+                              }
+                            }
+                          );
+                        }
 
                         // 저축/투자 항목들
                         savings

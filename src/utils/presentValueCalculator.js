@@ -17,21 +17,25 @@ export function calculateLifetimeCashFlowTotals(cashflowData = []) {
 
   const supplyMap = new Map();
   const demandMap = new Map();
-  const EPSILON = 1e-2;
 
   const accumulate = (map, item) => {
     if (!item || !item.label) return;
     const amount = Number(item.amount) || 0;
     if (amount <= 0) return;
+    
+    // 카테고리 정규화
     const category = item.category || "기타";
-    const key = `${category}|${item.label}`;
+    const label = item.label;
+    
+    // 각 항목을 개별적으로 표시 (통합하지 않음)
+    const key = `${category}|${label}`;
     const existing = map.get(key);
     if (existing) {
       existing.amount += amount;
     } else {
       map.set(key, {
         category,
-        name: item.label,
+        name: label,
         amount,
       });
     }
@@ -39,14 +43,12 @@ export function calculateLifetimeCashFlowTotals(cashflowData = []) {
 
   cashflowData.forEach((entry) => {
     const breakdown = entry?.breakdown;
-    let positiveSum = 0;
-    let negativeSum = 0;
 
     if (breakdown) {
+      // breakdown에 있는 모든 항목을 그대로 사용
       (breakdown.positives || []).forEach((item) => {
         const amount = Number(item?.amount) || 0;
         if (amount <= 0) return;
-        positiveSum += amount;
         accumulate(supplyMap, {
           label: item.label,
           category: item.category,
@@ -56,7 +58,6 @@ export function calculateLifetimeCashFlowTotals(cashflowData = []) {
       (breakdown.negatives || []).forEach((item) => {
         const amount = Number(item?.amount) || 0;
         if (amount <= 0) return;
-        negativeSum += amount;
         accumulate(demandMap, {
           label: item.label,
           category: item.category,
@@ -64,26 +65,8 @@ export function calculateLifetimeCashFlowTotals(cashflowData = []) {
         });
       });
     }
-
-    const amount = Number(entry?.amount) || 0;
-    const netFromBreakdown = positiveSum - negativeSum;
-    const residual = amount - netFromBreakdown;
-
-    if (Math.abs(residual) > EPSILON) {
-      if (residual > 0) {
-        accumulate(supplyMap, {
-          label: "기타 수입",
-          category: "미분류",
-          amount: residual,
-        });
-      } else if (residual < 0) {
-        accumulate(demandMap, {
-          label: "기타 지출",
-          category: "미분류",
-          amount: Math.abs(residual),
-        });
-      }
-    }
+    
+    // residual 계산 로직 제거 - breakdown에 모든 항목이 이미 포함되어 있음
   });
 
   // breakdown 정보가 없는 경우 amount 기준으로 fallback

@@ -103,7 +103,7 @@ function PensionModal({
     // 퇴직금/DB형용 필드
     averageSalary: "", // 평균 임금 (월 단위, 만원)
     yearsOfService: "", // 재직 년도
-    noAdditionalContribution: false, // 퇴직금/DB - IRP 추가 적립 안함
+    noAdditionalContribution: false, // 퇴직금/DB 추가 적립 안함
   });
 
   const [errors, setErrors] = useState({});
@@ -401,7 +401,7 @@ function PensionModal({
         newFormData.noAdditionalContribution = false; // 개인연금은 추가 적립 안함 해제
         break;
       case "severance":
-        newFormData.title = "퇴직금/DB - IRP";
+        newFormData.title = "퇴직금/DB";
         newFormData.noAdditionalContribution = true; // 추가 적립 안함 기본 체크
         newFormData.contributionStartYear = retirementYear; // 은퇴년도 (추가 적립 안함이므로 의미 없음)
         newFormData.contributionEndYear = retirementYear; // 은퇴년도 (추가 적립 안함이므로 의미 없음)
@@ -652,7 +652,7 @@ function PensionModal({
                   }
                   className={styles.checkbox}
                 />
-                <span className={styles.checkboxText}>퇴직금/DB - IRP</span>
+                <span className={styles.checkboxText}>퇴직금/DB</span>
               </label>
             </div>
             {errors.type && (
@@ -813,7 +813,7 @@ function PensionModal({
                   </div>
                 </>
               ) : formData.type === "severance" ? (
-                // 퇴직금/DB - IRP 필드
+                // 퇴직금/DB 필드
                 <>
                   {/* 평균 임금 & 재직 년도 (같은 행에 배치) */}
                   <div className={styles.row}>

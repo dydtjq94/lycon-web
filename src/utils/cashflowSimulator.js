@@ -341,6 +341,12 @@ export function calculateCashflowSimulation(
                 title: debt.title,
                 amount: debtAmount,
               });
+              addNegative(
+                `${debt.title} (원금 상환)`,
+                debtAmount,
+                "부채 원금 상환",
+                `debt-principal-${debt.id || debt.title}`
+              );
             }
 
             debt.amount = 0;
@@ -843,7 +849,7 @@ export function calculateCashflowSimulation(
           year < paymentStartYear
         ) {
           // 적립 기간 처리
-          // 퇴직금/DB - IRP만 추가 적립 시 현금이 빠져나감 (실제 내 현금을 사용)
+          // 퇴직금/DB만 추가 적립 시 현금이 빠져나감 (실제 내 현금을 사용)
           if (
             pension.type === "severance" &&
             pension.contributionAmount &&
@@ -1466,7 +1472,7 @@ export function calculateAssetSimulation(
         type: pension.type, // 연금 타입 저장
         monthlyPayment: 0, // 월 수령액 (적립 종료 후 계산)
         retirementYear: retirementYear, // 은퇴년도 저장
-        // 퇴직금/DB - IRP는 은퇴년도 전까지 자산 차트에 표시 안함
+        // 퇴직금/DB는 은퇴년도 전까지 자산 차트에 표시 안함
         // 퇴직연금/개인연금은 처음부터 자산 차트에 표시
         isActive: isActive,
       };
@@ -1629,7 +1635,7 @@ export function calculateAssetSimulation(
     Object.keys(pensionsByTitle).forEach((title) => {
       const pension = pensionsByTitle[title];
 
-      // 퇴직금/DB - IRP: 은퇴년도 처리
+      // 퇴직금/DB: 은퇴년도 처리
       if (
         !pension.isActive &&
         pension.type === "severance" &&
@@ -1641,7 +1647,7 @@ export function calculateAssetSimulation(
 
       if (!pension.isActive) return; // 비활성 연금은 건너뛰기
 
-      // 퇴직금/DB - IRP인 경우: 은퇴년도가 수령년도가 아니면 자산으로만 표시
+      // 퇴직금/DB인 경우: 은퇴년도가 수령년도가 아니면 자산으로만 표시
       if (
         pension.type === "severance" &&
         year === pension.retirementYear &&
@@ -1653,7 +1659,7 @@ export function calculateAssetSimulation(
         return;
       }
 
-      // 퇴직금/DB - IRP인 경우: 적립 기간 처리 (은퇴 다음해부터)
+      // 퇴직금/DB인 경우: 적립 기간 처리 (은퇴 다음해부터)
       if (
         pension.type === "severance" &&
         year > pension.retirementYear && // 은퇴 다음해부터만
