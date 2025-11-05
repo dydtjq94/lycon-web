@@ -822,7 +822,12 @@ export function calculateCashflowSimulation(
           // 적립 완료 시점의 총 금액 계산
           let totalAccumulated = pension.currentAmount || 0;
 
-          // 추가 적립이 있는 경우에만 적립액 계산 (연말 기준)
+          // 적립 기간 동안 현재 보유액 + 추가 적립액에 수익률 적용 (연말 기준)
+          const contributionYears =
+            pension.contributionEndYear - pension.contributionStartYear + 1;
+
+          // 추가 적립 금액 계산 (있는 경우만)
+          let yearlyContribution = 0;
           if (
             !pension.noAdditionalContribution &&
             pension.contributionAmount &&
@@ -832,19 +837,18 @@ export function calculateCashflowSimulation(
               pension.contributionFrequency === "monthly"
                 ? pension.contributionAmount
                 : pension.contributionAmount / 12;
-            const yearlyContribution = monthlyAmount * 12;
+            yearlyContribution = monthlyAmount * 12;
+          }
 
-            const contributionYears =
-              pension.contributionEndYear - pension.contributionStartYear + 1;
-            for (let i = 0; i < contributionYears; i++) {
-              if (i === 0) {
-                // 시작년도: 적립금만 (수익률 X)
-                totalAccumulated = totalAccumulated + yearlyContribution;
-              } else {
-                // 다음 해부터: 수익률 + 적립금
-                totalAccumulated =
-                  totalAccumulated * (1 + returnRate) + yearlyContribution;
-              }
+          // 적립 기간 동안 수익률 적용 (추가 적립 여부와 무관하게 현재 보유액은 수익률 적용)
+          for (let i = 0; i < contributionYears; i++) {
+            if (i === 0) {
+              // 시작년도: 현재 보유액 + 적립금 (수익률 X)
+              totalAccumulated = totalAccumulated + yearlyContribution;
+            } else {
+              // 다음 해부터: 수익률 + 적립금
+              totalAccumulated =
+                totalAccumulated * (1 + returnRate) + yearlyContribution;
             }
           }
 
@@ -855,12 +859,10 @@ export function calculateCashflowSimulation(
           }
 
           // 즉시 수령 판단 (수익률 적용 안 함):
-          // 1. 퇴직금/DB이고 은퇴년도 = 수령년도인 경우
-          // 2. 적립 종료년도 = 수령 시작년도인 경우 (연말 기준, 같은 해에 적립하고 바로 수령)
+          // 적립 종료년도 = 수령 시작년도인 경우만 (연말 기준, 같은 해에 적립하고 바로 수령)
+          // 단, 퇴직금은 이미 보유한 금액이므로 항상 수익률 적용
           const isImmediateWithdrawal =
-            (pension.type === "severance" &&
-              year === retirementYear &&
-              pension.noAdditionalContribution) ||
+            pension.type !== "severance" &&
             pension.contributionEndYear === paymentStartYear;
 
           // PMT 계산: 매년 동일한 금액 수령 (한 번만 계산하고 저장)
@@ -1639,22 +1641,23 @@ export function calculateAssetSimulation(
         pension.type !== "severance" && // 퇴직금/DB는 위에서 이미 처리
         year >= pension.contributionStartYear &&
         year <= pension.contributionEndYear &&
-        year < pension.paymentStartYear &&
-        pension.contributionAmount &&
-        pension.contributionAmount > 0
+        year < pension.paymentStartYear
       ) {
-        // 적립 기간: 연금 자산에 추가
+        // 적립 기간: 연금 자산에 추가 (현재 보유액도 수익률 적용)
         const returnRate = pension.returnRate / 100;
 
-        // 월간/연간 적립 금액 계산
-        const monthlyAmount =
-          pension.contributionFrequency === "monthly"
-            ? pension.contributionAmount
-            : pension.contributionAmount / 12;
-        const yearlyAmount = monthlyAmount * 12;
+        // 추가 적립 금액 계산 (있는 경우만)
+        let yearlyAmount = 0;
+        if (pension.contributionAmount && pension.contributionAmount > 0) {
+          const monthlyAmount =
+            pension.contributionFrequency === "monthly"
+              ? pension.contributionAmount
+              : pension.contributionAmount / 12;
+          yearlyAmount = monthlyAmount * 12;
+        }
 
         if (year === pension.contributionStartYear) {
-          // 시작년도: 적립금만 (수익률 X)
+          // 시작년도: 현재 보유액 + 적립금 (수익률 X)
           pension.amount = pension.amount + yearlyAmount;
         } else {
           // 다음 해부터: 작년 말 잔액에 수익률 적용 + 올해 적립금
@@ -1675,12 +1678,10 @@ export function calculateAssetSimulation(
         const paymentEndYear = pension.paymentStartYear + paymentYears - 1;
 
         // 즉시 수령 판단 (수익률 적용 안 함):
-        // 1. 퇴직금/DB이고 은퇴년도 = 수령년도인 경우
-        // 2. 적립 종료년도 = 수령 시작년도인 경우 (연말 기준, 같은 해에 적립하고 바로 수령)
+        // 적립 종료년도 = 수령 시작년도인 경우만 (연말 기준, 같은 해에 적립하고 바로 수령)
+        // 단, 퇴직금은 이미 보유한 금액이므로 항상 수익률 적용
         const isImmediateWithdrawal =
-          (pension.type === "severance" &&
-            year === pension.retirementYear &&
-            pension.noAdditionalContribution) ||
+          pension.type !== "severance" &&
           pension.contributionEndYear === pension.paymentStartYear;
 
         if (isImmediateWithdrawal) {

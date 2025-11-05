@@ -225,14 +225,26 @@ function PensionModal({
         setFormData({
           type: editData.type || "national",
           title: editData.title || "",
-          monthlyAmount: editData.monthlyAmount || "",
+          monthlyAmount:
+            editData.monthlyAmount !== undefined &&
+            editData.monthlyAmount !== null
+              ? editData.monthlyAmount.toString()
+              : "",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 20,
           inflationRate: editData.inflationRate
             ? editData.inflationRate.toFixed(2)
             : 1.89,
-          currentAmount: editData.currentAmount || "",
-          contributionAmount: editData.contributionAmount || "",
+          currentAmount:
+            editData.currentAmount !== undefined &&
+            editData.currentAmount !== null
+              ? editData.currentAmount.toString()
+              : "",
+          contributionAmount:
+            editData.contributionAmount !== undefined &&
+            editData.contributionAmount !== null
+              ? editData.contributionAmount.toString()
+              : "",
           contributionFrequency: editData.contributionFrequency || "monthly",
           contributionStartYear:
             editData.contributionStartYear || new Date().getFullYear(),
@@ -252,8 +264,16 @@ function PensionModal({
           memo: editData.memo || "",
           isFixedContributionEndYearToRetirement:
             editData.isFixedContributionEndYearToRetirement || false,
-          averageSalary: editData.averageSalary || "",
-          yearsOfService: editData.yearsOfService || "",
+          averageSalary:
+            editData.averageSalary !== undefined &&
+            editData.averageSalary !== null
+              ? editData.averageSalary.toString()
+              : "",
+          yearsOfService:
+            editData.yearsOfService !== undefined &&
+            editData.yearsOfService !== null
+              ? editData.yearsOfService.toString()
+              : "",
           noAdditionalContribution: editData.noAdditionalContribution || false,
         });
       } else {
@@ -365,14 +385,14 @@ function PensionModal({
       case "retirement":
         newFormData.title = "퇴직연금";
         newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
-        newFormData.paymentStartYear = retirementYearPlus1; // 은퇴 나이 + 1부터 수령
+        newFormData.paymentStartYear = retirementYear; // 은퇴년도부터 수령
         newFormData.paymentYears = 10; // 10년간 수령
         newFormData.noAdditionalContribution = false; // 퇴직연금은 추가 적립 안함 해제
         break;
       case "personal":
         newFormData.title = "개인연금";
         newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
-        newFormData.paymentStartYear = retirementYearPlus1; // 은퇴 나이 + 1부터 수령
+        newFormData.paymentStartYear = retirementYear; // 은퇴년도부터 수령
         newFormData.paymentYears = 10; // 10년간 수령
         newFormData.noAdditionalContribution = false; // 개인연금은 추가 적립 안함 해제
         break;
