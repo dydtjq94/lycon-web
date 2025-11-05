@@ -1457,7 +1457,9 @@ export function calculateAssetSimulation(
       const isActive = pension.type !== "severance";
 
       pensionsByTitle[pension.title] = {
-        amount: pension.currentAmount || 0,
+        // 퇴직금/DB는 초기 amount를 0으로 설정 (은퇴년도에 currentAmount 설정)
+        // 퇴직연금/개인연금은 처음부터 currentAmount 설정
+        amount: pension.type === "severance" ? 0 : pension.currentAmount || 0,
         initialAmount: pension.currentAmount || 0, // 원래 보유액 저장
         contributionStartYear: pension.contributionStartYear,
         contributionEndYear: pension.contributionEndYear,
@@ -1643,6 +1645,7 @@ export function calculateAssetSimulation(
       ) {
         // 은퇴년도: 자산에 표시 (수령 여부는 아래에서 처리)
         pension.isActive = true;
+        pension.amount = pension.initialAmount; // 은퇴년도에 퇴직금 자산으로 설정
       }
 
       if (!pension.isActive) return; // 비활성 연금은 건너뛰기

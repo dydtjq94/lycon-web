@@ -388,6 +388,7 @@ function PensionModal({
         break;
       case "retirement":
         newFormData.title = "퇴직연금";
+        newFormData.contributionStartYear = currentYear; // 현재년도부터 적립 시작
         newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
         newFormData.paymentStartYear = retirementYear; // 은퇴년도부터 수령
         newFormData.paymentYears = 10; // 10년간 수령
@@ -395,6 +396,7 @@ function PensionModal({
         break;
       case "personal":
         newFormData.title = "개인연금";
+        newFormData.contributionStartYear = currentYear; // 현재년도부터 적립 시작
         newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
         newFormData.paymentStartYear = retirementYear; // 은퇴년도부터 수령
         newFormData.paymentYears = 10; // 10년간 수령
