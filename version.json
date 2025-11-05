@@ -1,7 +1,20 @@
 {
-  "version": "0.28.53",
+  "version": "0.28.54",
   "today": "2025-11-05",
   "history": [
+    {
+      "version": "0.28.54",
+      "date": "2025-11-05",
+      "changes": [
+        "🚀 시뮬레이션 데이터 정제 기능 추가 ✅ (대폭 최적화!)",
+        "0과 빈 배열([]) 자동 제거: 값이 없는 필드는 JSON에서 완전히 제외",
+        "cleanSimulationYearData 함수: 각 년도 데이터에서 불필요한 필드 제거",
+        "핵심 필드는 항상 유지: year, age, amount, breakdown",
+        "savings=0, pension=0, savingMaturities=[] 등 자동 제거",
+        "시뮬레이션 데이터 크기 약 60-70% 감소 예상",
+        "AI 프롬프트가 훨씬 더 짧고 간결해짐"
+      ]
+    },
     {
       "version": "0.28.53",
       "date": "2025-11-05",

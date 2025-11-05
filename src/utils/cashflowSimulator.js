@@ -2315,9 +2315,68 @@ function cleanDebtData(debts) {
 }
 
 /**
+ * 시뮬레이션 데이터 정제: 0이나 빈 배열 제거
+ * 핵심 필드(year, age, amount, breakdown)는 항상 유지
+ */
+function cleanSimulationYearData(yearData) {
+  const cleaned = {
+    year: yearData.year,
+    age: yearData.age,
+    amount: yearData.amount,
+  };
+
+  // breakdown이 있으면 항상 포함 (중요한 정보)
+  if (yearData.breakdown) {
+    cleaned.breakdown = yearData.breakdown;
+  }
+
+  // 나머지 필드들은 0이 아니거나 빈 배열이 아닐 때만 포함
+  Object.keys(yearData).forEach((key) => {
+    // 이미 처리한 필드들은 건너뛰기
+    if (
+      key === "year" ||
+      key === "age" ||
+      key === "amount" ||
+      key === "breakdown"
+    ) {
+      return;
+    }
+
+    const value = yearData[key];
+
+    // 숫자이고 0이 아닌 경우
+    if (typeof value === "number" && value !== 0) {
+      cleaned[key] = value;
+    }
+    // 배열이고 비어있지 않은 경우
+    else if (Array.isArray(value) && value.length > 0) {
+      cleaned[key] = value;
+    }
+    // 객체인 경우 (breakdown 외)
+    else if (
+      typeof value === "object" &&
+      value !== null &&
+      !Array.isArray(value) &&
+      Object.keys(value).length > 0
+    ) {
+      cleaned[key] = value;
+    }
+  });
+
+  return cleaned;
+}
+
+/**
+ * 시뮬레이션 데이터 배열 정제
+ */
+function cleanSimulationData(simulationData) {
+  return simulationData.map((yearData) => cleanSimulationYearData(yearData));
+}
+
+/**
  * AI 봇을 위한 시뮬레이션 데이터 추출
  * 현금흐름과 자산 시뮬레이션 데이터를 AI가 분석하기 쉬운 형태로 변환
- * createdAt, updatedAt 등 메타데이터는 제외하고 핵심 필드만 추출
+ * createdAt, updatedAt 등 메타데이터 제외, 0과 빈 배열도 제거
  */
 export function extractAIAnalysisData(
   profileData,
@@ -2354,7 +2413,7 @@ export function extractAIAnalysisData(
     debts
   );
 
-  // AI 분석용 데이터 구성 (핵심 필드만 추출)
+  // AI 분석용 데이터 구성 (핵심 필드만 추출, 0과 빈 배열 제거)
   const aiAnalysisData = {
     // 기본 정보
     profile: {
@@ -2369,10 +2428,10 @@ export function extractAIAnalysisData(
       targetAssets: profileData.targetAssets,
     },
 
-    // 시뮬레이션 데이터 (최대 20년간)
+    // 시뮬레이션 데이터 (최대 20년간, 0과 빈 배열 제거)
     simulation: {
-      cashflow: cashflowData.slice(0, 20), // 최대 20년간
-      assets: assetData.slice(0, 20), // 최대 20년간
+      cashflow: cleanSimulationData(cashflowData.slice(0, 20)),
+      assets: cleanSimulationData(assetData.slice(0, 20)),
     },
 
     // 원시 데이터 (핵심 필드만 포함, 메타데이터 제외)
