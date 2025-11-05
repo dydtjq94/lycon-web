@@ -59,7 +59,7 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
     }
   }, [isOpen, profileData]);
 
-  // ESC 키로 모달 닫기
+  // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape" && isOpen) {
@@ -69,10 +69,14 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
+      // 모달이 열릴 때 body 스크롤 막기
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
+      // 모달이 닫힐 때 body 스크롤 복원
+      document.body.style.overflow = "";
     };
   }, [isOpen, onClose]);
 

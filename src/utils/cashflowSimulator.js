@@ -743,6 +743,71 @@ export function calculateCashflowSimulation(
       }
     });
 
+    // 수익형 저축: 매년 현금 수입 발생 (자산 가치에 대한 수익률)
+    savings.forEach((saving) => {
+      const sStartYear =
+        typeof saving.startYear === "string"
+          ? parseInt(saving.startYear, 10)
+          : saving.startYear;
+      const sEndYear =
+        typeof saving.endYear === "string"
+          ? parseInt(saving.endYear, 10)
+          : saving.endYear;
+
+      if (
+        saving.savingType === "income" &&
+        saving.incomeRate > 0 &&
+        year > sStartYear &&
+        year < sEndYear
+      ) {
+        // 연말 기준: 수익은 시작 다음 해부터 종료 전까지 발생
+        // 전년도 말 저축 자산 가치 계산
+        const yearsElapsed = year - sStartYear;
+        const interestRate = saving.interestRate || 0;
+        const yearlyGrowthRate = saving.yearlyGrowthRate || 0;
+
+        let previousYearEndValue = 0;
+        const currentAmount = Number(saving.currentAmount) || 0;
+
+        if (saving.frequency === "one_time") {
+          // 일회성 저축: 원금 + 수익률 복리
+          previousYearEndValue =
+            (currentAmount + (Number(saving.amount) || 0)) *
+            Math.pow(1 + interestRate, yearsElapsed - 1);
+        } else {
+          // 월간/연간 저축: 각 년도 적립 + 수익률 복리
+          const monthlyAmount =
+            saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
+
+          let accumulated = currentAmount;
+          for (let i = 0; i < yearsElapsed; i++) {
+            const adjustedMonthlyAmount =
+              monthlyAmount * Math.pow(1 + yearlyGrowthRate, i);
+            const yearlyAmount = adjustedMonthlyAmount * 12;
+
+            if (i === 0) {
+              accumulated = accumulated + yearlyAmount;
+            } else {
+              accumulated = accumulated * (1 + interestRate) + yearlyAmount;
+            }
+          }
+          previousYearEndValue = accumulated;
+        }
+
+        // 매년 수익 = 전년도 말 자산 가치 * 수익률
+        const yearlyIncome = previousYearEndValue * saving.incomeRate;
+        if (yearlyIncome > 0) {
+          totalSavingMaturity += yearlyIncome;
+          addPositive(
+            `${saving.title} (배당/이자)`,
+            yearlyIncome,
+            "저축 수익",
+            `saving-income-${saving.id || saving.title}`
+          );
+        }
+      }
+    });
+
     // 연금 계산
     pensions.forEach((pension) => {
       if (pension.type === "national") {
@@ -1367,6 +1432,8 @@ export function calculateAssetSimulation(
         frequency: saving.frequency,
         originalAmount: saving.amount,
         title: saving.title, // 제목도 저장
+        savingType: saving.savingType || "standard", // "standard" 또는 "income"
+        incomeRate: saving.incomeRate || 0, // 수익형 저축의 수익률
         isActive: true, // 활성 상태 추가
       };
     });

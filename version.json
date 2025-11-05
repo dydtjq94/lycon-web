@@ -1,7 +1,35 @@
 {
-  "version": "0.28.33",
+  "version": "0.28.35",
   "today": "2025-11-05",
   "history": [
+    {
+      "version": "0.28.35",
+      "date": "2025-11-05",
+      "changes": [
+        "🔒 모든 모달 열릴 때 배경 스크롤 막기 ✅ (UX 개선!)",
+        "기존 문제: 모달이 열려있을 때 뒤 배경(대시보드)이 스크롤됨",
+        "수정: 모달 열릴 때 document.body.style.overflow = 'hidden' 적용",
+        "모달 닫힐 때 document.body.style.overflow = '' 복원",
+        "적용 모달: SavingModal, PensionModal, AssetModal, IncomeModal, ExpenseModal, DebtModal, RealEstateModal, FinancialDataModal, SimulationModal, ProfileEditModal, SimulationCompareModal, TrashModal",
+        "모든 주요 모달에서 일관된 UX 제공"
+      ]
+    },
+    {
+      "version": "0.28.34",
+      "date": "2025-11-05",
+      "changes": [
+        "🎉 저축/투자에 기본형과 수익형(현금) 타입 추가 ✅ (신규 기능!)",
+        "저축 타입 선택: 기본형 / 수익형(현금)",
+        "기본형: 기존과 동일하게 만기 시 전액 수령 (복리 계산)",
+        "수익형(현금): 매년 자산 가치의 일정 비율을 배당/이자로 현금 수령",
+        "수익형 설정: 연간 수익률 (배당, 이자 등) % 입력",
+        "예: 1억원 저축, 수익률 5%, 수익형 → 매년 500만원 현금 수입 발생",
+        "자산 가치는 계속 복리로 증가하면서 매년 수익도 함께 증가",
+        "SavingModal: savingType, incomeRate 필드 추가",
+        "cashflowSimulator: 수익형 저축 현금 수입 계산 로직 추가",
+        "자산의 수익형 로직을 저축에도 동일하게 적용"
+      ]
+    },
     {
       "version": "0.28.33",
       "date": "2025-11-05",

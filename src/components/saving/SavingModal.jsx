@@ -36,6 +36,7 @@ function SavingModal({
 
   const [formData, setFormData] = useState({
     title: "",
+    savingType: "standard", // "standard" (기본형) 또는 "income" (수익형 현금)
     frequency: "monthly", // monthly, yearly, one_time
     amount: "",
     currentAmount: "", // 현재 보유 금액
@@ -45,6 +46,7 @@ function SavingModal({
     memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
     interestRate: "2.86", // 기본 수익률 2.86%
     yearlyGrowthRate: "1.89", // 연간 저축/투자금액 증가율 1.89%
+    incomeRate: "3", // 수익형 현금: 연간 수익률 (배당, 이자 등)
     capitalGainsTaxRate: "", // 양도세율 (%)
     isFixedToRetirementYear: false, // 은퇴년도 고정 여부
   });
@@ -144,6 +146,7 @@ function SavingModal({
       if (editData) {
         setFormData({
           title: editData.title || "",
+          savingType: editData.savingType || "standard",
           frequency:
             editData.originalFrequency || editData.frequency || "monthly",
           amount: editData.originalAmount ?? editData.amount ?? "",
@@ -152,21 +155,32 @@ function SavingModal({
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
           endYear: parseInt(editData.endYear) || getRetirementYear(),
           memo: editData.memo || "",
-          interestRate: editData.interestRate !== undefined && editData.interestRate !== null
-            ? (editData.interestRate * 100).toFixed(2)
-            : "2.86",
-          yearlyGrowthRate: editData.yearlyGrowthRate !== undefined && editData.yearlyGrowthRate !== null
-            ? (editData.yearlyGrowthRate * 100).toFixed(2)
-            : "1.89",
-          capitalGainsTaxRate: editData.capitalGainsTaxRate !== undefined && editData.capitalGainsTaxRate !== null
-            ? (editData.capitalGainsTaxRate * 100).toFixed(2)
-            : "",
+          interestRate:
+            editData.interestRate !== undefined &&
+            editData.interestRate !== null
+              ? (editData.interestRate * 100).toFixed(2)
+              : "2.86",
+          yearlyGrowthRate:
+            editData.yearlyGrowthRate !== undefined &&
+            editData.yearlyGrowthRate !== null
+              ? (editData.yearlyGrowthRate * 100).toFixed(2)
+              : "1.89",
+          incomeRate:
+            editData.incomeRate !== undefined && editData.incomeRate !== null
+              ? (editData.incomeRate * 100).toFixed(2)
+              : "3",
+          capitalGainsTaxRate:
+            editData.capitalGainsTaxRate !== undefined &&
+            editData.capitalGainsTaxRate !== null
+              ? (editData.capitalGainsTaxRate * 100).toFixed(2)
+              : "",
           isFixedToRetirementYear: editData.isFixedToRetirementYear || false,
         });
       } else {
         // 새 데이터일 때 초기화
         setFormData({
           title: "",
+          savingType: "standard",
           frequency: "monthly",
           amount: "",
           currentAmount: "",
@@ -176,6 +190,7 @@ function SavingModal({
           memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
           interestRate: "2.86",
           yearlyGrowthRate: "1.89",
+          incomeRate: "3",
           capitalGainsTaxRate: "",
           isFixedToRetirementYear: false,
         });
@@ -183,7 +198,7 @@ function SavingModal({
     }
   }, [isOpen, editData]);
 
-  // ESC 키로 모달 닫기
+  // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape" && isOpen) {
@@ -193,10 +208,14 @@ function SavingModal({
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
+      // 모달이 열릴 때 body 스크롤 막기
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
+      // 모달이 닫힐 때 body 스크롤 복원
+      document.body.style.overflow = "";
     };
   }, [isOpen, onClose]);
 
@@ -214,6 +233,18 @@ function SavingModal({
 
     if (formData.startYear > formData.endYear) {
       newErrors.endYear = "종료년도는 시작년도보다 늦어야 합니다.";
+    }
+
+    // 수익형일 때 incomeRate 검증
+    if (formData.savingType === "income") {
+      const incomeRateNum = parseFloat(formData.incomeRate);
+      if (
+        isNaN(incomeRateNum) ||
+        incomeRateNum < -100 ||
+        incomeRateNum > 1000
+      ) {
+        newErrors.incomeRate = "수익률은 -100%와 1000% 사이의 숫자여야 합니다.";
+      }
     }
 
     setErrors(newErrors);
@@ -240,6 +271,7 @@ function SavingModal({
 
     const savingData = {
       ...formData,
+      savingType: formData.savingType, // "standard" 또는 "income"
       amount: parseInt(formData.amount),
       currentAmount: formData.currentAmount
         ? parseInt(formData.currentAmount)
@@ -249,8 +281,12 @@ function SavingModal({
       endYear: parseInt(formData.endYear), // 문자열을 숫자로 변환
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
       yearlyGrowthRate: parseFloat(formData.yearlyGrowthRate) / 100, // 백분율을 소수로 변환
-      capitalGainsTaxRate: formData.capitalGainsTaxRate 
-        ? parseFloat(formData.capitalGainsTaxRate) / 100 
+      incomeRate:
+        formData.savingType === "income"
+          ? parseFloat(formData.incomeRate) / 100
+          : 0, // 수익형일 때만 수익률 적용
+      capitalGainsTaxRate: formData.capitalGainsTaxRate
+        ? parseFloat(formData.capitalGainsTaxRate) / 100
         : 0, // 양도세율 (백분율을 소수로 변환)
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
@@ -271,6 +307,7 @@ function SavingModal({
   const handleClose = () => {
     setFormData({
       title: "",
+      savingType: "standard",
       frequency: "monthly",
       amount: "",
       currentAmount: "",
@@ -280,6 +317,8 @@ function SavingModal({
       memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
       interestRate: "2.86",
       yearlyGrowthRate: "1.89",
+      incomeRate: "3",
+      capitalGainsTaxRate: "",
       isFixedToRetirementYear: false,
     });
     setErrors({});
@@ -319,6 +358,37 @@ function SavingModal({
             {errors.title && (
               <span className={styles.errorText}>{errors.title}</span>
             )}
+          </div>
+
+          {/* 저축 타입 선택 */}
+          <div className={styles.field}>
+            <label className={styles.label}>저축 타입 *</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="savingType"
+                  value="standard"
+                  checked={formData.savingType === "standard"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, savingType: e.target.value })
+                  }
+                />
+                <span className={styles.radioText}>기본형</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="savingType"
+                  value="income"
+                  checked={formData.savingType === "income"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, savingType: e.target.value })
+                  }
+                />
+                <span className={styles.radioText}>수익형 (현금)</span>
+              </label>
+            </div>
           </div>
 
           {/* 주기와 금액 */}
@@ -371,22 +441,37 @@ function SavingModal({
 
           {/* 현재 보유 금액 */}
           <div className={styles.field}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-              <label htmlFor="currentAmount" className={styles.label} style={{ marginBottom: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "0.5rem",
+              }}
+            >
+              <label
+                htmlFor="currentAmount"
+                className={styles.label}
+                style={{ marginBottom: 0 }}
+              >
                 현재 보유 금액 (만원)
               </label>
-              <label className={styles.fixedCheckboxLabel} style={{ marginBottom: 0 }}>
+              <label
+                className={styles.fixedCheckboxLabel}
+                style={{ marginBottom: 0 }}
+              >
                 <input
                   type="checkbox"
                   checked={formData.treatAsInitialPurchase}
                   onChange={(e) =>
-                    setFormData({ ...formData, treatAsInitialPurchase: e.target.checked })
+                    setFormData({
+                      ...formData,
+                      treatAsInitialPurchase: e.target.checked,
+                    })
                   }
                   className={styles.fixedCheckbox}
                 />
-                <span className={styles.fixedCheckboxText}>
-                  구매로 처리
-                </span>
+                <span className={styles.fixedCheckboxText}>구매로 처리</span>
               </label>
             </div>
             <input
@@ -409,7 +494,13 @@ function SavingModal({
             <div className={styles.helperText}>
               시작년도 기준 현재 이미 보유하고 있는 금액입니다 (선택사항)
               {formData.treatAsInitialPurchase && (
-                <span style={{ display: 'block', color: '#ef4444', marginTop: '0.25rem' }}>
+                <span
+                  style={{
+                    display: "block",
+                    color: "#ef4444",
+                    marginTop: "0.25rem",
+                  }}
+                >
                   ※ 구매로 처리 시 시작년도에 현금흐름에서 차감됩니다
                 </span>
               )}
@@ -561,34 +652,68 @@ function SavingModal({
               </div>
             )}
 
-            {/* 양도세율 */}
+            {/* 양도세율 (기본형일 때만) */}
+            {formData.savingType === "standard" && (
+              <div className={styles.field}>
+                <label htmlFor="capitalGainsTaxRate" className={styles.label}>
+                  양도세율 (%) <span className={styles.optional}>- 선택</span>
+                </label>
+                <input
+                  type="text"
+                  id="capitalGainsTaxRate"
+                  value={formData.capitalGainsTaxRate}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // 숫자와 소수점만 허용 (0-100)
+                    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                      setFormData({
+                        ...formData,
+                        capitalGainsTaxRate: value,
+                      });
+                    }
+                  }}
+                  onKeyPress={handleKeyPress}
+                  className={styles.input}
+                  placeholder="예: 22 (수익의 22%를 세금으로 납부)"
+                />
+                <div className={styles.fieldHelper}>
+                  만기 시 (최종가치 - 원금) × 양도세율을 세금으로 납부합니다.
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 수익형 현금: 연간 수익률 (배당, 이자 등) */}
+          {formData.savingType === "income" && (
             <div className={styles.field}>
-              <label htmlFor="capitalGainsTaxRate" className={styles.label}>
-                양도세율 (%) <span className={styles.optional}>- 선택</span>
+              <label htmlFor="incomeRate" className={styles.label}>
+                연간 수익률 (배당, 이자 등) (%) *
               </label>
               <input
                 type="text"
-                id="capitalGainsTaxRate"
-                value={formData.capitalGainsTaxRate}
+                id="incomeRate"
+                value={formData.incomeRate}
                 onChange={(e) => {
                   const value = e.target.value;
-                  // 숫자와 소수점만 허용 (0-100)
-                  if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                    setFormData({
-                      ...formData,
-                      capitalGainsTaxRate: value,
-                    });
+                  // 숫자와 소수점, 마이너스 허용
+                  if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                    setFormData({ ...formData, incomeRate: value });
                   }
                 }}
                 onKeyPress={handleKeyPress}
-                className={styles.input}
-                placeholder="예: 22 (수익의 22%를 세금으로 납부)"
+                className={`${styles.input} ${
+                  errors.incomeRate ? styles.error : ""
+                }`}
+                placeholder="3"
               />
+              {errors.incomeRate && (
+                <span className={styles.errorText}>{errors.incomeRate}</span>
+              )}
               <div className={styles.fieldHelper}>
-                만기 시 (최종가치 - 원금) × 양도세율을 세금으로 납부합니다.
+                매년 자산 가치의 일정 비율을 현금 수입으로 받습니다.
               </div>
             </div>
-          </div>
+          )}
 
           {/* 메모 */}
           <div className={styles.field}>

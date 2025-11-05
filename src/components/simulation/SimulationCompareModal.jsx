@@ -696,7 +696,13 @@ function SimulationCompareModal({
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    // 모달이 열릴 때 body 스크롤 막기
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      // 모달이 닫힐 때 body 스크롤 복원
+      document.body.style.overflow = "";
+    };
   }, [isOpen, onClose, defaultTitle, targetTitle, defaultData, targetData]);
 
   return (
