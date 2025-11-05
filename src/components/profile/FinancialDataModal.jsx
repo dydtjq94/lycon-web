@@ -120,7 +120,7 @@ function FinancialDataModal({
         {/* 현재 자산 현황 섹션 */}
         {profileData && financialData && (
           <div className={styles.currentAssetsSection}>
-            <h4 className={styles.currentAssetsTitle}>📊 현재 자산 현황</h4>
+            <h4 className={styles.currentAssetsTitle}>현재 자산 현황</h4>
             <div className={styles.currentAssetsList}>
               {/* 현재 현금 */}
               <div className={styles.currentAssetItem}>
@@ -139,7 +139,9 @@ function FinancialDataModal({
                 if (savingsTotal > 0) {
                   return (
                     <div className={styles.currentAssetItem}>
-                      <span className={styles.currentAssetLabel}>저축/투자 보유</span>
+                      <span className={styles.currentAssetLabel}>
+                        저축/투자 보유
+                      </span>
                       <span className={styles.currentAssetValue}>
                         {formatAmount(savingsTotal)}
                       </span>
@@ -158,7 +160,9 @@ function FinancialDataModal({
                 if (assetsTotal > 0) {
                   return (
                     <div className={styles.currentAssetItem}>
-                      <span className={styles.currentAssetLabel}>자산 가치</span>
+                      <span className={styles.currentAssetLabel}>
+                        자산 가치
+                      </span>
                       <span className={styles.currentAssetValue}>
                         {formatAmount(assetsTotal)}
                       </span>
@@ -170,14 +174,19 @@ function FinancialDataModal({
 
               {/* 부동산 현재 가치 */}
               {(() => {
-                const realEstatesTotal = (financialData.realEstates || []).reduce(
-                  (sum, realEstate) => sum + (Number(realEstate.currentValue) || 0),
+                const realEstatesTotal = (
+                  financialData.realEstates || []
+                ).reduce(
+                  (sum, realEstate) =>
+                    sum + (Number(realEstate.currentValue) || 0),
                   0
                 );
                 if (realEstatesTotal > 0) {
                   return (
                     <div className={styles.currentAssetItem}>
-                      <span className={styles.currentAssetLabel}>부동산 가치</span>
+                      <span className={styles.currentAssetLabel}>
+                        부동산 가치
+                      </span>
                       <span className={styles.currentAssetValue}>
                         {formatAmount(realEstatesTotal)}
                       </span>
@@ -196,7 +205,9 @@ function FinancialDataModal({
                 if (pensionsTotal > 0) {
                   return (
                     <div className={styles.currentAssetItem}>
-                      <span className={styles.currentAssetLabel}>연금 보유액</span>
+                      <span className={styles.currentAssetLabel}>
+                        연금 보유액
+                      </span>
                       <span className={styles.currentAssetValue}>
                         {formatAmount(pensionsTotal)}
                       </span>
@@ -215,8 +226,14 @@ function FinancialDataModal({
                 if (debtsTotal > 0) {
                   return (
                     <div className={styles.currentAssetItem}>
-                      <span className={`${styles.currentAssetLabel} ${styles.debt}`}>부채</span>
-                      <span className={`${styles.currentAssetValue} ${styles.debt}`}>
+                      <span
+                        className={`${styles.currentAssetLabel} ${styles.debt}`}
+                      >
+                        부채
+                      </span>
+                      <span
+                        className={`${styles.currentAssetValue} ${styles.debt}`}
+                      >
                         -{formatAmount(debtsTotal)}
                       </span>
                     </div>
@@ -236,8 +253,11 @@ function FinancialDataModal({
                   (sum, asset) => sum + (Number(asset.currentValue) || 0),
                   0
                 );
-                const realEstatesTotal = (financialData.realEstates || []).reduce(
-                  (sum, realEstate) => sum + (Number(realEstate.currentValue) || 0),
+                const realEstatesTotal = (
+                  financialData.realEstates || []
+                ).reduce(
+                  (sum, realEstate) =>
+                    sum + (Number(realEstate.currentValue) || 0),
                   0
                 );
                 const pensionsTotal = (financialData.pensions || []).reduce(
@@ -248,8 +268,14 @@ function FinancialDataModal({
                   (sum, debt) => sum + (Number(debt.debtAmount) || 0),
                   0
                 );
-                const netAssets = currentCash + savingsTotal + assetsTotal + realEstatesTotal + pensionsTotal - debtsTotal;
-                
+                const netAssets =
+                  currentCash +
+                  savingsTotal +
+                  assetsTotal +
+                  realEstatesTotal +
+                  pensionsTotal -
+                  debtsTotal;
+
                 return (
                   <div className={`${styles.currentAssetItem} ${styles.total}`}>
                     <span className={styles.currentAssetLabel}>순자산</span>
