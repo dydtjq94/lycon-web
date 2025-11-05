@@ -39,6 +39,7 @@ function SavingModal({
     frequency: "monthly", // monthly, yearly, one_time
     amount: "",
     currentAmount: "", // 현재 보유 금액
+    treatAsInitialPurchase: false, // 현재 보유 금액을 구매로 처리할지 여부
     startYear: new Date().getFullYear(),
     endYear: getRetirementYear(),
     memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
@@ -147,6 +148,7 @@ function SavingModal({
             editData.originalFrequency || editData.frequency || "monthly",
           amount: editData.originalAmount ?? editData.amount ?? "",
           currentAmount: editData.currentAmount ?? "",
+          treatAsInitialPurchase: editData.treatAsInitialPurchase || false,
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
           endYear: parseInt(editData.endYear) || getRetirementYear(),
           memo: editData.memo || "",
@@ -168,6 +170,7 @@ function SavingModal({
           frequency: "monthly",
           amount: "",
           currentAmount: "",
+          treatAsInitialPurchase: false,
           startYear: new Date().getFullYear(),
           endYear: getRetirementYear(),
           memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
@@ -241,6 +244,7 @@ function SavingModal({
       currentAmount: formData.currentAmount
         ? parseInt(formData.currentAmount)
         : 0,
+      treatAsInitialPurchase: formData.treatAsInitialPurchase || false,
       startYear: parseInt(formData.startYear), // 문자열을 숫자로 변환
       endYear: parseInt(formData.endYear), // 문자열을 숫자로 변환
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
@@ -270,6 +274,7 @@ function SavingModal({
       frequency: "monthly",
       amount: "",
       currentAmount: "",
+      treatAsInitialPurchase: false,
       startYear: new Date().getFullYear(),
       endYear: new Date().getFullYear() + 10,
       memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
@@ -366,9 +371,24 @@ function SavingModal({
 
           {/* 현재 보유 금액 */}
           <div className={styles.field}>
-            <label htmlFor="currentAmount" className={styles.label}>
-              현재 보유 금액 (만원)
-            </label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <label htmlFor="currentAmount" className={styles.label} style={{ marginBottom: 0 }}>
+                현재 보유 금액 (만원)
+              </label>
+              <label className={styles.fixedCheckboxLabel} style={{ marginBottom: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={formData.treatAsInitialPurchase}
+                  onChange={(e) =>
+                    setFormData({ ...formData, treatAsInitialPurchase: e.target.checked })
+                  }
+                  className={styles.fixedCheckbox}
+                />
+                <span className={styles.fixedCheckboxText}>
+                  구매로 처리
+                </span>
+              </label>
+            </div>
             <input
               type="text"
               id="currentAmount"
@@ -388,6 +408,11 @@ function SavingModal({
               )}
             <div className={styles.helperText}>
               시작년도 기준 현재 이미 보유하고 있는 금액입니다 (선택사항)
+              {formData.treatAsInitialPurchase && (
+                <span style={{ display: 'block', color: '#ef4444', marginTop: '0.25rem' }}>
+                  ※ 구매로 처리 시 시작년도에 현금흐름에서 차감됩니다
+                </span>
+              )}
             </div>
           </div>
 

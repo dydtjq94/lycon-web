@@ -117,36 +117,148 @@ function FinancialDataModal({
           </button>
         </div>
 
-        {/* 프로필 정보 섹션 */}
-        {profileData && (
-          <div className={styles.profileSection}>
-            <div className={styles.profileInfo}>
-              <div className={styles.profileItem}>
-                <span className={styles.profileLabel}>현재 나이</span>
-                <span className={styles.profileValue}>
-                  {new Date().getFullYear() - profileData.birthYear}세
+        {/* 현재 자산 현황 섹션 */}
+        {profileData && financialData && (
+          <div className={styles.currentAssetsSection}>
+            <h4 className={styles.currentAssetsTitle}>📊 현재 자산 현황</h4>
+            <div className={styles.currentAssetsList}>
+              {/* 현재 현금 */}
+              <div className={styles.currentAssetItem}>
+                <span className={styles.currentAssetLabel}>현재 현금</span>
+                <span className={styles.currentAssetValue}>
+                  {formatAmount(parseInt(profileData.currentCash || 0))}
                 </span>
               </div>
-              <div className={styles.profileItem}>
-                <span className={styles.profileLabel}>은퇴 예정 나이</span>
-                <span className={styles.profileValue}>
-                  {profileData.retirementAge}세
-                </span>
-              </div>
-              <div className={styles.profileItem}>
-                <span className={styles.profileLabel}>현재 현금</span>
-                <span className={styles.profileValue}>
-                  {formatAmountForChart(parseInt(profileData.currentCash || 0))}
-                </span>
-              </div>
-              <div className={styles.profileItem}>
-                <span className={styles.profileLabel}>목표 자산</span>
-                <span className={styles.profileValue}>
-                  {profileData.targetAssets
-                    ? formatAmount(profileData.targetAssets)
-                    : "미설정"}
-                </span>
-              </div>
+
+              {/* 저축/투자 현재 보유액 */}
+              {(() => {
+                const savingsTotal = (financialData.savings || []).reduce(
+                  (sum, saving) => sum + (Number(saving.currentAmount) || 0),
+                  0
+                );
+                if (savingsTotal > 0) {
+                  return (
+                    <div className={styles.currentAssetItem}>
+                      <span className={styles.currentAssetLabel}>저축/투자 보유</span>
+                      <span className={styles.currentAssetValue}>
+                        {formatAmount(savingsTotal)}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* 자산 현재 가치 */}
+              {(() => {
+                const assetsTotal = (financialData.assets || []).reduce(
+                  (sum, asset) => sum + (Number(asset.currentValue) || 0),
+                  0
+                );
+                if (assetsTotal > 0) {
+                  return (
+                    <div className={styles.currentAssetItem}>
+                      <span className={styles.currentAssetLabel}>자산 가치</span>
+                      <span className={styles.currentAssetValue}>
+                        {formatAmount(assetsTotal)}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* 부동산 현재 가치 */}
+              {(() => {
+                const realEstatesTotal = (financialData.realEstates || []).reduce(
+                  (sum, realEstate) => sum + (Number(realEstate.currentValue) || 0),
+                  0
+                );
+                if (realEstatesTotal > 0) {
+                  return (
+                    <div className={styles.currentAssetItem}>
+                      <span className={styles.currentAssetLabel}>부동산 가치</span>
+                      <span className={styles.currentAssetValue}>
+                        {formatAmount(realEstatesTotal)}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* 연금 현재 보유액 */}
+              {(() => {
+                const pensionsTotal = (financialData.pensions || []).reduce(
+                  (sum, pension) => sum + (Number(pension.currentAmount) || 0),
+                  0
+                );
+                if (pensionsTotal > 0) {
+                  return (
+                    <div className={styles.currentAssetItem}>
+                      <span className={styles.currentAssetLabel}>연금 보유액</span>
+                      <span className={styles.currentAssetValue}>
+                        {formatAmount(pensionsTotal)}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* 부채 */}
+              {(() => {
+                const debtsTotal = (financialData.debts || []).reduce(
+                  (sum, debt) => sum + (Number(debt.debtAmount) || 0),
+                  0
+                );
+                if (debtsTotal > 0) {
+                  return (
+                    <div className={styles.currentAssetItem}>
+                      <span className={`${styles.currentAssetLabel} ${styles.debt}`}>부채</span>
+                      <span className={`${styles.currentAssetValue} ${styles.debt}`}>
+                        -{formatAmount(debtsTotal)}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* 순자산 (총합) */}
+              {(() => {
+                const currentCash = parseInt(profileData.currentCash || 0);
+                const savingsTotal = (financialData.savings || []).reduce(
+                  (sum, saving) => sum + (Number(saving.currentAmount) || 0),
+                  0
+                );
+                const assetsTotal = (financialData.assets || []).reduce(
+                  (sum, asset) => sum + (Number(asset.currentValue) || 0),
+                  0
+                );
+                const realEstatesTotal = (financialData.realEstates || []).reduce(
+                  (sum, realEstate) => sum + (Number(realEstate.currentValue) || 0),
+                  0
+                );
+                const pensionsTotal = (financialData.pensions || []).reduce(
+                  (sum, pension) => sum + (Number(pension.currentAmount) || 0),
+                  0
+                );
+                const debtsTotal = (financialData.debts || []).reduce(
+                  (sum, debt) => sum + (Number(debt.debtAmount) || 0),
+                  0
+                );
+                const netAssets = currentCash + savingsTotal + assetsTotal + realEstatesTotal + pensionsTotal - debtsTotal;
+                
+                return (
+                  <div className={`${styles.currentAssetItem} ${styles.total}`}>
+                    <span className={styles.currentAssetLabel}>순자산</span>
+                    <span className={styles.currentAssetValue}>
+                      {formatAmount(netAssets)}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}

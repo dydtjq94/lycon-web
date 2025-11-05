@@ -101,6 +101,68 @@
   color: #0f172a;
 }
 
+/* 현재 자산 현황 섹션 */
+.currentAssetsSection {
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid #edf1f5;
+  background: #fafbfc;
+}
+
+.currentAssetsTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0 0 0.5rem 0;
+}
+
+.currentAssetsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.currentAssetItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.currentAssetItem.total {
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.currentAssetLabel {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.currentAssetItem.total .currentAssetLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.currentAssetValue {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.currentAssetItem.total .currentAssetValue {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.currentAssetLabel.debt,
+.currentAssetValue.debt {
+  color: #ef4444;
+}
+
 .loading {
   display: flex;
   align-items: center;
@@ -226,5 +288,37 @@
 
   .profileValue {
     font-size: 0.85rem;
+  }
+
+  .currentAssetsSection {
+    padding: 0.65rem 1.1rem;
+  }
+
+  .currentAssetsTitle {
+    font-size: 0.75rem;
+  }
+
+  .currentAssetsList {
+    gap: 0.3rem;
+  }
+
+  .currentAssetItem {
+    padding: 0.2rem 0;
+  }
+
+  .currentAssetLabel {
+    font-size: 0.7rem;
+  }
+
+  .currentAssetValue {
+    font-size: 0.7rem;
+  }
+
+  .currentAssetItem.total .currentAssetLabel {
+    font-size: 0.75rem;
+  }
+
+  .currentAssetItem.total .currentAssetValue {
+    font-size: 0.8rem;
   }
 }

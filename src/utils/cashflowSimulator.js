@@ -588,6 +588,20 @@ export function calculateCashflowSimulation(
           ? parseInt(saving.endYear, 10)
           : saving.endYear;
 
+      // 구매로 처리: 시작년도에 현재 보유 금액 차감
+      if (year === sStartYear && saving.treatAsInitialPurchase) {
+        const currentAmount = Number(saving.currentAmount) || 0;
+        if (currentAmount > 0) {
+          totalSavings += currentAmount;
+          addNegative(
+            `${saving.title} (구매)`,
+            currentAmount,
+            "저축 구매",
+            `saving-purchase-${saving.id || saving.title}`
+          );
+        }
+      }
+
       if (year >= sStartYear && year < sEndYear) {
         // 종료년도 전까지만 적립
         const yearsElapsed = year - sStartYear;
@@ -675,7 +689,7 @@ export function calculateCashflowSimulation(
           `saving-maturity-${saving.id || saving.title}`
         );
 
-        // 양도세 계산 (다음해 처리를 위해 저장)
+        // 양도세 계산 (종료년도에 바로 처리)
         const taxRate = saving.capitalGainsTaxRate || 0;
         if (taxRate > 0) {
           let capitalGainsTax = 0;
@@ -706,36 +720,25 @@ export function calculateCashflowSimulation(
             capitalGainsTax = capitalGain * taxRate;
           }
 
-          // 양도세 정보를 저축 객체에 임시 저장 (다음해 처리용)
+          // 양도세를 종료년도에 바로 지출 처리
           if (capitalGainsTax > 0) {
-            saving._pendingTax = {
+            const taxRatePercent = (taxRate * 100).toFixed(0);
+
+            totalCapitalGainsTax += capitalGainsTax;
+
+            // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
+            capitalGainsTaxes.push({
+              title: `${saving.title} (양도세, ${taxRatePercent}%)`,
               amount: capitalGainsTax,
-              taxRatePercent: (taxRate * 100).toFixed(0),
-            };
+            });
+
+            addNegative(
+              `${saving.title} (양도세, ${taxRatePercent}%)`,
+              capitalGainsTax,
+              "양도세",
+              `saving-tax-${saving.id || saving.title}`
+            );
           }
-        }
-      } else if (year === sEndYear + 1) {
-        // 저축 종료 다음해: 양도세 처리
-        if (saving._pendingTax) {
-          const { amount, taxRatePercent } = saving._pendingTax;
-
-          totalCapitalGainsTax += amount;
-
-          // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
-          capitalGainsTaxes.push({
-            title: `${saving.title} (양도세, ${taxRatePercent}%)`,
-            amount: amount,
-          });
-
-          addNegative(
-            `${saving.title} (양도세, ${taxRatePercent}%)`,
-            amount,
-            "양도세",
-            `saving-tax-${saving.id || saving.title}`
-          );
-
-          // 처리 완료 후 삭제
-          delete saving._pendingTax;
         }
       }
     });
@@ -1216,6 +1219,34 @@ export function calculateCashflowSimulation(
           "자산 매각",
           `asset-sale-${asset.id || asset.title}`
         );
+
+        // 양도세 계산 (종료년도에 바로 처리)
+        const taxRate = asset.capitalGainsTaxRate || 0;
+        if (taxRate > 0) {
+          // 양도소득 = 최종가치 - 초기가치
+          const capitalGain = Math.max(0, finalValue - asset.currentValue);
+          const capitalGainsTax = capitalGain * taxRate;
+
+          // 양도세를 종료년도에 바로 지출 처리
+          if (capitalGainsTax > 0) {
+            const taxRatePercent = (taxRate * 100).toFixed(0);
+
+            totalCapitalGainsTax += capitalGainsTax;
+
+            // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
+            capitalGainsTaxes.push({
+              title: `${asset.title} (양도세, ${taxRatePercent}%)`,
+              amount: capitalGainsTax,
+            });
+
+            addNegative(
+              `${asset.title} (양도세, ${taxRatePercent}%)`,
+              capitalGainsTax,
+              "양도세",
+              `asset-tax-${asset.id || asset.title}`
+            );
+          }
+        }
       }
     });
 
@@ -1424,6 +1455,7 @@ export function calculateAssetSimulation(
       growthRate: asset.growthRate || 0, // 이미 소수로 저장됨 (예: 0.0286)
       assetType: asset.assetType || "general", // "general" 또는 "income"
       incomeRate: asset.incomeRate || 0, // 수익형 자산의 수익률
+      capitalGainsTaxRate: asset.capitalGainsTaxRate || 0, // 양도세율 저장
       isPurchase: asset.isPurchase || false, // 구매 여부 저장
       isActive: true,
       _initialValue: initialValue, // 초기값 저장

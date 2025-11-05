@@ -26,6 +26,7 @@ function AssetModal({
     endYear: "",
     assetType: "general", // "general" 또는 "income"
     incomeRate: "3", // % 단위로 기본값 설정
+    capitalGainsTaxRate: "", // 양도세율 (%)
     memo: "2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률",
     isPurchase: false, // 구매 여부
   });
@@ -112,6 +113,9 @@ function AssetModal({
             editData.incomeRate !== undefined
               ? (editData.incomeRate * 100).toFixed(2)
               : "3",
+          capitalGainsTaxRate: editData.capitalGainsTaxRate !== undefined && editData.capitalGainsTaxRate !== null
+            ? (editData.capitalGainsTaxRate * 100).toFixed(2)
+            : "",
           memo: editData.memo || "",
           isPurchase: editData.isPurchase || false,
         });
@@ -130,6 +134,7 @@ function AssetModal({
           endYear: deathYear,
           assetType: "general",
           incomeRate: "3",
+          capitalGainsTaxRate: "",
           memo: "2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률",
           isPurchase: false,
         });
@@ -221,6 +226,9 @@ function AssetModal({
         formData.assetType === "income"
           ? parseFloat(formData.incomeRate) / 100
           : 0, // 수익형 자산일 때만 수익률 적용
+      capitalGainsTaxRate: formData.capitalGainsTaxRate 
+        ? parseFloat(formData.capitalGainsTaxRate) / 100 
+        : 0, // 양도세율 (백분율을 소수로 변환)
       memo: formData.memo.trim(),
       isPurchase: formData.isPurchase, // 구매 여부
       selectedSimulationIds:
@@ -244,6 +252,7 @@ function AssetModal({
       endYear: "",
       assetType: "general",
       incomeRate: "",
+      capitalGainsTaxRate: "",
       memo: "",
       isPurchase: false,
     });
@@ -255,9 +264,9 @@ function AssetModal({
 
   return (
     <div className={styles.modalOverlay}>
-      <div className={styles.modal}>
+      <div className={styles.modalContent}>
         <div className={styles.modalHeader}>
-          <h2>{editData ? "자산 수정" : "자산 추가"}</h2>
+          <h2 className={styles.modalTitle}>{editData ? "자산 수정" : "자산 추가"}</h2>
           <button className={styles.closeButton} onClick={handleClose}>
             ×
           </button>
@@ -404,6 +413,32 @@ function AssetModal({
           )}
 
           <div className={styles.field}>
+            <label className={styles.label}>
+              양도세율 (%) <span className={styles.optional}>- 선택</span>
+            </label>
+            <input
+              type="text"
+              value={formData.capitalGainsTaxRate}
+              onChange={(e) => {
+                const value = e.target.value;
+                // 숫자와 소수점만 허용 (0-100)
+                if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                  setFormData({
+                    ...formData,
+                    capitalGainsTaxRate: value,
+                  });
+                }
+              }}
+              onKeyPress={handleKeyPress}
+              className={styles.input}
+              placeholder="예: 22 (수익의 22%를 세금으로 납부)"
+            />
+            <div className={styles.fieldHelper}>
+              매각 시 (최종가치 - 초기가치) × 양도세율을 세금으로 납부합니다.
+            </div>
+          </div>
+
+          <div className={styles.field}>
             <label className={styles.label}>보유 기간 *</label>
             <div className={styles.yearInputs}>
               <input
@@ -513,7 +548,7 @@ function AssetModal({
             </div>
           )}
 
-          <div className={styles.buttonGroup}>
+          <div className={styles.modalFooter}>
             <button
               type="button"
               onClick={handleClose}
@@ -521,7 +556,7 @@ function AssetModal({
             >
               취소
             </button>
-            <button type="submit" className={styles.submitButton}>
+            <button type="submit" className={styles.saveButton}>
               {editData ? "수정" : "추가"}
             </button>
           </div>
