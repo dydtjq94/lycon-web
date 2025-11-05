@@ -2845,6 +2845,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
           <FinancialDataStorePanel
             onAddItems={handleAddDataStoreItems}
             profileData={profileData}
+            onClose={closeDataStorePanel}
+            isAdmin={isAdmin}
           />
         </div>
       </div>

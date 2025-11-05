@@ -1919,3 +1919,292 @@ export const versionHistoryService = {
     }
   },
 };
+
+/**
+ * 재무 라이브러리 서비스
+ * Firebase의 financialLibrary 컬렉션에 재무 데이터 템플릿을 저장하고 관리합니다.
+ * 가족 구성원 타입별로 분류되며, 프로필 생성 시 자동으로 적용될 수 있습니다.
+ */
+export const financialLibraryService = {
+  /**
+   * 재무 라이브러리 템플릿 생성
+   * @param {Object} templateData - 템플릿 데이터
+   * @returns {String} 생성된 문서 ID
+   */
+  async createTemplate(templateData) {
+    try {
+      const docRef = await addDoc(collection(db, "financialLibrary"), {
+        ...templateData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("재무 라이브러리 템플릿 생성 완료:", docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error("재무 라이브러리 템플릿 생성 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 모든 재무 라이브러리 템플릿 조회
+   * @returns {Array} 템플릿 배열
+   */
+  async getTemplates() {
+    try {
+      const querySnapshot = await getDocs(
+        query(collection(db, "financialLibrary"), orderBy("createdAt", "asc"))
+      );
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("재무 라이브러리 템플릿 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 가족 구성원 타입별 템플릿 조회
+   * @param {String} familyMemberType - 가족 구성원 타입 (self/spouse/child/parent/common)
+   * @returns {Array} 해당 타입의 템플릿 배열
+   */
+  async getTemplatesByFamilyType(familyMemberType) {
+    try {
+      const q = query(
+        collection(db, "financialLibrary"),
+        where("familyMemberType", "==", familyMemberType),
+        orderBy("category", "asc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("가족 구성원 타입별 템플릿 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 자동 적용 템플릿 조회 (프로필 생성 시 자동으로 추가되는 템플릿)
+   * @returns {Array} autoApply가 true인 템플릿 배열
+   */
+  async getAutoApplyTemplates() {
+    try {
+      const q = query(
+        collection(db, "financialLibrary"),
+        where("autoApply", "==", true)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (error) {
+      console.error("자동 적용 템플릿 조회 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 재무 라이브러리 템플릿 수정
+   * @param {String} templateId - 템플릿 ID
+   * @param {Object} updateData - 수정할 데이터
+   */
+  async updateTemplate(templateId, updateData) {
+    try {
+      const docRef = doc(db, "financialLibrary", templateId);
+      await updateDoc(docRef, {
+        ...updateData,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("재무 라이브러리 템플릿 수정 완료:", templateId);
+    } catch (error) {
+      console.error("재무 라이브러리 템플릿 수정 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 재무 라이브러리 템플릿 삭제
+   * @param {String} templateId - 템플릿 ID
+   */
+  async deleteTemplate(templateId) {
+    try {
+      const docRef = doc(db, "financialLibrary", templateId);
+      await deleteDoc(docRef);
+      console.log("재무 라이브러리 템플릿 삭제 완료:", templateId);
+    } catch (error) {
+      console.error("재무 라이브러리 템플릿 삭제 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 기본 재무 라이브러리 템플릿 초기화
+   * Firebase에 기본 템플릿이 없을 때 초기화합니다.
+   */
+  async initializeDefaultTemplates() {
+    try {
+      const existing = await this.getTemplates();
+      if (existing.length > 0) {
+        console.log("재무 라이브러리 템플릿이 이미 존재합니다.");
+        return;
+      }
+
+      console.log("기본 재무 라이브러리 템플릿 생성 중...");
+
+      // 기본 템플릿 데이터
+      const defaultTemplates = [
+        // 본인 (self) 관련
+        {
+          title: "월급여",
+          category: "income",
+          familyMemberType: "self",
+          ageStart: null,
+          ageEnd: null,
+          autoApply: false,
+          data: {
+            amount: 300,
+            frequency: "monthly",
+            growthRate: 3.3,
+            memo: "기본 급여",
+            originalAmount: 300,
+            originalFrequency: "monthly",
+          },
+        },
+        {
+          title: "상여금",
+          category: "income",
+          familyMemberType: "self",
+          ageStart: null,
+          ageEnd: null,
+          autoApply: false,
+          data: {
+            amount: 2000,
+            frequency: "yearly",
+            growthRate: 3.3,
+            memo: "연간 상여금",
+            originalAmount: 2000,
+            originalFrequency: "yearly",
+          },
+        },
+        // 자녀 (child) 관련
+        {
+          title: "대학 등록금",
+          category: "expense",
+          familyMemberType: "child",
+          ageStart: 19,
+          ageEnd: 22,
+          autoApply: true,
+          data: {
+            amount: 1000,
+            frequency: "yearly",
+            growthRate: 2.0,
+            memo: "대학 4년 등록금",
+          },
+        },
+        {
+          title: "자녀 용돈",
+          category: "expense",
+          familyMemberType: "child",
+          ageStart: 13,
+          ageEnd: 18,
+          autoApply: false,
+          data: {
+            amount: 30,
+            frequency: "monthly",
+            growthRate: 2.0,
+            memo: "중고등학생 용돈",
+          },
+        },
+        {
+          title: "자녀 결혼자금",
+          category: "expense",
+          familyMemberType: "child",
+          ageStart: 30,
+          ageEnd: 30,
+          autoApply: false,
+          data: {
+            amount: 5000,
+            frequency: "onetime",
+            growthRate: 0,
+            memo: "자녀 결혼 지원금",
+          },
+        },
+        {
+          title: "자녀 학원비",
+          category: "expense",
+          familyMemberType: "child",
+          ageStart: 7,
+          ageEnd: 18,
+          autoApply: false,
+          data: {
+            amount: 50,
+            frequency: "monthly",
+            growthRate: 2.0,
+            memo: "초중고 학원비",
+          },
+        },
+        // 공통 (common) 관련
+        {
+          title: "생활비",
+          category: "expense",
+          familyMemberType: "common",
+          ageStart: null,
+          ageEnd: null,
+          autoApply: false,
+          data: {
+            amount: 200,
+            frequency: "monthly",
+            growthRate: 1.89,
+            memo: "월 생활비",
+            isFixedToRetirementYear: false,
+          },
+        },
+        {
+          title: "보험료",
+          category: "expense",
+          familyMemberType: "common",
+          ageStart: null,
+          ageEnd: null,
+          autoApply: false,
+          data: {
+            amount: 50,
+            frequency: "monthly",
+            growthRate: 1.89,
+            memo: "월 보험료",
+            isFixedToRetirementYear: false,
+          },
+        },
+        {
+          title: "국민연금",
+          category: "pension",
+          familyMemberType: "common",
+          ageStart: null,
+          ageEnd: null,
+          autoApply: false,
+          data: {
+            type: "national",
+            monthlyAmount: 150,
+            inflationRate: 1.89,
+            memo: "국민연금",
+          },
+        },
+      ];
+
+      // 모든 템플릿 생성
+      for (const template of defaultTemplates) {
+        await this.createTemplate(template);
+      }
+
+      console.log("기본 재무 라이브러리 템플릿 생성 완료");
+    } catch (error) {
+      console.error("기본 재무 라이브러리 템플릿 초기화 오류:", error);
+      throw error;
+    }
+  },
+};
