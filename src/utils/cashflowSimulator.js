@@ -4,6 +4,23 @@
 import { calculateKoreanAge } from "./koreanAge";
 
 /**
+ * PMT 계산 함수 (정기 지불액 계산)
+ * @param {number} pv - 현재 가치 (Present Value)
+ * @param {number} rate - 기간당 이자율 (연수익률)
+ * @param {number} nper - 총 지불/수령 횟수 (기간)
+ * @returns {number} 매년 수령액
+ */
+function calculatePMT(pv, rate, nper) {
+  if (rate === 0) {
+    // 이자율이 0이면 단순히 원금을 기간으로 나눔
+    return pv / nper;
+  }
+  // PMT = (PV × r × (1 + r)^n) / ((1 + r)^n - 1)
+  const pow = Math.pow(1 + rate, nper);
+  return (pv * rate * pow) / (pow - 1);
+}
+
+/**
  * 부동산 취득세 계산 함수
  * @param {number} propertyValue - 부동산 가치 (만원 단위)
  * @returns {number} 취득세 (만원 단위)
@@ -743,42 +760,24 @@ export function calculateCashflowSimulation(
           );
         }
       } else {
-        // 퇴직연금/개인연금: 수령 기간만 현금흐름에 반영
+        // 퇴직연금/개인연금: PMT 방식으로 수령
         const paymentStartYear = pension.paymentStartYear;
-        const paymentEndYear = pension.paymentEndYear;
+        const paymentYears = pension.paymentYears || 10; // 수령 기간(년)
+        const paymentEndYear = paymentStartYear + paymentYears - 1; // 종료년도 계산
 
-        // 퇴직금/DB인 경우, 은퇴년도 처리
+        // 적립/수령 기간 처리
+        // 추가 적립 안함인 경우 적립 기간 건너뛰기 (즉시 수령 처리)
+        // 적립 종료년도 = 수령 시작년도인 경우 수령 로직 우선 (year < paymentStartYear)
         if (
-          pension.type === "severance" &&
-          year === retirementYear &&
-          year === paymentStartYear &&
-          year === paymentEndYear
-        ) {
-          // 은퇴년도 = 수령년도 (바로 현금 수령)
-          const currentAmount = pension.currentAmount || 0;
-          totalPension += currentAmount;
-          addPositive(
-            pension.title,
-            currentAmount,
-            "퇴직금 IRP",
-            `pension-payment-${pension.id || pension.title}`
-          );
-        } else if (
-          pension.type === "severance" &&
-          year === retirementYear &&
-          year !== paymentStartYear
-        ) {
-          // 은퇴년도: 현금흐름에 추가 안함 (자산으로만 표시, 나중에 수령)
-        } else if (
+          !pension.noAdditionalContribution &&
           year >= pension.contributionStartYear &&
-          year <= pension.contributionEndYear
+          year <= pension.contributionEndYear &&
+          year < paymentStartYear
         ) {
           // 적립 기간 처리
           // 퇴직금/DB - IRP만 추가 적립 시 현금이 빠져나감 (실제 내 현금을 사용)
-          // 단, "추가 적립 안함"이 체크되지 않은 경우만
           if (
             pension.type === "severance" &&
-            !pension.noAdditionalContribution &&
             pension.contributionAmount &&
             pension.contributionAmount > 0
           ) {
@@ -813,108 +812,9 @@ export function calculateCashflowSimulation(
             );
           }
           // 퇴직연금은 적립 시 현금이 빠져나가지 않음 (회사에서 적립)
-        } else if (year >= paymentStartYear && year <= paymentEndYear) {
-          // 수령 기간 중 (종료년도까지 수령)
-          // 퇴직금/DB인 경우, 은퇴년도에는 수령 처리 안함
-          if (
-            pension.type === "severance" &&
-            year === retirementYear &&
-            year === paymentStartYear
-          ) {
-            // 은퇴년도: 현금흐름에 추가 안함 (자산으로만 표시)
-            // 다음 해부터 수령 시작
-          } else {
-            // 수령 기간: 현금흐름에 추가 (플러스)
-            // 수령 중에도 남은 금액에 수익률 적용하고, 남은 년수로 나눔
-
-            const returnRate = pension.returnRate / 100;
-
-            // 적립 완료 시점의 총 금액 계산
-            let totalAccumulated = pension.currentAmount || 0;
-
-            // 추가 적립이 있는 경우에만 적립액 계산 (연말 기준)
-            if (
-              !pension.noAdditionalContribution &&
-              pension.contributionAmount &&
-              pension.contributionAmount > 0
-            ) {
-              const monthlyAmount =
-                pension.contributionFrequency === "monthly"
-                  ? pension.contributionAmount
-                  : pension.contributionAmount / 12;
-              const yearlyContribution = monthlyAmount * 12;
-
-              const contributionYears =
-                pension.contributionEndYear - pension.contributionStartYear + 1;
-              for (let i = 0; i < contributionYears; i++) {
-                if (i === 0) {
-                  // 시작년도: 적립금만 (수익률 X)
-                  totalAccumulated = totalAccumulated + yearlyContribution;
-                } else {
-                  // 다음 해부터: 수익률 + 적립금
-                  totalAccumulated =
-                    totalAccumulated * (1 + returnRate) + yearlyContribution;
-                }
-              }
-            }
-
-            // 적립 종료 후 ~ 수령 시작 전 공백 기간의 수익률 적용
-            const gapYears = paymentStartYear - pension.contributionEndYear - 1;
-            for (let i = 0; i < gapYears; i++) {
-              totalAccumulated = totalAccumulated * (1 + returnRate);
-            }
-
-            // 현재가 수령 몇 년째인지 계산
-            const paymentYears = paymentEndYear - paymentStartYear + 1;
-            const yearsSincePaymentStart = year - paymentStartYear;
-
-            // 이전 년도까지 수령하고 남은 금액 계산
-            // 매년: (남은 금액 / 남은 년수) 수령, 남은 금액에 수익률 적용
-            let remainingAmount = totalAccumulated;
-
-            // 퇴직금/DB이고 은퇴 다음해에 수령하는 경우는 수익률 적용 안함
-            const shouldApplyReturnRate = !(
-              pension.type === "severance" &&
-              year === retirementYear + 1 &&
-              year === paymentStartYear
-            );
-
-            for (let i = 0; i < yearsSincePaymentStart; i++) {
-              const yearsLeft = paymentYears - i;
-              const payment = remainingAmount / yearsLeft;
-              if (shouldApplyReturnRate || i < yearsSincePaymentStart - 1) {
-                remainingAmount =
-                  (remainingAmount - payment) * (1 + returnRate);
-              } else {
-                remainingAmount = remainingAmount - payment;
-              }
-            }
-
-            // 올해 수령액 = 현재 남은 금액 / 남은 년수
-            const yearsLeft = paymentYears - yearsSincePaymentStart;
-            const yearlyPayment = remainingAmount / yearsLeft;
-
-            totalPension += yearlyPayment;
-
-            const pensionTypeLabel =
-              pension.type === "retirement"
-                ? "퇴직연금"
-                : pension.type === "severance"
-                ? "퇴직금 IRP"
-                : "개인연금";
-
-            addPositive(
-              pension.title,
-              yearlyPayment,
-              pensionTypeLabel,
-              `pension-payment-${pension.id || pension.title}`
-            );
-          }
-        } else if (year === paymentEndYear) {
-          // 수령 종료년도: 최종 수령
+        } else if (year === paymentStartYear) {
+          // PMT 방식: 수령 시작년도에 PMT 금액 계산 (한 번만)
           const returnRate = pension.returnRate / 100;
-          const paymentStartYear = pension.paymentStartYear;
-          const paymentEndYear = pension.paymentEndYear;
 
           // 적립 완료 시점의 총 금액 계산
           let totalAccumulated = pension.currentAmount || 0;
@@ -951,31 +851,52 @@ export function calculateCashflowSimulation(
             totalAccumulated = totalAccumulated * (1 + returnRate);
           }
 
-          // 현재가 수령 몇 년째인지 계산
-          const paymentYears = paymentEndYear - paymentStartYear + 1;
-          const yearsSincePaymentStart = year - paymentStartYear;
+          // 즉시 수령 판단 (수익률 적용 안 함):
+          // 1. 퇴직금/DB이고 은퇴년도 = 수령년도인 경우
+          // 2. 적립 종료년도 = 수령 시작년도인 경우 (연말 기준, 같은 해에 적립하고 바로 수령)
+          const isImmediateWithdrawal =
+            (pension.type === "severance" &&
+              year === retirementYear &&
+              pension.noAdditionalContribution) ||
+            pension.contributionEndYear === paymentStartYear;
 
-          // 이전 년도까지 수령하고 남은 금액 계산
-          let remainingAmount = totalAccumulated;
-
-          const shouldApplyReturnRate = !(
-            pension.type === "severance" &&
-            year === retirementYear + 1 &&
-            year === paymentStartYear
-          );
-
-          for (let i = 0; i < yearsSincePaymentStart; i++) {
-            const yearsLeft = paymentYears - i;
-            const payment = remainingAmount / yearsLeft;
-            if (shouldApplyReturnRate || i < yearsSincePaymentStart - 1) {
-              remainingAmount = (remainingAmount - payment) * (1 + returnRate);
-            } else {
-              remainingAmount = remainingAmount - payment;
-            }
+          // PMT 계산: 매년 동일한 금액 수령 (한 번만 계산하고 저장)
+          if (isImmediateWithdrawal) {
+            // 즉시 수령: 수익률 적용 없이 그대로 수령
+            pension._cashflowPMT = calculatePMT(
+              totalAccumulated,
+              0, // 수익률 0
+              paymentYears
+            );
+            pension._cashflowIsImmediateWithdrawal = true; // 저장
+          } else {
+            // 일반 수령: 수익률 적용
+            pension._cashflowPMT = calculatePMT(
+              totalAccumulated,
+              returnRate,
+              paymentYears
+            );
+            pension._cashflowIsImmediateWithdrawal = false; // 저장
           }
 
-          // 올해 수령액 = 현재 남은 금액 (전액 수령)
-          const yearlyPayment = remainingAmount;
+          totalPension += pension._cashflowPMT;
+
+          const pensionTypeLabel =
+            pension.type === "retirement"
+              ? "퇴직연금"
+              : pension.type === "severance"
+              ? "퇴직금 IRP"
+              : "개인연금";
+
+          addPositive(
+            pension.title,
+            pension._cashflowPMT,
+            pensionTypeLabel,
+            `pension-payment-${pension.id || pension.title}`
+          );
+        } else if (year > paymentStartYear && year <= paymentEndYear) {
+          // PMT 방식: 수령 기간 중 (이미 계산된 PMT 사용)
+          const yearlyPayment = pension._cashflowPMT || 0;
 
           totalPension += yearlyPayment;
 
@@ -993,6 +914,7 @@ export function calculateCashflowSimulation(
             `pension-payment-${pension.id || pension.title}`
           );
         }
+        // PMT 방식에서는 year <= paymentEndYear 조건에서 모든 수령 처리 완료
       }
     });
 
@@ -1434,7 +1356,9 @@ export function calculateAssetSimulation(
         contributionStartYear: pension.contributionStartYear,
         contributionEndYear: pension.contributionEndYear,
         paymentStartYear: pension.paymentStartYear,
-        paymentEndYear: pension.paymentEndYear,
+        paymentYears: pension.paymentYears || 10, // 수령 기간(년)
+        paymentEndYear:
+          pension.paymentStartYear + (pension.paymentYears || 10) - 1, // 종료년도 계산
         returnRate: pension.returnRate !== undefined ? pension.returnRate : 5.0,
         contributionAmount: pension.contributionAmount,
         contributionFrequency: pension.contributionFrequency,
@@ -1610,25 +1534,20 @@ export function calculateAssetSimulation(
         pension.type === "severance" &&
         year === pension.retirementYear
       ) {
-        // 은퇴년도 = 수령년도인 경우: 바로 현금화되므로 자산에 표시 안 함
-        if (
-          year === pension.paymentStartYear &&
-          year === pension.paymentEndYear
-        ) {
-          pension.isActive = false;
-          pension.amount = 0;
-          return;
-        }
-        // 은퇴년도 ≠ 수령년도: 자산에 표시
+        // 은퇴년도: 자산에 표시 (수령 여부는 아래에서 처리)
         pension.isActive = true;
       }
 
       if (!pension.isActive) return; // 비활성 연금은 건너뛰기
 
-      // 퇴직금/DB - IRP인 경우: 은퇴년도에는 아무것도 안함
-      if (pension.type === "severance" && year === pension.retirementYear) {
+      // 퇴직금/DB - IRP인 경우: 은퇴년도가 수령년도가 아니면 자산으로만 표시
+      if (
+        pension.type === "severance" &&
+        year === pension.retirementYear &&
+        year !== pension.paymentStartYear
+      ) {
         // 은퇴년도: 퇴직금 그대로 자산으로만 표시
-        // 수익률 X, 적립 X, 수령 X
+        // 수익률 X, 적립 X, 수령 X (나중에 수령)
         // 다음 해부터 계산 시작
         return;
       }
@@ -1683,10 +1602,12 @@ export function calculateAssetSimulation(
       }
 
       // 퇴직연금/개인연금: 적립 기간 처리
+      // 적립 종료년도 = 수령 시작년도인 경우 수령 로직 우선 (year < paymentStartYear)
       if (
         pension.type !== "severance" && // 퇴직금/DB는 위에서 이미 처리
         year >= pension.contributionStartYear &&
         year <= pension.contributionEndYear &&
+        year < pension.paymentStartYear &&
         pension.contributionAmount &&
         pension.contributionAmount > 0
       ) {
@@ -1715,72 +1636,80 @@ export function calculateAssetSimulation(
         // 적립 종료 후 ~ 수령 시작 전: 수익률만 적용 (공백 기간)
         const returnRate = pension.returnRate / 100;
         pension.amount = pension.amount * (1 + returnRate);
-      } else if (
-        year >= pension.paymentStartYear &&
-        year <= pension.paymentEndYear
-      ) {
-        // 수령 기간 중 (종료년도까지 수령)
-        // 퇴직금/DB인 경우, 은퇴년도에는 수령 처리 안함 (자산으로만 표시)
-        if (
-          pension.type === "severance" &&
-          year === pension.retirementYear &&
-          year === pension.paymentStartYear
-        ) {
-          // 은퇴년도: 퇴직금 그대로 자산으로 표시 (수익률 X, 수령 X)
-          // 다음 해부터 수익률 적용 및 수령 시작
-        } else if (year === pension.paymentEndYear) {
-          // 수령 종료년도: 최종 수령
-          const returnRate = pension.returnRate / 100;
-          const paymentYears =
-            pension.paymentEndYear - pension.paymentStartYear + 1;
-          const yearsSincePaymentStart = year - pension.paymentStartYear;
+      } else if (year === pension.paymentStartYear) {
+        // PMT 방식: 수령 시작년도에 매년 수령액 계산
+        const returnRate = pension.returnRate / 100;
+        const paymentYears = pension.paymentYears || 10;
+        const paymentEndYear = pension.paymentStartYear + paymentYears - 1;
 
-          // 퇴직금/DB이고 은퇴 다음해에 수령하는 경우, 수익률 적용 안함
-          if (
-            !(
-              pension.type === "severance" &&
-              year === pension.retirementYear + 1 &&
-              year === pension.paymentStartYear
-            )
-          ) {
-            // 수령 전 남은 금액에 수익률 적용
-            pension.amount = pension.amount * (1 + returnRate);
-          }
+        // 즉시 수령 판단 (수익률 적용 안 함):
+        // 1. 퇴직금/DB이고 은퇴년도 = 수령년도인 경우
+        // 2. 적립 종료년도 = 수령 시작년도인 경우 (연말 기준, 같은 해에 적립하고 바로 수령)
+        const isImmediateWithdrawal =
+          (pension.type === "severance" &&
+            year === pension.retirementYear &&
+            pension.noAdditionalContribution) ||
+          pension.contributionEndYear === pension.paymentStartYear;
 
-          // 마지막 수령: 남은 금액 전부 수령
-          const yearsLeft = paymentYears - yearsSincePaymentStart;
-          const yearlyPayment = pension.amount / yearsLeft;
-          pension.amount -= yearlyPayment;
+        if (isImmediateWithdrawal) {
+          // 즉시 수령: 수익률 적용 없이 그대로 수령
+          pension._pmtAmount = calculatePMT(
+            pension.amount,
+            0, // 수익률 0
+            paymentYears
+          );
+          pension._isImmediateWithdrawal = true; // 저장
+          // 수익률 적용 없이 PMT 차감
+          pension.amount = pension.amount - pension._pmtAmount;
+        } else {
+          // 일반 수령: 수익률 적용
+          pension._pmtAmount = calculatePMT(
+            pension.amount,
+            returnRate,
+            paymentYears
+          );
+          pension._isImmediateWithdrawal = false; // 저장
+          // 수익률 적용 후 PMT 차감
+          pension.amount =
+            pension.amount * (1 + returnRate) - pension._pmtAmount;
+        }
 
-          // 수령 완료 후 비활성화
+        // 수령 기간이 1년인 경우 (시작 = 종료): 즉시 비활성화
+        if (pension.paymentStartYear === paymentEndYear) {
           pension.isActive = false;
           pension.amount = 0;
-        } else {
-          // 수령 기간 중: 수익률 적용하면서 남은 년수로 나눔
-          const returnRate = pension.returnRate / 100;
-          const paymentYears =
-            pension.paymentEndYear - pension.paymentStartYear + 1;
-          const yearsSincePaymentStart = year - pension.paymentStartYear;
-
-          // 퇴직금/DB이고 은퇴 다음해에 수령하는 경우, 수익률 적용 안함
-          if (
-            !(
-              pension.type === "severance" &&
-              year === pension.retirementYear + 1 &&
-              year === pension.paymentStartYear
-            )
-          ) {
-            // 수령 전 남은 금액에 수익률 적용
-            pension.amount = pension.amount * (1 + returnRate);
-          }
-
-          // 올해 수령액 = 현재 금액 / 남은 년수
-          const yearsLeft = paymentYears - yearsSincePaymentStart;
-          const yearlyPayment = pension.amount / yearsLeft;
-
-          // 수령 후 남은 금액
-          pension.amount -= yearlyPayment;
         }
+      } else if (
+        year > pension.paymentStartYear &&
+        year < pension.paymentEndYear
+      ) {
+        // PMT 방식: 수령 기간 중
+        const returnRate = pension.returnRate / 100;
+
+        if (pension._isImmediateWithdrawal) {
+          // 즉시 수령: 수익률 적용 없이 PMT 차감
+          pension.amount = pension.amount - pension._pmtAmount;
+        } else {
+          // 일반 수령: 수익률 적용 후 PMT 차감
+          pension.amount =
+            pension.amount * (1 + returnRate) - pension._pmtAmount;
+        }
+      } else if (year === pension.paymentEndYear) {
+        // PMT 방식: 수령 종료년도 (마지막 수령 후 비활성화)
+        const returnRate = pension.returnRate / 100;
+
+        if (pension._isImmediateWithdrawal) {
+          // 즉시 수령: 수익률 적용 없이 마지막 PMT 차감
+          pension.amount = pension.amount - pension._pmtAmount;
+        } else {
+          // 일반 수령: 수익률 적용 후 마지막 PMT 차감
+          pension.amount =
+            pension.amount * (1 + returnRate) - pension._pmtAmount;
+        }
+
+        // 수령 완료 후 비활성화
+        pension.isActive = false;
+        pension.amount = 0;
       } else if (year > pension.paymentEndYear) {
         // 수령 종료 이후: 연금 비활성화
         pension.isActive = false;

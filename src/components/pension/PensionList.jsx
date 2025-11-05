@@ -111,13 +111,21 @@ function PensionList({
                     {formatAmount(pension.currentAmount)}
                   </div>
                 )}
-                {pension.contributionAmount > 0 && (
-                  <div className={styles.pensionAmount}>
-                    {formatAmount(pension.contributionAmount)}/
-                    {pension.contributionFrequency === "monthly" ? "월" : "년"}
-                  </div>
-                )}
+                {/* 추가 적립이 있는 경우만 적립 금액 표시 */}
+                {pension.contributionAmount > 0 &&
+                  !(
+                    pension.type === "severance" &&
+                    pension.noAdditionalContribution
+                  ) && (
+                    <div className={styles.pensionAmount}>
+                      {formatAmount(pension.contributionAmount)}/
+                      {pension.contributionFrequency === "monthly"
+                        ? "월"
+                        : "년"}
+                    </div>
+                  )}
                 <div className={styles.pensionPeriod}>
+                  {/* 추가 적립이 있는 경우만 적립 기간 표시 */}
                   {pension.type === "severance" &&
                   !pension.noAdditionalContribution ? (
                     <>
@@ -132,10 +140,14 @@ function PensionList({
                       <br />
                     </>
                   ) : null}
-                  수령: {pension.paymentStartYear}년 - {pension.paymentEndYear}
-                  년
+                  수령: {pension.paymentStartYear}년부터{" "}
+                  {pension.paymentYears ||
+                    (pension.paymentEndYear
+                      ? pension.paymentEndYear - pension.paymentStartYear + 1
+                      : 10)}
+                  년간
                   <br />
-                  (수익률 {pension.returnRate}% 적용)
+                  (수익률 {pension.returnRate}% 적용, PMT 방식)
                 </div>
               </>
             )}

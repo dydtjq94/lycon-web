@@ -2049,7 +2049,7 @@ function DashboardPage() {
 
     setIsGeneratingAI(true);
     try {
-      // 현재 선택된 시뮬레이션 정보 추가
+      // 현재 선택된 시뮬레이션 정보
       const currentSimulation = simulations.find(
         (sim) => sim.id === activeSimulationId
       );
@@ -2057,22 +2057,114 @@ function DashboardPage() {
         ? currentSimulation.title
         : "알 수 없음";
 
-      const analysisData = extractAIAnalysisData(
-        profileData,
-        incomes,
-        expenses,
-        savings,
-        pensions,
-        realEstates,
-        assets,
-        debts
-      );
+      // 기본 시뮬레이션(현재) 찾기
+      const defaultSimulation = simulations.find((sim) => sim.isDefault);
+      const isCurrentDefault = defaultSimulation?.id === activeSimulationId;
 
-      // 시뮬레이션 정보 추가
-      analysisData.시뮬레이션 = simulationTitle;
+      let promptText;
 
-      // AI 분석용 프롬프트와 데이터를 함께 구성
-      const promptText = `당신은 20년 경력의 전문 재무 상담사입니다. 제공된 재무 데이터를 분석하여 상세한 재무 상담과 구체적인 액션 플랜을 제시해주세요.
+      // 현재 탭이 기본 시뮬레이션이 아닌 경우: 기본 + 현재 두 개 비교
+      if (!isCurrentDefault && defaultSimulation) {
+        // 기본 시뮬레이션 데이터 가져오기
+        const defaultData = await fetchSimulationFinancialData(
+          defaultSimulation.id
+        );
+        const defaultAnalysisData = extractAIAnalysisData(
+          profileData,
+          defaultData.incomes,
+          defaultData.expenses,
+          defaultData.savings,
+          defaultData.pensions,
+          defaultData.realEstates,
+          defaultData.assets,
+          defaultData.debts
+        );
+
+        // 현재 시뮬레이션 데이터
+        const currentAnalysisData = extractAIAnalysisData(
+          profileData,
+          incomes,
+          expenses,
+          savings,
+          pensions,
+          realEstates,
+          assets,
+          debts
+        );
+
+        // 비교 프롬프트 생성
+        promptText = `당신은 20년 경력의 전문 재무 상담사입니다. 두 가지 재무 시뮬레이션을 비교 분석하여 상세한 재무 상담과 구체적인 액션 플랜을 제시해주세요.
+
+**비교 대상 시뮬레이션:**
+- A: ${defaultSimulation.title} (기본 시뮬레이션)
+- B: ${simulationTitle} (선택된 시뮬레이션)
+
+## 비교 분석 요청사항
+
+### 1. 두 시뮬레이션 차이점 분석
+- A와 B의 주요 차이점 3가지 요약
+- 각 시뮬레이션의 현금흐름 패턴 비교
+- 은퇴 후 현금흐름 지속 가능성 비교
+
+### 2. 자산 구조 비교
+- A와 B의 자산 구성 비교
+- 목표 자산 달성 가능성과 시점 비교
+- 각 시뮬레이션의 리스크 수준 비교
+
+### 3. 장단점 분석
+- A 시뮬레이션의 장점과 단점
+- B 시뮬레이션의 장점과 단점
+- 어떤 시뮬레이션이 더 적합한지 판단
+
+### 4. 권장 사항
+- 두 시뮬레이션 중 어느 것을 선택하는 것이 좋은지
+- 선택한 시뮬레이션에서 개선할 점
+- 구체적인 액션 플랜 (금액과 시점 포함)
+
+### 5. 시나리오별 대응
+- 각 시뮬레이션에서 최악/최선의 시나리오 비교
+- 리스크 관리 방안 비교
+
+## 출력 형식
+1. **시뮬레이션 비교 요약** (3-4줄)
+2. **주요 차이점 3가지** (우선순위별)
+3. **각 시뮬레이션 장단점**
+4. **권장 시뮬레이션 및 이유**
+5. **개선 방안 및 액션 플랜** (구체적 금액과 방법)
+6. **위험 관리 방안 비교**
+7. **예상 결과 비교** (구체적 수치로)
+
+모든 제안은 한국의 금융 환경과 세제를 고려하여 현실적이고 실행 가능한 수준으로 제시해주세요.
+
+## 재무 데이터
+
+### A: ${defaultSimulation.title} (기본 시뮬레이션)
+${JSON.stringify(defaultAnalysisData, null, 2)}
+
+### B: ${simulationTitle} (선택된 시뮬레이션)
+${JSON.stringify(currentAnalysisData, null, 2)}`;
+
+        alert(
+          "현재 데이터와 선택된 시뮬레이션 데이터가 비교 형식으로 클립보드에 복사되었습니다!\nChatGPT에 붙여넣기하여 AI 비교 분석을 받아보세요."
+        );
+      } else {
+        // 기본 시뮬레이션인 경우: 기존 방식 유지
+        const analysisData = extractAIAnalysisData(
+          profileData,
+          incomes,
+          expenses,
+          savings,
+          pensions,
+          realEstates,
+          assets,
+          debts
+        );
+
+        // 시뮬레이션 정보 추가
+        analysisData.시뮬레이션 = simulationTitle;
+
+        // AI 분석용 프롬프트와 데이터를 함께 구성
+        promptText = `당신은 20년 경력의 전문 재무 상담사입니다. 제공된 재무 데이터를 분석하여 상세한 재무 상담과 구체적인 액션 플랜을 제시해주세요.
 
 **분석 대상 시뮬레이션: ${simulationTitle}**
 
@@ -2134,11 +2226,13 @@ function DashboardPage() {
 ## 재무 데이터
 ${JSON.stringify(analysisData, null, 2)}`;
 
+        alert(
+          "AI 분석용 프롬프트와 데이터가 클립보드에 복사되었습니다!\nChatGPT에 붙여넣기하여 AI 조언을 받아보세요."
+        );
+      }
+
       // 클립보드에 프롬프트와 데이터를 함께 복사
       await navigator.clipboard.writeText(promptText);
-      alert(
-        "AI 분석용 프롬프트와 데이터가 클립보드에 복사되었습니다!\nChatGPT에 붙여넣기하여 AI 조언을 받아보세요."
-      );
     } catch (error) {
       console.error("AI 분석 데이터 생성 오류:", error);
       alert("AI 분석 데이터 생성 중 오류가 발생했습니다.");

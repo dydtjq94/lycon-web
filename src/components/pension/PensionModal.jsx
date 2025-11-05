@@ -97,7 +97,7 @@ function PensionModal({
     contributionEndYear: new Date().getFullYear() + 10,
     returnRate: 2.86, // 투자 수익률
     paymentStartYear: age65Year, // 수령 시작년도
-    paymentEndYear: age90Year, // 수령 종료년도
+    paymentYears: 10, // 수령 기간(년) - PMT 방식
     memo: "",
     isFixedContributionEndYearToRetirement: false, // 적립 종료년도 은퇴년도 고정 여부
     // 퇴직금/DB형용 필드
@@ -244,8 +244,11 @@ function PensionModal({
               : 2.86,
           paymentStartYear:
             editData.paymentStartYear || new Date().getFullYear() + 11,
-          paymentEndYear:
-            editData.paymentEndYear || new Date().getFullYear() + 20,
+          paymentYears: editData.paymentYears
+            ? editData.paymentYears
+            : editData.paymentEndYear
+            ? editData.paymentEndYear - editData.paymentStartYear
+            : 10, // 기존 데이터 호환성 (paymentEndYear가 있으면 기간 계산)
           memo: editData.memo || "",
           isFixedContributionEndYearToRetirement:
             editData.isFixedContributionEndYearToRetirement || false,
@@ -270,7 +273,7 @@ function PensionModal({
           contributionEndYear: new Date().getFullYear() + 10,
           returnRate: 2.86,
           paymentStartYear: age65Year,
-          paymentEndYear: age90Year,
+          paymentYears: 10,
           memo: "",
           isFixedContributionEndYearToRetirement: false,
           averageSalary: "",
@@ -357,18 +360,21 @@ function PensionModal({
         newFormData.title = "국민연금";
         newFormData.startYear = age65Year;
         newFormData.endYear = age90Year;
+        newFormData.noAdditionalContribution = false; // 국민연금은 추가 적립 안함 해제
         break;
       case "retirement":
         newFormData.title = "퇴직연금";
         newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
         newFormData.paymentStartYear = retirementYearPlus1; // 은퇴 나이 + 1부터 수령
-        newFormData.paymentEndYear = paymentEndYear; // 10년간 수령
+        newFormData.paymentYears = 10; // 10년간 수령
+        newFormData.noAdditionalContribution = false; // 퇴직연금은 추가 적립 안함 해제
         break;
       case "personal":
         newFormData.title = "개인연금";
         newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
         newFormData.paymentStartYear = retirementYearPlus1; // 은퇴 나이 + 1부터 수령
-        newFormData.paymentEndYear = paymentEndYear; // 10년간 수령
+        newFormData.paymentYears = 10; // 10년간 수령
+        newFormData.noAdditionalContribution = false; // 개인연금은 추가 적립 안함 해제
         break;
       case "severance":
         newFormData.title = "퇴직금/DB - IRP";
@@ -376,7 +382,7 @@ function PensionModal({
         newFormData.contributionStartYear = retirementYear; // 은퇴년도 (추가 적립 안함이므로 의미 없음)
         newFormData.contributionEndYear = retirementYear; // 은퇴년도 (추가 적립 안함이므로 의미 없음)
         newFormData.paymentStartYear = retirementYear; // 은퇴년도 즉시 수령
-        newFormData.paymentEndYear = retirementYear; // 은퇴년도 즉시 수령 (한번에 현금으로)
+        newFormData.paymentYears = 1; // 은퇴년도 즉시 수령 (한번에 현금으로)
         break;
     }
 
@@ -411,7 +417,7 @@ function PensionModal({
       if (!formData.yearsOfService || formData.yearsOfService < 0) {
         newErrors.yearsOfService = "재직 년도를 입력해주세요.";
       }
-      
+
       // 추가 적립 안함이 아닐 때만 적립 관련 검증
       if (!formData.noAdditionalContribution) {
         // 적립 금액은 선택사항이므로 검증 제외
@@ -422,16 +428,18 @@ function PensionModal({
           newErrors.contributionEndYear =
             "적립 종료년도는 시작년도보다 늦어야 합니다.";
         }
-        if (formData.contributionEndYear >= formData.paymentStartYear) {
+        if (formData.contributionEndYear > formData.paymentStartYear) {
           newErrors.paymentStartYear =
-            "수령 시작년도는 적립 종료년도보다 늦어야 합니다.";
+            "수령 시작년도는 적립 종료년도와 같거나 늦어야 합니다.";
         }
       }
-      
-      if (formData.paymentStartYear > formData.paymentEndYear) {
-        newErrors.paymentEndYear =
-          "수령 종료년도는 시작년도보다 늦어야 합니다.";
+
+      // 수령 기간 검증
+      const paymentYearsNum = parseInt(formData.paymentYears);
+      if (!paymentYearsNum || paymentYearsNum <= 0) {
+        newErrors.paymentYears = "수령 기간은 1년 이상이어야 합니다.";
       }
+
       const returnRateNum = parseFloat(formData.returnRate);
       if (isNaN(returnRateNum) || returnRateNum < 0 || returnRateNum > 100) {
         newErrors.returnRate = "투자 수익률은 0-100% 사이여야 합니다.";
@@ -448,13 +456,15 @@ function PensionModal({
         newErrors.contributionEndYear =
           "적립 종료년도는 시작년도보다 늦어야 합니다.";
       }
-      if (formData.paymentStartYear > formData.paymentEndYear) {
-        newErrors.paymentEndYear =
-          "수령 종료년도는 시작년도보다 늦어야 합니다.";
+
+      // 수령 기간 검증
+      const paymentYearsNum = parseInt(formData.paymentYears);
+      if (!paymentYearsNum || paymentYearsNum <= 0) {
+        newErrors.paymentYears = "수령 기간은 1년 이상이어야 합니다.";
       }
-      if (formData.contributionEndYear >= formData.paymentStartYear) {
+      if (formData.contributionEndYear > formData.paymentStartYear) {
         newErrors.paymentStartYear =
-          "수령 시작년도는 적립 종료년도보다 늦어야 합니다.";
+          "수령 시작년도는 적립 종료년도와 같거나 늦어야 합니다.";
       }
       const returnRateNum = parseFloat(formData.returnRate);
       if (isNaN(returnRateNum) || returnRateNum < 0 || returnRateNum > 100) {
@@ -502,8 +512,8 @@ function PensionModal({
         formData.type !== "national" ? parseFloat(formData.returnRate) : 0, // 백분율로 저장 (사용 시 /100 해야 함)
       paymentStartYear:
         formData.type !== "national" ? parseInt(formData.paymentStartYear) : 0,
-      paymentEndYear:
-        formData.type !== "national" ? parseInt(formData.paymentEndYear) : 0,
+      paymentYears:
+        formData.type !== "national" ? parseInt(formData.paymentYears) : 0,
       isFixedContributionEndYearToRetirement:
         formData.type !== "national"
           ? formData.isFixedContributionEndYearToRetirement || false
@@ -546,7 +556,7 @@ function PensionModal({
       contributionEndYear: new Date().getFullYear() + 10,
       returnRate: 2.86,
       paymentStartYear: age65Year,
-      paymentEndYear: age90Year,
+      paymentYears: 10,
       memo: "",
       isFixedContributionEndYearToRetirement: false,
       averageSalary: "",
@@ -784,7 +794,9 @@ function PensionModal({
                   {/* 평균 임금 & 재직 년도 (같은 행에 배치) */}
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.label}>평균 임금 (월, 만원)</label>
+                      <label className={styles.label}>
+                        평균 임금 (월, 만원)
+                      </label>
                       <input
                         type="text"
                         value={formData.averageSalary}
@@ -875,13 +887,21 @@ function PensionModal({
                           setFormData({
                             ...formData,
                             noAdditionalContribution: isChecked,
-                            contributionAmount: isChecked ? "" : formData.contributionAmount,
+                            contributionAmount: isChecked
+                              ? ""
+                              : formData.contributionAmount,
                             // 추가 적립 안함 체크 시:
                             // - 적립년도를 은퇴년도로 고정 (시작/종료 모두)
                             // - 수령 시작년도를 은퇴년도로 변경
-                            contributionStartYear: isChecked ? retirementYear : formData.contributionStartYear,
-                            contributionEndYear: isChecked ? retirementYear : formData.contributionEndYear,
-                            paymentStartYear: isChecked ? retirementYear : formData.paymentStartYear,
+                            contributionStartYear: isChecked
+                              ? retirementYear
+                              : formData.contributionStartYear,
+                            contributionEndYear: isChecked
+                              ? retirementYear
+                              : formData.contributionEndYear,
+                            paymentStartYear: isChecked
+                              ? retirementYear
+                              : formData.paymentStartYear,
                           });
                         }}
                         className={styles.fixedCheckbox}
@@ -895,122 +915,125 @@ function PensionModal({
                   {/* 적립 금액 (추가 적립 안함이 체크되지 않았을 때만 표시) */}
                   {!formData.noAdditionalContribution && (
                     <div className={styles.field}>
-                    <label className={styles.label}>추가 적립 금액 (만원)</label>
-                    <div className={styles.row}>
-                      <input
-                        type="text"
-                        value={formData.contributionAmount}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            contributionAmount: e.target.value,
-                          })
-                        }
-                        onKeyPress={handleKeyPress}
-                        className={`${styles.input} ${
-                          errors.contributionAmount ? styles.error : ""
-                        }`}
-                        placeholder="예: 50 (선택사항)"
-                      />
-                      <select
-                        value={formData.contributionFrequency}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            contributionFrequency: e.target.value,
-                          })
-                        }
-                        className={styles.select}
-                      >
-                        <option value="monthly">월</option>
-                        <option value="yearly">년</option>
-                      </select>
-                    </div>
-                    {formData.contributionAmount &&
-                      !isNaN(parseInt(formData.contributionAmount)) && (
-                        <div className={styles.amountPreview}>
-                          {formatAmountForChart(
-                            parseInt(formData.contributionAmount)
-                          )}
-                        </div>
+                      <label className={styles.label}>
+                        추가 적립 금액 (만원)
+                      </label>
+                      <div className={styles.row}>
+                        <input
+                          type="text"
+                          value={formData.contributionAmount}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              contributionAmount: e.target.value,
+                            })
+                          }
+                          onKeyPress={handleKeyPress}
+                          className={`${styles.input} ${
+                            errors.contributionAmount ? styles.error : ""
+                          }`}
+                          placeholder="예: 50 (선택사항)"
+                        />
+                        <select
+                          value={formData.contributionFrequency}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              contributionFrequency: e.target.value,
+                            })
+                          }
+                          className={styles.select}
+                        >
+                          <option value="monthly">월</option>
+                          <option value="yearly">년</option>
+                        </select>
+                      </div>
+                      {formData.contributionAmount &&
+                        !isNaN(parseInt(formData.contributionAmount)) && (
+                          <div className={styles.amountPreview}>
+                            {formatAmountForChart(
+                              parseInt(formData.contributionAmount)
+                            )}
+                          </div>
+                        )}
+                      {errors.contributionAmount && (
+                        <span className={styles.errorText}>
+                          {errors.contributionAmount}
+                        </span>
                       )}
-                    {errors.contributionAmount && (
-                      <span className={styles.errorText}>
-                        {errors.contributionAmount}
-                      </span>
-                    )}
-                  </div>
+                    </div>
                   )}
 
                   {/* 적립년도 (시작, 종료) - 추가 적립 안함이 체크되지 않았을 때만 표시 */}
                   {!formData.noAdditionalContribution && (
-                  <div className={styles.row}>
-                    <div className={styles.field}>
-                      <label className={styles.label}>적립 시작년도</label>
-                      <input
-                        type="text"
-                        value={formData.contributionStartYear}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            contributionStartYear:
-                              parseInt(e.target.value) || 0,
-                          })
-                        }
-                        onKeyPress={handleKeyPress}
-                        className={styles.input}
-                        placeholder="은퇴년도"
-                      />
-                      {/* 적립 시작년도 나이 표시 */}
-                      {formData.contributionStartYear &&
-                        profileData &&
-                        profileData.birthYear && (
-                          <div className={styles.agePreview}>
-                            {calculateKoreanAge(
-                              profileData.birthYear,
-                              formData.contributionStartYear
-                            )}
-                            세
-                          </div>
-                        )}
-                    </div>
+                    <div className={styles.row}>
+                      <div className={styles.field}>
+                        <label className={styles.label}>적립 시작년도</label>
+                        <input
+                          type="text"
+                          value={formData.contributionStartYear}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              contributionStartYear:
+                                parseInt(e.target.value) || 0,
+                            })
+                          }
+                          onKeyPress={handleKeyPress}
+                          className={styles.input}
+                          placeholder="은퇴년도"
+                        />
+                        {/* 적립 시작년도 나이 표시 */}
+                        {formData.contributionStartYear &&
+                          profileData &&
+                          profileData.birthYear && (
+                            <div className={styles.agePreview}>
+                              {calculateKoreanAge(
+                                profileData.birthYear,
+                                formData.contributionStartYear
+                              )}
+                              세
+                            </div>
+                          )}
+                      </div>
 
-                    <div className={styles.field}>
-                      <label className={styles.label}>적립 종료년도</label>
-                      <input
-                        type="text"
-                        value={formData.contributionEndYear}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            contributionEndYear: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        onKeyPress={handleKeyPress}
-                        className={`${styles.input} ${
-                          errors.contributionEndYear ? styles.error : ""
-                        }`}
-                        placeholder="은퇴년도"
-                      />
-                      {/* 적립 종료년도 나이 표시 */}
-                      {formData.contributionEndYear &&
-                        profileData &&
-                        profileData.birthYear && (
-                          <div className={styles.agePreview}>
-                            {calculateKoreanAge(
-                              profileData.birthYear,
-                              formData.contributionEndYear
-                            )}
-                            세
-                          </div>
+                      <div className={styles.field}>
+                        <label className={styles.label}>적립 종료년도</label>
+                        <input
+                          type="text"
+                          value={formData.contributionEndYear}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              contributionEndYear:
+                                parseInt(e.target.value) || 0,
+                            })
+                          }
+                          onKeyPress={handleKeyPress}
+                          className={`${styles.input} ${
+                            errors.contributionEndYear ? styles.error : ""
+                          }`}
+                          placeholder="은퇴년도"
+                        />
+                        {/* 적립 종료년도 나이 표시 */}
+                        {formData.contributionEndYear &&
+                          profileData &&
+                          profileData.birthYear && (
+                            <div className={styles.agePreview}>
+                              {calculateKoreanAge(
+                                profileData.birthYear,
+                                formData.contributionEndYear
+                              )}
+                              세
+                            </div>
+                          )}
+                        {errors.contributionEndYear && (
+                          <span className={styles.errorText}>
+                            {errors.contributionEndYear}
+                          </span>
                         )}
-                      {errors.contributionEndYear && (
-                        <span className={styles.errorText}>
-                          {errors.contributionEndYear}
-                        </span>
-                      )}
+                      </div>
                     </div>
-                  </div>
                   )}
 
                   {/* 투자 수익률 */}
@@ -1081,39 +1104,28 @@ function PensionModal({
                     </div>
 
                     <div className={styles.field}>
-                      <label className={styles.label}>수령 종료년도</label>
+                      <label className={styles.label}>수령 기간(년)</label>
                       <input
                         type="text"
-                        value={formData.paymentEndYear}
+                        value={formData.paymentYears}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            paymentEndYear: e.target.value,
+                            paymentYears: e.target.value,
                           })
                         }
                         onKeyPress={handleKeyPress}
                         className={`${styles.input} ${
-                          errors.paymentEndYear ? styles.error : ""
+                          errors.paymentYears ? styles.error : ""
                         }`}
-                        placeholder="수령 종료년도"
+                        placeholder="예: 10"
                       />
-                      {/* 수령 종료년도 나이 표시 */}
-                      {formData.paymentEndYear &&
-                        profileData &&
-                        profileData.birthYear && (
-                          <div className={styles.agePreview}>
-                            {calculateKoreanAge(
-                              profileData.birthYear,
-                              formData.paymentEndYear
-                            )}
-                            세
-                          </div>
-                        )}
-                      {errors.paymentEndYear && (
+                      {errors.paymentYears && (
                         <span className={styles.errorText}>
-                          {errors.paymentEndYear}
+                          {errors.paymentYears}
                         </span>
                       )}
+                      <div className={styles.helperText}>PMT 방식</div>
                     </div>
                   </div>
                 </>
@@ -1370,39 +1382,28 @@ function PensionModal({
                     </div>
 
                     <div className={styles.field}>
-                      <label className={styles.label}>수령 종료년도</label>
+                      <label className={styles.label}>수령 기간(년)</label>
                       <input
                         type="text"
-                        value={formData.paymentEndYear}
+                        value={formData.paymentYears}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            paymentEndYear: e.target.value,
+                            paymentYears: e.target.value,
                           })
                         }
                         onKeyPress={handleKeyPress}
                         className={`${styles.input} ${
-                          errors.paymentEndYear ? styles.error : ""
+                          errors.paymentYears ? styles.error : ""
                         }`}
-                        placeholder="2050"
+                        placeholder="예: 10"
                       />
-                      {/* 수령 종료년도 나이 표시 */}
-                      {formData.paymentEndYear &&
-                        profileData &&
-                        profileData.birthYear && (
-                          <div className={styles.agePreview}>
-                            {calculateKoreanAge(
-                              profileData.birthYear,
-                              formData.paymentEndYear
-                            )}
-                            세
-                          </div>
-                        )}
-                      {errors.paymentEndYear && (
+                      {errors.paymentYears && (
                         <span className={styles.errorText}>
-                          {errors.paymentEndYear}
+                          {errors.paymentYears}
                         </span>
                       )}
+                      <div className={styles.helperText}>PMT 방식</div>
                     </div>
                   </div>
                 </>

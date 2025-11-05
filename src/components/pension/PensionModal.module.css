@@ -211,6 +211,13 @@
   font-style: italic;
 }
 
+.helperText {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-weight: 400;
+}
+
 .buttonGroup {
   display: flex;
   gap: 12px;
