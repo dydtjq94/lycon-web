@@ -226,12 +226,14 @@
 
 .toggleButton:hover {
   color: #111827;
+  outline: none;
 }
 
 .toggleButton:focus {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
   border-radius: 2px;
+  outline: none;
 }
 
 .summaryValue {
@@ -329,7 +331,9 @@
   align-items: center;
   padding: 0.35rem 0;
   background: #f9fafb;
-  border-left: 3px solid #e5e7eb;
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-left-color: #e5e7eb; /* 기본 색상, 인라인 스타일로 오버라이드됨 */
   padding-left: 0.5rem;
 }
 

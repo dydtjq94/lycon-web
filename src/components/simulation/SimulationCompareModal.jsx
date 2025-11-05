@@ -196,7 +196,7 @@ function SimulationCompareModal({
 
   const valueColumnCount =
     Number(showDefaultColumn) + Number(showTargetColumn) || 1;
-  const gridTemplateColumns = `minmax(120px, 0.8fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
+  const gridTemplateColumns = `minmax(160px, 1.2fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
 
   const renderBreakdownList = (items, prefix) => {
     if (!Array.isArray(items) || items.length === 0) {
@@ -234,6 +234,91 @@ function SimulationCompareModal({
     );
   };
 
+  // 카테고리 판별 함수 (정렬용)
+  const getCategoryType = (itemName) => {
+    const name = itemName.toLowerCase();
+
+    // 소득 관련
+    if (
+      name.includes("소득") ||
+      name.includes("급여") ||
+      name.includes("수입") ||
+      name.includes("인건비")
+    ) {
+      return "income";
+    }
+
+    // 지출 관련
+    if (
+      name.includes("지출") ||
+      name.includes("생활비") ||
+      name.includes("비용") ||
+      name.includes("세금")
+    ) {
+      return "expense";
+    }
+
+    // 저축/투자 관련
+    if (
+      name.includes("저축") ||
+      name.includes("투자") ||
+      name.includes("예금") ||
+      name.includes("적금")
+    ) {
+      return "savings";
+    }
+
+    // 연금 관련
+    if (
+      name.includes("연금") ||
+      name.includes("퇴직") ||
+      name.includes("국민연금")
+    ) {
+      return "pension";
+    }
+
+    // 부동산 관련
+    if (
+      name.includes("부동산") ||
+      name.includes("아파트") ||
+      name.includes("자택") ||
+      name.includes("임대") ||
+      name.includes("주택")
+    ) {
+      return "realEstate";
+    }
+
+    // 부채 관련
+    if (
+      name.includes("부채") ||
+      name.includes("대출") ||
+      name.includes("빚") ||
+      name.includes("이자")
+    ) {
+      return "debt";
+    }
+
+    // 자산 관련 (기타)
+    return "assets";
+  };
+
+  // 카테고리별 색상 결정 함수
+  const getCategoryColor = (itemName) => {
+    const categoryType = getCategoryType(itemName);
+
+    const colorMap = {
+      income: "#10b981", // 소득 - 초록색
+      expense: "#ef4444", // 지출 - 빨간색
+      savings: "#3b82f6", // 저축/투자 - 파란색
+      pension: "#fbbf24", // 연금 - 노란색
+      realEstate: "#8b5cf6", // 부동산 - 보라색
+      debt: "#6b7280", // 부채 - 회색
+      assets: "#06b6d4", // 자산 - 청록색
+    };
+
+    return colorMap[categoryType] || "#06b6d4";
+  };
+
   // 두 breakdown을 비교하여 같은 이름끼리 행을 맞춰서 표시
   const renderBreakdownComparison = (
     defaultItems,
@@ -257,21 +342,67 @@ function SimulationCompareModal({
     const filteredDefault = filterItems(defaultItems);
     const filteredTarget = filterItems(targetItems);
 
-    // 모든 고유한 이름 추출
-    const allNames = new Set();
-    filteredDefault.forEach((item) => allNames.add(item.name));
-    filteredTarget.forEach((item) => allNames.add(item.name));
+    // 현재(default)에 있는 항목들과 새로 추가된 항목들을 분리
+    const defaultNames = new Set(filteredDefault.map((item) => item.name));
+    const targetNames = new Set(filteredTarget.map((item) => item.name));
 
-    if (allNames.size === 0) {
+    // 현재에 있는 항목들 (공통 + 삭제될 항목)
+    const existingNames = Array.from(defaultNames);
+
+    // 새로 추가된 항목들 (시뮬레이션에만 있음)
+    const newNames = Array.from(targetNames).filter(
+      (name) => !defaultNames.has(name)
+    );
+
+    if (existingNames.length === 0 && newNames.length === 0) {
       return null;
     }
+
+    // 카테고리별 정렬 순서
+    const categoryOrder = [
+      "income", // 소득
+      "expense", // 지출
+      "savings", // 저축/투자
+      "pension", // 연금
+      "realEstate", // 부동산
+      "assets", // 자산
+      "debt", // 부채
+    ];
+
+    // 카테고리별 정렬 함수
+    const sortByCategory = (names) => {
+      return names.sort((a, b) => {
+        const categoryA = getCategoryType(a);
+        const categoryB = getCategoryType(b);
+
+        const orderA = categoryOrder.indexOf(categoryA);
+        const orderB = categoryOrder.indexOf(categoryB);
+
+        // 카테고리 순서가 다르면 카테고리 순서로 정렬
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+
+        // 같은 카테고리 내에서는 이름순으로 정렬
+        return a.localeCompare(b, "ko");
+      });
+    };
+
+    // 1. 현재에 있는 항목들을 카테고리별로 정렬
+    const sortedExistingNames = sortByCategory(existingNames);
+
+    // 2. 새로 추가된 항목들을 카테고리별로 정렬
+    const sortedNewNames = sortByCategory(newNames);
+
+    // 3. 현재 항목 + 신규 항목 순서로 병합
+    const sortedNames = [...sortedExistingNames, ...sortedNewNames];
 
     // 이름으로 아이템 찾기
     const findItem = (items, name) => items.find((item) => item.name === name);
 
     return (
       <>
-        {Array.from(allNames).map((name, index) => {
+        {sortedNames.map((name, index) => {
           const defaultItem = findItem(filteredDefault, name);
           const targetItem = findItem(filteredTarget, name);
 
@@ -279,11 +410,14 @@ function SimulationCompareModal({
           const isNew = !defaultItem && targetItem; // 새로 추가됨
           const isRemoved = defaultItem && !targetItem; // 삭제됨
 
+          // 카테고리 색상 가져오기
+          const borderColor = getCategoryColor(name);
+
           return (
             <div
               key={`${prefix}-${name}-${index}`}
               className={styles.breakdownComparisonRow}
-              style={{ gridTemplateColumns }}
+              style={{ gridTemplateColumns, borderLeftColor: borderColor }}
             >
               <div className={styles.breakdownComparisonName}>{name}</div>
               <div className={styles.breakdownComparisonValue}>
