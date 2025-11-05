@@ -101,11 +101,20 @@
   box-shadow: 0 1px 3px rgba(14, 165, 233, 0.03);
 }
 
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .summaryTitle {
   font-size: 1rem;
   font-weight: 700;
   color: #1e40af;
-  margin: 0 0 0.75rem;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -113,6 +122,56 @@
 
 .summaryTitle::before {
   font-size: 1.1rem;
+}
+
+/* 기간 탭 스타일 */
+.periodTabs {
+  display: flex;
+  gap: 0.25rem;
+  background: #f3f4f6;
+  padding: 0.25rem;
+  border-radius: 6px;
+}
+
+.periodTab {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.periodTab:hover {
+  color: #374151;
+  background: #e5e7eb;
+}
+
+.periodTabActive {
+  color: #1e40af;
+  background: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 640px) {
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .periodTabs {
+    width: 100%;
+  }
+
+  .periodTab {
+    flex: 1;
+    text-align: center;
+  }
 }
 
 .summaryTable {
@@ -144,6 +203,35 @@
 .summaryLabel {
   font-weight: 600;
   color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 토글 버튼 스타일 */
+.toggleButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.7rem;
+  color: #6b7280;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.toggleButton:hover {
+  color: #111827;
+}
+
+.toggleButton:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .summaryValue {
@@ -232,4 +320,65 @@
 
 .negative {
   color: #dc2626;
+}
+
+/* Breakdown 비교 행 스타일 */
+.breakdownComparisonRow {
+  display: grid;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.35rem 0;
+  background: #f9fafb;
+  border-left: 3px solid #e5e7eb;
+  padding-left: 0.5rem;
+}
+
+.breakdownComparisonRow:hover {
+  background: #f3f4f6;
+}
+
+.breakdownComparisonName {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+  padding-left: 0.5rem;
+}
+
+.breakdownComparisonValue {
+  font-size: 0.75rem;
+  color: #4b5563;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.breakdownComparisonDiff {
+  display: inline-flex;
+  margin-left: 0.25rem;
+}
+
+/* 신규/삭제됨 배지 스타일 */
+.breakdownComparisonNew {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: #dcfce7;
+  color: #166534;
+  margin-left: 0.5rem;
+}
+
+.breakdownComparisonRemoved {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #991b1b;
+  margin-left: 0.5rem;
 }

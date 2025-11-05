@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styles from "./SimulationCompareModal.module.css";
 import IncomeList from "../income/IncomeList";
 import ExpenseList from "../expense/ExpenseList";
@@ -73,16 +73,61 @@ function SimulationCompareModal({
 }) {
   if (!isOpen) return null;
 
+  // 세부 항목 토글 상태 (기본값: 접혀있음)
+  const [expandedRows, setExpandedRows] = useState({});
+
+  // 생애 자금 수급/수요 탭 상태 (기본값: 전체)
+  const [cashflowPeriod, setCashflowPeriod] = useState("all");
+
+  // 토글 함수
+  const toggleRow = (rowKey) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [rowKey]: !prev[rowKey],
+    }));
+  };
+
+  // 은퇴년도 계산
+  const retirementYear = useMemo(() => {
+    if (!profileData?.birthYear || !profileData?.retirementAge) return null;
+    const currentYear = new Date().getFullYear();
+    const currentAge = currentYear - parseInt(profileData.birthYear, 10);
+    return currentYear + (parseInt(profileData.retirementAge, 10) - currentAge);
+  }, [profileData]);
+
+  // cashflow 데이터 필터링 함수
+  const filterCashflowByPeriod = (cashflow, period) => {
+    if (!cashflow || !retirementYear) return cashflow;
+
+    switch (period) {
+      case "beforeRetirement": // 은퇴전(포함)
+        return cashflow.filter((cf) => cf.year <= retirementYear);
+      case "afterRetirement": // 은퇴 이후
+        return cashflow.filter((cf) => cf.year > retirementYear);
+      case "all": // 전체
+      default:
+        return cashflow;
+    }
+  };
+
   // 생애 자금 수급/수요 총합 계산 (할인율 미적용)
   const defaultPV = useMemo(() => {
     if (!defaultData || !isOpen) return null;
-    return calculateLifetimeCashFlowTotals(defaultData.cashflow || []);
-  }, [defaultData, isOpen]);
+    const filteredCashflow = filterCashflowByPeriod(
+      defaultData.cashflow || [],
+      cashflowPeriod
+    );
+    return calculateLifetimeCashFlowTotals(filteredCashflow);
+  }, [defaultData, isOpen, cashflowPeriod, retirementYear]);
 
   const targetPV = useMemo(() => {
     if (!targetData || !isOpen) return null;
-    return calculateLifetimeCashFlowTotals(targetData.cashflow || []);
-  }, [targetData, isOpen]);
+    const filteredCashflow = filterCashflowByPeriod(
+      targetData.cashflow || [],
+      cashflowPeriod
+    );
+    return calculateLifetimeCashFlowTotals(filteredCashflow);
+  }, [targetData, isOpen, cashflowPeriod, retirementYear]);
 
   const defaultAssetsTimeline = useMemo(() => {
     if (!profileData || !defaultData || !isOpen) return null;
@@ -151,7 +196,7 @@ function SimulationCompareModal({
 
   const valueColumnCount =
     Number(showDefaultColumn) + Number(showTargetColumn) || 1;
-  const gridTemplateColumns = `minmax(80px, 0.4fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
+  const gridTemplateColumns = `minmax(120px, 0.8fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
 
   const renderBreakdownList = (items, prefix) => {
     if (!Array.isArray(items) || items.length === 0) {
@@ -186,6 +231,102 @@ function SimulationCompareModal({
           </li>
         ))}
       </ul>
+    );
+  };
+
+  // 두 breakdown을 비교하여 같은 이름끼리 행을 맞춰서 표시
+  const renderBreakdownComparison = (
+    defaultItems,
+    targetItems,
+    prefix,
+    gridTemplateColumns
+  ) => {
+    // 시스템 필드들을 제외하고 필터링
+    const systemFields = ["totalAmount", "year", "age"];
+    const filterItems = (items) => {
+      if (!Array.isArray(items)) return [];
+      return items.filter(
+        (item) =>
+          item &&
+          item.name &&
+          !systemFields.includes(item.name) &&
+          typeof item.amount === "number"
+      );
+    };
+
+    const filteredDefault = filterItems(defaultItems);
+    const filteredTarget = filterItems(targetItems);
+
+    // 모든 고유한 이름 추출
+    const allNames = new Set();
+    filteredDefault.forEach((item) => allNames.add(item.name));
+    filteredTarget.forEach((item) => allNames.add(item.name));
+
+    if (allNames.size === 0) {
+      return null;
+    }
+
+    // 이름으로 아이템 찾기
+    const findItem = (items, name) => items.find((item) => item.name === name);
+
+    return (
+      <>
+        {Array.from(allNames).map((name, index) => {
+          const defaultItem = findItem(filteredDefault, name);
+          const targetItem = findItem(filteredTarget, name);
+
+          // 추가/삭제 여부 확인
+          const isNew = !defaultItem && targetItem; // 새로 추가됨
+          const isRemoved = defaultItem && !targetItem; // 삭제됨
+
+          return (
+            <div
+              key={`${prefix}-${name}-${index}`}
+              className={styles.breakdownComparisonRow}
+              style={{ gridTemplateColumns }}
+            >
+              <div className={styles.breakdownComparisonName}>{name}</div>
+              <div className={styles.breakdownComparisonValue}>
+                {defaultItem ? (
+                  <>
+                    <span>{formatAmountForChart(defaultItem.amount)}</span>
+                    {isRemoved && (
+                      <span className={styles.breakdownComparisonRemoved}>
+                        삭제됨
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className={styles.summaryEmpty}>-</span>
+                )}
+              </div>
+              <div className={styles.breakdownComparisonValue}>
+                {targetItem ? (
+                  <>
+                    <span>{formatAmountForChart(targetItem.amount)}</span>
+                    {isNew && (
+                      <span className={styles.breakdownComparisonNew}>
+                        신규
+                      </span>
+                    )}
+                    {defaultItem && targetItem && (
+                      <span className={styles.breakdownComparisonDiff}>
+                        {renderDifference(
+                          defaultItem.amount,
+                          targetItem.amount,
+                          "supply"
+                        )}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className={styles.summaryEmpty}>-</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </>
     );
   };
 
@@ -469,7 +610,39 @@ function SimulationCompareModal({
               {/* 생애 자금 수급/수요 현재가 요약 */}
               {(defaultPV || targetPV) && (
                 <div className={styles.summarySection}>
-                  <h4 className={styles.summaryTitle}>생애 자금 수급/수요</h4>
+                  <div className={styles.sectionHeader}>
+                    <h4 className={styles.summaryTitle}>생애 자금 수급/수요</h4>
+                    <div className={styles.periodTabs}>
+                      <button
+                        className={`${styles.periodTab} ${
+                          cashflowPeriod === "all" ? styles.periodTabActive : ""
+                        }`}
+                        onClick={() => setCashflowPeriod("all")}
+                      >
+                        전체
+                      </button>
+                      <button
+                        className={`${styles.periodTab} ${
+                          cashflowPeriod === "beforeRetirement"
+                            ? styles.periodTabActive
+                            : ""
+                        }`}
+                        onClick={() => setCashflowPeriod("beforeRetirement")}
+                      >
+                        은퇴전(포함)
+                      </button>
+                      <button
+                        className={`${styles.periodTab} ${
+                          cashflowPeriod === "afterRetirement"
+                            ? styles.periodTabActive
+                            : ""
+                        }`}
+                        onClick={() => setCashflowPeriod("afterRetirement")}
+                      >
+                        은퇴 이후
+                      </button>
+                    </div>
+                  </div>
                   <div className={styles.summaryTable}>
                     <div
                       className={`${styles.summaryRow} ${styles.summaryHeader}`}
@@ -488,71 +661,133 @@ function SimulationCompareModal({
                       )}
                     </div>
                     {summaryRows.map((row) => (
-                      <div
-                        key={row.key}
-                        className={styles.summaryRow}
-                        style={{ gridTemplateColumns }}
-                      >
+                      <React.Fragment key={row.key}>
                         <div
-                          className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                          className={styles.summaryRow}
+                          style={{ gridTemplateColumns }}
                         >
-                          {row.label}
+                          <div
+                            className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                          >
+                            {row.key !== "net" && (
+                              <button
+                                className={styles.toggleButton}
+                                onClick={() => toggleRow(row.key)}
+                                aria-label={
+                                  expandedRows[row.key]
+                                    ? "세부 항목 접기"
+                                    : "세부 항목 펼치기"
+                                }
+                              >
+                                {expandedRows[row.key] ? "▼" : "▶"}
+                              </button>
+                            )}
+                            {row.label}
+                          </div>
+                          {showDefaultColumn && !showTargetColumn && (
+                            <div className={styles.summaryCell}>
+                              {row.defaultValue !== null ? (
+                                <span
+                                  className={`${styles.summaryValue} ${
+                                    row.key === "net"
+                                      ? row.defaultValue >= 0
+                                        ? styles.positive
+                                        : styles.negative
+                                      : ""
+                                  }`}
+                                >
+                                  {formatAmountForChart(row.defaultValue)}
+                                </span>
+                              ) : (
+                                <span className={styles.summaryEmpty}>-</span>
+                              )}
+                              {row.key !== "net" &&
+                                renderBreakdownList(
+                                  row.defaultBreakdown,
+                                  `default-${row.key}`
+                                )}
+                            </div>
+                          )}
+                          {!showDefaultColumn && showTargetColumn && (
+                            <div className={styles.summaryCell}>
+                              {row.targetValue !== null ? (
+                                <span
+                                  className={`${styles.summaryValue} ${
+                                    row.key === "net"
+                                      ? row.targetValue >= 0
+                                        ? styles.positive
+                                        : styles.negative
+                                      : ""
+                                  }`}
+                                >
+                                  {formatAmountForChart(row.targetValue)}
+                                </span>
+                              ) : (
+                                <span className={styles.summaryEmpty}>-</span>
+                              )}
+                              {row.key !== "net" &&
+                                renderBreakdownList(
+                                  row.targetBreakdown,
+                                  `target-${row.key}`
+                                )}
+                            </div>
+                          )}
+                          {showDefaultColumn && showTargetColumn && (
+                            <>
+                              <div className={styles.summaryCell}>
+                                {row.defaultValue !== null ? (
+                                  <span
+                                    className={`${styles.summaryValue} ${
+                                      row.key === "net"
+                                        ? row.defaultValue >= 0
+                                          ? styles.positive
+                                          : styles.negative
+                                        : ""
+                                    }`}
+                                  >
+                                    {formatAmountForChart(row.defaultValue)}
+                                  </span>
+                                ) : (
+                                  <span className={styles.summaryEmpty}>-</span>
+                                )}
+                              </div>
+                              <div className={styles.summaryCell}>
+                                {row.targetValue !== null ? (
+                                  <span
+                                    className={`${styles.summaryValue} ${
+                                      row.key === "net"
+                                        ? row.targetValue >= 0
+                                          ? styles.positive
+                                          : styles.negative
+                                        : ""
+                                    }`}
+                                  >
+                                    {formatAmountForChart(row.targetValue)}
+                                  </span>
+                                ) : (
+                                  <span className={styles.summaryEmpty}>-</span>
+                                )}
+                                {renderDifference(
+                                  row.defaultValue,
+                                  row.targetValue,
+                                  row.key === "demand" ? "demand" : "supply"
+                                )}
+                              </div>
+                            </>
+                          )}
                         </div>
-                        {showDefaultColumn && (
-                          <div className={styles.summaryCell}>
-                            {row.defaultValue !== null ? (
-                              <span
-                                className={`${styles.summaryValue} ${
-                                  row.key === "net"
-                                    ? row.defaultValue >= 0
-                                      ? styles.positive
-                                      : styles.negative
-                                    : ""
-                                }`}
-                              >
-                                {formatAmountForChart(row.defaultValue)}
-                              </span>
-                            ) : (
-                              <span className={styles.summaryEmpty}>-</span>
-                            )}
-                            {row.key !== "net" &&
-                              renderBreakdownList(
-                                row.defaultBreakdown,
-                                `default-${row.key}`
-                              )}
-                          </div>
-                        )}
-                        {showTargetColumn && (
-                          <div className={styles.summaryCell}>
-                            {row.targetValue !== null ? (
-                              <span
-                                className={`${styles.summaryValue} ${
-                                  row.key === "net"
-                                    ? row.targetValue >= 0
-                                      ? styles.positive
-                                      : styles.negative
-                                    : ""
-                                }`}
-                              >
-                                {formatAmountForChart(row.targetValue)}
-                              </span>
-                            ) : (
-                              <span className={styles.summaryEmpty}>-</span>
-                            )}
-                            {showDefaultColumn &&
-                              renderDifference(
-                                row.defaultValue,
-                                row.targetValue,
-                                row.key === "demand" ? "demand" : "supply"
-                              )}
-                            {row.key !== "net" &&
-                              renderBreakdownList(
-                                row.targetBreakdown,
-                                `target-${row.key}`
-                              )}
-                          </div>
-                        )}
-                      </div>
+                        {/* 세부 내용을 별도 행으로 표시 (양쪽 비교) - 펼쳐졌을 때만 */}
+                        {showDefaultColumn &&
+                          showTargetColumn &&
+                          row.key !== "net" &&
+                          expandedRows[row.key] &&
+                          renderBreakdownComparison(
+                            row.defaultBreakdown,
+                            row.targetBreakdown,
+                            `comparison-${row.key}`,
+                            gridTemplateColumns
+                          )}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
@@ -578,75 +813,141 @@ function SimulationCompareModal({
                       )}
                     </div>
                     {netWorthRows.map((row) => (
-                      <div
-                        key={row.key}
-                        className={styles.summaryRow}
-                        style={{ gridTemplateColumns }}
-                      >
+                      <React.Fragment key={row.key}>
                         <div
-                          className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                          className={styles.summaryRow}
+                          style={{ gridTemplateColumns }}
                         >
-                          {row.label}
+                          <div
+                            className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                          >
+                            {!row.isGoal && (
+                              <button
+                                className={styles.toggleButton}
+                                onClick={() => toggleRow(`networth-${row.key}`)}
+                                aria-label={
+                                  expandedRows[`networth-${row.key}`]
+                                    ? "세부 항목 접기"
+                                    : "세부 항목 펼치기"
+                                }
+                              >
+                                {expandedRows[`networth-${row.key}`] ? "▼" : "▶"}
+                              </button>
+                            )}
+                            {row.label}
+                          </div>
+                          {showDefaultColumn && !showTargetColumn && (
+                            <div className={styles.summaryCell}>
+                              {row.defaultValue !== null &&
+                              !Number.isNaN(row.defaultValue) ? (
+                                <span
+                                  className={`${styles.summaryValue} ${
+                                    row.isGoal
+                                      ? ""
+                                      : row.defaultValue >= 0
+                                      ? styles.positive
+                                      : styles.negative
+                                  }`}
+                                >
+                                  {formatAmountForChart(row.defaultValue)}
+                                </span>
+                              ) : (
+                                <span className={styles.summaryEmpty}>-</span>
+                              )}
+                              {!row.isGoal &&
+                                row.defaultBreakdown.length > 0 &&
+                                renderBreakdownList(
+                                  row.defaultBreakdown,
+                                  `default-networth-${row.key}`
+                                )}
+                            </div>
+                          )}
+                          {!showDefaultColumn && showTargetColumn && (
+                            <div className={styles.summaryCell}>
+                              {row.targetValue !== null &&
+                              !Number.isNaN(row.targetValue) ? (
+                                <span
+                                  className={`${styles.summaryValue} ${
+                                    row.isGoal
+                                      ? ""
+                                      : row.targetValue >= 0
+                                      ? styles.positive
+                                      : styles.negative
+                                  }`}
+                                >
+                                  {formatAmountForChart(row.targetValue)}
+                                </span>
+                              ) : (
+                                <span className={styles.summaryEmpty}>-</span>
+                              )}
+                              {!row.isGoal &&
+                                row.targetBreakdown.length > 0 &&
+                                renderBreakdownList(
+                                  row.targetBreakdown,
+                                  `target-networth-${row.key}`
+                                )}
+                            </div>
+                          )}
+                          {showDefaultColumn && showTargetColumn && (
+                            <>
+                              <div className={styles.summaryCell}>
+                                {row.defaultValue !== null &&
+                                !Number.isNaN(row.defaultValue) ? (
+                                  <span
+                                    className={`${styles.summaryValue} ${
+                                      row.isGoal
+                                        ? ""
+                                        : row.defaultValue >= 0
+                                        ? styles.positive
+                                        : styles.negative
+                                    }`}
+                                  >
+                                    {formatAmountForChart(row.defaultValue)}
+                                  </span>
+                                ) : (
+                                  <span className={styles.summaryEmpty}>-</span>
+                                )}
+                              </div>
+                              <div className={styles.summaryCell}>
+                                {row.targetValue !== null &&
+                                !Number.isNaN(row.targetValue) ? (
+                                  <span
+                                    className={`${styles.summaryValue} ${
+                                      row.isGoal
+                                        ? ""
+                                        : row.targetValue >= 0
+                                        ? styles.positive
+                                        : styles.negative
+                                    }`}
+                                  >
+                                    {formatAmountForChart(row.targetValue)}
+                                  </span>
+                                ) : (
+                                  <span className={styles.summaryEmpty}>-</span>
+                                )}
+                                {renderDifference(
+                                  row.defaultValue,
+                                  row.targetValue,
+                                  "supply"
+                                )}
+                              </div>
+                            </>
+                          )}
                         </div>
-                        {showDefaultColumn && (
-                          <div className={styles.summaryCell}>
-                            {row.defaultValue !== null &&
-                            !Number.isNaN(row.defaultValue) ? (
-                              <span
-                                className={`${styles.summaryValue} ${
-                                  row.isGoal
-                                    ? ""
-                                    : row.defaultValue >= 0
-                                    ? styles.positive
-                                    : styles.negative
-                                }`}
-                              >
-                                {formatAmountForChart(row.defaultValue)}
-                              </span>
-                            ) : (
-                              <span className={styles.summaryEmpty}>-</span>
-                            )}
-                            {!row.isGoal &&
-                              row.defaultBreakdown.length > 0 &&
-                              renderBreakdownList(
-                                row.defaultBreakdown,
-                                `default-networth-${row.key}`
-                              )}
-                          </div>
-                        )}
-                        {showTargetColumn && (
-                          <div className={styles.summaryCell}>
-                            {row.targetValue !== null &&
-                            !Number.isNaN(row.targetValue) ? (
-                              <span
-                                className={`${styles.summaryValue} ${
-                                  row.isGoal
-                                    ? ""
-                                    : row.targetValue >= 0
-                                    ? styles.positive
-                                    : styles.negative
-                                }`}
-                              >
-                                {formatAmountForChart(row.targetValue)}
-                              </span>
-                            ) : (
-                              <span className={styles.summaryEmpty}>-</span>
-                            )}
-                            {showDefaultColumn &&
-                              renderDifference(
-                                row.defaultValue,
-                                row.targetValue,
-                                "supply"
-                              )}
-                            {!row.isGoal &&
-                              row.targetBreakdown.length > 0 &&
-                              renderBreakdownList(
-                                row.targetBreakdown,
-                                `target-networth-${row.key}`
-                              )}
-                          </div>
-                        )}
-                      </div>
+                        {/* 세부 내용을 별도 행으로 표시 (양쪽 비교) - 펼쳐졌을 때만 */}
+                        {showDefaultColumn &&
+                          showTargetColumn &&
+                          !row.isGoal &&
+                          expandedRows[`networth-${row.key}`] &&
+                          (row.defaultBreakdown.length > 0 ||
+                            row.targetBreakdown.length > 0) &&
+                          renderBreakdownComparison(
+                            row.defaultBreakdown,
+                            row.targetBreakdown,
+                            `networth-comparison-${row.key}`,
+                            gridTemplateColumns
+                          )}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
