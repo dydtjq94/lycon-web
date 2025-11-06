@@ -149,7 +149,7 @@ function PensionModal({
     formData.type,
   ]);
 
-  // 수정 모드일 때 해당 id가 존재하는 시뮬레이션 확인
+  // 수정 모드일 때 해당 항목(제목 기준)이 존재하는 시뮬레이션 확인
   useEffect(() => {
     const checkAvailableSimulations = async () => {
       setIsSimSelectionLoading(true);
@@ -158,18 +158,25 @@ function PensionModal({
       if (
         isOpen &&
         editData &&
-        editData.id &&
+        editData.title &&
         profileId &&
         simulations.length > 0
       ) {
         try {
-          // 모든 시뮬레이션에서 해당 id 존재 여부 확인
+          // 모든 시뮬레이션에서 같은 제목을 가진 항목 존재 여부 확인
           const checkPromises = simulations.map(async (sim) => {
             try {
-              await pensionService.getPension(profileId, sim.id, editData.id);
-              return sim.id; // 존재하면 시뮬레이션 id 반환
+              const pensions = await pensionService.getPensions(
+                profileId,
+                sim.id
+              );
+              // 같은 제목의 항목이 있는지 확인
+              const hasSameTitle = pensions.some(
+                (pension) => pension.title === editData.title
+              );
+              return hasSameTitle ? sim.id : null;
             } catch (error) {
-              return null; // 존재하지 않으면 null
+              return null; // 오류 시 null
             }
           });
           const results = await Promise.all(checkPromises);

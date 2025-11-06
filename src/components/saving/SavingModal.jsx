@@ -71,7 +71,7 @@ function SavingModal({
     profileData?.birthYear,
   ]);
 
-  // 수정 모드일 때 해당 id가 존재하는 시뮬레이션 확인
+  // 수정 모드일 때 해당 항목(제목 기준)이 존재하는 시뮬레이션 확인
   useEffect(() => {
     const checkAvailableSimulations = async () => {
       setIsSimSelectionLoading(true);
@@ -80,18 +80,25 @@ function SavingModal({
       if (
         isOpen &&
         editData &&
-        editData.id &&
+        editData.title &&
         profileId &&
         simulations.length > 0
       ) {
         try {
-          // 모든 시뮬레이션에서 해당 id 존재 여부 확인
+          // 모든 시뮬레이션에서 같은 제목을 가진 항목 존재 여부 확인
           const checkPromises = simulations.map(async (sim) => {
             try {
-              await savingsService.getSaving(profileId, sim.id, editData.id);
-              return sim.id; // 존재하면 시뮬레이션 id 반환
+              const savings = await savingsService.getSavings(
+                profileId,
+                sim.id
+              );
+              // 같은 제목의 항목이 있는지 확인
+              const hasSameTitle = savings.some(
+                (saving) => saving.title === editData.title
+              );
+              return hasSameTitle ? sim.id : null;
             } catch (error) {
-              return null; // 존재하지 않으면 null
+              return null; // 오류 시 null
             }
           });
           const results = await Promise.all(checkPromises);
@@ -227,8 +234,14 @@ function SavingModal({
       newErrors.title = "저축/투자 항목명을 입력해주세요.";
     }
 
-    if (!formData.amount || formData.amount < 0) {
-      newErrors.amount = "저축/투자 금액을 입력해주세요.";
+    // 금액이 없거나 0보다 작으면 에러 (0은 허용)
+    if (
+      formData.amount === "" ||
+      formData.amount === null ||
+      formData.amount === undefined ||
+      parseFloat(formData.amount) < 0
+    ) {
+      newErrors.amount = "저축/투자 금액을 입력해주세요. (0 이상)";
     }
 
     if (formData.startYear > formData.endYear) {

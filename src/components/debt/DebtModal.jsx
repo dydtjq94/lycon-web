@@ -51,7 +51,7 @@ function DebtModal({
   const [availableSimulationIds, setAvailableSimulationIds] = useState([]);
   const [isSimSelectionLoading, setIsSimSelectionLoading] = useState(false);
 
-  // 수정 모드일 때 해당 id가 존재하는 시뮬레이션 확인
+  // 수정 모드일 때 해당 항목(제목 기준)이 존재하는 시뮬레이션 확인
   useEffect(() => {
     const checkAvailableSimulations = async () => {
       setIsSimSelectionLoading(true);
@@ -60,17 +60,21 @@ function DebtModal({
       if (
         isOpen &&
         editData &&
-        editData.id &&
+        editData.title &&
         profileId &&
         simulations.length > 0
       ) {
         try {
           const checkPromises = simulations.map(async (sim) => {
             try {
-              await debtService.getDebt(profileId, sim.id, editData.id);
-              return sim.id;
+              const debts = await debtService.getDebts(profileId, sim.id);
+              // 같은 제목의 항목이 있는지 확인
+              const hasSameTitle = debts.some(
+                (debt) => debt.title === editData.title
+              );
+              return hasSameTitle ? sim.id : null;
             } catch (error) {
-              return null;
+              return null; // 오류 시 null
             }
           });
           const results = await Promise.all(checkPromises);
