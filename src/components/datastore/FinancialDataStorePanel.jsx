@@ -6,14 +6,19 @@ import styles from "./FinancialDataStorePanel.module.css";
 /**
  * 재무 라이브러리 패널
  * 가족 구성원별 재무 데이터 템플릿을 Firebase에서 불러와 관리하고 추가할 수 있는 패널
- * 
+ *
  * 구조:
  * - 상단: 가족 구성원 타입 탭 (본인/배우자/자녀/부모)
  * - 왼쪽: 카테고리 필터 (전체/소득/지출)
  * - 메인: 템플릿 리스트 (클릭하여 모달 열기)
  * - 관리자: 템플릿 관리 버튼
  */
-function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdmin }) {
+function FinancialDataStorePanel({
+  onSelectTemplate,
+  profileData,
+  onClose,
+  isAdmin,
+}) {
   const [templates, setTemplates] = useState([]); // 모든 템플릿
   const [loading, setLoading] = useState(true);
   const [selectedFamilyType, setSelectedFamilyType] = useState("self"); // 선택된 가족 구성원 타입
@@ -45,10 +50,10 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      
+
       // Firebase에서 템플릿 조회
       const allTemplates = await financialLibraryService.getTemplates();
-      
+
       // 템플릿이 없으면 기본 템플릿 초기화
       if (allTemplates.length === 0) {
         await financialLibraryService.initializeDefaultTemplates();
@@ -77,12 +82,15 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
       } else {
         // 단일 값인 경우 (하위 호환성)
         if (memberType !== selectedFamilyType) {
-        return false;
+          return false;
         }
       }
 
       // 카테고리 필터
-      if (selectedCategory !== "all" && template.category !== selectedCategory) {
+      if (
+        selectedCategory !== "all" &&
+        template.category !== selectedCategory
+      ) {
         return false;
       }
 
@@ -127,8 +135,10 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
   useEffect(() => {
     if (profileData) {
       const available = getAvailableFamilyTypes();
-      const isCurrentTypeAvailable = available.some(t => t.value === selectedFamilyType);
-      
+      const isCurrentTypeAvailable = available.some(
+        (t) => t.value === selectedFamilyType
+      );
+
       // 현재 선택된 타입이 없으면 첫 번째 타입으로 변경
       if (!isCurrentTypeAvailable && available.length > 0) {
         setSelectedFamilyType(available[0].value);
@@ -140,19 +150,23 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
   // 현재 선택된 타입에 해당하는 가족 구성원 목록 가져오기
   const getAvailableFamilyMembers = () => {
     if (!profileData || !profileData.familyMembers) return [];
-    
+
     if (selectedFamilyType === "son") {
       // 아들만 필터링
-      return profileData.familyMembers.filter(m => m.relationship === "자녀" && m.gender === "아들");
+      return profileData.familyMembers.filter(
+        (m) => m.relationship === "자녀" && m.gender === "아들"
+      );
     } else if (selectedFamilyType === "daughter") {
       // 딸만 필터링
-      return profileData.familyMembers.filter(m => m.relationship === "자녀" && m.gender === "딸");
+      return profileData.familyMembers.filter(
+        (m) => m.relationship === "자녀" && m.gender === "딸"
+      );
     } else if (selectedFamilyType === "father") {
       // 부만 필터링
-      return profileData.familyMembers.filter(m => m.relationship === "부");
+      return profileData.familyMembers.filter((m) => m.relationship === "부");
     } else if (selectedFamilyType === "mother") {
       // 모만 필터링
-      return profileData.familyMembers.filter(m => m.relationship === "모");
+      return profileData.familyMembers.filter((m) => m.relationship === "모");
     }
     return [];
   };
@@ -160,27 +174,27 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
   // 템플릿 클릭 시 데이터 준비하여 모달 열기
   const handleSelectTemplate = (template) => {
     const currentYear = new Date().getFullYear();
-          const { category, data, ageStart, ageEnd, familyMemberType } = template;
+    const { category, data, ageStart, ageEnd, familyMemberType } = template;
 
     // 중요: 사용자가 선택한 탭(selectedFamilyType)을 사용하여 정확한 가족 구성원의 나이로 계산
     const memberType = selectedFamilyType;
 
-          // 나이 범위가 있는 경우 startYear/endYear 자동 계산
-          let startYear = currentYear;
-          let endYear = currentYear + 30;
+    // 나이 범위가 있는 경우 startYear/endYear 자동 계산
+    let startYear = currentYear;
+    let endYear = currentYear + 30;
     let targetMemberName = ""; // 적용 대상 이름
 
-          // 가족 구성원의 출생년도를 기반으로 계산
-          if (ageStart !== null && ageEnd !== null) {
+    // 가족 구성원의 출생년도를 기반으로 계산
+    if (ageStart !== null && ageEnd !== null) {
       if (memberType === "self" && profileData.birthYear) {
-              const currentAge = calculateKoreanAge(profileData.birthYear);
-              startYear = currentYear + (ageStart - currentAge);
-              endYear = currentYear + (ageEnd - currentAge);
+        const currentAge = calculateKoreanAge(profileData.birthYear);
+        startYear = currentYear + (ageStart - currentAge);
+        endYear = currentYear + (ageEnd - currentAge);
         targetMemberName = "본인";
       } else if (memberType === "spouse" && profileData.spouseBirthYear) {
-              const spouseAge = calculateKoreanAge(profileData.spouseBirthYear);
-              startYear = currentYear + (ageStart - spouseAge);
-              endYear = currentYear + (ageEnd - spouseAge);
+        const spouseAge = calculateKoreanAge(profileData.spouseBirthYear);
+        startYear = currentYear + (ageStart - spouseAge);
+        endYear = currentYear + (ageEnd - spouseAge);
         targetMemberName = "배우자";
       } else if (["son", "daughter", "father", "mother"].includes(memberType)) {
         // 선택된 가족 구성원 사용 (아들/딸/부/모)
@@ -193,13 +207,21 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
           // 선택되지 않았으면 첫 번째 해당 구성원 사용
           let defaultMember = null;
           if (memberType === "son") {
-            defaultMember = profileData.familyMembers?.find(m => m.relationship === "자녀" && m.gender === "아들");
+            defaultMember = profileData.familyMembers?.find(
+              (m) => m.relationship === "자녀" && m.gender === "아들"
+            );
           } else if (memberType === "daughter") {
-            defaultMember = profileData.familyMembers?.find(m => m.relationship === "자녀" && m.gender === "딸");
+            defaultMember = profileData.familyMembers?.find(
+              (m) => m.relationship === "자녀" && m.gender === "딸"
+            );
           } else if (memberType === "father") {
-            defaultMember = profileData.familyMembers?.find(m => m.relationship === "부");
+            defaultMember = profileData.familyMembers?.find(
+              (m) => m.relationship === "부"
+            );
           } else if (memberType === "mother") {
-            defaultMember = profileData.familyMembers?.find(m => m.relationship === "모");
+            defaultMember = profileData.familyMembers?.find(
+              (m) => m.relationship === "모"
+            );
           }
           if (defaultMember && defaultMember.birthYear) {
             const memberAge = calculateKoreanAge(defaultMember.birthYear);
@@ -222,13 +244,21 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
           // 첫 번째 해당 구성원 이름 사용
           let defaultMember = null;
           if (memberType === "son") {
-            defaultMember = profileData.familyMembers?.find(m => m.relationship === "자녀" && m.gender === "아들");
+            defaultMember = profileData.familyMembers?.find(
+              (m) => m.relationship === "자녀" && m.gender === "아들"
+            );
           } else if (memberType === "daughter") {
-            defaultMember = profileData.familyMembers?.find(m => m.relationship === "자녀" && m.gender === "딸");
+            defaultMember = profileData.familyMembers?.find(
+              (m) => m.relationship === "자녀" && m.gender === "딸"
+            );
           } else if (memberType === "father") {
-            defaultMember = profileData.familyMembers?.find(m => m.relationship === "부");
+            defaultMember = profileData.familyMembers?.find(
+              (m) => m.relationship === "부"
+            );
           } else if (memberType === "mother") {
-            defaultMember = profileData.familyMembers?.find(m => m.relationship === "모");
+            defaultMember = profileData.familyMembers?.find(
+              (m) => m.relationship === "모"
+            );
           }
           if (defaultMember?.name) {
             targetMemberName = defaultMember.name;
@@ -238,8 +268,8 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
     }
 
     // 항목 명 생성: "템플릿 이름 - 적용 대상"
-    const generatedTitle = targetMemberName 
-      ? `${template.title} - ${targetMemberName}` 
+    const generatedTitle = targetMemberName
+      ? `${template.title} - ${targetMemberName}`
       : template.title;
 
     // 모달에 전달할 데이터 준비
@@ -253,12 +283,11 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
       memo: data.memo || "", // memo 유지
     };
 
-    console.log('템플릿 데이터 전달:', templateData); // 디버깅용
+    console.log("템플릿 데이터 전달:", templateData); // 디버깅용
 
     onSelectTemplate(templateData);
     // 사이드바는 유지 (onClose 호출 제거)
   };
-
 
   // 현재 프로필에 있는 가족 구성원 타입만 필터링
   const getAvailableFamilyTypes = () => {
@@ -273,7 +302,7 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
 
     // 아들이 있는지 확인
     const hasSon = profileData?.familyMembers?.some(
-      m => m.relationship === "자녀" && m.gender === "아들"
+      (m) => m.relationship === "자녀" && m.gender === "아들"
     );
     if (hasSon) {
       types.push({ value: "son", label: "아들", available: true });
@@ -281,7 +310,7 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
 
     // 딸이 있는지 확인
     const hasDaughter = profileData?.familyMembers?.some(
-      m => m.relationship === "자녀" && m.gender === "딸"
+      (m) => m.relationship === "자녀" && m.gender === "딸"
     );
     if (hasDaughter) {
       types.push({ value: "daughter", label: "딸", available: true });
@@ -289,7 +318,7 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
 
     // 부가 있는지 확인
     const hasFather = profileData?.familyMembers?.some(
-      m => m.relationship === "부"
+      (m) => m.relationship === "부"
     );
     if (hasFather) {
       types.push({ value: "father", label: "부", available: true });
@@ -297,7 +326,7 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
 
     // 모가 있는지 확인
     const hasMother = profileData?.familyMembers?.some(
-      m => m.relationship === "모"
+      (m) => m.relationship === "모"
     );
     if (hasMother) {
       types.push({ value: "mother", label: "모", available: true });
@@ -335,46 +364,44 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
         ))}
       </div>
 
-      {/* 가족 구성원이 없을 때 안내 메시지 */}
-      {availableFamilyTypes.length === 1 && (
-        <div className={styles.noFamilyNotice}>
-          <span className={styles.noticeIcon}>ℹ️</span>
-          <span className={styles.noticeText}>
-            프로필에 가족 구성원을 추가하면 더 많은 템플릿을 사용할 수 있습니다.
-          </span>
-        </div>
-      )}
-
       {/* 가족 구성원 선택 (아들/딸/부/모만) */}
-      {["son", "daughter", "father", "mother"].includes(selectedFamilyType) && 
-       availableFamilyMembers.length > 0 && (
-        <div className={styles.familyMemberSelector}>
-          <div className={styles.memberButtons}>
-            {availableFamilyMembers.map((member, index) => {
-              // id가 없으면 name + birthYear로 고유 키 생성
-              const memberKey = member.id || `${member.name}-${member.birthYear}`;
-              const selectedKey = selectedFamilyMember?.id || 
-                                 (selectedFamilyMember ? `${selectedFamilyMember.name}-${selectedFamilyMember.birthYear}` : null);
-              const isSelected = memberKey === selectedKey;
-              
-              return (
-                <button
-                  key={memberKey}
-                  type="button"
-                  className={isSelected ? styles.memberButtonActive : styles.memberButton}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setSelectedFamilyMember(member);
-                  }}
-                >
-                  {member.name}, {calculateKoreanAge(member.birthYear)}세
-                </button>
-              );
-            })}
+      {["son", "daughter", "father", "mother"].includes(selectedFamilyType) &&
+        availableFamilyMembers.length > 0 && (
+          <div className={styles.familyMemberSelector}>
+            <div className={styles.memberButtons}>
+              {availableFamilyMembers.map((member, index) => {
+                // id가 없으면 name + birthYear로 고유 키 생성
+                const memberKey =
+                  member.id || `${member.name}-${member.birthYear}`;
+                const selectedKey =
+                  selectedFamilyMember?.id ||
+                  (selectedFamilyMember
+                    ? `${selectedFamilyMember.name}-${selectedFamilyMember.birthYear}`
+                    : null);
+                const isSelected = memberKey === selectedKey;
+
+                return (
+                  <button
+                    key={memberKey}
+                    type="button"
+                    className={
+                      isSelected
+                        ? styles.memberButtonActive
+                        : styles.memberButton
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedFamilyMember(member);
+                    }}
+                  >
+                    {member.name}, {calculateKoreanAge(member.birthYear)}세
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* 카테고리 필터 */}
       <div className={styles.categoryFilters}>
@@ -395,32 +422,47 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
       <div className={styles.content}>
         {Object.keys(groupedTemplates).length === 0 ? (
           <div className={styles.emptyState}>
-            {selectedCategory === 'income' ? (
+            {selectedCategory === "income" ? (
               <>
                 <span className={styles.emptyIcon}>💰</span>
-                <span className={styles.emptyText}>소득 라이브러리가 비었습니다</span>
-                <span className={styles.emptySubText}>관리 모드에서 소득 템플릿을 추가해보세요</span>
+                <span className={styles.emptyText}>
+                  소득 라이브러리가 비었습니다
+                </span>
+                <span className={styles.emptySubText}>
+                  관리 모드에서 소득 템플릿을 추가해보세요
+                </span>
               </>
-            ) : selectedCategory === 'expense' ? (
+            ) : selectedCategory === "expense" ? (
               <>
                 <span className={styles.emptyIcon}>💸</span>
-                <span className={styles.emptyText}>지출 라이브러리가 비었습니다</span>
-                <span className={styles.emptySubText}>관리 모드에서 지출 템플릿을 추가해보세요</span>
+                <span className={styles.emptyText}>
+                  지출 라이브러리가 비었습니다
+                </span>
+                <span className={styles.emptySubText}>
+                  관리 모드에서 지출 템플릿을 추가해보세요
+                </span>
               </>
             ) : (
               <>
                 <span className={styles.emptyIcon}>📋</span>
-                <span className={styles.emptyText}>선택된 조건에 맞는 템플릿이 없습니다</span>
+                <span className={styles.emptyText}>
+                  선택된 조건에 맞는 템플릿이 없습니다
+                </span>
               </>
             )}
           </div>
         ) : (
           Object.keys(groupedTemplates).map((category) => (
             <div key={category} className={styles.categorySection}>
-              <h4 className={`${styles.categoryTitle} ${
-                category === 'income' ? styles.categoryTitleIncome :
-                category === 'expense' ? styles.categoryTitleExpense : ''
-              }`}>
+              <h4
+                className={`${styles.categoryTitle} ${
+                  category === "income"
+                    ? styles.categoryTitleIncome
+                    : category === "expense"
+                    ? styles.categoryTitleExpense
+                    : ""
+                }`}
+              >
                 {getCategoryLabel(category)}
               </h4>
               <div className={styles.itemsList}>
@@ -429,17 +471,21 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
                     <div
                       key={template.id}
                       className={`${styles.itemRow} ${
-                        template.category === 'income' ? styles.itemRowIncome :
-                        template.category === 'expense' ? styles.itemRowExpense : ''
+                        template.category === "income"
+                          ? styles.itemRowIncome
+                          : template.category === "expense"
+                          ? styles.itemRowExpense
+                          : ""
                       }`}
                       onClick={() => handleSelectTemplate(template)}
                     >
-                          <div className={styles.itemInfo}>
-                            <span className={styles.itemTitle}>
-                              {template.title}
-                            </span>
+                      <div className={styles.itemInfo}>
+                        <span className={styles.itemTitle}>
+                          {template.title}
+                        </span>
                         <div className={styles.itemMeta}>
-                          {template.ageStart !== null && template.ageEnd !== null ? (
+                          {template.ageStart !== null &&
+                          template.ageEnd !== null ? (
                             <span className={styles.itemAge}>
                               {template.ageStart}~{template.ageEnd}세
                             </span>
@@ -447,7 +493,9 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
                           {template.data?.amount && (
                             <span className={styles.itemAmount}>
                               {template.data.amount.toLocaleString()}만원/
-                              {template.data.frequency === "monthly" ? "월" : "년"}
+                              {template.data.frequency === "monthly"
+                                ? "월"
+                                : "년"}
                             </span>
                           )}
                         </div>
@@ -460,7 +508,6 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
           ))
         )}
       </div>
-
     </div>
   );
 }
