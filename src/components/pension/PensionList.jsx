@@ -107,7 +107,7 @@ function PensionList({
               <>
                 {pension.currentAmount > 0 && (
                   <div className={styles.pensionCurrentAmount}>
-                    {pension.type === "severance" ? "퇴직금" : "현재 보유"}:{" "}
+                    {pension.type === "severance" ? "퇴직금" : "시작 보유"}:{" "}
                     {formatAmount(pension.currentAmount)}
                   </div>
                 )}

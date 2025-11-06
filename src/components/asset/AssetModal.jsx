@@ -148,6 +148,7 @@ function AssetModal({
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape" && isOpen) {
+        e.stopImmediatePropagation(); // 다른 ESC 핸들러 실행 방지
         onClose();
       }
     };

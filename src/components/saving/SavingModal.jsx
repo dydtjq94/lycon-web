@@ -209,6 +209,7 @@ function SavingModal({
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape" && isOpen) {
+        e.stopImmediatePropagation(); // 다른 ESC 핸들러 실행 방지
         onClose();
       }
     };
@@ -467,7 +468,7 @@ function SavingModal({
                 className={styles.label}
                 style={{ marginBottom: 0 }}
               >
-                현재 보유 금액 (만원)
+                시작 보유 금액 (만원)
               </label>
               <label
                 className={styles.fixedCheckboxLabel}
@@ -505,7 +506,7 @@ function SavingModal({
                 </div>
               )}
             <div className={styles.helperText}>
-              시작년도 기준 현재 이미 보유하고 있는 금액입니다 (선택사항)
+              시작년도 기준으로 이미 보유하고 있는 금액입니다 (선택사항)
               {formData.treatAsInitialPurchase && (
                 <span
                   style={{

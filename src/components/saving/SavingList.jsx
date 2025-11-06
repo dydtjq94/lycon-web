@@ -45,12 +45,12 @@ function SavingList({
             </div>
 
             <div className={styles.savingContent}>
-              {/* 현재 보유액 표시 */}
+              {/* 시작 보유액 표시 */}
               {saving.currentAmount !== undefined && 
                saving.currentAmount !== null && 
                saving.currentAmount > 0 && (
                 <div className={styles.savingCurrent}>
-                  현재 보유: {formatAmount(saving.currentAmount)}
+                  시작 보유: {formatAmount(saving.currentAmount)}
                 </div>
               )}
 

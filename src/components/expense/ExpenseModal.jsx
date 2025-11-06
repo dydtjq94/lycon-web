@@ -190,7 +190,7 @@ function ExpenseModal({
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape" && isOpen) {
-        e.stopPropagation(); // 이벤트 전파 막기 (상위 사이드바 닫힘 방지)
+        e.stopImmediatePropagation(); // 다른 ESC 핸들러 실행 방지
         onClose();
       }
     };

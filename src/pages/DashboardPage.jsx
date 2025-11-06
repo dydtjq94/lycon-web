@@ -3108,6 +3108,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
         defaultData={comparisonData.defaultData}
         targetData={comparisonData.targetData}
         profileData={profileData}
+        currentSimulationId={activeSimulationId}
+        simulations={simulations}
       />
 
       {/* 체크리스트 템플릿 수정 모달 (관리자 전용) */}

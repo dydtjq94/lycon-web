@@ -7,59 +7,69 @@ import PensionList from "../pension/PensionList";
 import RealEstateList from "../realestate/RealEstateList";
 import AssetList from "../asset/AssetList";
 import DebtList from "../debt/DebtList";
+import IncomeModal from "../income/IncomeModal";
+import ExpenseModal from "../expense/ExpenseModal";
+import SavingModal from "../saving/SavingModal";
+import PensionModal from "../pension/PensionModal";
+import RealEstateModal from "../realestate/RealEstateModal";
+import AssetModal from "../asset/AssetModal";
+import DebtModal from "../debt/DebtModal";
 import { calculateLifetimeCashFlowTotals } from "../../utils/presentValueCalculator";
 import { formatAmountForChart } from "../../utils/format";
 import { calculateAssetSimulation } from "../../utils/cashflowSimulator";
 import { trackEvent } from "../../libs/mixpanel";
 
 const categoryConfigs = [
-  { key: "incomes", label: "소득", component: IncomeList, propName: "incomes" },
+  { 
+    key: "incomes", 
+    label: "소득", 
+    component: IncomeList, 
+    propName: "incomes",
+    modalComponent: IncomeModal 
+  },
   {
     key: "expenses",
     label: "지출",
     component: ExpenseList,
     propName: "expenses",
+    modalComponent: ExpenseModal
   },
   {
     key: "savings",
     label: "저축/투자",
     component: SavingList,
     propName: "savings",
+    modalComponent: SavingModal
   },
   {
     key: "pensions",
     label: "연금",
     component: PensionList,
     propName: "pensions",
+    modalComponent: PensionModal
   },
   {
     key: "realEstates",
     label: "부동산",
     component: RealEstateList,
     propName: "realEstates",
+    modalComponent: RealEstateModal
   },
-  { key: "assets", label: "자산", component: AssetList, propName: "assets" },
-  { key: "debts", label: "부채", component: DebtList, propName: "debts" },
+  { 
+    key: "assets", 
+    label: "자산", 
+    component: AssetList, 
+    propName: "assets",
+    modalComponent: AssetModal
+  },
+  { 
+    key: "debts", 
+    label: "부채", 
+    component: DebtList, 
+    propName: "debts",
+    modalComponent: DebtModal
+  },
 ];
-const renderList = (config, data) => {
-  const Component = config.component;
-  if (!Component) {
-    return <div className={styles.empty}>지원되지 않는 카테고리입니다.</div>;
-  }
-
-  const props = {
-    [config.propName]: data || [],
-    onEdit: () => {},
-    onDelete: () => {},
-    isReadOnly: true,
-  };
-
-  return (
-    <div className={styles.listWrapper}>
-      <Component {...props} />
-    </div>
-  );
-};
 
 function SimulationCompareModal({
   isOpen,
@@ -70,6 +80,8 @@ function SimulationCompareModal({
   defaultData,
   targetData,
   profileData,
+  currentSimulationId,
+  simulations,
 }) {
   if (!isOpen) return null;
 
@@ -78,6 +90,57 @@ function SimulationCompareModal({
 
   // 생애 자금 수급/수요 탭 상태 (기본값: 전체)
   const [cashflowPeriod, setCashflowPeriod] = useState("all");
+
+  // 재무 데이터 수정 모달 상태
+  const [editModal, setEditModal] = useState({
+    isOpen: false,
+    type: null, // 'income', 'expense', 'saving', etc.
+    data: null,
+  });
+
+  // 재무 데이터 수정 핸들러
+  const handleEditData = (type, data) => {
+    setEditModal({
+      isOpen: true,
+      type: type,
+      data: data,
+    });
+    
+    trackEvent("시뮬레이션 비교 모달에서 재무 데이터 수정 시작", {
+      type: type,
+      dataTitle: data?.title || "",
+    });
+  };
+
+  // 재무 데이터 수정 모달 닫기
+  const handleCloseEditModal = () => {
+    setEditModal({
+      isOpen: false,
+      type: null,
+      data: null,
+    });
+  };
+
+  // renderList 함수 - onEdit 핸들러 추가
+  const renderList = (config, data) => {
+    const Component = config.component;
+    if (!Component) {
+      return <div className={styles.empty}>지원되지 않는 카테고리입니다.</div>;
+    }
+
+    const props = {
+      [config.propName]: data || [],
+      onEdit: (item) => handleEditData(config.key.slice(0, -1), item), // 's' 제거 (incomes -> income)
+      onDelete: () => {}, // 읽기 전용이므로 삭제는 비활성화
+      isReadOnly: false, // 클릭 가능하게 설정
+    };
+
+    return (
+      <div className={styles.listWrapper}>
+        <Component {...props} />
+      </div>
+    );
+  };
 
   // 토글 함수
   const toggleRow = (rowKey) => {
@@ -691,6 +754,10 @@ function SimulationCompareModal({
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
+        // 재무 데이터 수정 모달이 열려있으면 비교 모달은 닫지 않음
+        if (editModal.isOpen) {
+          return;
+        }
         onClose?.();
         trackEvent("시뮬레이션 비교 모달 닫힘", {
           method: "ESC 키",
@@ -705,7 +772,7 @@ function SimulationCompareModal({
       // 모달이 닫힐 때 body 스크롤 복원
       document.body.style.overflow = "";
     };
-  }, [isOpen, onClose, defaultTitle, targetTitle, defaultData, targetData]);
+  }, [isOpen, onClose, defaultTitle, targetTitle, defaultData, targetData, editModal.isOpen]);
 
   return (
     <div
@@ -1145,6 +1212,78 @@ function SimulationCompareModal({
           )}
         </div>
       </div>
+
+      {/* 재무 데이터 수정 모달들 */}
+      {editModal.isOpen && editModal.type === "income" && (
+        <IncomeModal
+          isOpen={editModal.isOpen}
+          onClose={handleCloseEditModal}
+          profileId={profileData?.id}
+          editData={editModal.data}
+          activeSimulationId={currentSimulationId}
+          simulations={simulations}
+        />
+      )}
+      {editModal.isOpen && editModal.type === "expense" && (
+        <ExpenseModal
+          isOpen={editModal.isOpen}
+          onClose={handleCloseEditModal}
+          profileId={profileData?.id}
+          editData={editModal.data}
+          activeSimulationId={currentSimulationId}
+          simulations={simulations}
+        />
+      )}
+      {editModal.isOpen && editModal.type === "saving" && (
+        <SavingModal
+          isOpen={editModal.isOpen}
+          onClose={handleCloseEditModal}
+          profileId={profileData?.id}
+          editData={editModal.data}
+          activeSimulationId={currentSimulationId}
+          simulations={simulations}
+        />
+      )}
+      {editModal.isOpen && editModal.type === "pension" && (
+        <PensionModal
+          isOpen={editModal.isOpen}
+          onClose={handleCloseEditModal}
+          profileId={profileData?.id}
+          editData={editModal.data}
+          activeSimulationId={currentSimulationId}
+          simulations={simulations}
+        />
+      )}
+      {editModal.isOpen && editModal.type === "realEstate" && (
+        <RealEstateModal
+          isOpen={editModal.isOpen}
+          onClose={handleCloseEditModal}
+          profileId={profileData?.id}
+          editData={editModal.data}
+          activeSimulationId={currentSimulationId}
+          simulations={simulations}
+        />
+      )}
+      {editModal.isOpen && editModal.type === "asset" && (
+        <AssetModal
+          isOpen={editModal.isOpen}
+          onClose={handleCloseEditModal}
+          profileId={profileData?.id}
+          editData={editModal.data}
+          activeSimulationId={currentSimulationId}
+          simulations={simulations}
+        />
+      )}
+      {editModal.isOpen && editModal.type === "debt" && (
+        <DebtModal
+          isOpen={editModal.isOpen}
+          onClose={handleCloseEditModal}
+          profileId={profileData?.id}
+          editData={editModal.data}
+          activeSimulationId={currentSimulationId}
+          simulations={simulations}
+        />
+      )}
     </div>
   );
 }

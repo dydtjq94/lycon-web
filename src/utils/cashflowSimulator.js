@@ -1478,7 +1478,8 @@ export function calculateAssetSimulation(
           : saving.endYear;
 
       savingsById[saving.id] = {
-        amount: saving.currentAmount || 0, // 현재 보유 금액으로 시작
+        amount: 0, // 시작년도 전에는 0, 시작년도에 currentAmount 추가
+        currentAmount: saving.currentAmount || 0, // 현재 보유 금액 저장
         startYear: startYear,
         endYear: endYear,
         interestRate: saving.interestRate || 0.03, // 이자율 (소수로 저장됨)
@@ -1488,7 +1489,7 @@ export function calculateAssetSimulation(
         title: saving.title, // 제목도 저장
         savingType: saving.savingType || "standard", // "standard" 또는 "income"
         incomeRate: saving.incomeRate || 0, // 수익형 저축의 수익률
-        isActive: true, // 활성 상태 추가
+        isActive: false, // 시작년도 전에는 비활성
       };
     });
   }
@@ -1626,8 +1627,9 @@ export function calculateAssetSimulation(
     Object.keys(savingsById).forEach((id) => {
       const saving = savingsById[id];
 
-      if (!saving.isActive) {
-        return; // 비활성 저축은 건너뛰기
+      // 시작년도 이전: 자산 차트에 표시 안함
+      if (year < saving.startYear) {
+        return;
       }
 
       // endYear 이상이면 저축을 비활성화 (자산 차트에서 제거)
@@ -1643,6 +1645,17 @@ export function calculateAssetSimulation(
         return; // 전환 후 더 이상 처리하지 않음
       }
 
+      // 시작년도: 활성화 및 현재 보유액 설정
+      if (year === saving.startYear && !saving.isActive) {
+        saving.isActive = true;
+        saving.amount = saving.currentAmount; // 현재 보유액으로 시작
+      }
+
+      // 비활성 상태면 건너뛰기
+      if (!saving.isActive) {
+        return;
+      }
+
       if (year >= saving.startYear && year < saving.endYear) {
         // 저축 기간 중 (endYear 전까지만 - 종료년도에는 자산에서 제거)
         const yearsElapsed = year - saving.startYear;
@@ -1652,7 +1665,7 @@ export function calculateAssetSimulation(
         if (saving.frequency === "one_time") {
           // 일회성 저축 (정기예금 등)
           if (year === saving.startYear) {
-            // 시작년도: 원금만 (수익률 적용 X)
+            // 시작년도: 현재 보유액 + 원금 (수익률 적용 X)
             saving.amount = saving.amount + saving.originalAmount;
           } else if (year > saving.startYear) {
             // 다음 해부터 수익률 적용
@@ -1671,7 +1684,7 @@ export function calculateAssetSimulation(
           const yearlyAmount = adjustedMonthlyAmount * 12;
 
           if (year === saving.startYear) {
-            // 시작년도: 적립금만 (수익률 적용 X)
+            // 시작년도: 현재 보유액 + 적립금 (수익률 적용 X)
             saving.amount = saving.amount + yearlyAmount;
           } else {
             // 다음 해부터: 작년 말 잔액에 수익률 적용 + 올해 적립금

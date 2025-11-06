@@ -136,10 +136,18 @@ function FinancialDataModal({
                 </span>
               </div>
 
-              {/* 저축/투자 현재 보유액 */}
+              {/* 저축/투자 시작 보유액 (현재년도 기준) */}
               {(() => {
+                const currentYear = new Date().getFullYear();
                 const savingsTotal = (financialData.savings || []).reduce(
-                  (sum, saving) => sum + (Number(saving.currentAmount) || 0),
+                  (sum, saving) => {
+                    // 시작년도가 현재년도 이하인 경우만 합산
+                    const startYear = Number(saving.startYear) || currentYear;
+                    if (startYear <= currentYear) {
+                      return sum + (Number(saving.currentAmount) || 0);
+                    }
+                    return sum;
+                  },
                   0
                 );
                 if (savingsTotal > 0) {
@@ -202,17 +210,26 @@ function FinancialDataModal({
                 return null;
               })()}
 
-              {/* 연금 현재 보유액 */}
+              {/* 연금 보유액 (현재년도 기준) */}
               {(() => {
+                const currentYear = new Date().getFullYear();
                 const pensionsTotal = (financialData.pensions || []).reduce(
-                  (sum, pension) => sum + (Number(pension.currentAmount) || 0),
+                  (sum, pension) => {
+                    // 적립 시작년도가 현재년도 이하인 경우만 합산
+                    const startYear =
+                      Number(pension.contributionStartYear) || currentYear;
+                    if (startYear <= currentYear) {
+                      return sum + (Number(pension.currentAmount) || 0);
+                    }
+                    return sum;
+                  },
                   0
                 );
                 if (pensionsTotal > 0) {
                   return (
                     <div className={styles.currentAssetItem}>
                       <span className={styles.currentAssetLabel}>
-                        연금 보유액
+                        연금 보유
                       </span>
                       <span className={styles.currentAssetValue}>
                         {formatAmount(pensionsTotal)}
@@ -248,13 +265,23 @@ function FinancialDataModal({
                 return null;
               })()}
 
-              {/* 순자산 (총합) */}
+              {/* 순자산 (총합) - 현재년도 기준 */}
               {(() => {
+                const currentYear = new Date().getFullYear();
                 const currentCash = parseInt(profileData.currentCash || 0);
+
+                // 저축/투자: 시작년도가 현재년도 이하인 경우만 합산
                 const savingsTotal = (financialData.savings || []).reduce(
-                  (sum, saving) => sum + (Number(saving.currentAmount) || 0),
+                  (sum, saving) => {
+                    const startYear = Number(saving.startYear) || currentYear;
+                    if (startYear <= currentYear) {
+                      return sum + (Number(saving.currentAmount) || 0);
+                    }
+                    return sum;
+                  },
                   0
                 );
+
                 const assetsTotal = (financialData.assets || []).reduce(
                   (sum, asset) => sum + (Number(asset.currentValue) || 0),
                   0
@@ -266,10 +293,20 @@ function FinancialDataModal({
                     sum + (Number(realEstate.currentValue) || 0),
                   0
                 );
+
+                // 연금: 적립 시작년도가 현재년도 이하인 경우만 합산
                 const pensionsTotal = (financialData.pensions || []).reduce(
-                  (sum, pension) => sum + (Number(pension.currentAmount) || 0),
+                  (sum, pension) => {
+                    const startYear =
+                      Number(pension.contributionStartYear) || currentYear;
+                    if (startYear <= currentYear) {
+                      return sum + (Number(pension.currentAmount) || 0);
+                    }
+                    return sum;
+                  },
                   0
                 );
+
                 const debtsTotal = (financialData.debts || []).reduce(
                   (sum, debt) => sum + (Number(debt.debtAmount) || 0),
                   0

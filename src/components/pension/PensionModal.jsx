@@ -90,7 +90,7 @@ function PensionModal({
     endYear: age90Year,
     inflationRate: 1.89, // 물가상승률 (국민연금용)
     // 퇴직연금/개인연금용 필드
-    currentAmount: "", // 현재 보유액
+    currentAmount: "", // 시작 보유액
     contributionAmount: "", // 월/년 적립 금액
     contributionFrequency: "monthly", // monthly, yearly
     contributionStartYear: new Date().getFullYear(),
@@ -315,6 +315,7 @@ function PensionModal({
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape" && isOpen) {
+        e.stopImmediatePropagation(); // 다른 ESC 핸들러 실행 방지
         onClose();
       }
     };
@@ -480,7 +481,7 @@ function PensionModal({
     } else {
       // 퇴직연금/개인연금
       if (formData.currentAmount && formData.currentAmount < 0) {
-        newErrors.currentAmount = "현재 보유액은 0 이상이어야 합니다.";
+        newErrors.currentAmount = "시작 보유액은 0 이상이어야 합니다.";
       }
       if (!formData.contributionAmount || formData.contributionAmount < 0) {
         newErrors.contributionAmount = "적립 금액을 입력해주세요.";
@@ -1165,9 +1166,9 @@ function PensionModal({
               ) : (
                 // 퇴직연금/개인연금 필드
                 <>
-                  {/* 현재 보유액 */}
+                  {/* 시작 보유액 */}
                   <div className={styles.field}>
-                    <label className={styles.label}>현재 보유액 (만원)</label>
+                    <label className={styles.label}>시작 보유액 (만원)</label>
                     <input
                       type="text"
                       value={formData.currentAmount}
