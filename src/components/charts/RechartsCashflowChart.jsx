@@ -1299,7 +1299,7 @@ function RechartsCashflowChart({
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <div className={styles.chartTitleWrapper}>
-            <h3 className={styles.chartTitle}>가계 현금흐름</h3>
+            <div className={styles.chartTitle}>가계 현금 흐름</div>
             <button
               className={styles.zoomButton}
               onClick={() => setIsZoomed(true)}
@@ -1328,7 +1328,7 @@ function RechartsCashflowChart({
       <ChartZoomModal
         isOpen={isZoomed}
         onClose={() => setIsZoomed(false)}
-        title="가계 현금흐름"
+        title="가계 현금 흐름"
       >
         <div style={{ width: "100%", height: "100%" }}>
           {renderChart("100%", true)}

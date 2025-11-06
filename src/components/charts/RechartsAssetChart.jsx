@@ -1286,7 +1286,7 @@ function RechartsAssetChart({
           <>
             <div className={styles.chartHeader}>
               <div className={styles.chartTitleWrapper}>
-                <h3 className={styles.chartTitle}>가계 자산 규모</h3>
+                <div className={styles.chartTitle}>가계 자산 규모</div>
                 <button
                   className={styles.zoomButton}
                   onClick={() => setIsZoomed(true)}
