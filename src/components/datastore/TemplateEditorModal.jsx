@@ -8,7 +8,7 @@ import styles from "./TemplateEditorModal.module.css";
 function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
   const [formData, setFormData] = useState({
     title: "",
-    category: "income",
+    category: "expense", // 기본값: 지출
     familyMemberType: ["self"], // 배열로 변경
     ageStart: null,
     ageEnd: null,
@@ -64,7 +64,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
         // 초기화
         setFormData({
           title: "",
-          category: "income",
+          category: "expense", // 기본값: 지출
           familyMemberType: ["self"], // 배열로 변경
           ageStart: null,
           ageEnd: null,
