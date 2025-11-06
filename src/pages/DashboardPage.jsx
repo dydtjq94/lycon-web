@@ -2454,7 +2454,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                 {profileData.hasSpouse &&
                   `배우자(${calculateKoreanAge(
                     profileData.spouseBirthYear
-                  )}세), `}
+                  )}세)${profileData.familyMembers && profileData.familyMembers.length > 0 ? ', ' : ''}`}
                 {profileData.familyMembers &&
                   profileData.familyMembers.length > 0 &&
                   profileData.familyMembers.map((member, index) => {
