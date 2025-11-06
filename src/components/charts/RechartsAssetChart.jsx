@@ -65,6 +65,7 @@ function RechartsAssetChart({
   spouseRetirementAge,
   deathAge = 90,
   targetAssets = 50000,
+  profileData = null, // 배우자 나이 계산을 위해 추가
   savings = [],
   pensions = [],
   realEstates = [],
@@ -75,6 +76,17 @@ function RechartsAssetChart({
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
   const hasData = Array.isArray(data) && data.length > 0;
+
+  // 나이를 년도로 변환
+  const retirementYear =
+    hasData && retirementAge
+      ? data[0].year + (retirementAge - data[0].age)
+      : null;
+
+  const spouseRetirementYear =
+    hasData && spouseRetirementAge
+      ? data[0].year + (spouseRetirementAge - data[0].age)
+      : null;
 
   useEffect(() => {
     if (!hasData) {
@@ -716,7 +728,7 @@ function RechartsAssetChart({
 
         {/* X축 - 나이 */}
         <XAxis
-          dataKey="age"
+          dataKey="year"
           type="number"
           scale="linear"
           domain={["dataMin - 1", "dataMax + 1"]}
@@ -763,15 +775,23 @@ function RechartsAssetChart({
               // 총 자산 = 자본 토탈 - 부채 토탈
               const totalAssets = capitalTotal - debtTotal;
 
+              // 배우자 나이 계산
+              const spouseAge =
+                profileData?.hasSpouse && profileData?.spouseBirthYear
+                  ? data.year - parseInt(profileData.spouseBirthYear)
+                  : null;
+
               return (
                 <div
                   className={styles.customTooltip}
                   data-zoomed={isZoomedView}
                 >
                   <div className={styles.tooltipHeader}>
-                    <span className={styles.tooltipTitle}>
-                      {data.age}세 ({data.year}년)
-                    </span>
+                    <div className={styles.tooltipYear}>{data.year}</div>
+                    <div className={styles.tooltipAge}>
+                      본인 {data.age}
+                      {spouseAge && ` • 배우자 ${spouseAge}`}
+                    </div>
                     {data.age === retirementAge && (
                       <div className={styles.retirementWarning}>은퇴</div>
                     )}
@@ -953,9 +973,9 @@ function RechartsAssetChart({
         />
 
         {/* 은퇴 시점 표시 */}
-        {retirementData && (
+        {retirementData && retirementYear && (
           <ReferenceLine
-            x={retirementAge}
+            x={retirementYear}
             stroke="#9ca3af"
             strokeWidth={1.5}
             strokeDasharray="10 5"
@@ -969,16 +989,16 @@ function RechartsAssetChart({
         )}
 
         {/* 배우자 은퇴 시점 표시 */}
-        {spouseRetirementAge && (
+        {spouseRetirementYear && (
           <ReferenceLine
-            x={spouseRetirementAge}
+            x={spouseRetirementYear}
             stroke="#a78bfa"
             strokeWidth={1.5}
             strokeDasharray="10 5"
             label={{
               value: "배우자 은퇴",
               position: "top",
-              offset: spouseRetirementAge === retirementAge ? 30 : 10, // 은퇴 나이가 같으면 위로 30px, 다르면 10px 올림
+              offset: spouseRetirementYear === retirementYear ? 30 : 10, // 은퇴 년도가 같으면 위로 30px, 다르면 10px 올림
               style: { fill: "#a78bfa", fontSize: "12px" },
             }}
           />
@@ -1013,7 +1033,7 @@ function RechartsAssetChart({
         {/* 현금 위험 시점 표시 */}
         {cashNegativeTransition && (
           <ReferenceLine
-            x={cashNegativeTransition.age}
+            x={cashNegativeTransition.year}
             stroke="#ef4444"
             strokeWidth={2}
             strokeDasharray="8 4"

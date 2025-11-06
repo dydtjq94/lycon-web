@@ -44,24 +44,17 @@ function RechartsCashflowChart({
   const retirementYear =
     profileData?.retirementYear || new Date().getFullYear();
 
-  // 배우자 은퇴 시점 계산 (본인의 나이 기준으로)
-  const spouseRetirementAge = (() => {
+  // 배우자 은퇴 년도 계산
+  const spouseRetirementYear = (() => {
     if (!profileData?.hasSpouse || !profileData?.spouseIsWorking) {
       return null;
     }
 
-    const currentYear = new Date().getFullYear();
     const spouseBirthYear = parseInt(profileData.spouseBirthYear);
     const spouseRetirement = parseInt(profileData.spouseRetirementAge);
 
-    // 배우자가 은퇴하는 년도 계산
-    const spouseRetirementYear = spouseBirthYear + spouseRetirement;
-
-    // 그 년도에 본인의 나이 계산
-    const ownerBirthYear = parseInt(profileData.birthYear);
-    const ownerAgeAtSpouseRetirement = spouseRetirementYear - ownerBirthYear;
-
-    return ownerAgeAtSpouseRetirement;
+    // 배우자가 은퇴하는 년도 반환
+    return spouseBirthYear + spouseRetirement;
   })();
 
   // 소득 이벤트 추출 (시작/종료 이벤트)
@@ -468,7 +461,7 @@ function RechartsCashflowChart({
 
         {/* X축 - 나이 */}
         <XAxis
-          dataKey="age"
+          dataKey="year"
           type="number"
           scale="linear"
           domain={["dataMin - 1", "dataMax + 1"]}
@@ -561,15 +554,23 @@ function RechartsCashflowChart({
                   totalRealEstateTaxExpense +
                   totalCapitalGainsTaxExpense;
 
+                // 배우자 나이 계산
+                const spouseAge =
+                  profileData?.hasSpouse && profileData?.spouseBirthYear
+                    ? data.year - parseInt(profileData.spouseBirthYear)
+                    : null;
+
                 return (
                   <div
                     className={styles.customTooltip}
                     data-zoomed={isZoomedView}
                   >
                     <div className={styles.tooltipHeader}>
-                      <span className={styles.tooltipTitle}>
-                        {data.age}세 ({data.year}년)
-                      </span>
+                      <div className={styles.tooltipYear}>{data.year}</div>
+                      <div className={styles.tooltipAge}>
+                        본인 {data.age}
+                        {spouseAge && ` • 배우자 ${spouseAge}`}
+                      </div>
                       {data.age === retirementAge && (
                         <div className={styles.retirementWarning}>은퇴</div>
                       )}
@@ -1078,7 +1079,7 @@ function RechartsCashflowChart({
         {/* 은퇴 시점 표시 */}
         {retirementData && (
           <ReferenceLine
-            x={retirementAge}
+            x={retirementYear}
             stroke="#9ca3af"
             strokeWidth={1.5}
             strokeDasharray="10 5"
@@ -1092,16 +1093,16 @@ function RechartsCashflowChart({
         )}
 
         {/* 배우자 은퇴 시점 표시 */}
-        {spouseRetirementAge && (
+        {spouseRetirementYear && (
           <ReferenceLine
-            x={spouseRetirementAge}
+            x={spouseRetirementYear}
             stroke="#a78bfa"
             strokeWidth={1.5}
             strokeDasharray="10 5"
             label={{
               value: "배우자 은퇴",
               position: "top",
-              offset: spouseRetirementAge === retirementAge ? 30 : 10, // 은퇴 나이가 같으면 위로 30px, 다르면 10px 올림
+              offset: spouseRetirementYear === retirementYear ? 30 : 10, // 은퇴 년도가 같으면 위로 30px, 다르면 10px 올림
               style: { fill: "#a78bfa", fontSize: "12px" },
             }}
           />

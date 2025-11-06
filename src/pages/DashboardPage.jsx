@@ -2795,6 +2795,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   retirementAge={profileData.retirementAge}
                   spouseRetirementAge={profileData.spouseRetirementAge}
                   targetAssets={profileData.targetAssets}
+                  profileData={profileData}
                   savings={savings}
                   pensions={pensions}
                   realEstates={realEstates}

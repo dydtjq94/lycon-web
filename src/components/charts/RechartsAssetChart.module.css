@@ -164,11 +164,32 @@
 
 .tooltipHeader {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.25rem;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid #f1f5f9;
+}
+
+.tooltipYear {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.customTooltip[data-zoomed="true"] .tooltipYear {
+  font-size: 1.5rem;
+}
+
+.tooltipAge {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #6b7280;
+  margin-top: -2px;
+}
+
+.customTooltip[data-zoomed="true"] .tooltipAge {
+  font-size: 1rem;
 }
 
 .tooltipTitle {
@@ -260,7 +281,8 @@
   border-radius: 4px;
   font-size: 10px;
   font-weight: 500;
-  margin-left: 8px;
+  align-self: flex-start;
+  margin-top: 0.25rem;
 }
 
 .customTooltip[data-zoomed="true"] .retirementWarning {
@@ -276,7 +298,8 @@
   border-radius: 4px;
   font-size: 10px;
   font-weight: 500;
-  margin-left: 8px;
+  align-self: flex-start;
+  margin-top: 0.25rem;
 }
 
 .customTooltip[data-zoomed="true"] .cashWarning {
