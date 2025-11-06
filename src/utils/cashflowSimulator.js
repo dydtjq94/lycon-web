@@ -728,18 +728,23 @@ export function calculateCashflowSimulation(
 
           // 양도세를 종료년도에 바로 지출 처리
           if (capitalGainsTax > 0) {
-            const taxRatePercent = (taxRate * 100).toFixed(0);
+            // 소수점이 있으면 소수점 첫째 자리까지 표시
+            const taxRatePercent = taxRate * 100;
+            const taxRateFormatted =
+              taxRatePercent % 1 !== 0
+                ? taxRatePercent.toFixed(1)
+                : Math.floor(taxRatePercent);
 
             totalCapitalGainsTax += capitalGainsTax;
 
             // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
             capitalGainsTaxes.push({
-              title: `${saving.title} (양도세, ${taxRatePercent}%)`,
+              title: `${saving.title} (양도세, ${taxRateFormatted}%)`,
               amount: capitalGainsTax,
             });
 
             addNegative(
-              `${saving.title} (양도세, ${taxRatePercent}%)`,
+              `${saving.title} (양도세, ${taxRateFormatted}%)`,
               capitalGainsTax,
               "양도세",
               `saving-tax-${saving.id || saving.title}`
@@ -1302,18 +1307,23 @@ export function calculateCashflowSimulation(
 
           // 양도세를 종료년도에 바로 지출 처리
           if (capitalGainsTax > 0) {
-            const taxRatePercent = (taxRate * 100).toFixed(0);
+            // 소수점이 있으면 소수점 첫째 자리까지 표시
+            const taxRatePercent = taxRate * 100;
+            const taxRateFormatted =
+              taxRatePercent % 1 !== 0
+                ? taxRatePercent.toFixed(1)
+                : Math.floor(taxRatePercent);
 
             totalCapitalGainsTax += capitalGainsTax;
 
             // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
             capitalGainsTaxes.push({
-              title: `${asset.title} (양도세, ${taxRatePercent}%)`,
+              title: `${asset.title} (양도세, ${taxRateFormatted}%)`,
               amount: capitalGainsTax,
             });
 
             addNegative(
-              `${asset.title} (양도세, ${taxRatePercent}%)`,
+              `${asset.title} (양도세, ${taxRateFormatted}%)`,
               capitalGainsTax,
               "양도세",
               `asset-tax-${asset.id || asset.title}`

@@ -967,19 +967,16 @@ function RechartsCashflowChart({
                           });
                         }
 
-                        // 양도소득세 (지출) - 부동산 + 저축
+                        // 양도소득세 (지출) - 부동산 + 저축 + 자산
                         if (
                           data.capitalGainsTaxes &&
                           data.capitalGainsTaxes.length > 0
                         ) {
                           data.capitalGainsTaxes.forEach((tax, index) => {
-                            // holdingYears가 있으면 보유년수 표시 (부동산), 없으면 간단히 표시 (저축)
-                            const label = tax.holdingYears
-                              ? `${tax.title} (양도세, 보유 ${tax.holdingYears}년)`
-                              : `${tax.title}`;
+                            // title에 이미 세율이나 보유년수가 포함되어 있음
                             allItems.push({
                               key: `capitalGainsTax-${index}`,
-                              label: label,
+                              label: tax.title,
                               value: tax.amount,
                               type: "negative",
                               category: tax.holdingYears
@@ -1074,9 +1071,11 @@ function RechartsCashflowChart({
                           debt: { color: "#f97316", order: 7, name: "부채" },
                         };
 
-                        // +와 -로 분리하여 카테고리별, 금액별 정렬
+                        // +와 -로 분리하여 카테고리별, 금액별 정렬 (금액이 0인 항목 제외)
                         const positiveItems = allItems
-                          .filter((item) => item.type === "positive")
+                          .filter(
+                            (item) => item.type === "positive" && item.value > 0
+                          )
                           .sort((a, b) => {
                             // 1순위: 카테고리 순서
                             const orderA =
@@ -1089,7 +1088,9 @@ function RechartsCashflowChart({
                           });
 
                         const negativeItems = allItems
-                          .filter((item) => item.type === "negative")
+                          .filter(
+                            (item) => item.type === "negative" && item.value > 0
+                          )
                           .sort((a, b) => {
                             // 1순위: 카테고리 순서
                             const orderA =
