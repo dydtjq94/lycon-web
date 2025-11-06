@@ -62,7 +62,7 @@ OptimizedPieChart.displayName = "OptimizedPieChart";
 function RechartsAssetChart({
   data,
   retirementAge,
-  spouseRetirementAge,
+  spouseRetirementAge: spouseRetirementAgeProp,
   deathAge = 90,
   targetAssets = 50000,
   profileData = null, // 배우자 나이 계산을 위해 추가
@@ -77,16 +77,30 @@ function RechartsAssetChart({
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
   const hasData = Array.isArray(data) && data.length > 0;
 
+  // 배우자 은퇴 나이 (props 또는 profileData에서 가져오기)
+  const spouseRetirementAge = spouseRetirementAgeProp
+    ? parseInt(spouseRetirementAgeProp)
+    : profileData?.spouseRetirementAge
+    ? parseInt(profileData.spouseRetirementAge)
+    : null;
+
   // 나이를 년도로 변환
   const retirementYear =
     hasData && retirementAge
       ? data[0].year + (retirementAge - data[0].age)
       : null;
 
-  const spouseRetirementYear =
-    hasData && spouseRetirementAge
-      ? data[0].year + (spouseRetirementAge - data[0].age)
-      : null;
+  // 배우자 은퇴 년도 계산 (배우자 출생년도 + 은퇴 나이)
+  const spouseRetirementYear = (() => {
+    if (!profileData?.hasSpouse || !profileData?.spouseIsWorking) {
+      return null;
+    }
+    if (!profileData?.spouseBirthYear || !spouseRetirementAge) {
+      return null;
+    }
+    const spouseBirthYear = parseInt(profileData.spouseBirthYear);
+    return spouseBirthYear + spouseRetirementAge;
+  })();
 
   useEffect(() => {
     if (!hasData) {
@@ -789,6 +803,12 @@ function RechartsAssetChart({
                   ? data.year - parseInt(profileData.spouseBirthYear)
                   : null;
 
+              // 배우자 은퇴 나이 (툴팁 내부에서 명시적으로 가져오기)
+              const tooltipSpouseRetirementAge =
+                profileData?.spouseRetirementAge
+                  ? parseInt(profileData.spouseRetirementAge)
+                  : spouseRetirementAge;
+
               // 자녀들 나이 계산
               const childrenAges = profileData?.familyMembers
                 ? profileData.familyMembers
@@ -814,7 +834,25 @@ function RechartsAssetChart({
                   data-zoomed={isZoomedView}
                 >
                   <div className={styles.tooltipHeader}>
-                    <div className={styles.tooltipYear}>{data.year}</div>
+                    <div className={styles.tooltipYearRow}>
+                      <div className={styles.tooltipYear}>{data.year}</div>
+                      <div className={styles.tooltipBadges}>
+                        {/* 이벤트 표시를 년도 오른쪽으로 이동 */}
+                        {data.age === retirementAge && (
+                          <div className={styles.retirementWarning}>은퇴</div>
+                        )}
+                        {spouseAge &&
+                          spouseAge === tooltipSpouseRetirementAge && (
+                            <div className={styles.spouseRetirementWarning}>
+                              배우자 은퇴
+                            </div>
+                          )}
+                        {cashNegativeTransition &&
+                          data.age === cashNegativeTransition.age && (
+                            <div className={styles.cashWarning}>현금 위험</div>
+                          )}
+                      </div>
+                    </div>
                     <div className={styles.tooltipAge}>
                       본인 {data.age}
                       {spouseAge && ` • 배우자 ${spouseAge}`}
@@ -824,13 +862,6 @@ function RechartsAssetChart({
                         {childrenAgeText}
                       </div>
                     )}
-                    {data.age === retirementAge && (
-                      <div className={styles.retirementWarning}>은퇴</div>
-                    )}
-                    {cashNegativeTransition &&
-                      data.age === cashNegativeTransition.age && (
-                        <div className={styles.cashWarning}>현금 위험</div>
-                      )}
                   </div>
 
                   <div className={styles.tooltipBreakdown}>

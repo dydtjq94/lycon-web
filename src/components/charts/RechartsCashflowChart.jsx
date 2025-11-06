@@ -568,6 +568,11 @@ function RechartsCashflowChart({
                     ? data.year - parseInt(profileData.spouseBirthYear)
                     : null;
 
+                // 배우자 은퇴 나이
+                const spouseRetirementAge = profileData?.spouseRetirementAge
+                  ? parseInt(profileData.spouseRetirementAge)
+                  : null;
+
                 // 자녀들 나이 계산
                 const childrenAges = profileData?.familyMembers
                   ? profileData.familyMembers
@@ -593,7 +598,20 @@ function RechartsCashflowChart({
                     data-zoomed={isZoomedView}
                   >
                     <div className={styles.tooltipHeader}>
-                      <div className={styles.tooltipYear}>{data.year}</div>
+                      <div className={styles.tooltipYearRow}>
+                        <div className={styles.tooltipYear}>{data.year}</div>
+                        <div className={styles.tooltipBadges}>
+                          {/* 이벤트 표시를 년도 오른쪽으로 이동 */}
+                          {data.age === retirementAge && (
+                            <div className={styles.retirementWarning}>은퇴</div>
+                          )}
+                          {spouseAge && spouseAge === spouseRetirementAge && (
+                            <div className={styles.spouseRetirementWarning}>
+                              배우자 은퇴
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       <div className={styles.tooltipAge}>
                         본인 {data.age}
                         {spouseAge && ` • 배우자 ${spouseAge}`}
@@ -602,9 +620,6 @@ function RechartsCashflowChart({
                         <div className={styles.tooltipChildren}>
                           {childrenAgeText}
                         </div>
-                      )}
-                      {data.age === retirementAge && (
-                        <div className={styles.retirementWarning}>은퇴</div>
                       )}
                     </div>
                     <div className={styles.tooltipBreakdown}>

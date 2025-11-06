@@ -195,6 +195,15 @@
   border-bottom: 1px solid #f1f5f9;
 }
 
+/* 년도와 뱃지를 가로로 배치하는 컨테이너 */
+.tooltipYearRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
 .tooltipYear {
   font-size: 1rem;
   font-weight: 700;
@@ -203,6 +212,15 @@
 
 .customTooltip[data-zoomed="true"] .tooltipYear {
   font-size: 1.5rem;
+}
+
+/* 뱃지들을 담는 컨테이너 */
+.tooltipBadges {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .tooltipAge {
@@ -234,11 +252,28 @@
   border-radius: 4px;
   font-size: 10px;
   font-weight: 500;
-  align-self: flex-start;
-  margin-top: 0.25rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .customTooltip[data-zoomed="true"] .retirementWarning {
+  padding: 4px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.spouseRetirementWarning {
+  background: #a78bfa;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.customTooltip[data-zoomed="true"] .spouseRetirementWarning {
   padding: 4px 10px;
   font-size: 14px;
   border-radius: 6px;
