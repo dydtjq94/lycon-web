@@ -327,6 +327,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                     onChange={(e) =>
                       handleChange("ageStart", e.target.value || null)
                     }
+                    onWheel={(e) => e.target.blur()}
                     placeholder="예: 7"
                     min="0"
                     max="150"
@@ -342,6 +343,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                     onChange={(e) =>
                       handleChange("ageEnd", e.target.value || null)
                     }
+                    onWheel={(e) => e.target.blur()}
                     placeholder="예: 12"
                     min="0"
                     max="150"
@@ -384,6 +386,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                   className={styles.input}
                   value={formData.data.amount}
                   onChange={(e) => handleDataChange("amount", e.target.value)}
+                  onWheel={(e) => e.target.blur()}
                   placeholder="예: 300 (300만원) 또는 10.5 (10만 5천원)"
                   min="0"
                   step="0.1"
@@ -403,6 +406,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                   onChange={(e) =>
                     handleDataChange("growthRate", e.target.value)
                   }
+                  onWheel={(e) => e.target.blur()}
                   placeholder="예: 1.89"
                   step="0.01"
                 />
