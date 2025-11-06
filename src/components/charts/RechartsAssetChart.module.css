@@ -192,6 +192,17 @@
   font-size: 1rem;
 }
 
+.tooltipChildren {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-top: -2px;
+}
+
+.customTooltip[data-zoomed="true"] .tooltipChildren {
+  font-size: 0.9rem;
+}
+
 .tooltipTitle {
   font-size: 14px;
   font-weight: 600;
@@ -322,10 +333,11 @@
 }
 
 .tooltipEventDot {
-  width: 8px; /* Adjusted to 6px in JSX */
-  height: 8px; /* Adjusted to 6px in JSX */
-  border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 0;
   flex-shrink: 0;
+  margin: 0;
 }
 
 .tooltipEventText {

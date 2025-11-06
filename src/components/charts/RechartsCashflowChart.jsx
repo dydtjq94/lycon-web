@@ -457,6 +457,14 @@ function RechartsCashflowChart({
           bottom: 120,
         }}
       >
+        {/* 그라데이션 정의 */}
+        <defs>
+          <linearGradient id="blueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#1d4ed8" />
+          </linearGradient>
+        </defs>
+
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
 
         {/* X축 - 나이 */}
@@ -560,6 +568,25 @@ function RechartsCashflowChart({
                     ? data.year - parseInt(profileData.spouseBirthYear)
                     : null;
 
+                // 자녀들 나이 계산
+                const childrenAges = profileData?.familyMembers
+                  ? profileData.familyMembers
+                      .filter((member) => member.relationship === "자녀")
+                      .map((child) => ({
+                        gender: child.gender || "아들",
+                        age: data.year - parseInt(child.birthYear),
+                      }))
+                      .filter((child) => child.age >= 0) // 태어난 자녀만 표시
+                  : [];
+
+                // 자녀 나이 텍스트 생성 (예: "아들 4, 딸 2")
+                const childrenAgeText =
+                  childrenAges.length > 0
+                    ? childrenAges
+                        .map((child) => `${child.gender} ${child.age}`)
+                        .join(", ")
+                    : "";
+
                 return (
                   <div
                     className={styles.customTooltip}
@@ -571,6 +598,11 @@ function RechartsCashflowChart({
                         본인 {data.age}
                         {spouseAge && ` • 배우자 ${spouseAge}`}
                       </div>
+                      {childrenAgeText && (
+                        <div className={styles.tooltipChildren}>
+                          {childrenAgeText}
+                        </div>
+                      )}
                       {data.age === retirementAge && (
                         <div className={styles.retirementWarning}>은퇴</div>
                       )}
@@ -633,6 +665,7 @@ function RechartsCashflowChart({
                               label: income.title,
                               value: adjustedAmount,
                               type: "positive",
+                              category: "income",
                             });
                           });
 
@@ -659,6 +692,7 @@ function RechartsCashflowChart({
                               label: expense.title,
                               value: adjustedAmount,
                               type: "negative",
+                              category: "expense",
                             });
                           });
 
@@ -680,6 +714,7 @@ function RechartsCashflowChart({
                                   label: item.label,
                                   value: item.amount || 0,
                                   type: "positive",
+                                  category: "pension",
                                 });
                               }
                             }
@@ -696,6 +731,7 @@ function RechartsCashflowChart({
                                   label: item.label,
                                   value: item.amount || 0,
                                   type: "negative",
+                                  category: "pension",
                                 });
                               }
                             }
@@ -722,6 +758,7 @@ function RechartsCashflowChart({
                                   label: saving.title,
                                   value: saving.amount,
                                   type: "negative",
+                                  category: "saving",
                                 });
                               }
                             } else {
@@ -740,9 +777,33 @@ function RechartsCashflowChart({
                                 label: saving.title,
                                 value: yearlyAmount,
                                 type: "negative",
+                                category: "saving",
                               });
                             }
                           });
+
+                        // 부동산 임대 수입
+                        if (yearData.rentalIncome > 0) {
+                          // 해당 년도에 임대 수입이 있는 부동산들 찾기
+                          const rentalRealEstates = realEstates.filter(
+                            (re) =>
+                              re.hasRentalIncome === true &&
+                              data.year >= re.rentalIncomeStartYear &&
+                              data.year <= (re.rentalIncomeEndYear || data.year)
+                          );
+
+                          if (rentalRealEstates.length > 0) {
+                            rentalRealEstates.forEach((re, index) => {
+                              allItems.push({
+                                key: `rentalIncome-${index}`,
+                                label: `임대소득 (${re.title})`,
+                                value: re.rentalIncome || 0,
+                                type: "positive",
+                                category: "realEstate",
+                              });
+                            });
+                          }
+                        }
 
                         // 주택 연금 수입
                         if (yearData.realEstatePension > 0) {
@@ -762,6 +823,7 @@ function RechartsCashflowChart({
                             label: label,
                             value: yearData.realEstatePension,
                             type: "positive",
+                            category: "realEstate",
                           });
                         }
 
@@ -776,6 +838,7 @@ function RechartsCashflowChart({
                               label: `${sale.title} (매각)`,
                               value: sale.amount,
                               type: "positive",
+                              category: "realEstate",
                             });
                           });
                         }
@@ -808,6 +871,7 @@ function RechartsCashflowChart({
                               label: `${asset.title} (수익)`,
                               value: annualIncome,
                               type: "positive",
+                              category: "asset",
                             });
                           });
 
@@ -819,6 +883,7 @@ function RechartsCashflowChart({
                               label: `${sale.title} (매각)`,
                               value: sale.amount,
                               type: "positive",
+                              category: "asset",
                             });
                           });
                         }
@@ -837,6 +902,7 @@ function RechartsCashflowChart({
                                   label: `${saving.title} 만료`,
                                   value: saving.amount,
                                   type: "positive",
+                                  category: "saving",
                                 });
                               }
                             );
@@ -847,6 +913,7 @@ function RechartsCashflowChart({
                               label: "저축 만료",
                               value: yearData.savingMaturity,
                               type: "positive",
+                              category: "saving",
                             });
                           }
                         }
@@ -863,6 +930,7 @@ function RechartsCashflowChart({
                                 label: `${purchase.title} (구매)`,
                                 value: purchase.amount,
                                 type: "negative",
+                                category: "realEstate",
                               });
                             }
                           );
@@ -879,6 +947,7 @@ function RechartsCashflowChart({
                               label: `${tax.title} (취득세 ${tax.taxRate})`,
                               value: tax.amount,
                               type: "negative",
+                              category: "realEstate",
                             });
                           });
                         }
@@ -898,6 +967,9 @@ function RechartsCashflowChart({
                               label: label,
                               value: tax.amount,
                               type: "negative",
+                              category: tax.holdingYears
+                                ? "realEstate"
+                                : "saving",
                             });
                           });
                         }
@@ -913,6 +985,7 @@ function RechartsCashflowChart({
                               label: `${purchase.title} (구매)`,
                               value: purchase.amount,
                               type: "negative",
+                              category: "asset",
                             });
                           });
                         }
@@ -929,6 +1002,7 @@ function RechartsCashflowChart({
                                 label: `${injection.title} (대출 유입)`,
                                 value: injection.amount,
                                 type: "positive",
+                                category: "debt",
                               });
                             }
                           });
@@ -946,6 +1020,7 @@ function RechartsCashflowChart({
                                 label: `${payment.title} (이자)`,
                                 value: payment.amount,
                                 type: "negative",
+                                category: "debt",
                               });
                             }
                           });
@@ -963,19 +1038,53 @@ function RechartsCashflowChart({
                                 label: `${payment.title} (원금 상환)`,
                                 value: payment.amount,
                                 type: "negative",
+                                category: "debt",
                               });
                             }
                           });
                         }
 
-                        // +와 -로 분리하여 정렬
+                        // 카테고리별 색상 및 순서 정의
+                        const categoryConfig = {
+                          income: { color: "#10b981", order: 1, name: "소득" },
+                          expense: { color: "#ef4444", order: 2, name: "지출" },
+                          saving: { color: "#3b82f6", order: 3, name: "저축" },
+                          pension: { color: "#fbbf24", order: 4, name: "연금" },
+                          realEstate: {
+                            color: "#8b5cf6",
+                            order: 5,
+                            name: "부동산",
+                          },
+                          asset: { color: "#06b6d4", order: 6, name: "자산" },
+                          debt: { color: "#f97316", order: 7, name: "부채" },
+                        };
+
+                        // +와 -로 분리하여 카테고리별, 금액별 정렬
                         const positiveItems = allItems
                           .filter((item) => item.type === "positive")
-                          .sort((a, b) => b.value - a.value); // 금액 내림차순
+                          .sort((a, b) => {
+                            // 1순위: 카테고리 순서
+                            const orderA =
+                              categoryConfig[a.category]?.order || 999;
+                            const orderB =
+                              categoryConfig[b.category]?.order || 999;
+                            if (orderA !== orderB) return orderA - orderB;
+                            // 2순위: 금액 내림차순
+                            return b.value - a.value;
+                          });
 
                         const negativeItems = allItems
                           .filter((item) => item.type === "negative")
-                          .sort((a, b) => b.value - a.value); // 금액 내림차순
+                          .sort((a, b) => {
+                            // 1순위: 카테고리 순서
+                            const orderA =
+                              categoryConfig[a.category]?.order || 999;
+                            const orderB =
+                              categoryConfig[b.category]?.order || 999;
+                            if (orderA !== orderB) return orderA - orderB;
+                            // 2순위: 금액 내림차순
+                            return b.value - a.value;
+                          });
 
                         return (
                           <>
@@ -985,8 +1094,18 @@ function RechartsCashflowChart({
                                 key={item.key}
                                 className={styles.tooltipItem}
                               >
-                                <span className={styles.tooltipLabel}>
-                                  {item.label}:
+                                <span className={styles.tooltipLabelWithDot}>
+                                  <span
+                                    className={styles.tooltipCategoryDot}
+                                    style={{
+                                      backgroundColor:
+                                        categoryConfig[item.category]?.color ||
+                                        "#9ca3af",
+                                    }}
+                                  />
+                                  <span className={styles.tooltipLabel}>
+                                    {item.label}:
+                                  </span>
                                 </span>
                                 <span
                                   className={styles.tooltipValue}
@@ -1003,8 +1122,18 @@ function RechartsCashflowChart({
                                 key={item.key}
                                 className={styles.tooltipItem}
                               >
-                                <span className={styles.tooltipLabel}>
-                                  {item.label}:
+                                <span className={styles.tooltipLabelWithDot}>
+                                  <span
+                                    className={styles.tooltipCategoryDot}
+                                    style={{
+                                      backgroundColor:
+                                        categoryConfig[item.category]?.color ||
+                                        "#9ca3af",
+                                    }}
+                                  />
+                                  <span className={styles.tooltipLabel}>
+                                    {item.label}:
+                                  </span>
                                 </span>
                                 <span
                                   className={styles.tooltipValue}
@@ -1122,49 +1251,24 @@ function RechartsCashflowChart({
           ))}
         </Bar>
 
-        {/* 이벤트 마커를 표시하기 위한 투명한 레이어 */}
-        {allEvents.map((event, eventIndex) => {
-          const dataIndex = chartData.findIndex((d) => d.age === event.age);
-          if (dataIndex === -1) return null;
-
-          // 카테고리별 색상 결정
-          const eventColor =
-            event.category === "income"
-              ? "#10b981"
-              : event.category === "expense"
-              ? "#ef4444"
-              : event.category === "saving"
-              ? "#3b82f6"
-              : event.category === "pension"
-              ? "#fbbf24"
-              : event.category === "realEstate"
-              ? "#8b5cf6"
-              : event.category === "asset"
-              ? "#06b6d4"
-              : event.category === "debt"
-              ? "#374151"
-              : "#374151"; // 기본값
-
-          // 같은 년도의 이벤트 인덱스 계산 (수직으로 쌓기 위해)
-          const eventsInSameYear = allEvents.filter((e) => e.age === event.age);
-          const eventVerticalIndex = eventsInSameYear.findIndex(
-            (e) => e.year === event.year && e.title === event.title
-          );
-          const offset = 25 + eventVerticalIndex * 7.5; // 각 이벤트마다 7.5px씩 아래로
+        {/* 이벤트 마커를 표시하기 위한 투명한 레이어 - 년도별로 작고 화려한 네모 표시 */}
+        {Object.keys(eventsByYear).map((year) => {
+          const dataPoint = chartData.find((d) => d.year === parseInt(year));
+          if (!dataPoint) return null;
 
           return (
             <ReferenceLine
-              key={`event-${eventIndex}`}
-              x={event.age}
+              key={`event-marker-${year}`}
+              x={dataPoint.year}
               stroke="transparent"
               strokeWidth={0}
               label={{
-                value: "●",
+                value: "■",
                 position: "bottom",
-                offset: offset,
+                offset: 25,
                 style: {
-                  fill: eventColor,
-                  fontSize: "8px",
+                  fill: "url(#blueGradient)",
+                  fontSize: "7px",
                   fontWeight: "bold",
                 },
               }}

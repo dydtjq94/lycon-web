@@ -724,6 +724,14 @@ function RechartsAssetChart({
           bottom: 120,
         }}
       >
+        {/* 그라데이션 정의 */}
+        <defs>
+          <linearGradient id="blueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#1d4ed8" />
+          </linearGradient>
+        </defs>
+
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
 
         {/* X축 - 나이 */}
@@ -781,6 +789,25 @@ function RechartsAssetChart({
                   ? data.year - parseInt(profileData.spouseBirthYear)
                   : null;
 
+              // 자녀들 나이 계산
+              const childrenAges = profileData?.familyMembers
+                ? profileData.familyMembers
+                    .filter((member) => member.relationship === "자녀")
+                    .map((child) => ({
+                      gender: child.gender || "아들",
+                      age: data.year - parseInt(child.birthYear),
+                    }))
+                    .filter((child) => child.age >= 0) // 태어난 자녀만 표시
+                : [];
+
+              // 자녀 나이 텍스트 생성 (예: "아들 4, 딸 2")
+              const childrenAgeText =
+                childrenAges.length > 0
+                  ? childrenAges
+                      .map((child) => `${child.gender} ${child.age}`)
+                      .join(", ")
+                  : "";
+
               return (
                 <div
                   className={styles.customTooltip}
@@ -792,6 +819,11 @@ function RechartsAssetChart({
                       본인 {data.age}
                       {spouseAge && ` • 배우자 ${spouseAge}`}
                     </div>
+                    {childrenAgeText && (
+                      <div className={styles.tooltipChildren}>
+                        {childrenAgeText}
+                      </div>
+                    )}
                     {data.age === retirementAge && (
                       <div className={styles.retirementWarning}>은퇴</div>
                     )}
@@ -1160,44 +1192,24 @@ function RechartsAssetChart({
           });
         })()}
 
-        {/* 이벤트 마커 */}
-        {allEvents.map((event, eventIndex) => {
-          const dataIndex = chartData.findIndex((d) => d.age === event.age);
-          if (dataIndex === -1) return null;
-
-          const eventColor =
-            event.category === "saving"
-              ? "#3b82f6"
-              : event.category === "pension"
-              ? "#fbbf24"
-              : event.category === "realEstate"
-              ? "#8b5cf6"
-              : event.category === "asset"
-              ? "#06b6d4"
-              : event.category === "debt"
-              ? "#374151"
-              : "#374151"; // 기본값
-
-          // 같은 년도의 이벤트 인덱스 계산 (수직으로 쌓기 위해)
-          const eventsInSameYear = allEvents.filter((e) => e.age === event.age);
-          const eventVerticalIndex = eventsInSameYear.findIndex(
-            (e) => e.year === event.year && e.title === event.title
-          );
-          const offset = 25 + eventVerticalIndex * 7.5; // 각 이벤트마다 7.5px씩 아래로
+        {/* 이벤트 마커를 표시하기 위한 투명한 레이어 - 년도별로 작고 화려한 네모 표시 */}
+        {Object.keys(eventsByYear).map((year) => {
+          const dataPoint = chartData.find((d) => d.year === parseInt(year));
+          if (!dataPoint) return null;
 
           return (
             <ReferenceLine
-              key={`event-${eventIndex}`}
-              x={event.age}
+              key={`event-marker-${year}`}
+              x={dataPoint.year}
               stroke="transparent"
               strokeWidth={0}
               label={{
-                value: "●",
+                value: "■",
                 position: "bottom",
-                offset: offset,
+                offset: 25,
                 style: {
-                  fill: eventColor,
-                  fontSize: "8px",
+                  fill: "url(#blueGradient)",
+                  fontSize: "7px",
                   fontWeight: "bold",
                 },
               }}
