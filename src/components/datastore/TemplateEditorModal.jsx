@@ -47,8 +47,8 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
         setFormData({
           title: editData.title || "",
           category: editData.category || "income",
-          familyMemberType: Array.isArray(editData.familyMemberType) 
-            ? editData.familyMemberType 
+          familyMemberType: Array.isArray(editData.familyMemberType)
+            ? editData.familyMemberType
             : [editData.familyMemberType || "self"], // 배열로 변환
           ageStart: editData.ageStart,
           ageEnd: editData.ageEnd,
@@ -165,8 +165,14 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
         title: formData.title.trim(),
         category: formData.category,
         familyMemberType: formData.familyMemberType,
-        ageStart: formData.ageStart === "" || formData.ageStart === null ? null : parseInt(formData.ageStart),
-        ageEnd: formData.ageEnd === "" || formData.ageEnd === null ? null : parseInt(formData.ageEnd),
+        ageStart:
+          formData.ageStart === "" || formData.ageStart === null
+            ? null
+            : parseInt(formData.ageStart),
+        ageEnd:
+          formData.ageEnd === "" || formData.ageEnd === null
+            ? null
+            : parseInt(formData.ageEnd),
         autoApply: formData.autoApply,
         data: {
           frequency: formData.data.frequency,
@@ -245,7 +251,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                       key={cat.value}
                       type="button"
                       className={`${styles.tabButton} ${
-                        formData.category === cat.value ? styles.tabButtonActive : ""
+                        formData.category === cat.value
+                          ? styles.tabButtonActive
+                          : ""
                       }`}
                       onClick={() => handleChange("category", cat.value)}
                     >
@@ -281,7 +289,10 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           );
                         } else {
                           // 선택되어 있지 않으면 추가
-                          handleChange("familyMemberType", [...currentTypes, type.value]);
+                          handleChange("familyMemberType", [
+                            ...currentTypes,
+                            type.value,
+                          ]);
                         }
                       }}
                     >
@@ -290,7 +301,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                   ))}
                 </div>
                 {errors.familyMemberType && (
-                  <span className={styles.error}>{errors.familyMemberType}</span>
+                  <span className={styles.error}>
+                    {errors.familyMemberType}
+                  </span>
                 )}
               </div>
             </div>
@@ -371,9 +384,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                   className={styles.input}
                   value={formData.data.amount}
                   onChange={(e) => handleDataChange("amount", e.target.value)}
-                  placeholder="예: 300 (300만원)"
+                  placeholder="예: 300 (300만원) 또는 10.5 (10만 5천원)"
                   min="0"
-                  step="10"
+                  step="0.1"
                 />
                 {errors.amount && (
                   <span className={styles.error}>{errors.amount}</span>
@@ -452,4 +465,3 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
 }
 
 export default TemplateEditorModal;
-

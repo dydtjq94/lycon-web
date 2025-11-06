@@ -323,6 +323,33 @@ function DashboardPage() {
     };
   }, [profileId, navigate]);
 
+  // 사이드바가 열릴 때 배경 스크롤 막기
+  useEffect(() => {
+    const isSidebarOpen = isProfilePanelOpen || isDataStorePanelOpen;
+    
+    if (isSidebarOpen) {
+      // 현재 스크롤 위치 저장
+      const scrollY = window.scrollY;
+      
+      // body 스크롤 막기
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+
+      return () => {
+        // 원래 상태로 복구
+        document.body.style.overflow = "";
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        
+        // 스크롤 위치 복원
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isProfilePanelOpen, isDataStorePanelOpen]);
+
   useEffect(() => {
     if (!profileId) {
       setProfileChecklist(null);
