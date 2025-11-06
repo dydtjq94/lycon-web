@@ -162,8 +162,8 @@ function FinancialDataStorePanel({ onSelectTemplate, profileData, onClose, isAdm
     const currentYear = new Date().getFullYear();
           const { category, data, ageStart, ageEnd, familyMemberType } = template;
 
-    // familyMemberType이 배열인 경우 첫 번째 값 사용
-    const memberType = Array.isArray(familyMemberType) ? familyMemberType[0] : familyMemberType;
+    // 중요: 사용자가 선택한 탭(selectedFamilyType)을 사용하여 정확한 가족 구성원의 나이로 계산
+    const memberType = selectedFamilyType;
 
           // 나이 범위가 있는 경우 startYear/endYear 자동 계산
           let startYear = currentYear;

@@ -696,12 +696,14 @@ function DashboardPage() {
     if (!checkEditPermission("소득 추가")) return;
     trackEvent("소득 추가 버튼 클릭", { profileId });
     setEditingIncome(null);
+    setInitialIncomeData(null); // initialData 초기화
     setIsIncomeModalOpen(true);
   };
 
   const handleEditIncome = (income) => {
     if (!checkEditPermission("소득 수정")) return;
     setEditingIncome(income);
+    setInitialIncomeData(null); // initialData 초기화
     setIsIncomeModalOpen(true);
   };
 
@@ -793,6 +795,7 @@ function DashboardPage() {
   const handleAddExpense = () => {
     if (!checkEditPermission("지출 추가")) return;
     setEditingExpense(null);
+    setInitialExpenseData(null); // initialData 초기화
     setIsExpenseModalOpen(true);
   };
 
@@ -806,6 +809,7 @@ function DashboardPage() {
   const handleEditExpense = (expense) => {
     if (!checkEditPermission("지출 수정")) return;
     setEditingExpense(expense);
+    setInitialExpenseData(null); // initialData 초기화
     setIsExpenseModalOpen(true);
   };
 
@@ -2931,6 +2935,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={() => {
           setIsIncomeModalOpen(false);
           setInitialIncomeData(null);
+          setEditingIncome(null); // 수정 데이터 초기화
         }}
         onSave={handleSaveIncome}
         editData={editingIncome}
@@ -2947,6 +2952,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={() => {
           setIsExpenseModalOpen(false);
           setInitialExpenseData(null);
+          setEditingExpense(null); // 수정 데이터 초기화
         }}
         onSave={handleSaveExpense}
         editData={editingExpense}
@@ -2960,7 +2966,10 @@ ${JSON.stringify(analysisData, null, 2)}`;
       {/* 저축/투자 모달 */}
       <SavingModal
         isOpen={isSavingModalOpen}
-        onClose={() => setIsSavingModalOpen(false)}
+        onClose={() => {
+          setIsSavingModalOpen(false);
+          setEditingSaving(null); // 수정 데이터 초기화
+        }}
         onSave={handleSaveSaving}
         editData={editingSaving}
         profileData={profileData}
@@ -2971,7 +2980,10 @@ ${JSON.stringify(analysisData, null, 2)}`;
 
       <PensionModal
         isOpen={isPensionModalOpen}
-        onClose={() => setIsPensionModalOpen(false)}
+        onClose={() => {
+          setIsPensionModalOpen(false);
+          setEditingPension(null); // 수정 데이터 초기화
+        }}
         onSave={handleSavePension}
         editData={editingPension}
         profileData={profileData}
@@ -2982,7 +2994,10 @@ ${JSON.stringify(analysisData, null, 2)}`;
 
       <RealEstateModal
         isOpen={isRealEstateModalOpen}
-        onClose={() => setIsRealEstateModalOpen(false)}
+        onClose={() => {
+          setIsRealEstateModalOpen(false);
+          setEditingRealEstate(null); // 수정 데이터 초기화
+        }}
         onSave={handleSaveRealEstate}
         editData={editingRealEstate}
         profileData={profileData}
@@ -3001,7 +3016,10 @@ ${JSON.stringify(analysisData, null, 2)}`;
       {/* 자산 모달 */}
       <AssetModal
         isOpen={isAssetModalOpen}
-        onClose={() => setIsAssetModalOpen(false)}
+        onClose={() => {
+          setIsAssetModalOpen(false);
+          setEditingAsset(null); // 수정 데이터 초기화
+        }}
         onSave={handleSaveAsset}
         editData={editingAsset}
         profileData={profileData}
@@ -3013,7 +3031,10 @@ ${JSON.stringify(analysisData, null, 2)}`;
       {/* 부채 모달 */}
       <DebtModal
         isOpen={isDebtModalOpen}
-        onClose={() => setIsDebtModalOpen(false)}
+        onClose={() => {
+          setIsDebtModalOpen(false);
+          setEditingDebt(null); // 수정 데이터 초기화
+        }}
         onSave={handleSaveDebt}
         editData={editingDebt}
         profileData={profileData}
