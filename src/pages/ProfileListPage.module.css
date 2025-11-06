@@ -146,8 +146,8 @@
 
 .infoDivider {
   font-size: 14px;
-  color: #d1d5db;
-  margin: 0 6px;
+  color: #747474;
+  padding-top: 6px;
 }
 
 /* 프로필 액션 */
@@ -347,10 +347,6 @@
   }
 
   .infoText {
-    font-size: 12px;
-  }
-
-  .infoDivider {
     font-size: 12px;
   }
 
