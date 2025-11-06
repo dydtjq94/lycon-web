@@ -581,7 +581,11 @@ export function calculateCashflowSimulation(
 
     // 저축 계산 (현금흐름에서는 년간 저축 상승률만 적용, 이자율 적용 안함)
     let totalSavingMaturity = 0; // 저축 만료 수입 (별도 변수)
+    let totalSavingIncome = 0; // 저축 수익 (배당/이자) - 별도 변수
     let savingMaturities = []; // 저축 만료 상세 정보
+    const savingPurchases = []; // 저축 구매 상세 정보
+    const savingIncomes = []; // 저축 수익 상세 정보 (배당/이자)
+    const savingContributions = []; // 저축 적립 상세 정보
 
     savings.forEach((saving) => {
       // 년도 데이터 타입 확인 및 변환(문자열 → 숫자)
@@ -599,6 +603,13 @@ export function calculateCashflowSimulation(
         const currentAmount = Number(saving.currentAmount) || 0;
         if (currentAmount > 0) {
           totalSavings += currentAmount;
+
+          // 저축 구매 상세 정보 추가
+          savingPurchases.push({
+            title: saving.title,
+            amount: currentAmount,
+          });
+
           addNegative(
             `${saving.title} (구매)`,
             currentAmount,
@@ -608,8 +619,8 @@ export function calculateCashflowSimulation(
         }
       }
 
-      if (year >= sStartYear && year < sEndYear) {
-        // 종료년도 전까지만 적립
+      if (year >= sStartYear && year <= sEndYear) {
+        // 종료년도 연말까지 적립 (연말 기준)
         const yearsElapsed = year - sStartYear;
         const yearlyGrowthRate = saving.yearlyGrowthRate || 0; // 이미 소수로 저장됨
 
@@ -617,8 +628,15 @@ export function calculateCashflowSimulation(
           // 일회성 저축: 시작년도에만 현금흐름에 반영
           if (year === saving.startYear) {
             totalSavings += saving.amount;
+
+            // 저축 적립 상세 정보 추가
+            savingContributions.push({
+              title: saving.title,
+              amount: saving.amount,
+            });
+
             addNegative(
-              saving.title,
+              `${saving.title} (적립)`,
               saving.amount,
               "저축 적립",
               `saving-contrib-${saving.id || saving.title}`
@@ -635,14 +653,23 @@ export function calculateCashflowSimulation(
           const yearlyAmount = adjustedMonthlyAmount * 12;
 
           totalSavings += yearlyAmount;
+
+          // 저축 적립 상세 정보 추가
+          savingContributions.push({
+            title: saving.title,
+            amount: yearlyAmount,
+          });
+
           addNegative(
-            saving.title,
+            `${saving.title} (적립)`,
             yearlyAmount,
             "저축 적립",
             `saving-contrib-${saving.id || saving.title}`
           );
         }
-      } else if (year === sEndYear) {
+      }
+
+      if (year === sEndYear) {
         // 종료년도: 종료년도까지 수익률 계산하고 현금흐름에 추가
         const yearsElapsed = sEndYear - sStartYear;
         const interestRate = saving.interestRate || 0;
@@ -769,9 +796,9 @@ export function calculateCashflowSimulation(
         saving.savingType === "income" &&
         saving.incomeRate > 0 &&
         year > sStartYear &&
-        year < sEndYear
+        year <= sEndYear
       ) {
-        // 연말 기준: 수익은 시작 다음 해부터 종료 전까지 발생
+        // 연말 기준: 수익은 시작 다음 해부터 종료년도 연말까지 발생
         // 전년도 말 저축 자산 가치 계산
         const yearsElapsed = year - sStartYear;
         const interestRate = saving.interestRate || 0;
@@ -808,7 +835,14 @@ export function calculateCashflowSimulation(
         // 매년 수익 = 전년도 말 자산 가치 * 수익률
         const yearlyIncome = previousYearEndValue * saving.incomeRate;
         if (yearlyIncome > 0) {
-          totalSavingMaturity += yearlyIncome;
+          totalSavingIncome += yearlyIncome; // 저축 수익 합계에 추가
+
+          // 저축 수익 상세 정보 추가 (배당/이자)
+          savingIncomes.push({
+            title: saving.title,
+            amount: yearlyIncome,
+          });
+
           addPositive(
             `${saving.title} (배당/이자)`,
             yearlyIncome,
@@ -1333,7 +1367,7 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 현금흐름 = 소득 - 지출 - 저축 + 연금 + 임대소득 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 + 대출 현금 유입 - 부채이자 - 부채원금상환 - 자산구매 - 부동산구매 - 부동산취득세 - 양도소득세 (각 년도별 순현금흐름)
+    // 현금흐름 = 소득 - 지출 - 저축 + 연금 + 임대소득 + 주택연금 + 자산수익 + 부동산매각 + 자산매각 + 저축만료 + 저축수익 + 대출 현금 유입 - 부채이자 - 부채원금상환 - 자산구매 - 부동산구매 - 부동산취득세 - 양도소득세 (각 년도별 순현금흐름)
     const netCashflow =
       totalIncome -
       totalExpense -
@@ -1345,7 +1379,8 @@ export function calculateCashflowSimulation(
       totalRealEstateSale +
       totalAssetSale +
       totalDebtInjection +
-      totalSavingMaturity -
+      totalSavingMaturity +
+      totalSavingIncome -
       totalDebtInterest -
       totalDebtPrincipal -
       totalAssetPurchase -
@@ -1357,7 +1392,7 @@ export function calculateCashflowSimulation(
       year,
       age,
       amount: netCashflow,
-      income: totalIncome,
+      income: totalIncome + totalSavingIncome, // 저축 수익을 총 수입에 포함
       expense: totalExpense,
       savings: totalSavings,
       pension: totalPension,
@@ -1369,6 +1404,8 @@ export function calculateCashflowSimulation(
       debtInjection: totalDebtInjection,
       savingMaturity: totalSavingMaturity,
       savingMaturities: savingMaturities, // 저축 만료 상세 정보
+      savingIncomes: savingIncomes, // 저축 수익 상세 정보 (배당/이자)
+      savingContributions: savingContributions, // 저축 적립 상세 정보
       debtInterest: totalDebtInterest,
       debtPrincipal: totalDebtPrincipal,
       debtInterests: debtInterestDetails,
@@ -1378,6 +1415,7 @@ export function calculateCashflowSimulation(
       capitalGainsTax: totalCapitalGainsTax, // 부동산 양도소득세
       capitalGainsTaxes: capitalGainsTaxes, // 부동산 양도소득세 상세 정보
       // 구매와 매각 상세 정보 추가
+      savingPurchases: savingPurchases, // 저축 구매 상세 정보
       assetPurchases: assetPurchases,
       realEstatePurchases: realEstatePurchases,
       debtInjections: debtInjections,

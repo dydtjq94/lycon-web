@@ -149,10 +149,10 @@ function RechartsCashflowChart({
             title: `${saving.title} 종료`,
           });
 
-          // 수령 이벤트: 종료 다음 해에 "수령" 표시
+          // 수령 이벤트: 종료년도에 바로 "수령" 표시 (종료와 동시에 수령)
           events.push({
-            year: sEnd + 1,
-            age: sEnd + 1 - (data[0]?.year - data[0]?.age),
+            year: sEnd,
+            age: sEnd - (data[0]?.year - data[0]?.age),
             type: "withdrawal",
             category: "saving",
             title: `${saving.title} 수령`,
@@ -412,6 +412,9 @@ function RechartsCashflowChart({
     amount: item.amount,
     formattedAmount: formatAmountForChart(item.amount),
     assetPurchases: item.assetPurchases || [],
+    savingPurchases: item.savingPurchases || [], // 저축 구매 추가
+    savingIncomes: item.savingIncomes || [], // 저축 수익 (배당/이자) 추가
+    savingContributions: item.savingContributions || [], // 저축 적립 추가
     realEstatePurchases: item.realEstatePurchases || [],
     realEstateTaxes: item.realEstateTaxes || [], // 부동산 취득세 추가
     capitalGainsTaxes: item.capitalGainsTaxes || [], // 부동산 양도소득세 추가
@@ -753,49 +756,7 @@ function RechartsCashflowChart({
                           );
                         }
 
-                        // 저축/투자 항목들
-                        savings
-                          .filter(
-                            (saving) =>
-                              data.year >= saving.startYear &&
-                              data.year <= saving.endYear
-                          )
-                          .forEach((saving, index) => {
-                            const yearsElapsed = data.year - saving.startYear;
-                            const yearlyGrowthRate =
-                              saving.yearlyGrowthRate || 0;
-
-                            if (saving.frequency === "one_time") {
-                              // 일회성 저축: 시작년도에만 표시
-                              if (data.year === saving.startYear) {
-                                allItems.push({
-                                  key: `saving-${index}`,
-                                  label: saving.title,
-                                  value: saving.amount,
-                                  type: "negative",
-                                  category: "saving",
-                                });
-                              }
-                            } else {
-                              // 월간/연간 저축
-                              const monthlyAmount =
-                                saving.frequency === "monthly"
-                                  ? saving.amount
-                                  : saving.amount / 12;
-                              const adjustedMonthlyAmount =
-                                monthlyAmount *
-                                Math.pow(1 + yearlyGrowthRate, yearsElapsed);
-                              const yearlyAmount = adjustedMonthlyAmount * 12;
-
-                              allItems.push({
-                                key: `saving-${index}`,
-                                label: saving.title,
-                                value: yearlyAmount,
-                                type: "negative",
-                                category: "saving",
-                              });
-                            }
-                          });
+                        // 저축/투자 항목들은 savingContributions, savingIncomes, savingPurchases 배열로 표시됨 (중복 방지)
 
                         // 부동산 임대 수입
                         if (yearData.rentalIncome > 0) {
@@ -903,6 +864,22 @@ function RechartsCashflowChart({
                           });
                         }
 
+                        // 저축 수익 (배당/이자) - 수익형 저축
+                        if (
+                          data.savingIncomes &&
+                          data.savingIncomes.length > 0
+                        ) {
+                          data.savingIncomes.forEach((income, index) => {
+                            allItems.push({
+                              key: `savingIncome-${index}`,
+                              label: `${income.title} (배당/이자)`,
+                              value: income.amount,
+                              type: "positive",
+                              category: "saving",
+                            });
+                          });
+                        }
+
                         // 저축 만료
                         if (yearData.savingMaturity > 0) {
                           // 저축 만료 상세 정보가 있으면 개별 표시
@@ -973,15 +950,57 @@ function RechartsCashflowChart({
                           data.capitalGainsTaxes.length > 0
                         ) {
                           data.capitalGainsTaxes.forEach((tax, index) => {
-                            // title에 이미 세율이나 보유년수가 포함되어 있음
+                            // 부동산: holdingYears가 있으면 보유기간 표시
+                            // 저축/자산: title에 이미 세율 포함
+                            let label = tax.title;
+                            if (tax.holdingYears) {
+                              // 소수점이 있으면 소수점 첫째 자리까지 표시
+                              const years =
+                                tax.holdingYears % 1 !== 0
+                                  ? tax.holdingYears.toFixed(1)
+                                  : Math.floor(tax.holdingYears);
+                              label = `${tax.title} (양도세, 보유 ${years}년)`;
+                            }
                             allItems.push({
                               key: `capitalGainsTax-${index}`,
-                              label: tax.title,
+                              label: label,
                               value: tax.amount,
                               type: "negative",
                               category: tax.holdingYears
                                 ? "realEstate"
                                 : "saving",
+                            });
+                          });
+                        }
+
+                        // 저축 적립 (지출)
+                        if (
+                          data.savingContributions &&
+                          data.savingContributions.length > 0
+                        ) {
+                          data.savingContributions.forEach((contrib, index) => {
+                            allItems.push({
+                              key: `savingContrib-${index}`,
+                              label: `${contrib.title} (적립)`,
+                              value: contrib.amount,
+                              type: "negative",
+                              category: "saving",
+                            });
+                          });
+                        }
+
+                        // 저축 구매 (지출)
+                        if (
+                          data.savingPurchases &&
+                          data.savingPurchases.length > 0
+                        ) {
+                          data.savingPurchases.forEach((purchase, index) => {
+                            allItems.push({
+                              key: `savingPurchase-${index}`,
+                              label: `${purchase.title} (구매)`,
+                              value: purchase.amount,
+                              type: "negative",
+                              category: "saving",
                             });
                           });
                         }
