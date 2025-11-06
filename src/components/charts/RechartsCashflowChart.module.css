@@ -326,11 +326,13 @@
   align-items: center;
   font-size: 12px;
   margin-bottom: 6px;
+  gap: 16px; /* 항목과 금액 사이 최소 간격 */
 }
 
 .customTooltip[data-zoomed="true"] .tooltipItem {
   font-size: 16px;
   margin-bottom: 10px;
+  gap: 24px; /* 확대 모드에서는 간격 더 넓게 */
 }
 
 .tooltipLabelWithDot {
