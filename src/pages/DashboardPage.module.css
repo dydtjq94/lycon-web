@@ -700,6 +700,25 @@
   color: #374151;
 }
 
+.profilePanelSettings {
+  border: none;
+  background: transparent;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profilePanelSettings:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
 .profilePanelClose {
   border: none;
   background: transparent;

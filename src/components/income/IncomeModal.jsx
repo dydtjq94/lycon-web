@@ -12,6 +12,7 @@ function IncomeModal({
   onClose,
   onSave,
   editData = null,
+  initialData = null, // 재무 라이브러리에서 전달된 템플릿 데이터
   profileData = null,
   simulations = [],
   activeSimulationId = null,
@@ -138,6 +139,7 @@ function IncomeModal({
   useEffect(() => {
     if (isOpen) {
       if (editData) {
+        // 수정 모드
         setFormData({
           title: editData.title || "",
           frequency:
@@ -152,8 +154,23 @@ function IncomeModal({
               : "",
           isFixedToRetirementYear: editData.isFixedToRetirementYear || false,
         });
+      } else if (initialData) {
+        // 재무 라이브러리에서 선택된 템플릿 데이터로 초기화
+        setFormData({
+          title: initialData.title || "",
+          frequency: initialData.frequency || "monthly",
+          amount: initialData.amount || "",
+          startYear: initialData.startYear || new Date().getFullYear(),
+          endYear: initialData.endYear || getRetirementYear(),
+          memo: initialData.memo || "",
+          growthRate:
+            initialData.growthRate !== undefined
+              ? initialData.growthRate.toString()
+              : "3.3",
+          isFixedToRetirementYear: initialData.isFixedToRetirementYear || false,
+        });
       } else {
-        // 새 데이터일 때 초기화
+        // 새 데이터일 때 기본값
         setFormData({
           title: "",
           frequency: "monthly",
@@ -166,12 +183,13 @@ function IncomeModal({
         });
       }
     }
-  }, [isOpen, editData]);
+  }, [isOpen, editData, initialData]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape" && isOpen) {
+        e.stopPropagation(); // 이벤트 전파 막기 (상위 사이드바 닫힘 방지)
         onClose();
       }
     };

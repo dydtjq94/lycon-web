@@ -1947,6 +1947,15 @@ export const financialLibraryService = {
   },
 
   /**
+   * 재무 라이브러리 템플릿 추가 (createTemplate의 별칭)
+   * @param {Object} templateData - 템플릿 데이터
+   * @returns {String} 생성된 문서 ID
+   */
+  async addTemplate(templateData) {
+    return this.createTemplate(templateData);
+  },
+
+  /**
    * 모든 재무 라이브러리 템플릿 조회
    * @returns {Array} 템플릿 배열
    */

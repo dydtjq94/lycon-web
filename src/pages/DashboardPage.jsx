@@ -54,6 +54,7 @@ import ProfileChecklistPanel from "../components/checklist/ProfileChecklistPanel
 import ChecklistTemplateModal from "../components/checklist/ChecklistTemplateModal";
 import { normalizeChecklistItems } from "../constants/profileChecklist";
 import FinancialDataStorePanel from "../components/datastore/FinancialDataStorePanel";
+import TemplateManageModal from "../components/datastore/TemplateManageModal";
 import { trackEvent, trackPageView } from "../libs/mixpanel";
 import styles from "./DashboardPage.module.css";
 
@@ -86,6 +87,8 @@ function DashboardPage() {
   const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false);
   const [profilePanelTab, setProfilePanelTab] = useState("memo");
   const [isDataStorePanelOpen, setIsDataStorePanelOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false); // 재무 라이브러리 관리 모달
+  const [libraryRefreshKey, setLibraryRefreshKey] = useState(0); // 재무 라이브러리 새로고침 키
   const [profileMemo, setProfileMemo] = useState("");
   const [isProfileMemoSaving, setIsProfileMemoSaving] = useState(false);
   const [profileChecklist, setProfileChecklist] = useState(null);
@@ -216,6 +219,8 @@ function DashboardPage() {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // 사이드바 접기/펼치기 상태
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  const [initialIncomeData, setInitialIncomeData] = useState(null); // 재무 라이브러리에서 선택한 소득 템플릿 데이터
+  const [initialExpenseData, setInitialExpenseData] = useState(null); // 재무 라이브러리에서 선택한 지출 템플릿 데이터
   const [isCompareLoading, setIsCompareLoading] = useState(false);
   const [comparisonData, setComparisonData] = useState({
     defaultData: null,
@@ -1604,7 +1609,21 @@ function DashboardPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isDataStorePanelOpen]);
 
-  // 재무 라이브러리에서 선택한 항목들 추가
+  // 재무 라이브러리에서 템플릿 선택 시 처리
+  const handleSelectTemplate = (templateData) => {
+    const { category } = templateData;
+    
+    // 카테고리에 따라 적절한 모달 열기
+    if (category === "income") {
+      setInitialIncomeData(templateData);
+      setIsIncomeModalOpen(true);
+    } else if (category === "expense") {
+      setInitialExpenseData(templateData);
+      setIsExpenseModalOpen(true);
+    }
+  };
+
+  // 재무 라이브러리에서 선택한 항목들 추가 (구버전, 호환성 유지)
   const handleAddDataStoreItems = async (items) => {
     if (!checkEditPermission("재무 데이터 추가")) return;
     if (!profileId || !activeSimulationId) return;
@@ -2408,13 +2427,20 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   )}세), `}
                 {profileData.familyMembers &&
                   profileData.familyMembers.length > 0 &&
-                  profileData.familyMembers.map((member, index) => (
-                    <span key={member.id || `family-${index}`}>
-                      {index > 0 && ", "}
-                      {member.relationship || member.relation || "가족"}(
-                      {calculateKoreanAge(member.birthYear)}세)
-                    </span>
-                  ))}
+                  profileData.familyMembers.map((member, index) => {
+                    // 자녀인 경우 성별 표시
+                    const isChild = member.relationship === "자녀";
+                    const currentAge = calculateKoreanAge(member.birthYear);
+                    
+                    return (
+                      <span key={member.id || `family-${index}`}>
+                        {index > 0 && ", "}
+                        {isChild && member.gender
+                          ? `자녀(${member.gender}, ${currentAge}세)`
+                          : `${member.relationship || member.relation || "가족"}(${currentAge}세)`}
+                      </span>
+                    );
+                  })}
               </span>
             )}
           </span>
@@ -2833,17 +2859,30 @@ ${JSON.stringify(analysisData, null, 2)}`;
           <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600 }}>
             재무 라이브러리
           </h3>
-          <button
-            className={styles.profilePanelClose}
-            onClick={closeDataStorePanel}
-            type="button"
-          >
-            →
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            {isAdmin && (
+              <button
+                className={styles.profilePanelSettings}
+                onClick={() => setIsManageModalOpen(true)}
+                type="button"
+                title="템플릿 관리"
+              >
+                ⚙
+              </button>
+            )}
+            <button
+              className={styles.profilePanelClose}
+              onClick={closeDataStorePanel}
+              type="button"
+            >
+              →
+            </button>
+          </div>
         </div>
         <div className={styles.profileSidePanelContent}>
           <FinancialDataStorePanel
-            onAddItems={handleAddDataStoreItems}
+            key={libraryRefreshKey}
+            onSelectTemplate={handleSelectTemplate}
             profileData={profileData}
             onClose={closeDataStorePanel}
             isAdmin={isAdmin}
@@ -2851,12 +2890,25 @@ ${JSON.stringify(analysisData, null, 2)}`;
         </div>
       </div>
 
+      {/* 재무 라이브러리 관리 모달 */}
+      <TemplateManageModal
+        isOpen={isManageModalOpen}
+        onClose={() => {
+          setIsManageModalOpen(false);
+          setLibraryRefreshKey(prev => prev + 1); // 템플릿 목록 새로고침
+        }}
+      />
+
       {/* 소득 모달 */}
       <IncomeModal
         isOpen={isIncomeModalOpen}
-        onClose={() => setIsIncomeModalOpen(false)}
+        onClose={() => {
+          setIsIncomeModalOpen(false);
+          setInitialIncomeData(null);
+        }}
         onSave={handleSaveIncome}
         editData={editingIncome}
+        initialData={initialIncomeData}
         profileData={profileData}
         simulations={simulations}
         activeSimulationId={activeSimulationId}
@@ -2866,9 +2918,13 @@ ${JSON.stringify(analysisData, null, 2)}`;
       {/* 지출 모달 */}
       <ExpenseModal
         isOpen={isExpenseModalOpen}
-        onClose={() => setIsExpenseModalOpen(false)}
+        onClose={() => {
+          setIsExpenseModalOpen(false);
+          setInitialExpenseData(null);
+        }}
         onSave={handleSaveExpense}
         editData={editingExpense}
+        initialData={initialExpenseData}
         profileData={profileData}
         simulations={simulations}
         activeSimulationId={activeSimulationId}

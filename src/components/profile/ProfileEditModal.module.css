@@ -1,4 +1,4 @@
-/* 프로필 수정 모달 스타일 */
+/* 모달 오버레이 */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -10,106 +10,186 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 1rem;
 }
 
-.modal {
+/* 모달 컨텐츠 */
+.modalContent {
   background: white;
   border-radius: 12px;
+  max-width: 1400px;
   width: 100%;
-  max-width: 900px; /* 더 넓게 */
   max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-.modalHeader {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.modalHeader h2 {
-  margin: 0;
-  font-size: 1.5rem;
+/* 상단 헤더 */
+.header {
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-radius: 12px 12px 0 0;
+}
+
+.title {
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #1f2937;
+  color: #111827;
+  margin: 0;
 }
 
 .closeButton {
-  background: none;
+  background: transparent;
   border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
+  font-size: 2rem;
   color: #6b7280;
+  cursor: pointer;
   padding: 0;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  transition: background-color 0.2s;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
 .closeButton:hover {
-  background-color: #f3f4f6;
+  background: #e5e7eb;
+  color: #111827;
 }
 
-/* 2열 그리드 폼 적용 */
+/* 폼 */
 .form {
-  padding: 24px;
+  padding: 2rem;
+  padding-bottom: 100px; /* 버튼 공간 확보 */
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 에러 배너 */
+.errorBanner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* ========== 2단 레이아웃 ========== */
+.twoColumnLayout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px 32px;
+  gap: 2rem;
+  margin-bottom: 2rem;
 }
 
+.leftColumn,
+.rightColumn {
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.leftColumn {
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+}
+
+.rightColumn {
+  background: linear-gradient(to bottom, #ffffff, #fafbfc);
+}
+
+.columnTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+  letter-spacing: -0.02em;
+}
+
+/* 필드 그리드 */
+.fieldGrid {
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+/* 필드 */
 .field {
-  margin-bottom: 0;
-}
-
-/* 가구 구성원부터는 한줄(1컬럼)로 쭉 */
-.familyRowFull {
-  grid-column: 1 / 3;
-  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .label {
-  display: block;
-  margin-bottom: 6px;
   font-weight: 500;
   color: #374151;
   font-size: 0.875rem;
 }
 
-.input {
+.input,
+.select {
   width: 100%;
-  padding: 12px 16px;
+  padding: 0.75rem;
   border: 1px solid #d1d5db;
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+  transition: all 0.2s ease;
+  outline: none;
   box-sizing: border-box;
 }
 
-.input:focus {
+.input:focus,
+.select:focus {
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.1);
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.input.error {
+.input:disabled,
+.select:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.inputError {
   border-color: #ef4444;
+}
+
+.inputError:focus {
+  border-color: #dc2626;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .errorText {
-  display: block;
-  margin-top: 4px;
   color: #ef4444;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
 }
 
 .amountPreview {
@@ -119,257 +199,288 @@
   margin-left: 12px;
 }
 
+/* 체크박스 */
 .checkboxLabel {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
   cursor: pointer;
-  font-weight: 500;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
   color: #374151;
-  font-size: 0.875rem;
-}
-
-.checkbox {
-  margin-right: 8px;
-  width: 16px;
-  height: 16px;
-  accent-color: #3b82f6;
-}
-
-/* 하단 고정 버튼 그룹 - PC/모바일 모두 하단에 sticky/fixed로 노출 */
-.fixedButtonGroup {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 20px 24px 16px 24px;
-  border-top: 1px solid #e5e7eb;
-  z-index: 10;
-  background-color: #f9fafb;
-  border-radius: 0 0 12px 12px;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.02);
-}
-/* buttonGroup 기존 스타일 블록 제거 */
-.buttonGroup {
-  display: none;
-}
-
-.cancelButton {
-  padding: 0.75rem 1.5rem;
-  background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.875rem;
   font-weight: 500;
+}
+
+.checkboxField {
+  margin: 0.5rem 0;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
   cursor: pointer;
-  transition: all 0.2s;
-}
-.cancelButton:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
-}
-.submitButton {
-  padding: 0.75rem 1.5rem;
-  background: #111827;
-  color: #fff;
-  border: 1px solid #111827;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.submitButton:hover:not(:disabled) {
-  background: #374151;
-  border-color: #374151;
-}
-.submitButton:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-  border-color: #9ca3af;
+  outline: none;
 }
 
-/* 모바일 대응 */
-@media (max-width: 900px) {
-  .modal {
-    max-width: 100vw;
-    min-width: 0;
-  }
-}
-@media (max-width: 640px) {
-  .modalOverlay {
-    padding: 10px;
-  }
+/* ========== 가구 구성원 섹션 ========== */
 
-  .modal {
-    max-height: 95vh;
-  }
-
-  .modalHeader {
-    padding: 16px 20px;
-  }
-
-  .modalHeader h2 {
-    font-size: 1.25rem;
-  }
-
-  .form {
-    grid-template-columns: 1fr;
-    gap: 18px 0;
-    padding: 20px;
-  }
-  .familyRowFull {
-    grid-column: 1;
-  }
-
-  .fixedButtonGroup {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 16px 10px 12px 10px;
-  }
-  .cancelButton,
-  .submitButton {
-    width: 100%;
-  }
+/* 가족 섹션 (자녀/부모/기타) */
+.familySection {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-/* 가구 구성원 관리 스타일 */
-.familyMembersSection {
-  margin-top: 8px;
+.familySection:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
-.familyMembersList {
-  margin-bottom: 16px;
-}
-
-.familyMemberItem {
+.familySectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 0.5rem;
 }
 
-.memberInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.familySectionTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
-.memberName {
+.addFamilyButton {
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
   font-weight: 500;
-  color: #1f2937;
-  font-size: 14px;
-}
-
-.memberDetails {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.removeMemberButton {
-  background: #ef4444;
-  color: white;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
   border: none;
-  border-radius: 50%;
+  outline: none;
+  background: #111827;
+  color: white;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.addFamilyButton:hover:not(:disabled) {
+  background: #1f2937;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.addFamilyButton:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.addFamilyButton:focus,
+.addFamilyButton:active {
+  outline: none;
+}
+
+/* 가족 구성원 아이템 (심플) */
+.familyMemberItem {
+  position: relative;
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.familyMemberItem:last-child {
+  border-bottom: none;
+}
+
+/* X 삭제 버튼 (오른쪽 위) */
+.removeButton {
+  position: absolute;
+  top: 0;
+  right: 0;
   width: 24px;
   height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  transition: background-color 0.2s;
-}
-
-.removeMemberButton:hover {
-  background: #dc2626;
-}
-
-.addMemberSection {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 16px;
-}
-
-.addMemberInputs {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.addMemberInputs .input {
-  flex: 1;
-  min-width: 80px;
-}
-
-.select {
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  font-size: 14px;
-  background: white;
-  color: #374151;
-  min-width: 80px;
-}
-
-.select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.addMemberButton {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
+  border: none;
   background: transparent;
-  color: #111827;
-  border: 1.5px solid #111827;
-  font-size: 20px;
-  font-weight: 700;
-  padding-bottom: 4px;
+  color: #9ca3af;
+  font-size: 1.5rem;
+  line-height: 1;
   cursor: pointer;
-  transition: all 0.2s;
-  margin-left: 8px;
-  box-sizing: border-box;
-}
-.addMemberButton:hover {
-  background: #374151;
-  border-color: #374151;
-}
-.addMemberButton:active {
-  background: #1d1a29;
-  border-color: #1d1a29;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  outline: none;
 }
 
-/* 모바일 반응형 */
+.removeButton:hover:not(:disabled) {
+  color: #dc2626;
+  transform: scale(1.1);
+}
+
+.removeButton:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 가족 구성원 아이템 내부 필드 간격 */
+.familyMemberItem .fieldGrid {
+  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, 1fr); /* 자녀/부모/기타 카드는 3열 */
+}
+
+.familyMemberItem .field {
+  gap: 0.25rem;
+}
+
+.familyMemberItem .label {
+  font-size: 0.75rem;
+}
+
+.familyMemberItem .input,
+.familyMemberItem .select {
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.familyMemberItem .checkboxLabel {
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+/* 제출 버튼 */
+.submitButtonContainer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.5rem 2rem;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  border-radius: 0 0 12px 12px;
+}
+
+.submitButton {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: block;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+  background: #111827;
+  color: white;
+}
+
+.submitButton:hover {
+  background: #374151;
+}
+
+.submitButton:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.submitButton:focus,
+.submitButton:active {
+  outline: none;
+}
+
+/* 모바일 대응 */
 @media (max-width: 768px) {
-  .addMemberInputs {
-    flex-direction: column;
-    align-items: stretch;
+  .modalContent {
+    max-height: 95vh;
+    border-radius: 8px;
   }
 
-  .addMemberInputs .input,
+  .header {
+    padding: 1rem;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .title {
+    font-size: 1rem;
+  }
+
+  .closeButton {
+    font-size: 1.75rem;
+  }
+
+  .form {
+    padding: 1rem;
+  }
+
+  /* 모바일에서는 1열로 */
+  .twoColumnLayout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .leftColumn,
+  .rightColumn {
+    padding: 1.5rem;
+    border-radius: 10px;
+  }
+
+  .columnTitle {
+    font-size: 1.1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .fieldGrid,
+  .familyMemberItem .fieldGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .input,
   .select {
-    width: 100%;
-    min-width: auto;
+    font-size: 0.9375rem;
+  }
+
+  .familySection {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .familySectionTitle {
+    font-size: 0.9rem;
+  }
+
+  .addFamilyButton {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.7rem;
   }
 
   .familyMemberItem {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    padding: 0.75rem 0;
   }
 
-  .removeMemberButton {
-    align-self: flex-end;
+  .removeButton {
+    font-size: 1.25rem;
+  }
+
+  .submitButtonContainer {
+    padding: 1rem 1.5rem;
+  }
+
+  .form {
+    padding: 1rem;
+    padding-bottom: 80px; /* 모바일에서 버튼 공간 */
   }
 }
