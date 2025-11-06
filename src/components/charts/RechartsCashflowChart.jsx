@@ -1085,6 +1085,7 @@ function RechartsCashflowChart({
             label={{
               value: "은퇴",
               position: "top",
+              offset: 10, // 위로 10px 올림
               style: { fill: "#9ca3af", fontSize: "12px" },
             }}
           />
@@ -1100,7 +1101,7 @@ function RechartsCashflowChart({
             label={{
               value: "배우자 은퇴",
               position: "top",
-              offset: spouseRetirementAge === retirementAge ? 20 : 0, // 은퇴 나이가 같으면 위로 15px 올림
+              offset: spouseRetirementAge === retirementAge ? 30 : 10, // 은퇴 나이가 같으면 위로 30px, 다르면 10px 올림
               style: { fill: "#a78bfa", fontSize: "12px" },
             }}
           />
