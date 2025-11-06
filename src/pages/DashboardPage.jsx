@@ -1585,6 +1585,32 @@ function DashboardPage() {
   };
 
   const closeProfilePanel = () => setIsProfilePanelOpen(false);
+  
+  const openDataStorePanel = () => {
+    // 권한이 없으면 회원가입 유도
+    if (!hasEditPermission) {
+      trackEvent("재무 라이브러리 접근 시도 (권한 없음)", {
+        profileId,
+      });
+      if (
+        confirm(
+          "재무 라이브러리를 사용하려면 회원가입이 필요합니다. 회원가입 페이지로 이동하시겠습니까?"
+        )
+      ) {
+        trackEvent("회원가입 페이지로 이동", {
+          profileId,
+          source: "재무 라이브러리",
+        });
+        navigate(`/signup?profileId=${profileId}`);
+      }
+      return;
+    }
+    trackEvent("재무 라이브러리 열기", {
+      profileId,
+    });
+    setIsDataStorePanelOpen(true);
+  };
+  
   const closeDataStorePanel = () => setIsDataStorePanelOpen(false);
 
   useEffect(() => {
@@ -2448,7 +2474,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         <div className={styles.profileActions}>
           <button
             className={styles.iconButton}
-            onClick={() => setIsDataStorePanelOpen(true)}
+            onClick={openDataStorePanel}
           >
             <span className={styles.buttonText}>재무 라이브러리</span>
           </button>
