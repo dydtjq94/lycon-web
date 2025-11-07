@@ -68,7 +68,7 @@ function RechartsCashflowChart({
           age: income.startYear - (data[0]?.year - data[0]?.age),
           type: "start",
           category: "income",
-          title: `${income.title} 시작`,
+          title: `${income.title} | 시작`,
         });
 
         // 종료 이벤트
@@ -78,7 +78,7 @@ function RechartsCashflowChart({
             age: income.endYear - (data[0]?.year - data[0]?.age),
             type: "end",
             category: "income",
-            title: `${income.title} 종료`,
+            title: `${income.title} | 종료`,
           });
         }
       });
@@ -99,7 +99,7 @@ function RechartsCashflowChart({
           age: expense.startYear - (data[0]?.year - data[0]?.age),
           type: "start",
           category: "expense",
-          title: `${expense.title} 시작`,
+          title: `${expense.title} | 시작`,
         });
 
         // 종료 이벤트
@@ -109,7 +109,7 @@ function RechartsCashflowChart({
             age: expense.endYear - (data[0]?.year - data[0]?.age),
             type: "end",
             category: "expense",
-            title: `${expense.title} 종료`,
+            title: `${expense.title} | 종료`,
           });
         }
       });
@@ -135,7 +135,7 @@ function RechartsCashflowChart({
             age: sStart - (data[0]?.year - data[0]?.age),
             type: "start",
             category: "saving",
-            title: `${saving.title} 시작`,
+            title: `${saving.title} | 시작`,
           });
         }
 
@@ -146,7 +146,7 @@ function RechartsCashflowChart({
             age: sEnd - (data[0]?.year - data[0]?.age),
             type: "end",
             category: "saving",
-            title: `${saving.title} 종료`,
+            title: `${saving.title} | 종료`,
           });
         }
       });
@@ -168,7 +168,7 @@ function RechartsCashflowChart({
             age: pension.startYear - (data[0]?.year - data[0]?.age),
             type: "start",
             category: "pension",
-            title: `${pension.title} 수령 시작`,
+            title: `${pension.title} | 수령 시작`,
           });
 
           if (pension.endYear) {
@@ -177,7 +177,7 @@ function RechartsCashflowChart({
               age: pension.endYear - (data[0]?.year - data[0]?.age),
               type: "end",
               category: "pension",
-              title: `${pension.title} 수령 종료`,
+              title: `${pension.title} | 수령 종료`,
             });
           }
         } else {
@@ -187,7 +187,7 @@ function RechartsCashflowChart({
             age: pension.paymentStartYear - (data[0]?.year - data[0]?.age),
             type: "start",
             category: "pension",
-            title: `${pension.title} 수령 시작`,
+            title: `${pension.title} | 수령 시작`,
           });
 
           if (pension.paymentEndYear) {
@@ -196,7 +196,7 @@ function RechartsCashflowChart({
               age: pension.paymentEndYear - (data[0]?.year - data[0]?.age),
               type: "end",
               category: "pension",
-              title: `${pension.title} 수령 종료`,
+              title: `${pension.title} | 수령 종료`,
             });
           }
         }
@@ -219,7 +219,7 @@ function RechartsCashflowChart({
             age: realEstate.startYear - (data[0]?.year - data[0]?.age),
             type: "purchase",
             category: "realEstate",
-            title: `${realEstate.title} 구매`,
+            title: `${realEstate.title} | 구매`,
           });
         }
 
@@ -231,7 +231,7 @@ function RechartsCashflowChart({
               realEstate.rentalIncomeStartYear - (data[0]?.year - data[0]?.age),
             type: "start",
             category: "realEstate",
-            title: `${realEstate.title} 임대소득 시작`,
+            title: `${realEstate.title} | 임대소득 시작`,
           });
 
           if (realEstate.rentalIncomeEndYear) {
@@ -241,7 +241,7 @@ function RechartsCashflowChart({
                 realEstate.rentalIncomeEndYear - (data[0]?.year - data[0]?.age),
               type: "end",
               category: "realEstate",
-              title: `${realEstate.title} 임대소득 종료`,
+              title: `${realEstate.title} | 임대소득 종료`,
             });
           }
         }
@@ -253,7 +253,7 @@ function RechartsCashflowChart({
             age: realEstate.pensionStartYear - (data[0]?.year - data[0]?.age),
             type: "conversion",
             category: "realEstate",
-            title: `${realEstate.title} 주택연금 전환`,
+            title: `${realEstate.title} | 주택연금 전환`,
           });
         }
 
@@ -264,7 +264,7 @@ function RechartsCashflowChart({
             age: realEstate.endYear - (data[0]?.year - data[0]?.age),
             type: "sale",
             category: "realEstate",
-            title: `${realEstate.title} 매각`,
+            title: `${realEstate.title} | 매각`,
           });
         }
       });
@@ -285,7 +285,7 @@ function RechartsCashflowChart({
           age: debt.startYear - (data[0]?.year - data[0]?.age),
           type: "start",
           category: "debt",
-          title: `${debt.title} 대출 시작`,
+          title: `${debt.title} | 대출 시작`,
         });
 
         // 상환 완료 이벤트 (부채 타입별 처리)
@@ -296,7 +296,7 @@ function RechartsCashflowChart({
             age: debt.endYear - (data[0]?.year - data[0]?.age),
             type: "repayment",
             category: "debt",
-            title: `${debt.title} 만기 상환`,
+            title: `${debt.title} | 만기 상환`,
           });
         } else if (debt.debtType === "equal") {
           // 원리금균등상환: endYear에 상환 완료
@@ -305,7 +305,7 @@ function RechartsCashflowChart({
             age: debt.endYear - (data[0]?.year - data[0]?.age),
             type: "repayment",
             category: "debt",
-            title: `${debt.title} 상환 완료`,
+            title: `${debt.title} | 상환 완료`,
           });
         } else if (debt.debtType === "principal") {
           // 원금균등상환: endYear에 상환 완료
@@ -314,7 +314,7 @@ function RechartsCashflowChart({
             age: debt.endYear - (data[0]?.year - data[0]?.age),
             type: "repayment",
             category: "debt",
-            title: `${debt.title} 상환 완료`,
+            title: `${debt.title} | 상환 완료`,
           });
         } else if (debt.debtType === "grace") {
           // 거치식상환: 거치기간 후 원금 상환 시작
@@ -324,7 +324,7 @@ function RechartsCashflowChart({
             age: principalStartYear - (data[0]?.year - data[0]?.age),
             type: "principal_start",
             category: "debt",
-            title: `${debt.title} 원금 상환 시작`,
+            title: `${debt.title} | 원금 상환 시작`,
           });
 
           // 원금 상환 완료
@@ -333,7 +333,7 @@ function RechartsCashflowChart({
             age: debt.endYear - (data[0]?.year - data[0]?.age),
             type: "repayment",
             category: "debt",
-            title: `${debt.title} 상환 완료`,
+            title: `${debt.title} | 상환 완료`,
           });
         }
       });
@@ -354,7 +354,7 @@ function RechartsCashflowChart({
             age: asset.startYear - (data[0]?.year - data[0]?.age),
             type: "purchase",
             category: "asset",
-            title: `${asset.title} 구매`,
+            title: `${asset.title} | 구매`,
           };
           events.push(purchaseEvent);
         }
@@ -366,7 +366,7 @@ function RechartsCashflowChart({
             age: asset.endYear + 1 - (data[0]?.year - data[0]?.age),
             type: "sale",
             category: "asset",
-            title: `${asset.title} 매각`,
+            title: `${asset.title} | 매각`,
           };
           events.push(saleEvent);
         }
@@ -766,7 +766,7 @@ function RechartsCashflowChart({
                                 (Number(re.monthlyRentalIncome) || 0) * 12;
                               allItems.push({
                                 key: `rentalIncome-${index}`,
-                                label: `${re.title} (임대소득)`,
+                                label: `${re.title} | 임대소득`,
                                 value: yearlyRentalIncome,
                                 type: "positive",
                                 category: "realEstate",
@@ -785,7 +785,7 @@ function RechartsCashflowChart({
                           );
 
                           const label = realEstateWithPension
-                            ? `${realEstateWithPension.title} (주택연금)`
+                            ? `${realEstateWithPension.title} | 주택연금`
                             : "주택연금";
 
                           allItems.push({
@@ -805,7 +805,7 @@ function RechartsCashflowChart({
                           data.realEstateSales.forEach((sale, index) => {
                             allItems.push({
                               key: `realEstateSale-${index}`,
-                              label: `${sale.title} (매각)`,
+                              label: `${sale.title} | 매각`,
                               value: sale.amount,
                               type: "positive",
                               category: "realEstate",
@@ -838,7 +838,7 @@ function RechartsCashflowChart({
 
                             allItems.push({
                               key: `asset-income-${index}`,
-                              label: `${asset.title} (수익)`,
+                              label: `${asset.title} | 수익`,
                               value: annualIncome,
                               type: "positive",
                               category: "asset",
@@ -850,7 +850,7 @@ function RechartsCashflowChart({
                           data.assetSales.forEach((sale, index) => {
                             allItems.push({
                               key: `assetSale-${index}`,
-                              label: `${sale.title} (매각)`,
+                              label: `${sale.title} | 매각`,
                               value: sale.amount,
                               type: "positive",
                               category: "asset",
@@ -866,7 +866,7 @@ function RechartsCashflowChart({
                           data.savingIncomes.forEach((income, index) => {
                             allItems.push({
                               key: `savingIncome-${index}`,
-                              label: `${income.title} (배당/이자)`,
+                              label: `${income.title} | 배당/이자`,
                               value: income.amount,
                               type: "positive",
                               category: "saving",
@@ -885,7 +885,7 @@ function RechartsCashflowChart({
                               (saving, index) => {
                                 allItems.push({
                                   key: `savingMaturity-${index}`,
-                                  label: `${saving.title} (매도/만료)`,
+                                  label: `${saving.title} | 매도/만료`,
                                   value: saving.amount,
                                   type: "positive",
                                   category: "saving",
@@ -896,7 +896,7 @@ function RechartsCashflowChart({
                             // 상세 정보가 없으면 기본 표시
                             allItems.push({
                               key: "savingMaturity",
-                              label: "저축 (매도/만료)",
+                              label: "저축 | 매도/만료",
                               value: yearData.savingMaturity,
                               type: "positive",
                               category: "saving",
@@ -913,7 +913,7 @@ function RechartsCashflowChart({
                             (purchase, index) => {
                               allItems.push({
                                 key: `realEstatePurchase-${index}`,
-                                label: `${purchase.title} (구매)`,
+                                label: `${purchase.title} | 구매`,
                                 value: purchase.amount,
                                 type: "negative",
                                 category: "realEstate",
@@ -930,7 +930,7 @@ function RechartsCashflowChart({
                           data.realEstateTaxes.forEach((tax, index) => {
                             allItems.push({
                               key: `realEstateTax-${index}`,
-                              label: `${tax.title} (취득세 ${tax.taxRate})`,
+                              label: `${tax.title} | 취득세 ${tax.taxRate}`,
                               value: tax.amount,
                               type: "negative",
                               category: "realEstate",
@@ -953,7 +953,7 @@ function RechartsCashflowChart({
                                 tax.holdingYears % 1 !== 0
                                   ? tax.holdingYears.toFixed(1)
                                   : Math.floor(tax.holdingYears);
-                              label = `${tax.title} (양도세, 보유 ${years}년)`;
+                              label = `${tax.title} | 양도세, 보유 ${years}년`;
                             }
                             allItems.push({
                               key: `capitalGainsTax-${index}`,
@@ -975,7 +975,7 @@ function RechartsCashflowChart({
                           data.savingContributions.forEach((contrib, index) => {
                             allItems.push({
                               key: `savingContrib-${index}`,
-                              label: `${contrib.title} (적립)`,
+                              label: `${contrib.title} | 적립`,
                               value: contrib.amount,
                               type: "negative",
                               category: "saving",
@@ -991,7 +991,7 @@ function RechartsCashflowChart({
                           data.savingPurchases.forEach((purchase, index) => {
                             allItems.push({
                               key: `savingPurchase-${index}`,
-                              label: `${purchase.title} (구매)`,
+                              label: `${purchase.title} | 구매`,
                               value: purchase.amount,
                               type: "negative",
                               category: "saving",
@@ -1007,7 +1007,7 @@ function RechartsCashflowChart({
                           data.assetPurchases.forEach((purchase, index) => {
                             allItems.push({
                               key: `assetPurchase-${index}`,
-                              label: `${purchase.title} (구매)`,
+                              label: `${purchase.title} | 구매`,
                               value: purchase.amount,
                               type: "negative",
                               category: "asset",
@@ -1024,7 +1024,7 @@ function RechartsCashflowChart({
                             if (injection.amount > 0) {
                               allItems.push({
                                 key: `debtInjection-${index}`,
-                                label: `${injection.title} (대출 유입)`,
+                                label: `${injection.title} | 대출 유입`,
                                 value: injection.amount,
                                 type: "positive",
                                 category: "debt",
@@ -1042,7 +1042,7 @@ function RechartsCashflowChart({
                             if (payment.amount > 0) {
                               allItems.push({
                                 key: `debtInterest-${payment.title}-${index}`,
-                                label: `${payment.title} (이자)`,
+                                label: `${payment.title} | 이자`,
                                 value: payment.amount,
                                 type: "negative",
                                 category: "debt",
@@ -1060,7 +1060,7 @@ function RechartsCashflowChart({
                             if (payment.amount > 0) {
                               allItems.push({
                                 key: `debtPrincipal-${payment.title}-${index}`,
-                                label: `${payment.title} (원금 상환)`,
+                                label: `${payment.title} | 원금 상환`,
                                 value: payment.amount,
                                 type: "negative",
                                 category: "debt",

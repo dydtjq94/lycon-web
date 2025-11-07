@@ -142,7 +142,7 @@ function RechartsAssetChart({
           age: saving.startYear - (data[0]?.year - data[0]?.age),
           type: "start",
           category: "saving",
-          title: `${saving.title} 시작`,
+          title: `${saving.title} | 시작`,
         });
 
         // 종료 이벤트
@@ -152,7 +152,7 @@ function RechartsAssetChart({
             age: saving.endYear - (data[0]?.year - data[0]?.age),
             type: "end",
             category: "saving",
-            title: `${saving.title} 종료`,
+            title: `${saving.title} | 종료`,
           });
         }
       });
@@ -174,7 +174,7 @@ function RechartsAssetChart({
             age: pension.contributionStartYear - (data[0]?.year - data[0]?.age),
             type: "start",
             category: "pension",
-            title: `${pension.title} 적립 시작`,
+            title: `${pension.title} | 적립 시작`,
           });
 
           if (pension.contributionEndYear) {
@@ -183,7 +183,7 @@ function RechartsAssetChart({
               age: pension.contributionEndYear - (data[0]?.year - data[0]?.age),
               type: "end",
               category: "pension",
-              title: `${pension.title} 적립 종료`,
+              title: `${pension.title} | 적립 종료`,
             });
           }
 
@@ -193,7 +193,7 @@ function RechartsAssetChart({
             age: pension.paymentStartYear - (data[0]?.year - data[0]?.age),
             type: "start",
             category: "pension",
-            title: `${pension.title} 수령 시작`,
+            title: `${pension.title} | 수령 시작`,
           });
 
           if (pension.paymentEndYear) {
@@ -202,7 +202,7 @@ function RechartsAssetChart({
               age: pension.paymentEndYear - (data[0]?.year - data[0]?.age),
               type: "end",
               category: "pension",
-              title: `${pension.title} 수령 종료`,
+              title: `${pension.title} | 수령 종료`,
             });
           }
         }
@@ -224,7 +224,7 @@ function RechartsAssetChart({
           age: realEstate.startYear - (data[0]?.year - data[0]?.age),
           type: "start",
           category: "realEstate",
-          title: `${realEstate.title} 보유 시작`,
+          title: `${realEstate.title} | 보유 시작`,
         });
 
         // 주택연금 전환 이벤트
@@ -234,7 +234,7 @@ function RechartsAssetChart({
             age: realEstate.pensionStartYear - (data[0]?.year - data[0]?.age),
             type: "conversion",
             category: "realEstate",
-            title: `${realEstate.title} 주택연금 전환`,
+            title: `${realEstate.title} | 주택연금 전환`,
           });
         }
 
@@ -245,7 +245,7 @@ function RechartsAssetChart({
             age: realEstate.endYear - (data[0]?.year - data[0]?.age),
             type: "end",
             category: "realEstate",
-            title: `${realEstate.title} 보유 종료`,
+            title: `${realEstate.title} | 보유 종료`,
           });
         }
       });
@@ -266,7 +266,7 @@ function RechartsAssetChart({
           age: debt.startYear - (data[0]?.year - data[0]?.age),
           type: "start",
           category: "debt",
-          title: `${debt.title} 대출 시작`,
+          title: `${debt.title} | 대출 시작`,
         });
 
         // 상환 완료 이벤트 (부채 타입별 처리)
@@ -277,7 +277,7 @@ function RechartsAssetChart({
             age: debt.endYear - (data[0]?.year - data[0]?.age),
             type: "repayment",
             category: "debt",
-            title: `${debt.title} 만기 상환`,
+            title: `${debt.title} | 만기 상환`,
           });
         } else if (debt.debtType === "equal") {
           // 원리금균등상환: endYear에 상환 완료
@@ -286,7 +286,7 @@ function RechartsAssetChart({
             age: debt.endYear - (data[0]?.year - data[0]?.age),
             type: "repayment",
             category: "debt",
-            title: `${debt.title} 상환 완료`,
+            title: `${debt.title} | 상환 완료`,
           });
         } else if (debt.debtType === "principal") {
           // 원금균등상환: endYear에 상환 완료
@@ -295,7 +295,7 @@ function RechartsAssetChart({
             age: debt.endYear - (data[0]?.year - data[0]?.age),
             type: "repayment",
             category: "debt",
-            title: `${debt.title} 상환 완료`,
+            title: `${debt.title} | 상환 완료`,
           });
         } else if (debt.debtType === "grace") {
           // 거치식상환: 거치기간 후 원금 상환 시작
@@ -305,7 +305,7 @@ function RechartsAssetChart({
             age: principalStartYear - (data[0]?.year - data[0]?.age),
             type: "principal_start",
             category: "debt",
-            title: `${debt.title} 원금 상환 시작`,
+            title: `${debt.title} | 원금 상환 시작`,
           });
 
           // 원금 상환 완료
@@ -314,7 +314,7 @@ function RechartsAssetChart({
             age: debt.endYear - (data[0]?.year - data[0]?.age),
             type: "repayment",
             category: "debt",
-            title: `${debt.title} 상환 완료`,
+            title: `${debt.title} | 상환 완료`,
           });
         }
       });
@@ -334,7 +334,7 @@ function RechartsAssetChart({
           age: asset.startYear - (data[0]?.year - data[0]?.age),
           type: "start",
           category: "asset",
-          title: `${asset.title} 보유 시작`,
+          title: `${asset.title} | 보유 시작`,
         });
 
         // 자산 매각 이벤트 (종료년도 +1)
@@ -344,7 +344,7 @@ function RechartsAssetChart({
             age: asset.endYear + 1 - (data[0]?.year - data[0]?.age),
             type: "sale",
             category: "asset",
-            title: `${asset.title} 매각`,
+            title: `${asset.title} | 매각`,
           });
         }
       });
