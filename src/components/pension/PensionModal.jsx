@@ -449,7 +449,7 @@ function PensionModal({
         newErrors.averageSalary = "평균 임금을 입력해주세요.";
       }
       if (!formData.yearsOfService || formData.yearsOfService < 0) {
-        newErrors.yearsOfService = "재직 년도를 입력해주세요.";
+        newErrors.yearsOfService = "재직 기간을 입력해주세요.";
       }
 
       // 추가 적립 안함이 아닐 때만 적립 관련 검증
@@ -675,7 +675,7 @@ function PensionModal({
             <>
               {/* 연금 항목명 */}
               <div className={styles.field}>
-                <label className={styles.label}>연금 항목명</label>
+                <label className={styles.label}>항목명</label>
                 <input
                   type="text"
                   value={formData.title}
@@ -696,7 +696,9 @@ function PensionModal({
                 // 국민연금 필드
                 <>
                   <div className={styles.field}>
-                    <label className={styles.label}>월 수령 금액 (만원)</label>
+                    <label className={styles.label}>
+                      월 예상 수령 금액 (만원)
+                    </label>
                     <input
                       type="text"
                       value={formData.monthlyAmount}
@@ -862,7 +864,7 @@ function PensionModal({
                     </div>
 
                     <div className={styles.field}>
-                      <label className={styles.label}>재직 년도 (년)</label>
+                      <label className={styles.label}>재직 기간 (년)</label>
                       <input
                         type="text"
                         value={formData.yearsOfService}
@@ -889,7 +891,7 @@ function PensionModal({
                   {/* 자동 계산된 보유액 표시 (읽기 전용) */}
                   <div className={styles.field}>
                     <label className={styles.label}>
-                      퇴직금 보유액 (자동 계산, 만원)
+                      예상 퇴직금 (자동 계산, 만원)
                     </label>
                     <input
                       type="text"
@@ -897,7 +899,7 @@ function PensionModal({
                       readOnly
                       disabled
                       className={`${styles.input} ${styles.disabled}`}
-                      placeholder="평균 임금 × 재직 년도"
+                      placeholder="평균 임금 × 재직 기간"
                     />
                     {formData.currentAmount &&
                       !isNaN(parseInt(formData.currentAmount)) && (
@@ -941,7 +943,7 @@ function PensionModal({
                         className={styles.fixedCheckbox}
                       />
                       <span className={styles.fixedCheckboxText}>
-                        추가 적립 안함 (퇴직금 보유액만으로 수령)
+                        추가 적립 안함
                       </span>
                     </label>
                   </div>
@@ -1072,7 +1074,7 @@ function PensionModal({
 
                   {/* 투자 수익률 */}
                   <div className={`${styles.field} ${styles.fieldWithMargin}`}>
-                    <label className={styles.label}>투자 수익률 (%)</label>
+                    <label className={styles.label}>연평균 수익률 (%)</label>
                     <input
                       type="text"
                       value={formData.returnRate}
@@ -1159,7 +1161,9 @@ function PensionModal({
                           {errors.paymentYears}
                         </span>
                       )}
-                      <div className={styles.helperText}>PMT 방식</div>
+                      <div className={styles.helperText}>
+                        연금인출 방식(PMT)
+                      </div>
                     </div>
                   </div>
                 </>
@@ -1168,7 +1172,7 @@ function PensionModal({
                 <>
                   {/* 시작 보유액 */}
                   <div className={styles.field}>
-                    <label className={styles.label}>시작 보유액 (만원)</label>
+                    <label className={styles.label}>기 보유 금액 (만원)</label>
                     <input
                       type="text"
                       value={formData.currentAmount}
@@ -1301,7 +1305,7 @@ function PensionModal({
                             className={styles.fixedCheckbox}
                           />
                           <span className={styles.fixedCheckboxText}>
-                            은퇴 년도 고정
+                            은퇴 시점 고정
                           </span>
                         </label>
                       </div>
@@ -1352,7 +1356,7 @@ function PensionModal({
 
                   <div className={`${styles.row} ${styles.rowWithMargin}`}>
                     <div className={styles.field}>
-                      <label className={styles.label}>투자 수익률 (%)</label>
+                      <label className={styles.label}>연평균 수익률 (%)</label>
                       <input
                         type="text"
                         value={formData.returnRate}
@@ -1437,7 +1441,9 @@ function PensionModal({
                           {errors.paymentYears}
                         </span>
                       )}
-                      <div className={styles.helperText}>PMT 방식</div>
+                      <div className={styles.helperText}>
+                        연금인출 방식(PMT)
+                      </div>
                     </div>
                   </div>
                 </>
@@ -1445,7 +1451,7 @@ function PensionModal({
 
               {/* 메모 */}
               <div className={`${styles.field} ${styles.fieldWithMargin}`}>
-                <label className={styles.label}>메모</label>
+                <label className={styles.label}>비고</label>
                 <textarea
                   value={formData.memo}
                   onChange={(e) =>
@@ -1457,11 +1463,11 @@ function PensionModal({
                 />
               </div>
 
-              {/* 적용할 시뮬레이션 선택 (하단 영역) */}
+              {/* 적용 시뮬레이션 선택 (하단 영역) */}
               {simulations && simulations.length > 0 && (
                 <div className={styles.field}>
                   <label className={styles.label}>
-                    적용할 시뮬레이션
+                    적용 시뮬레이션
                     {editData && (
                       <span className={styles.hintText}>
                         {" "}

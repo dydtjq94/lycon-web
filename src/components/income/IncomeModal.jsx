@@ -85,7 +85,9 @@ function IncomeModal({
             try {
               const incomes = await incomeService.getIncomes(profileId, sim.id);
               // 같은 제목의 항목이 있는지 확인
-              const hasSameTitle = incomes.some(income => income.title === editData.title);
+              const hasSameTitle = incomes.some(
+                (income) => income.title === editData.title
+              );
               return hasSameTitle ? sim.id : null;
             } catch (error) {
               return null; // 오류 시 null
@@ -302,7 +304,7 @@ function IncomeModal({
           {/* 소득 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
-              소득 항목명 *
+              항목명 *
             </label>
             <input
               type="text"
@@ -424,7 +426,7 @@ function IncomeModal({
                     className={styles.fixedCheckbox}
                   />
                   <span className={styles.fixedCheckboxText}>
-                    은퇴 년도 고정
+                    은퇴 시점 고정
                   </span>
                 </label>
               </div>
@@ -494,7 +496,7 @@ function IncomeModal({
           {/* 메모 */}
           <div className={styles.field}>
             <label htmlFor="memo" className={styles.label}>
-              메모
+              비고
             </label>
             <textarea
               id="memo"
@@ -508,11 +510,11 @@ function IncomeModal({
             />
           </div>
 
-          {/* 적용할 시뮬레이션 선택 (하단 영역) */}
+          {/* 적용 시뮬레이션 선택 (하단 영역) */}
           {simulations && simulations.length > 0 && (
             <div className={styles.field}>
               <label className={styles.label}>
-                적용할 시뮬레이션
+                적용 시뮬레이션
                 {editData && (
                   <span className={styles.hintText}>
                     {" "}

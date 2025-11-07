@@ -83,9 +83,14 @@ function ExpenseModal({
           // 모든 시뮬레이션에서 같은 제목을 가진 항목 존재 여부 확인
           const checkPromises = simulations.map(async (sim) => {
             try {
-              const expenses = await expenseService.getExpenses(profileId, sim.id);
+              const expenses = await expenseService.getExpenses(
+                profileId,
+                sim.id
+              );
               // 같은 제목의 항목이 있는지 확인
-              const hasSameTitle = expenses.some(expense => expense.title === editData.title);
+              const hasSameTitle = expenses.some(
+                (expense) => expense.title === editData.title
+              );
               return hasSameTitle ? sim.id : null;
             } catch (error) {
               return null; // 오류 시 null
@@ -301,7 +306,7 @@ function ExpenseModal({
           {/* 지출 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
-              지출 항목명 *
+              항목명 *
             </label>
             <input
               type="text"
@@ -421,7 +426,7 @@ function ExpenseModal({
                     className={styles.fixedCheckbox}
                   />
                   <span className={styles.fixedCheckboxText}>
-                    은퇴 년도 고정
+                    은퇴 시점 고정
                   </span>
                 </label>
               </div>
@@ -464,7 +469,7 @@ function ExpenseModal({
           {/* 상승률 */}
           <div className={styles.field}>
             <label htmlFor="growthRate" className={styles.label}>
-              상승률 (%)
+              물가 상승률 (%)
             </label>
             <input
               type="text"
@@ -486,7 +491,7 @@ function ExpenseModal({
           {/* 메모 */}
           <div className={styles.field}>
             <label htmlFor="memo" className={styles.label}>
-              메모
+              비고
             </label>
             <textarea
               id="memo"
@@ -500,11 +505,11 @@ function ExpenseModal({
             />
           </div>
 
-          {/* 적용할 시뮬레이션 선택 (하단 영역) */}
+          {/* 적용 시뮬레이션 선택 (하단 영역) */}
           {simulations && simulations.length > 0 && (
             <div className={styles.field}>
               <label className={styles.label}>
-                적용할 시뮬레이션
+                적용 시뮬레이션
                 {editData && (
                   <span className={styles.hintText}>
                     {" "}

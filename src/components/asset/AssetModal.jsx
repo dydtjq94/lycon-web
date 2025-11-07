@@ -54,7 +54,9 @@ function AssetModal({
             try {
               const assets = await assetService.getAssets(profileId, sim.id);
               // 같은 제목의 항목이 있는지 확인
-              const hasSameTitle = assets.some(asset => asset.title === editData.title);
+              const hasSameTitle = assets.some(
+                (asset) => asset.title === editData.title
+              );
               return hasSameTitle ? sim.id : null;
             } catch (error) {
               return null; // 오류 시 null
@@ -115,9 +117,11 @@ function AssetModal({
             editData.incomeRate !== undefined
               ? (editData.incomeRate * 100).toFixed(2)
               : "3",
-          capitalGainsTaxRate: editData.capitalGainsTaxRate !== undefined && editData.capitalGainsTaxRate !== null
-            ? (editData.capitalGainsTaxRate * 100).toFixed(2)
-            : "",
+          capitalGainsTaxRate:
+            editData.capitalGainsTaxRate !== undefined &&
+            editData.capitalGainsTaxRate !== null
+              ? (editData.capitalGainsTaxRate * 100).toFixed(2)
+              : "",
           memo: editData.memo || "",
           isPurchase: editData.isPurchase || false,
         });
@@ -233,8 +237,8 @@ function AssetModal({
         formData.assetType === "income"
           ? parseFloat(formData.incomeRate) / 100
           : 0, // 수익형 자산일 때만 수익률 적용
-      capitalGainsTaxRate: formData.capitalGainsTaxRate 
-        ? parseFloat(formData.capitalGainsTaxRate) / 100 
+      capitalGainsTaxRate: formData.capitalGainsTaxRate
+        ? parseFloat(formData.capitalGainsTaxRate) / 100
         : 0, // 양도세율 (백분율을 소수로 변환)
       memo: formData.memo.trim(),
       isPurchase: formData.isPurchase, // 구매 여부
@@ -273,7 +277,9 @@ function AssetModal({
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
         <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>{editData ? "자산 수정" : "자산 추가"}</h2>
+          <h2 className={styles.modalTitle}>
+            {editData ? "자산 수정" : "자산 추가"}
+          </h2>
           <button className={styles.closeButton} onClick={handleClose}>
             ×
           </button>
@@ -281,7 +287,7 @@ function AssetModal({
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
-            <label className={styles.label}>자산명 *</label>
+            <label className={styles.label}>항목명 *</label>
             <input
               type="text"
               value={formData.title}
@@ -297,7 +303,7 @@ function AssetModal({
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>가치 (만원) *</label>
+            <label className={styles.label}>자산 가치 (만원) *</label>
             <input
               type="text"
               value={formData.currentValue}
@@ -330,7 +336,7 @@ function AssetModal({
                 }
                 className={styles.checkbox}
               />
-              <span className={styles.checkboxText}>구매로 처리</span>
+              <span className={styles.checkboxText}>현금유출로 처리</span>
             </label>
             {formData.isPurchase && (
               <div className={styles.purchaseNotice}>
@@ -354,7 +360,7 @@ function AssetModal({
                     setFormData({ ...formData, assetType: e.target.value })
                   }
                 />
-                <span className={styles.radioText}>일반 자산</span>
+                <span className={styles.radioText}>일반 자산 (자동차 등)</span>
               </label>
               <label className={styles.radioLabel}>
                 <input
@@ -372,7 +378,7 @@ function AssetModal({
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>연간 상승률 (%) *</label>
+            <label className={styles.label}>연평균 가치 상승률 (%) *</label>
             <input
               type="text"
               value={formData.growthRate}
@@ -458,7 +464,7 @@ function AssetModal({
                 className={`${styles.input} ${styles.yearInput} ${
                   errors.startYear ? styles.error : ""
                 }`}
-                placeholder="시작 연도"
+                placeholder="보유 시작년도"
               />
               <span className={styles.yearSeparator}>~</span>
               <input
@@ -471,7 +477,7 @@ function AssetModal({
                 className={`${styles.input} ${styles.yearInput} ${
                   errors.endYear ? styles.error : ""
                 }`}
-                placeholder="종료 연도"
+                placeholder="보유 종료년도"
               />
             </div>
             {/* 년도별 나이 표시 */}
@@ -494,7 +500,7 @@ function AssetModal({
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>메모</label>
+            <label className={styles.label}>비고</label>
             <textarea
               value={formData.memo}
               onChange={(e) =>
@@ -506,11 +512,11 @@ function AssetModal({
             />
           </div>
 
-          {/* 적용할 시뮬레이션 선택 */}
+          {/* 적용 시뮬레이션 선택 */}
           {simulations && simulations.length > 0 && (
             <div className={styles.field}>
               <label className={styles.label}>
-                적용할 시뮬레이션
+                적용 시뮬레이션
                 {editData && (
                   <span className={styles.hintText}>
                     {" "}

@@ -56,10 +56,12 @@ function AssetList({
             <div className={styles.assetPeriod}>
               {asset.startYear}년 - {asset.endYear}년
               <br />
-              (상승률 {(asset.growthRate * 100).toFixed(2)}% 적용
+              (연평균 가치 상승률 {(asset.growthRate * 100).toFixed(2)}% 적용
               {asset.assetType === "income" &&
                 asset.incomeRate > 0 &&
-                `, 수익률 ${(asset.incomeRate * 100).toFixed(2)}%`}
+                `, 연간 수익률 (배당, 이자 등) ${(
+                  asset.incomeRate * 100
+                ).toFixed(2)}%`}
               )
             </div>
 

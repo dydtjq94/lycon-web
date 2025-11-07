@@ -59,7 +59,7 @@ function AssetChart({ data, retirementAge, deathAge = 90 }) {
   return (
     <div className={styles.chartContainer}>
       <div className={styles.chartHeader}>
-        <h3 className={styles.chartTitle}>자산 시뮬레이션</h3>
+        <div className={styles.chartTitle}>자산 시뮬레이션</div>
         <div className={styles.chartLegend}>
           <div className={styles.legendItem}>
             <div

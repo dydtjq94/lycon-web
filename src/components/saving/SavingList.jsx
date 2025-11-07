@@ -46,13 +46,13 @@ function SavingList({
 
             <div className={styles.savingContent}>
               {/* 시작 보유액 표시 */}
-              {saving.currentAmount !== undefined && 
-               saving.currentAmount !== null && 
-               saving.currentAmount > 0 && (
-                <div className={styles.savingCurrent}>
-                  시작 보유: {formatAmount(saving.currentAmount)}
-                </div>
-              )}
+              {saving.currentAmount !== undefined &&
+                saving.currentAmount !== null &&
+                saving.currentAmount > 0 && (
+                  <div className={styles.savingCurrent}>
+                    기 보유: {formatAmount(saving.currentAmount)}
+                  </div>
+                )}
 
               {/* 납입 주기 및 금액 */}
               <div className={styles.savingFrequency}>
@@ -69,7 +69,9 @@ function SavingList({
                 <br />
                 (연평균 수익률 {(saving.interestRate * 100).toFixed(2)}% 적용
                 {saving.yearlyGrowthRate > 0 &&
-                  `, 년간 상승률 ${(saving.yearlyGrowthRate * 100).toFixed(2)}%`}
+                  `, 저축/투자액 증가율 ${(
+                    saving.yearlyGrowthRate * 100
+                  ).toFixed(2)}%`}
                 )
               </div>
 

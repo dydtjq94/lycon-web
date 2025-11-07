@@ -44,10 +44,10 @@ const RealEstateList = ({
 
           <div className={styles.realEstateContent}>
             <div className={styles.realEstateValue}>
-              가치: {formatAmount(realEstate.currentValue)}
+              부동산 가치: {formatAmount(realEstate.currentValue)}
             </div>
             <div className={styles.realEstateRate}>
-              상승률: {realEstate.growthRate.toFixed(2)}%
+              연평균 가치 상승률: {realEstate.growthRate.toFixed(2)}%
             </div>
             <div className={styles.realEstatePeriod}>
               {new Date().getFullYear()}년 - {realEstate.endYear}년

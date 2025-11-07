@@ -54,7 +54,7 @@ function ExpenseList({
             <div className={styles.expensePeriod}>
               {expense.startYear}년 - {expense.endYear}년
               <br />
-              (상승률 {expense.growthRate}% 적용)
+              (물가 상승률 {expense.growthRate}% 적용)
             </div>
 
             {expense.memo && (

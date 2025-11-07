@@ -107,7 +107,7 @@ function PensionList({
               <>
                 {pension.currentAmount > 0 && (
                   <div className={styles.pensionCurrentAmount}>
-                    {pension.type === "severance" ? "퇴직금" : "시작 보유"}:{" "}
+                    {pension.type === "severance" ? "퇴직금" : "기 보유"}:{" "}
                     {formatAmount(pension.currentAmount)}
                   </div>
                 )}
@@ -147,7 +147,7 @@ function PensionList({
                       : 10)}
                   년간
                   <br />
-                  (수익률 {pension.returnRate}% 적용, PMT 방식)
+                  (연평균 수익률 {pension.returnRate}% 적용, 연금인출 방식(PMT))
                 </div>
               </>
             )}

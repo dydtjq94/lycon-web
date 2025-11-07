@@ -357,7 +357,7 @@ function SavingModal({
           {/* 저축 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
-              저축/투자 항목명 *
+              항목명 *
             </label>
             <input
               type="text"
@@ -376,7 +376,7 @@ function SavingModal({
 
           {/* 저축 타입 선택 */}
           <div className={styles.field}>
-            <label className={styles.label}>저축 타입 *</label>
+            <label className={styles.label}>저축/투자 타입 *</label>
             <div className={styles.radioGroup}>
               <label className={styles.radioLabel}>
                 <input
@@ -388,7 +388,9 @@ function SavingModal({
                     setFormData({ ...formData, savingType: e.target.value })
                   }
                 />
-                <span className={styles.radioText}>기본형</span>
+                <span className={styles.radioText}>
+                  가치성장형(정기예금, 성장주, 금, 암호화폐 등)
+                </span>
               </label>
               <label className={styles.radioLabel}>
                 <input
@@ -400,7 +402,9 @@ function SavingModal({
                     setFormData({ ...formData, savingType: e.target.value })
                   }
                 />
-                <span className={styles.radioText}>수익형 (현금)</span>
+                <span className={styles.radioText}>
+                  수익형(이자, 배당, 채권 등)
+                </span>
               </label>
             </div>
           </div>
@@ -421,7 +425,7 @@ function SavingModal({
               >
                 <option value="monthly">월</option>
                 <option value="yearly">년</option>
-                <option value="one_time">일회성</option>
+                <option value="one_time">일시납</option>
               </select>
             </div>
 
@@ -468,7 +472,7 @@ function SavingModal({
                 className={styles.label}
                 style={{ marginBottom: 0 }}
               >
-                시작 보유 금액 (만원)
+                기 보유 금액 (만원)
               </label>
               <label
                 className={styles.fixedCheckboxLabel}
@@ -485,7 +489,9 @@ function SavingModal({
                   }
                   className={styles.fixedCheckbox}
                 />
-                <span className={styles.fixedCheckboxText}>구매로 처리</span>
+                <span className={styles.fixedCheckboxText}>
+                  현금유출로 처리
+                </span>
               </label>
             </div>
             <input
@@ -577,7 +583,7 @@ function SavingModal({
                     className={styles.fixedCheckbox}
                   />
                   <span className={styles.fixedCheckboxText}>
-                    은퇴 년도 고정
+                    은퇴 시점 고정
                   </span>
                 </label>
               </div>
@@ -643,7 +649,7 @@ function SavingModal({
             {formData.frequency !== "one_time" && (
               <div className={styles.field}>
                 <label htmlFor="yearlyGrowthRate" className={styles.label}>
-                  연간 저축/투자금액 증가율 (%)
+                  저축/투자액 증가율 (%)
                 </label>
                 <input
                   type="text"
@@ -732,7 +738,7 @@ function SavingModal({
           {/* 메모 */}
           <div className={styles.field}>
             <label htmlFor="memo" className={styles.label}>
-              메모
+              비고
             </label>
             <textarea
               id="memo"
@@ -746,11 +752,11 @@ function SavingModal({
             />
           </div>
 
-          {/* 적용할 시뮬레이션 선택 (하단 영역) */}
+          {/* 적용 시뮬레이션 선택 (하단 영역) */}
           {simulations && simulations.length > 0 && (
             <div className={styles.field}>
               <label className={styles.label}>
-                적용할 시뮬레이션
+                적용 시뮬레이션
                 {editData && (
                   <span className={styles.hintText}>
                     {" "}

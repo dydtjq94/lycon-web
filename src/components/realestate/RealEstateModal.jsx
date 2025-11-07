@@ -59,9 +59,14 @@ const RealEstateModal = ({
           // 모든 시뮬레이션에서 같은 제목을 가진 항목 존재 여부 확인
           const checkPromises = simulations.map(async (sim) => {
             try {
-              const realEstates = await realEstateService.getRealEstates(profileId, sim.id);
+              const realEstates = await realEstateService.getRealEstates(
+                profileId,
+                sim.id
+              );
               // 같은 제목의 항목이 있는지 확인
-              const hasSameTitle = realEstates.some(realEstate => realEstate.title === editData.title);
+              const hasSameTitle = realEstates.some(
+                (realEstate) => realEstate.title === editData.title
+              );
               return hasSameTitle ? sim.id : null;
             } catch (error) {
               return null; // 오류 시 null
@@ -119,7 +124,10 @@ const RealEstateModal = ({
       if (editData) {
         setFormData({
           title: editData.title || "",
-          isResidential: editData.isResidential !== undefined ? editData.isResidential : true,
+          isResidential:
+            editData.isResidential !== undefined
+              ? editData.isResidential
+              : true,
           hasAcquisitionInfo: editData.hasAcquisitionInfo || false,
           currentValue: editData.currentValue || "",
           acquisitionPrice: editData.acquisitionPrice || "",
@@ -359,7 +367,7 @@ const RealEstateModal = ({
         <form className={styles.form} onSubmit={handleSubmit}>
           {/* 부동산명 */}
           <div className={styles.field}>
-            <label className={styles.label}>부동산명</label>
+            <label className={styles.label}>항목명</label>
             <input
               type="text"
               value={formData.title}
@@ -400,59 +408,71 @@ const RealEstateModal = ({
                 }
                 className={styles.checkbox}
               />
-              <span className={styles.checkboxText}>올해 이전에 취득</span>
+              <span className={styles.checkboxText}>
+                취득금액/취득시점 입력{" "}
+              </span>
             </label>
           </div>
 
           {/* 취득가액, 취득일자 (양도세 계산용) - 올해 이전에 취득 체크 시 표시 */}
           {formData.hasAcquisitionInfo && (
             <div className={styles.optionalSection}>
-            <div className={styles.optionalSectionHeader}>
-              <span className={styles.optionalSectionLabel}>양도세 계산용 (선택사항)</span>
-            </div>
-            <div className={styles.fieldGrid}>
-              {/* 취득가액 */}
-              <div className={styles.field}>
-                <label className={styles.label}>취득가액 (만원)</label>
-                <input
-                  type="text"
-                  value={formData.acquisitionPrice}
-                  onChange={(e) =>
-                    setFormData({ ...formData, acquisitionPrice: e.target.value })
-                  }
-                  onKeyPress={handleKeyPress}
-                  className={styles.input}
-                  placeholder="예: 40000"
-                />
-                {formData.acquisitionPrice &&
-                  !isNaN(parseInt(formData.acquisitionPrice)) && (
-                    <div className={styles.amountPreview}>
-                      {formatAmountForChart(parseInt(formData.acquisitionPrice))}
-                    </div>
-                  )}
+              <div className={styles.optionalSectionHeader}>
+                <span className={styles.optionalSectionLabel}>
+                  양도세 계산용 (선택사항)
+                </span>
               </div>
+              <div className={styles.fieldGrid}>
+                {/* 취득가액 */}
+                <div className={styles.field}>
+                  <label className={styles.label}>취득가액 (만원)</label>
+                  <input
+                    type="text"
+                    value={formData.acquisitionPrice}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        acquisitionPrice: e.target.value,
+                      })
+                    }
+                    onKeyPress={handleKeyPress}
+                    className={styles.input}
+                    placeholder="예: 40000"
+                  />
+                  {formData.acquisitionPrice &&
+                    !isNaN(parseInt(formData.acquisitionPrice)) && (
+                      <div className={styles.amountPreview}>
+                        {formatAmountForChart(
+                          parseInt(formData.acquisitionPrice)
+                        )}
+                      </div>
+                    )}
+                </div>
 
-              {/* 취득일자 */}
-              <div className={styles.field}>
-                <label className={styles.label}>취득일자 (년도)</label>
-                <input
-                  type="text"
-                  value={formData.acquisitionYear}
-                  onChange={(e) =>
-                    setFormData({ ...formData, acquisitionYear: e.target.value })
-                  }
-                  onKeyPress={handleKeyPress}
-                  className={styles.input}
-                  placeholder="예: 2020"
-                />
+                {/* 취득일자 */}
+                <div className={styles.field}>
+                  <label className={styles.label}>취득일자 (년도)</label>
+                  <input
+                    type="text"
+                    value={formData.acquisitionYear}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        acquisitionYear: e.target.value,
+                      })
+                    }
+                    onKeyPress={handleKeyPress}
+                    className={styles.input}
+                    placeholder="예: 2020"
+                  />
+                </div>
               </div>
-            </div>
             </div>
           )}
 
           {/* 가치 */}
           <div className={styles.field}>
-            <label className={styles.label}>가치 (만원)</label>
+            <label className={styles.label}>부동산 가치 (만원)</label>
             <input
               type="text"
               value={formData.currentValue}
@@ -487,7 +507,7 @@ const RealEstateModal = ({
                 }
                 className={styles.checkbox}
               />
-              <span className={styles.checkboxText}>구매로 처리</span>
+              <span className={styles.checkboxText}>현금유출로 처리</span>
             </label>
             {formData.isPurchase && (
               <div className={styles.purchaseNotice}>
@@ -500,7 +520,7 @@ const RealEstateModal = ({
 
           {/* 상승률 */}
           <div className={styles.field}>
-            <label className={styles.label}>상승률 (%)</label>
+            <label className={styles.label}>연평균 가치 상승률 (%)</label>
             <input
               type="text"
               value={formData.growthRate}
@@ -582,17 +602,21 @@ const RealEstateModal = ({
                     ...formData,
                     hasRentalIncome: isChecked,
                     // 체크 시 자동으로 임대 시작/종료년도를 부동산 보유 기간으로 설정
-                    rentalIncomeStartYear: isChecked && !formData.rentalIncomeStartYear
-                      ? formData.startYear || new Date().getFullYear()
-                      : formData.rentalIncomeStartYear,
-                    rentalIncomeEndYear: isChecked && !formData.rentalIncomeEndYear
-                      ? formData.endYear || new Date().getFullYear() + 30
-                      : formData.rentalIncomeEndYear,
+                    rentalIncomeStartYear:
+                      isChecked && !formData.rentalIncomeStartYear
+                        ? formData.startYear || new Date().getFullYear()
+                        : formData.rentalIncomeStartYear,
+                    rentalIncomeEndYear:
+                      isChecked && !formData.rentalIncomeEndYear
+                        ? formData.endYear || new Date().getFullYear() + 30
+                        : formData.rentalIncomeEndYear,
                   });
                 }}
                 className={styles.checkbox}
               />
-              <span className={styles.checkboxText}>임대 소득 있음</span>
+              <span className={styles.checkboxText}>
+                임대용 부동산으로 처리
+              </span>
             </label>
           </div>
 
@@ -721,7 +745,7 @@ const RealEstateModal = ({
                 }
                 className={styles.checkbox}
               />
-              <span className={styles.checkboxText}>주택연금으로 전환</span>
+              <span className={styles.checkboxText}>주택연금 적용</span>
             </label>
           </div>
 
@@ -729,7 +753,7 @@ const RealEstateModal = ({
           {formData.convertToPension && (
             <>
               <div className={styles.field}>
-                <label className={styles.label}>주택연금 기간 *</label>
+                <label className={styles.label}>주택연금 수령기간 *</label>
                 <div className={styles.yearInputs}>
                   <input
                     type="text"
@@ -744,7 +768,7 @@ const RealEstateModal = ({
                     className={`${styles.input} ${styles.yearInput} ${
                       errors.pensionStartYear ? styles.error : ""
                     }`}
-                    placeholder="시작년도"
+                    placeholder="수령 시작년도"
                   />
                   <span className={styles.yearSeparator}>~</span>
                   <input
@@ -760,7 +784,7 @@ const RealEstateModal = ({
                     className={`${styles.input} ${styles.yearInput} ${
                       errors.pensionEndYear ? styles.error : ""
                     }`}
-                    placeholder="종료년도"
+                    placeholder="수령 종료년도"
                   />
                 </div>
                 {/* 년도별 나이 표시 */}
@@ -823,7 +847,7 @@ const RealEstateModal = ({
 
           {/* 메모 */}
           <div className={styles.field}>
-            <label className={styles.label}>메모</label>
+            <label className={styles.label}>비고</label>
             <textarea
               value={formData.memo}
               onChange={(e) =>
@@ -835,11 +859,11 @@ const RealEstateModal = ({
             />
           </div>
 
-          {/* 적용할 시뮬레이션 선택 (하단 영역) */}
+          {/* 적용 시뮬레이션 선택 (하단 영역) */}
           {simulations && simulations.length > 0 && (
             <div className={styles.field}>
               <label className={styles.label}>
-                적용할 시뮬레이션
+                적용 시뮬레이션
                 {editData && (
                   <span className={styles.hintText}>
                     {" "}

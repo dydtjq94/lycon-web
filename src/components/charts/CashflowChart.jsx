@@ -62,7 +62,7 @@ function CashflowChart({ data, retirementAge, deathAge = 90 }) {
   return (
     <div className={styles.chartContainer}>
       <div className={styles.chartHeader}>
-        <h3 className={styles.chartTitle}>현금 흐름 시뮬레이션</h3>
+        <div className={styles.chartTitle}>현금 흐름 시뮬레이션</div>
         <div className={styles.chartLegend}>
           <div className={styles.legendItem}>
             <div

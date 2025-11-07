@@ -279,7 +279,7 @@ function DebtModal({
           {/* 부채 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
-              부채 항목명 *
+              항목명 *
             </label>
             <input
               type="text"
@@ -341,7 +341,7 @@ function DebtModal({
           <div className={styles.row}>
             <div className={styles.field}>
               <label htmlFor="debtAmount" className={styles.label}>
-                대출 금액 (만원) *
+                금액 (만원) *
               </label>
               <input
                 type="text"
@@ -377,7 +377,7 @@ function DebtModal({
                   }
                   className={styles.checkboxInput}
                 />
-                <span>현금으로 추가</span>
+                <span>현금유입으로 처리</span>
               </label>
             </div>
 
@@ -508,7 +508,7 @@ function DebtModal({
           {/* 메모 */}
           <div className={styles.field}>
             <label htmlFor="memo" className={styles.label}>
-              메모
+              비고
             </label>
             <textarea
               id="memo"
@@ -522,11 +522,11 @@ function DebtModal({
             />
           </div>
 
-          {/* 적용할 시뮬레이션 선택 */}
+          {/* 적용 시뮬레이션 선택 */}
           {simulations && simulations.length > 0 && (
             <div className={styles.field}>
               <label className={styles.label}>
-                적용할 시뮬레이션
+                적용 시뮬레이션
                 {editData && (
                   <span className={styles.hintText}>
                     {" "}
