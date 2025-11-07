@@ -217,6 +217,7 @@ function DashboardPage() {
   const [isFinancialDataModalOpen, setIsFinancialDataModalOpen] =
     useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isAIOptionModalOpen, setIsAIOptionModalOpen] = useState(false); // AI 옵션 선택 모달
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // 사이드바 접기/펼치기 상태
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [initialIncomeData, setInitialIncomeData] = useState(null); // 재무 라이브러리에서 선택한 소득 템플릿 데이터
@@ -326,11 +327,11 @@ function DashboardPage() {
   // 사이드바가 열릴 때 배경 스크롤 막기
   useEffect(() => {
     const isSidebarOpen = isProfilePanelOpen || isDataStorePanelOpen;
-    
+
     if (isSidebarOpen) {
       // 현재 스크롤 위치 저장
       const scrollY = window.scrollY;
-      
+
       // body 스크롤 막기
       document.body.style.overflow = "hidden";
       document.body.style.position = "fixed";
@@ -343,7 +344,7 @@ function DashboardPage() {
         document.body.style.position = "";
         document.body.style.top = "";
         document.body.style.width = "";
-        
+
         // 스크롤 위치 복원
         window.scrollTo(0, scrollY);
       };
@@ -1616,7 +1617,7 @@ function DashboardPage() {
   };
 
   const closeProfilePanel = () => setIsProfilePanelOpen(false);
-  
+
   const openDataStorePanel = () => {
     // 권한이 없으면 회원가입 유도
     if (!hasEditPermission) {
@@ -1641,7 +1642,7 @@ function DashboardPage() {
     });
     setIsDataStorePanelOpen(true);
   };
-  
+
   const closeDataStorePanel = () => setIsDataStorePanelOpen(false);
 
   useEffect(() => {
@@ -1669,7 +1670,7 @@ function DashboardPage() {
   // 재무 라이브러리에서 템플릿 선택 시 처리
   const handleSelectTemplate = (templateData) => {
     const { category } = templateData;
-    
+
     // 카테고리에 따라 적절한 모달 열기
     if (category === "income") {
       setInitialIncomeData(templateData);
@@ -2119,11 +2120,12 @@ function DashboardPage() {
     }
   };
 
-  // AI 분석 데이터 생성 핸들러
-  const handleGenerateAIAnalysis = async () => {
+  // AI 분석 데이터 생성 핸들러 (옵션: "single" 또는 "compare")
+  const handleGenerateAIAnalysis = async (option = "single") => {
     if (!profileData) return;
 
     setIsGeneratingAI(true);
+    setIsAIOptionModalOpen(false);
     try {
       // 현재 선택된 시뮬레이션 정보
       const currentSimulation = simulations.find(
@@ -2139,8 +2141,8 @@ function DashboardPage() {
 
       let promptText;
 
-      // 현재 탭이 기본 시뮬레이션이 아닌 경우: 기본 + 현재 두 개 비교
-      if (!isCurrentDefault && defaultSimulation) {
+      // 옵션이 "compare"이고 기본 시뮬레이션이 아닌 경우: 기본 + 현재 두 개 비교
+      if (option === "compare" && !isCurrentDefault && defaultSimulation) {
         // 기본 시뮬레이션 데이터 가져오기
         const defaultData = await fetchSimulationFinancialData(
           defaultSimulation.id
@@ -2230,7 +2232,7 @@ ${JSON.stringify(currentAnalysisData, null, 2)}`;
           "현재 데이터와 선택된 시뮬레이션 데이터가 비교 형식으로 클립보드에 복사되었습니다!\nChatGPT에 붙여넣기하여 AI 비교 분석을 받아보세요."
         );
       } else {
-        // 기본 시뮬레이션인 경우: 기존 방식 유지
+        // 단일 시뮬레이션 분석 (option === "single" 또는 기본 시뮬레이션)
         const analysisData = extractAIAnalysisData(
           profileData,
           incomes,
@@ -2481,20 +2483,27 @@ ${JSON.stringify(analysisData, null, 2)}`;
                 {profileData.hasSpouse &&
                   `배우자(${calculateKoreanAge(
                     profileData.spouseBirthYear
-                  )}세)${profileData.familyMembers && profileData.familyMembers.length > 0 ? ', ' : ''}`}
+                  )}세)${
+                    profileData.familyMembers &&
+                    profileData.familyMembers.length > 0
+                      ? ", "
+                      : ""
+                  }`}
                 {profileData.familyMembers &&
                   profileData.familyMembers.length > 0 &&
                   profileData.familyMembers.map((member, index) => {
                     // 자녀인 경우 성별 표시
                     const isChild = member.relationship === "자녀";
                     const currentAge = calculateKoreanAge(member.birthYear);
-                    
+
                     return (
                       <span key={member.id || `family-${index}`}>
                         {index > 0 && ", "}
                         {isChild && member.gender
                           ? `자녀(${member.gender}, ${currentAge}세)`
-                          : `${member.relationship || member.relation || "가족"}(${currentAge}세)`}
+                          : `${
+                              member.relationship || member.relation || "가족"
+                            }(${currentAge}세)`}
                       </span>
                     );
                   })}
@@ -2503,10 +2512,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
           </span>
         </div>
         <div className={styles.profileActions}>
-          <button
-            className={styles.iconButton}
-            onClick={openDataStorePanel}
-          >
+          <button className={styles.iconButton} onClick={openDataStorePanel}>
             <span className={styles.buttonText}>재무 라이브러리</span>
           </button>
           <button
@@ -2569,7 +2575,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
               <button
                 className={styles.sidebarIconButton}
                 title="AI 분석 데이터 추출"
-                onClick={handleGenerateAIAnalysis}
+                onClick={() => setIsAIOptionModalOpen(true)}
                 disabled={isGeneratingAI || !activeSimulationId}
               >
                 <svg
@@ -2953,7 +2959,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         isOpen={isManageModalOpen}
         onClose={() => {
           setIsManageModalOpen(false);
-          setLibraryRefreshKey(prev => prev + 1); // 템플릿 목록 새로고침
+          setLibraryRefreshKey((prev) => prev + 1); // 템플릿 목록 새로고침
         }}
       />
 
@@ -3111,6 +3117,86 @@ ${JSON.stringify(analysisData, null, 2)}`;
         currentSimulationId={activeSimulationId}
         simulations={simulations}
       />
+
+      {/* AI 옵션 선택 모달 */}
+      {isAIOptionModalOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setIsAIOptionModalOpen(false)}
+        >
+          <div
+            className={styles.aiOptionModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.aiOptionHeader}>
+              <h3 className={styles.aiOptionTitle}>AI 데이터 추출 옵션</h3>
+              <button
+                className={styles.aiOptionCloseButton}
+                onClick={() => setIsAIOptionModalOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.aiOptionContent}>
+              <p className={styles.aiOptionDescription}>
+                어떤 방식으로 데이터를 추출하시겠습니까?
+              </p>
+              <div className={styles.aiOptionButtons}>
+                <button
+                  className={styles.aiOptionButton}
+                  onClick={() => handleGenerateAIAnalysis("single")}
+                  disabled={isGeneratingAI}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" y1="18" x2="12" y2="12" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
+                  </svg>
+                  <div>
+                    <strong>해당 시뮬레이션만 추출</strong>
+                    <span>현재 시뮬레이션 데이터만 분석</span>
+                  </div>
+                </button>
+                <button
+                  className={styles.aiOptionButton}
+                  onClick={() => handleGenerateAIAnalysis("compare")}
+                  disabled={
+                    isGeneratingAI ||
+                    !simulations.some(
+                      (sim) => sim.isDefault && sim.id !== activeSimulationId
+                    )
+                  }
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <path d="M9 15h6" />
+                  </svg>
+                  <div>
+                    <strong>현재와 비교</strong>
+                    <span>기본 시뮬레이션과 비교 분석</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 체크리스트 템플릿 수정 모달 (관리자 전용) */}
       <ChecklistTemplateModal
