@@ -1286,7 +1286,7 @@ function RechartsAssetChart({
           <>
             <div className={styles.chartHeader}>
               <div className={styles.chartTitleWrapper}>
-                <div className={styles.chartTitle}>가계 자산 규모</div>
+                <div className={styles.chartTitle}>순 자산 규모</div>
                 <button
                   className={styles.zoomButton}
                   onClick={() => setIsZoomed(true)}
@@ -1319,7 +1319,7 @@ function RechartsAssetChart({
         <ChartZoomModal
           isOpen={isZoomed}
           onClose={() => setIsZoomed(false)}
-          title="가계 자산 규모"
+          title="순 자산 규모"
         >
           <div style={{ width: "100%", height: "100%" }}>
             {renderChart("100%", true)}
