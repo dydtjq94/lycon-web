@@ -894,7 +894,7 @@ function RechartsCashflowChart({
                               (saving, index) => {
                                 allItems.push({
                                   key: `savingMaturity-${index}`,
-                                  label: `${saving.title} (만료)`,
+                                  label: `${saving.title} (매도/만료)`,
                                   value: saving.amount,
                                   type: "positive",
                                   category: "saving",
@@ -905,7 +905,7 @@ function RechartsCashflowChart({
                             // 상세 정보가 없으면 기본 표시
                             allItems.push({
                               key: "savingMaturity",
-                              label: "저축 (만료)",
+                              label: "저축 (매도/만료)",
                               value: yearData.savingMaturity,
                               type: "positive",
                               category: "saving",
