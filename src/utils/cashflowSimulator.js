@@ -636,7 +636,7 @@ export function calculateCashflowSimulation(
             });
 
             addNegative(
-              `${saving.title} (적립)`,
+              `${saving.title} | 적립`,
               saving.amount,
               "저축 적립",
               `saving-contrib-${saving.id || saving.title}`
@@ -661,7 +661,7 @@ export function calculateCashflowSimulation(
           });
 
           addNegative(
-            `${saving.title} (적립)`,
+            `${saving.title} | 적립`,
             yearlyAmount,
             "저축 적립",
             `saving-contrib-${saving.id || saving.title}`
@@ -902,7 +902,7 @@ export function calculateCashflowSimulation(
             // 적립액을 음수로 현금흐름에 반영 (현금이 빠져나감)
             totalExpense += yearlyContribution;
             addNegative(
-              `${pension.title} (추가 적립)`,
+              `${pension.title} | 추가 적립`,
               yearlyContribution,
               "퇴직금 IRP 적립",
               `pension-contrib-${pension.id || pension.title}`
@@ -918,7 +918,7 @@ export function calculateCashflowSimulation(
             // 적립액을 음수로 현금흐름에 반영 (현금이 빠져나감)
             totalExpense += yearlyContribution;
             addNegative(
-              `${pension.title} (적립)`,
+              `${pension.title} | 적립`,
               yearlyContribution,
               "연금 적립",
               `pension-contrib-${pension.id || pension.title}`
