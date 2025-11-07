@@ -766,12 +766,12 @@ export function calculateCashflowSimulation(
 
             // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
             capitalGainsTaxes.push({
-              title: `${saving.title} (양도세, ${taxRateFormatted}%)`,
+              title: `${saving.title} | 양도세 ${taxRateFormatted}%`,
               amount: capitalGainsTax,
             });
 
             addNegative(
-              `${saving.title} (양도세, ${taxRateFormatted}%)`,
+              `${saving.title} | 양도세 ${taxRateFormatted}%`,
               capitalGainsTax,
               "양도세",
               `saving-tax-${saving.id || saving.title}`
@@ -866,7 +866,7 @@ export function calculateCashflowSimulation(
             Math.pow(1 + inflationRate, yearsElapsed);
           totalPension += adjustedAmount;
           addPositive(
-            pension.title,
+            `${pension.title} | 수령`,
             adjustedAmount,
             "국민연금",
             `pension-national-${pension.id || pension.title}`
@@ -1004,7 +1004,7 @@ export function calculateCashflowSimulation(
               : "개인연금";
 
           addPositive(
-            pension.title,
+            `${pension.title} | 수령`,
             pension._cashflowPMT,
             pensionTypeLabel,
             `pension-payment-${pension.id || pension.title}`
@@ -1023,7 +1023,7 @@ export function calculateCashflowSimulation(
               : "개인연금";
 
           addPositive(
-            pension.title,
+            `${pension.title} | 수령`,
             yearlyPayment,
             pensionTypeLabel,
             `pension-payment-${pension.id || pension.title}`
@@ -1352,12 +1352,12 @@ export function calculateCashflowSimulation(
 
             // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
             capitalGainsTaxes.push({
-              title: `${asset.title} (양도세, ${taxRateFormatted}%)`,
+              title: `${asset.title} | 양도세 ${taxRateFormatted}%`,
               amount: capitalGainsTax,
             });
 
             addNegative(
-              `${asset.title} (양도세, ${taxRateFormatted}%)`,
+              `${asset.title} | 양도세 ${taxRateFormatted}%`,
               capitalGainsTax,
               "양도세",
               `asset-tax-${asset.id || asset.title}`
