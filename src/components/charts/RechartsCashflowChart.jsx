@@ -148,15 +148,6 @@ function RechartsCashflowChart({
             category: "saving",
             title: `${saving.title} 종료`,
           });
-
-          // 수령 이벤트: 종료년도에 바로 "수령" 표시 (종료와 동시에 수령)
-          events.push({
-            year: sEnd,
-            age: sEnd - (data[0]?.year - data[0]?.age),
-            type: "withdrawal",
-            category: "saving",
-            title: `${saving.title} 수령`,
-          });
         }
       });
     }
