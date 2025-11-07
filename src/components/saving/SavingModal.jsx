@@ -671,37 +671,37 @@ function SavingModal({
                 />
               </div>
             )}
-
-            {/* 양도세율 (기본형일 때만) */}
-            {formData.savingType === "standard" && (
-              <div className={styles.field}>
-                <label htmlFor="capitalGainsTaxRate" className={styles.label}>
-                  양도세율 (%) <span className={styles.optional}>- 선택</span>
-                </label>
-                <input
-                  type="text"
-                  id="capitalGainsTaxRate"
-                  value={formData.capitalGainsTaxRate}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // 숫자와 소수점만 허용 (0-100)
-                    if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                      setFormData({
-                        ...formData,
-                        capitalGainsTaxRate: value,
-                      });
-                    }
-                  }}
-                  onKeyPress={handleKeyPress}
-                  className={styles.input}
-                  placeholder="예: 22 (수익의 22%를 세금으로 납부)"
-                />
-                <div className={styles.fieldHelper}>
-                  만기 시 (최종가치 - 원금) × 양도세율을 세금으로 납부합니다.
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* 양도세율 (기본형일 때만) - 가로 전체 사용 */}
+          {formData.savingType === "standard" && (
+            <div className={styles.field}>
+              <label htmlFor="capitalGainsTaxRate" className={styles.label}>
+                양도세율 (%) <span className={styles.optional}>- 선택</span>
+              </label>
+              <input
+                type="text"
+                id="capitalGainsTaxRate"
+                value={formData.capitalGainsTaxRate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // 숫자와 소수점만 허용 (0-100)
+                  if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                    setFormData({
+                      ...formData,
+                      capitalGainsTaxRate: value,
+                    });
+                  }
+                }}
+                onKeyPress={handleKeyPress}
+                className={styles.input}
+                placeholder="예: 22 (수익의 22%를 세금으로 납부)"
+              />
+              <div className={styles.fieldHelper}>
+                만기 시 (최종가치 - 원금) × 양도세율을 세금으로 납부합니다.
+              </div>
+            </div>
+          )}
 
           {/* 수익형 현금: 연간 수익률 (배당, 이자 등) */}
           {formData.savingType === "income" && (

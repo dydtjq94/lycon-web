@@ -91,6 +91,9 @@ function SimulationCompareModal({
   // 생애 자금 수급/수요 탭 상태 (기본값: 전체)
   const [cashflowPeriod, setCashflowPeriod] = useState("all");
 
+  // 메인 탭 상태 (기본값: 생애 자금)
+  const [activeTab, setActiveTab] = useState("cashflow");
+
   // 재무 데이터 수정 모달 상태
   const [editModal, setEditModal] = useState({
     isOpen: false,
@@ -816,8 +819,36 @@ function SimulationCompareModal({
             <div className={styles.loading}>데이터를 불러오는 중...</div>
           ) : (
             <>
+              {/* 메인 탭 네비게이션 */}
+              <div className={styles.mainTabs}>
+                <button
+                  className={`${styles.mainTab} ${
+                    activeTab === "cashflow" ? styles.mainTabActive : ""
+                  }`}
+                  onClick={() => setActiveTab("cashflow")}
+                >
+                  생애 자금 수급/수요
+                </button>
+                <button
+                  className={`${styles.mainTab} ${
+                    activeTab === "networth" ? styles.mainTabActive : ""
+                  }`}
+                  onClick={() => setActiveTab("networth")}
+                >
+                  시점별 순자산
+                </button>
+                <button
+                  className={`${styles.mainTab} ${
+                    activeTab === "detail" ? styles.mainTabActive : ""
+                  }`}
+                  onClick={() => setActiveTab("detail")}
+                >
+                  상세 재무 데이터
+                </button>
+              </div>
+
               {/* 생애 자금 수급/수요 현재가 요약 */}
-              {(defaultPV || targetPV) && (
+              {activeTab === "cashflow" && (defaultPV || targetPV) && (
                 <div className={styles.summarySection}>
                   <div className={styles.sectionHeader}>
                     <h4 className={styles.summaryTitle}>생애 자금 수급/수요</h4>
@@ -1002,7 +1033,7 @@ function SimulationCompareModal({
                   </div>
                 </div>
               )}
-              {netWorthRows.length > 0 && (
+              {activeTab === "networth" && netWorthRows.length > 0 && (
                 <div className={styles.netWorthSection}>
                   <h4 className={styles.netWorthTitle}>시점별 순자산</h4>
                   <div className={styles.summaryTable}>
@@ -1164,6 +1195,7 @@ function SimulationCompareModal({
               )}
 
               {/* 상세 재무 데이터 비교 */}
+              {activeTab === "detail" && (
               <div className={styles.financialDataSection}>
                 <h4 className={styles.financialDataTitle}>상세 재무 데이터</h4>
                 <div className={styles.summaryTable}>
@@ -1208,6 +1240,7 @@ function SimulationCompareModal({
                   ))}
                 </div>
               </div>
+              )}
             </>
           )}
         </div>

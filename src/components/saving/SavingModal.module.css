@@ -191,6 +191,36 @@
   line-height: 1.4;
 }
 
+/* 라디오 버튼 그룹 스타일 */
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.radioLabel input[type="radio"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.radioText {
+  font-weight: 500;
+  user-select: none;
+}
+
 .modalFooter {
   display: flex;
   justify-content: flex-end;
