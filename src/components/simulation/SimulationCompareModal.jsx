@@ -124,15 +124,50 @@ function SimulationCompareModal({
     });
   };
 
-  // renderList 함수 - onEdit 핸들러 추가
-  const renderList = (config, data) => {
+  // 재무 데이터를 현재 시뮬레이션 기준으로 정렬하는 함수
+  const sortByCurrentSimulation = (data, currentData) => {
+    if (!Array.isArray(data) || data.length === 0) return data;
+    if (!Array.isArray(currentData) || currentData.length === 0) return data;
+
+    // 현재 시뮬레이션의 ID 목록 추출
+    const currentIds = new Set(currentData.map((item) => item.id).filter(Boolean));
+
+    // 데이터를 두 그룹으로 나눔
+    const itemsWithCurrentId = []; // 현재 시뮬레이션에 있는 ID
+    const itemsWithoutCurrentId = []; // 새로 추가된 ID
+
+    data.forEach((item) => {
+      if (item.id && currentIds.has(item.id)) {
+        itemsWithCurrentId.push(item);
+      } else {
+        itemsWithoutCurrentId.push(item);
+      }
+    });
+
+    // 현재 시뮬레이션의 ID 순서대로 정렬
+    const currentIdOrder = currentData.map((item) => item.id).filter(Boolean);
+    itemsWithCurrentId.sort((a, b) => {
+      const indexA = currentIdOrder.indexOf(a.id);
+      const indexB = currentIdOrder.indexOf(b.id);
+      return indexA - indexB;
+    });
+
+    // 현재 시뮬레이션에 있는 항목들을 먼저, 새로 추가된 항목들은 뒤에
+    return [...itemsWithCurrentId, ...itemsWithoutCurrentId];
+  };
+
+  // renderList 함수 - onEdit 핸들러 추가 + 정렬 적용
+  const renderList = (config, data, currentData) => {
     const Component = config.component;
     if (!Component) {
       return <div className={styles.empty}>지원되지 않는 카테고리입니다.</div>;
     }
 
+    // 현재 시뮬레이션 기준으로 데이터 정렬
+    const sortedData = sortByCurrentSimulation(data, currentData);
+
     const props = {
-      [config.propName]: data || [],
+      [config.propName]: sortedData || [],
       onEdit: (item) => handleEditData(config.key.slice(0, -1), item), // 's' 제거 (incomes -> income)
       onDelete: () => {}, // 읽기 전용이므로 삭제는 비활성화
       isReadOnly: false, // 클릭 가능하게 설정
@@ -1228,12 +1263,12 @@ function SimulationCompareModal({
                       </div>
                       {showDefaultColumn && (
                         <div className={styles.summaryCell}>
-                          {renderList(config, defaultData?.[config.key])}
+                          {renderList(config, defaultData?.[config.key], defaultData?.[config.key])}
                         </div>
                       )}
                       {showTargetColumn && (
                         <div className={styles.summaryCell}>
-                          {renderList(config, targetData?.[config.key])}
+                          {renderList(config, targetData?.[config.key], defaultData?.[config.key])}
                         </div>
                       )}
                     </div>
