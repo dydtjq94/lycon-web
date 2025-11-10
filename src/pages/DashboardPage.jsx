@@ -738,7 +738,7 @@ function DashboardPage() {
   const handleSaveIncome = async (incomeData) => {
     try {
       if (editingIncome) {
-        // 수정
+        // 수정 모드: 각 시뮬레이션에서 ID 존재 여부 확인 후 업데이트 또는 생성
         trackEvent("소득 수정", {
           profileId,
           simulationId: activeSimulationId,
@@ -747,17 +747,39 @@ function DashboardPage() {
         const targetSimIds = incomeData.selectedSimulationIds?.length
           ? incomeData.selectedSimulationIds
           : [activeSimulationId];
-        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
-        await Promise.all(
-          targetSimIds.map((simId) =>
-            incomeService.updateIncome(
+
+        // 각 시뮬레이션에서 해당 ID가 존재하는지 확인
+        const checkPromises = targetSimIds.map(async (simId) => {
+          try {
+            const items = await incomeService.getIncomes(profileId, simId);
+            const exists = items.some((item) => item.id === editingIncome.id);
+            return { simId, exists };
+          } catch (error) {
+            return { simId, exists: false };
+          }
+        });
+        const checkResults = await Promise.all(checkPromises);
+
+        // 존재하는 시뮬레이션은 업데이트, 없는 시뮬레이션은 생성
+        const updatePromises = checkResults.map(({ simId, exists }) => {
+          if (exists) {
+            return incomeService.updateIncome(
               profileId,
               simId,
               editingIncome.id,
               incomeData
-            )
-          )
-        );
+            );
+          } else {
+            return incomeService.createIncomeWithId(
+              profileId,
+              simId,
+              editingIncome.id,
+              incomeData
+            );
+          }
+        });
+        await Promise.all(updatePromises);
+
         // 현재 탭 상태만 즉시 반영
         if (targetSimIds.includes(activeSimulationId)) {
           setIncomes(
@@ -844,21 +866,43 @@ function DashboardPage() {
   const handleSaveExpense = async (expenseData) => {
     try {
       if (editingExpense) {
-        // 수정
+        // 수정 모드: 각 시뮬레이션에서 ID 존재 여부 확인 후 업데이트 또는 생성
         const targetSimIds = expenseData.selectedSimulationIds?.length
           ? expenseData.selectedSimulationIds
           : [activeSimulationId];
-        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
-        await Promise.all(
-          targetSimIds.map((simId) =>
-            expenseService.updateExpense(
+
+        // 각 시뮬레이션에서 해당 ID가 존재하는지 확인
+        const checkPromises = targetSimIds.map(async (simId) => {
+          try {
+            const items = await expenseService.getExpenses(profileId, simId);
+            const exists = items.some((item) => item.id === editingExpense.id);
+            return { simId, exists };
+          } catch (error) {
+            return { simId, exists: false };
+          }
+        });
+        const checkResults = await Promise.all(checkPromises);
+
+        // 존재하는 시뮬레이션은 업데이트, 없는 시뮬레이션은 생성
+        const updatePromises = checkResults.map(({ simId, exists }) => {
+          if (exists) {
+            return expenseService.updateExpense(
               profileId,
               simId,
               editingExpense.id,
               expenseData
-            )
-          )
-        );
+            );
+          } else {
+            return expenseService.createExpenseWithId(
+              profileId,
+              simId,
+              editingExpense.id,
+              expenseData
+            );
+          }
+        });
+        await Promise.all(updatePromises);
+
         // 현재 탭 상태만 즉시 반영
         if (targetSimIds.includes(activeSimulationId)) {
           setExpenses(
@@ -924,21 +968,43 @@ function DashboardPage() {
   const handleSaveSaving = async (savingData) => {
     try {
       if (editingSaving) {
-        // 수정
+        // 수정 모드: 각 시뮬레이션에서 ID 존재 여부 확인 후 업데이트 또는 생성
         const targetSimIds = savingData.selectedSimulationIds?.length
           ? savingData.selectedSimulationIds
           : [activeSimulationId];
-        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
-        await Promise.all(
-          targetSimIds.map((simId) =>
-            savingsService.updateSaving(
+
+        // 각 시뮬레이션에서 해당 ID가 존재하는지 확인
+        const checkPromises = targetSimIds.map(async (simId) => {
+          try {
+            const items = await savingsService.getSavings(profileId, simId);
+            const exists = items.some((item) => item.id === editingSaving.id);
+            return { simId, exists };
+          } catch (error) {
+            return { simId, exists: false };
+          }
+        });
+        const checkResults = await Promise.all(checkPromises);
+
+        // 존재하는 시뮬레이션은 업데이트, 없는 시뮬레이션은 생성
+        const updatePromises = checkResults.map(({ simId, exists }) => {
+          if (exists) {
+            return savingsService.updateSaving(
               profileId,
               simId,
               editingSaving.id,
               savingData
-            )
-          )
-        );
+            );
+          } else {
+            return savingsService.createSavingWithId(
+              profileId,
+              simId,
+              editingSaving.id,
+              savingData
+            );
+          }
+        });
+        await Promise.all(updatePromises);
+
         // 현재 탭 상태만 즉시 반영
         if (targetSimIds.includes(activeSimulationId)) {
           setSavings(
@@ -1025,21 +1091,43 @@ function DashboardPage() {
   const handleSavePension = async (pensionData) => {
     try {
       if (editingPension) {
-        // 수정
+        // 수정 모드: 각 시뮬레이션에서 ID 존재 여부 확인 후 업데이트 또는 생성
         const targetSimIds = pensionData.selectedSimulationIds?.length
           ? pensionData.selectedSimulationIds
           : [activeSimulationId];
-        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
-        await Promise.all(
-          targetSimIds.map((simId) =>
-            pensionService.updatePension(
+
+        // 각 시뮬레이션에서 해당 ID가 존재하는지 확인
+        const checkPromises = targetSimIds.map(async (simId) => {
+          try {
+            const items = await pensionService.getPensions(profileId, simId);
+            const exists = items.some((item) => item.id === editingPension.id);
+            return { simId, exists };
+          } catch (error) {
+            return { simId, exists: false };
+          }
+        });
+        const checkResults = await Promise.all(checkPromises);
+
+        // 존재하는 시뮬레이션은 업데이트, 없는 시뮬레이션은 생성
+        const updatePromises = checkResults.map(({ simId, exists }) => {
+          if (exists) {
+            return pensionService.updatePension(
               profileId,
               simId,
               editingPension.id,
               pensionData
-            )
-          )
-        );
+            );
+          } else {
+            return pensionService.createPensionWithId(
+              profileId,
+              simId,
+              editingPension.id,
+              pensionData
+            );
+          }
+        });
+        await Promise.all(updatePromises);
+
         // 현재 탭 상태만 즉시 반영
         if (targetSimIds.includes(activeSimulationId)) {
           setPensions(
@@ -1119,21 +1207,48 @@ function DashboardPage() {
   const handleSaveRealEstate = async (realEstateData) => {
     try {
       if (editingRealEstate) {
-        // 수정
+        // 수정 모드: 각 시뮬레이션에서 ID 존재 여부 확인 후 업데이트 또는 생성
         const targetSimIds = realEstateData.selectedSimulationIds?.length
           ? realEstateData.selectedSimulationIds
           : [activeSimulationId];
-        // 선택된 모든 시뮬레이션에 동일 id로 병렬 업데이트
-        await Promise.all(
-          targetSimIds.map((simId) =>
-            realEstateService.updateRealEstate(
+
+        // 각 시뮬레이션에서 해당 ID가 존재하는지 확인
+        const checkPromises = targetSimIds.map(async (simId) => {
+          try {
+            const items = await realEstateService.getRealEstates(
+              profileId,
+              simId
+            );
+            const exists = items.some(
+              (item) => item.id === editingRealEstate.id
+            );
+            return { simId, exists };
+          } catch (error) {
+            return { simId, exists: false };
+          }
+        });
+        const checkResults = await Promise.all(checkPromises);
+
+        // 존재하는 시뮬레이션은 업데이트, 없는 시뮬레이션은 생성
+        const updatePromises = checkResults.map(({ simId, exists }) => {
+          if (exists) {
+            return realEstateService.updateRealEstate(
               profileId,
               simId,
               editingRealEstate.id,
               realEstateData
-            )
-          )
-        );
+            );
+          } else {
+            return realEstateService.createRealEstateWithId(
+              profileId,
+              simId,
+              editingRealEstate.id,
+              realEstateData
+            );
+          }
+        });
+        await Promise.all(updatePromises);
+
         // 현재 탭 상태만 즉시 반영
         if (targetSimIds.includes(activeSimulationId)) {
           setRealEstates(
@@ -1217,19 +1332,43 @@ function DashboardPage() {
   const handleSaveAsset = async (assetData) => {
     try {
       if (editingAsset) {
+        // 수정 모드: 각 시뮬레이션에서 ID 존재 여부 확인 후 업데이트 또는 생성
         const targetSimIds = assetData.selectedSimulationIds?.length
           ? assetData.selectedSimulationIds
           : [activeSimulationId];
-        await Promise.all(
-          targetSimIds.map((simId) =>
-            assetService.updateAsset(
+
+        // 각 시뮬레이션에서 해당 ID가 존재하는지 확인
+        const checkPromises = targetSimIds.map(async (simId) => {
+          try {
+            const items = await assetService.getAssets(profileId, simId);
+            const exists = items.some((item) => item.id === editingAsset.id);
+            return { simId, exists };
+          } catch (error) {
+            return { simId, exists: false };
+          }
+        });
+        const checkResults = await Promise.all(checkPromises);
+
+        // 존재하는 시뮬레이션은 업데이트, 없는 시뮬레이션은 생성
+        const updatePromises = checkResults.map(({ simId, exists }) => {
+          if (exists) {
+            return assetService.updateAsset(
               profileId,
               simId,
               editingAsset.id,
               assetData
-            )
-          )
-        );
+            );
+          } else {
+            return assetService.createAssetWithId(
+              profileId,
+              simId,
+              editingAsset.id,
+              assetData
+            );
+          }
+        });
+        await Promise.all(updatePromises);
+
         if (targetSimIds.includes(activeSimulationId)) {
           setAssets(
             assets.map((asset) =>
@@ -1298,15 +1437,43 @@ function DashboardPage() {
   const handleSaveDebt = async (debtData) => {
     try {
       if (editingDebt) {
-        // 수정
+        // 수정 모드: 각 시뮬레이션에서 ID 존재 여부 확인 후 업데이트 또는 생성
         const targetSimIds = debtData.selectedSimulationIds?.length
           ? debtData.selectedSimulationIds
           : [activeSimulationId];
-        await Promise.all(
-          targetSimIds.map((simId) =>
-            debtService.updateDebt(profileId, simId, editingDebt.id, debtData)
-          )
-        );
+
+        // 각 시뮬레이션에서 해당 ID가 존재하는지 확인
+        const checkPromises = targetSimIds.map(async (simId) => {
+          try {
+            const items = await debtService.getDebts(profileId, simId);
+            const exists = items.some((item) => item.id === editingDebt.id);
+            return { simId, exists };
+          } catch (error) {
+            return { simId, exists: false };
+          }
+        });
+        const checkResults = await Promise.all(checkPromises);
+
+        // 존재하는 시뮬레이션은 업데이트, 없는 시뮬레이션은 생성
+        const updatePromises = checkResults.map(({ simId, exists }) => {
+          if (exists) {
+            return debtService.updateDebt(
+              profileId,
+              simId,
+              editingDebt.id,
+              debtData
+            );
+          } else {
+            return debtService.createDebtWithId(
+              profileId,
+              simId,
+              editingDebt.id,
+              debtData
+            );
+          }
+        });
+        await Promise.all(updatePromises);
+
         if (targetSimIds.includes(activeSimulationId)) {
           setDebts(
             debts.map((debt) =>

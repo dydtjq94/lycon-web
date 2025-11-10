@@ -48,7 +48,8 @@ function IncomeModal({
 
   const [errors, setErrors] = useState({});
   const [selectedSimulationIds, setSelectedSimulationIds] = useState([]);
-  const [availableSimulationIds, setAvailableSimulationIds] = useState([]); // 해당 id가 존재하는 시뮬레이션만
+  // 각 시뮬레이션이 수정인지 추가인지 상태 저장: { simId: 'update' | 'create' }
+  const [simulationStatusMap, setSimulationStatusMap] = useState({});
   const [isSimSelectionLoading, setIsSimSelectionLoading] = useState(false);
 
   // 은퇴년도 고정이 켜져있으면 endYear를 자동으로 은퇴년도로 업데이트
@@ -66,78 +67,122 @@ function IncomeModal({
     profileData?.birthYear,
   ]);
 
-  // 수정 모드일 때 해당 항목(제목 기준)이 존재하는 시뮬레이션 확인
+  // 수정 모드일 때 각 시뮬레이션에 해당 ID가 존재하는지 확인
   useEffect(() => {
-    const checkAvailableSimulations = async () => {
-      setIsSimSelectionLoading(true);
+    // 모달이 닫혀있으면 아무것도 안함
+    if (!isOpen) {
+      return;
+    }
+
+    console.log("🔍 [소득모달] useEffect 시작 - editData:", editData);
+
+    // 모달이 열리면 즉시 이전 상태 초기화 및 로딩 시작
+    setIsSimSelectionLoading(true);
+    setSimulationStatusMap({});
+    setSelectedSimulationIds([]);
+
+    let cancelled = false;
+
+    const checkSimulationStatus = async () => {
       const startTime = Date.now();
 
-      if (
-        isOpen &&
-        editData &&
-        editData.title &&
-        profileId &&
-        simulations.length > 0
-      ) {
+      if (editData && editData.id && profileId && simulations.length > 0) {
+        console.log("✅ [소득모달] 수정 모드 - editData.id:", editData.id);
         try {
-          // 모든 시뮬레이션에서 같은 제목을 가진 항목 존재 여부 확인
+          // 모든 시뮬레이션에서 해당 ID가 존재하는지 확인
           const checkPromises = simulations.map(async (sim) => {
             try {
               const incomes = await incomeService.getIncomes(profileId, sim.id);
-              // 같은 제목의 항목이 있는지 확인
-              const hasSameTitle = incomes.some(
-                (income) => income.title === editData.title
+              // 같은 ID의 항목이 있는지 확인
+              const hasSameId = incomes.some(
+                (income) => income.id === editData.id
               );
-              return hasSameTitle ? sim.id : null;
+              console.log(
+                `  📊 시뮬레이션 ${sim.title || sim.id}: ${
+                  hasSameId ? "수정" : "추가"
+                } (incomes 개수: ${incomes.length})`
+              );
+              return { simId: sim.id, status: hasSameId ? "update" : "create" };
             } catch (error) {
-              return null; // 오류 시 null
+              console.error(`  ❌ 시뮬레이션 ${sim.id} 확인 오류:`, error);
+              return { simId: sim.id, status: "create" }; // 오류 시 추가로 처리
             }
           });
           const results = await Promise.all(checkPromises);
-          const availableIds = results.filter((id) => id !== null);
-          setAvailableSimulationIds(availableIds);
-          // 기본 선택: 현재 활성 시뮬레이션이 availableIds에 있으면 그것만, 없으면 전체
-          const defaultSelected = availableIds.includes(activeSimulationId)
-            ? [activeSimulationId]
-            : availableIds.length > 0
-            ? [availableIds[0]]
-            : [];
+
+          // 작업이 취소되었으면 상태 업데이트 안함
+          if (cancelled) {
+            console.log("⚠️ [소득모달] 작업 취소됨");
+            return;
+          }
+
+          // 상태 맵 생성
+          const statusMap = {};
+          results.forEach(({ simId, status }) => {
+            statusMap[simId] = status;
+          });
+          console.log("📝 [소득모달] 최종 statusMap:", statusMap);
+          setSimulationStatusMap(statusMap);
+
+          // 현재 활성 시뮬레이션을 기본 선택
+          const defaultSelected = activeSimulationId ? [activeSimulationId] : [];
           setSelectedSimulationIds(defaultSelected);
 
-          // 최소 3초 로딩 유지
+          // 최소 1초 로딩 유지
           const elapsedTime = Date.now() - startTime;
           const remainingTime = Math.max(0, 1000 - elapsedTime);
           await new Promise((resolve) => setTimeout(resolve, remainingTime));
         } catch (error) {
-          console.error("시뮬레이션 확인 오류:", error);
-          // 오류 시 모든 시뮬레이션 표시 (기존 동작)
-          setAvailableSimulationIds(simulations.map((s) => s.id));
+          console.error("❌ [소득모달] 시뮬레이션 상태 확인 오류:", error);
+
+          if (cancelled) return;
+
+          // 오류 시 모든 시뮬레이션을 추가 상태로 설정
+          const statusMap = {};
+          simulations.forEach((sim) => {
+            statusMap[sim.id] = "create";
+          });
+          setSimulationStatusMap(statusMap);
           setSelectedSimulationIds(
             activeSimulationId ? [activeSimulationId] : []
           );
 
-          // 최소 3초 로딩 유지
+          // 최소 1초 로딩 유지
           const elapsedTime = Date.now() - startTime;
           const remainingTime = Math.max(0, 1000 - elapsedTime);
           await new Promise((resolve) => setTimeout(resolve, remainingTime));
         } finally {
-          setIsSimSelectionLoading(false);
+          if (!cancelled) {
+            setIsSimSelectionLoading(false);
+          }
         }
       } else {
-        // 추가 모드이거나 editData가 없으면 모든 시뮬레이션 표시
-        // 최소 3초 로딩 유지
+        // 추가 모드일 때는 모든 시뮬레이션을 추가 상태로
+        console.log("➕ [소득모달] 추가 모드");
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, 1000 - elapsedTime);
         await new Promise((resolve) => setTimeout(resolve, remainingTime));
 
-        setAvailableSimulationIds(simulations.map((s) => s.id));
+        if (cancelled) return;
+
+        const statusMap = {};
+        simulations.forEach((sim) => {
+          statusMap[sim.id] = "create";
+        });
+        setSimulationStatusMap(statusMap);
         const defaultSelected = activeSimulationId ? [activeSimulationId] : [];
         setSelectedSimulationIds(defaultSelected);
         setIsSimSelectionLoading(false);
       }
     };
-    checkAvailableSimulations();
-  }, [isOpen, editData, profileId, simulations, activeSimulationId]);
+
+    checkSimulationStatus();
+
+    // cleanup 함수: 다음 useEffect 실행 전이나 컴포넌트 언마운트 시 호출
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, editData?.id, profileId, simulations, activeSimulationId]);
 
   // 수정 모드일 때 데이터 로드, 모달이 열릴 때마다 초기화
   useEffect(() => {
@@ -518,7 +563,7 @@ function IncomeModal({
                 {editData && (
                   <span className={styles.hintText}>
                     {" "}
-                    (동일한 항목이 있는 시뮬레이션만 표시됨)
+                    (수정: 같은 ID 항목 업데이트, 추가: 새로 생성)
                   </span>
                 )}
               </label>
@@ -528,11 +573,10 @@ function IncomeModal({
                     시뮬레이션 목록 불러오는 중…
                   </span>
                 ) : (
-                  simulations
-                    .filter((sim) =>
-                      editData ? availableSimulationIds.includes(sim.id) : true
-                    )
-                    .map((sim) => (
+                  simulations.map((sim) => {
+                    const status = simulationStatusMap[sim.id] || "create";
+                    const statusText = status === "update" ? "(수정)" : "(추가)";
+                    return (
                       <label key={sim.id} className={styles.fixedCheckboxLabel}>
                         <input
                           type="checkbox"
@@ -550,10 +594,18 @@ function IncomeModal({
                           className={styles.fixedCheckbox}
                         />
                         <span className={styles.fixedCheckboxText}>
-                          {sim.title || (sim.isDefault ? "현재" : "시뮬레이션")}
+                          {sim.title || (sim.isDefault ? "현재" : "시뮬레이션")}{" "}
+                          <span
+                            style={{
+                              color: status === "update" ? "#2196F3" : "#4CAF50",
+                            }}
+                          >
+                            {statusText}
+                          </span>
                         </span>
                       </label>
-                    ))
+                    );
+                  })
                 )}
               </div>
             </div>
