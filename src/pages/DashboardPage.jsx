@@ -600,7 +600,8 @@ function DashboardPage() {
     return {
       cashflow,
       cashflowDetailed: cashflow, // 상세 데이터는 cashflow와 동일
-      assets: assetSimulation,
+      assets: assetSimulation.data, // data 속성 사용
+      assetsDetailed: assetSimulation.detailedData, // detailedData 추가
     };
   }, [
     profileData,
@@ -2981,6 +2982,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   spouseRetirementAge={profileData.spouseRetirementAge}
                   targetAssets={profileData.targetAssets}
                   profileData={profileData}
+                  detailedData={simulationData.assetsDetailed}
                   savings={savings}
                   pensions={pensions}
                   realEstates={realEstates}

@@ -308,14 +308,14 @@ export function calculateCashflowSimulation(
               totalDebtInterest += yearlyInterest;
               debtInterestDetails.push({
                 title: debt.title,
-              amount: yearlyInterest,
-            });
-            addNegative(
-              `${debt.title} | 이자`,
-              yearlyInterest,
-              "부채 이자",
-              `debt-interest-${debt.id || debt.title}`
-            );
+                amount: yearlyInterest,
+              });
+              addNegative(
+                `${debt.title} | 이자`,
+                yearlyInterest,
+                "부채 이자",
+                `debt-interest-${debt.id || debt.title}`
+              );
             }
 
             debt.amount = -debtAmount;
@@ -326,27 +326,27 @@ export function calculateCashflowSimulation(
               totalDebtInterest += yearlyInterest;
               debtInterestDetails.push({
                 title: debt.title,
-              amount: yearlyInterest,
-            });
-            addNegative(
-              `${debt.title} | 이자`,
-              yearlyInterest,
-              "부채 이자",
-              `debt-interest-${debt.id || debt.title}`
-            );
+                amount: yearlyInterest,
+              });
+              addNegative(
+                `${debt.title} | 이자`,
+                yearlyInterest,
+                "부채 이자",
+                `debt-interest-${debt.id || debt.title}`
+              );
             }
             if (debtAmount > 0) {
               totalDebtPrincipal += debtAmount;
               debtPrincipalDetails.push({
                 title: debt.title,
-              amount: debtAmount,
-            });
-            addNegative(
-              `${debt.title} | 원금 상환`,
-              debtAmount,
-              "부채 원금 상환",
-              `debt-principal-${debt.id || debt.title}`
-            );
+                amount: debtAmount,
+              });
+              addNegative(
+                `${debt.title} | 원금 상환`,
+                debtAmount,
+                "부채 원금 상환",
+                `debt-principal-${debt.id || debt.title}`
+              );
             }
 
             debt.amount = 0;
@@ -383,27 +383,27 @@ export function calculateCashflowSimulation(
               totalDebtInterest += interestPayment;
               debtInterestDetails.push({
                 title: debt.title,
-            amount: interestPayment,
-          });
-          addNegative(
-            `${debt.title} | 이자`,
-            interestPayment,
-            "부채 이자",
-            `debt-interest-${debt.id || debt.title}`
-          );
+                amount: interestPayment,
+              });
+              addNegative(
+                `${debt.title} | 이자`,
+                interestPayment,
+                "부채 이자",
+                `debt-interest-${debt.id || debt.title}`
+              );
             }
             if (principalPayment > 0) {
               totalDebtPrincipal += principalPayment;
               debtPrincipalDetails.push({
                 title: debt.title,
-            amount: principalPayment,
-          });
-          addNegative(
-            `${debt.title} | 원금 상환`,
-            principalPayment,
-            "부채 원금 상환",
-            `debt-principal-${debt.id || debt.title}`
-          );
+                amount: principalPayment,
+              });
+              addNegative(
+                `${debt.title} | 원금 상환`,
+                principalPayment,
+                "부채 원금 상환",
+                `debt-principal-${debt.id || debt.title}`
+              );
             }
 
             const remainingAfterPayment = Math.max(
@@ -457,14 +457,14 @@ export function calculateCashflowSimulation(
             totalDebtInterest += interestPayment;
             debtInterestDetails.push({
               title: debt.title,
-            amount: interestPayment,
-          });
-          addNegative(
-            `${debt.title} | 이자`,
-            interestPayment,
-            "부채 이자",
-            `debt-interest-${debt.id || debt.title}`
-          );
+              amount: interestPayment,
+            });
+            addNegative(
+              `${debt.title} | 이자`,
+              interestPayment,
+              "부채 이자",
+              `debt-interest-${debt.id || debt.title}`
+            );
           }
           if (principalPayment > 0) {
             totalDebtPrincipal += principalPayment;
@@ -533,27 +533,27 @@ export function calculateCashflowSimulation(
               totalDebtInterest += interestPayment;
               debtInterestDetails.push({
                 title: debt.title,
-            amount: interestPayment,
-          });
-          addNegative(
-            `${debt.title} | 이자`,
-            interestPayment,
-            "부채 이자",
-            `debt-interest-${debt.id || debt.title}`
-          );
+                amount: interestPayment,
+              });
+              addNegative(
+                `${debt.title} | 이자`,
+                interestPayment,
+                "부채 이자",
+                `debt-interest-${debt.id || debt.title}`
+              );
             }
             if (principalPayment > 0) {
               totalDebtPrincipal += principalPayment;
               debtPrincipalDetails.push({
                 title: debt.title,
-            amount: principalPayment,
-          });
-          addNegative(
-            `${debt.title} | 원금 상환`,
-            principalPayment,
-            "부채 원금 상환",
-            `debt-principal-${debt.id || debt.title}`
-          );
+                amount: principalPayment,
+              });
+              addNegative(
+                `${debt.title} | 원금 상환`,
+                principalPayment,
+                "부채 원금 상환",
+                `debt-principal-${debt.id || debt.title}`
+              );
             }
 
             const remainingAfterPayment = Math.max(
@@ -1611,6 +1611,103 @@ export function calculateAssetSimulation(
     };
   });
 
+  // detailedData 배열 추가 (년도별 breakdown 정보)
+  const detailedData = [];
+
+  // 카테고리별 색상 매핑 함수
+  const getCategoryColor = (key, value = 0) => {
+    // 현금
+    if (key === "현금") {
+      return value < 0 ? "#ef4444" : "#10b981";
+    }
+    // 연금
+    if (
+      key.includes("연금") ||
+      key.includes("퇴직") ||
+      key.includes("국민연금")
+    ) {
+      const pensionColors = [
+        "#fbbf24",
+        "#f59e0b",
+        "#eab308",
+        "#d97706",
+        "#ca8a04",
+      ];
+      const hash = key.split("").reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return pensionColors[Math.abs(hash) % pensionColors.length];
+    }
+    // 부채
+    if (
+      key.includes("부채") ||
+      key.includes("대출") ||
+      key.includes("빚") ||
+      value < 0
+    ) {
+      const debtColors = [
+        "#111827",
+        "#1f2937",
+        "#374151",
+        "#4b5563",
+        "#6b7280",
+      ];
+      const hash = key.split("").reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return debtColors[Math.abs(hash) % debtColors.length];
+    }
+    // 저축/투자
+    if (
+      key.includes("저축") ||
+      key.includes("투자") ||
+      key.includes("예금") ||
+      key.includes("적금")
+    ) {
+      const savingColors = [
+        "#3b82f6",
+        "#2563eb",
+        "#1d4ed8",
+        "#06b6d4",
+        "#0891b2",
+      ];
+      const hash = key.split("").reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return savingColors[Math.abs(hash) % savingColors.length];
+    }
+    // 부동산
+    if (
+      key.includes("부동산") ||
+      key.includes("아파트") ||
+      key.includes("자택") ||
+      key.includes("임대")
+    ) {
+      const realEstateColors = [
+        "#8b5cf6",
+        "#7c3aed",
+        "#6d28d9",
+        "#5b21b6",
+        "#a78bfa",
+      ];
+      const hash = key.split("").reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return realEstateColors[Math.abs(hash) % realEstateColors.length];
+    }
+    // 일반 자산
+    const assetColors = ["#3b82f6", "#06b6d4", "#8b5cf6", "#6366f1", "#0ea5e9"];
+    const hash = key.split("").reduce((a, b) => {
+      a = (a << 5) - a + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return assetColors[Math.abs(hash) % assetColors.length];
+  };
+
   for (let i = 0; i < simulationYears; i++) {
     const year = currentYear + i;
     const age = startAge + i;
@@ -2122,9 +2219,193 @@ export function calculateAssetSimulation(
 
     assetItem.totalAmount = totalAmount;
     assetData.push(assetItem);
+
+    // detailedData 생성 (breakdown 정보)
+    const assetItems = [];
+    const debtItems = [];
+
+    // 현금 (양수면 자산, 음수면 부채로 분류)
+    if (currentCash > 0) {
+      assetItems.push({
+        label: "현금",
+        amount: currentCash,
+        originalValue: currentCash,
+        category: "cash",
+        color: getCategoryColor("현금", currentCash),
+      });
+    } else if (currentCash < 0) {
+      debtItems.push({
+        label: "현금",
+        amount: Math.abs(currentCash),
+        originalValue: currentCash,
+        category: "cash",
+        color: getCategoryColor("현금", currentCash),
+      });
+    }
+
+    // 저축
+    Object.keys(savingsById).forEach((id) => {
+      const saving = savingsById[id];
+      if (saving.isActive && saving.amount > 0) {
+        assetItems.push({
+          label: saving.title,
+          amount: saving.amount,
+          originalValue: saving.amount,
+          category: "saving",
+          color: getCategoryColor(saving.title),
+        });
+      }
+    });
+
+    // 연금
+    Object.keys(pensionsByTitle).forEach((title) => {
+      const pension = pensionsByTitle[title];
+      if (pension.isActive && pension.amount > 0) {
+        assetItems.push({
+          label: title,
+          amount: pension.amount,
+          originalValue: pension.amount,
+          category: "pension",
+          color: getCategoryColor(title),
+        });
+      }
+    });
+
+    // 부동산
+    Object.keys(realEstatesByTitle).forEach((title) => {
+      const realEstate = realEstatesByTitle[title];
+      if (realEstate.isActive && realEstate.amount > 0) {
+        assetItems.push({
+          label: title,
+          amount: realEstate.amount,
+          originalValue: realEstate.amount,
+          category: "realEstate",
+          color: getCategoryColor(title),
+        });
+      }
+    });
+
+    // 자산
+    Object.keys(assetsByTitle).forEach((title) => {
+      const asset = assetsByTitle[title];
+      if (asset.isActive && asset.amount > 0) {
+        const displayTitle = title === "현금" ? "현금 자산" : title;
+        assetItems.push({
+          label: displayTitle,
+          amount: asset.amount,
+          originalValue: asset.amount,
+          category: "asset",
+          color: getCategoryColor(displayTitle),
+        });
+      }
+    });
+
+    // 부채
+    Object.keys(debtsByTitle).forEach((title) => {
+      const debt = debtsByTitle[title];
+      if (debt.amount && debt.amount !== 0) {
+        debtItems.push({
+          label: title,
+          amount: Math.abs(debt.amount),
+          originalValue: debt.amount,
+          category: "debt",
+          color: getCategoryColor(title, debt.amount),
+        });
+      }
+    });
+
+    // bar 차트와 동일한 순서로 정렬 (미리 계산하여 hover 시 렉 방지)
+    // 1. 카테고리별 분류
+    const categorizedAssets = {
+      현금: [],
+      연금: [],
+      자산: [],
+    };
+
+    const categorizedDebts = {
+      현금: [],
+      기타: [],
+    };
+
+    assetItems.forEach((item) => {
+      if (item.label === "현금" || item.label === "현금 자산") {
+        categorizedAssets.현금.push(item);
+      } else if (
+        item.label.includes("연금") ||
+        item.label.includes("퇴직") ||
+        item.label.includes("국민연금")
+      ) {
+        categorizedAssets.연금.push(item);
+      } else {
+        categorizedAssets.자산.push(item);
+      }
+    });
+
+    debtItems.forEach((item) => {
+      if (item.label === "현금") {
+        categorizedDebts.현금.push(item);
+      } else {
+        categorizedDebts.기타.push(item);
+      }
+    });
+
+    // 2. 각 카테고리 내에서 금액이 작은 순서대로 정렬 (작은 금액이 위로)
+    Object.keys(categorizedAssets).forEach((category) => {
+      categorizedAssets[category].sort((a, b) => a.amount - b.amount); // 오름차순 (작은 금액 → 큰 금액)
+    });
+
+    // 부채도 모두 오름차순 정렬 (작은 금액 → 큰 금액)
+    if (categorizedDebts.현금.length > 0) {
+      categorizedDebts.현금.sort((a, b) => a.amount - b.amount);
+    }
+    if (categorizedDebts.기타.length > 0) {
+      categorizedDebts.기타.sort((a, b) => a.amount - b.amount);
+    }
+
+    // 3. bar 차트와 반대 순서로 결합
+    // bar 쌓이는 순서: 자산 큰 것(맨 아래) → 연금 큰 것 → 현금(맨 위)
+    // 상세 패널 순서: 자산 작은 것(맨 위) → 연금 작은 것 → 현금(맨 아래)
+    // 각 카테고리 내에서 작은 금액 → 큰 금액 순서로 정렬됨
+    const sortedAssetItems = [
+      ...categorizedAssets.자산,
+      ...categorizedAssets.연금,
+      ...categorizedAssets.현금,
+    ];
+
+    // 부채: 기타 부채(리스트 맨 위) → 현금(리스트 맨 아래)
+    const sortedDebtItems = [
+      ...categorizedDebts.기타,
+      ...categorizedDebts.현금,
+    ];
+
+    // 합계 계산
+    const totalAssets = sortedAssetItems.reduce(
+      (sum, item) => sum + item.amount,
+      0
+    );
+    const totalDebt = sortedDebtItems.reduce(
+      (sum, item) => sum + item.amount,
+      0
+    );
+
+    // detailedData에 추가 (이미 정렬된 데이터)
+    detailedData.push({
+      year: year,
+      age: age,
+      breakdown: {
+        assetItems: sortedAssetItems, // 이미 정렬됨
+        debtItems: sortedDebtItems, // 이미 정렬됨
+        totalAssets: totalAssets, // 합계도 미리 계산
+        totalDebt: totalDebt,
+        netAssets: totalAssets - totalDebt,
+      },
+    });
   }
 
-  return assetData;
+  return {
+    data: assetData,
+    detailedData: detailedData,
+  };
 }
 
 /**

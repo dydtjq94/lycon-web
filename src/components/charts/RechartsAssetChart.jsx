@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, memo } from "react";
+import React, { useEffect, useMemo, useState, memo, useRef } from "react";
 import {
   BarChart,
   Bar,
@@ -66,6 +66,7 @@ function RechartsAssetChart({
   deathAge = 90,
   targetAssets = 50000,
   profileData = null, // 배우자 나이 계산을 위해 추가
+  detailedData = [], // 미리 계산된 breakdown 데이터 추가
   savings = [],
   pensions = [],
   realEstates = [],
@@ -77,6 +78,7 @@ function RechartsAssetChart({
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
   const [hoveredData, setHoveredData] = useState(null); // 마우스 오버된 데이터
   const hasData = Array.isArray(data) && data.length > 0;
+  const lastHoveredYearRef = useRef(null); // 이전 hover 년도 저장 (불필요한 리렌더링 방지)
 
   // 배우자 은퇴 나이 (props 또는 profileData에서 가져오기)
   const spouseRetirementAge = spouseRetirementAgeProp
@@ -373,7 +375,7 @@ function RechartsAssetChart({
     return acc;
   }, {});
 
-  // 차트 데이터 포맷팅 및 동적 자산 항목 추출
+  // 차트 데이터 포맷팅 - 4개 카테고리로 단순화 (성능 최적화)
   const chartData = hasData
     ? data.map((item) => {
         // 배우자 나이 계산
@@ -403,7 +405,69 @@ function RechartsAssetChart({
           familyLabel += ` • ${childrenText}`;
         }
 
-        const processedItem = {
+        // 7개 카테고리로 세분화
+        let savingAmount = 0; // 저축/투자
+        let pensionAmount = 0; // 연금
+        let realEstateAmount = 0; // 부동산
+        let assetAmount = 0; // 자산
+        let positiveCash = 0; // +현금
+        let negativeCash = 0; // -현금
+        let debtAmount = 0; // 부채
+
+        Object.keys(item).forEach((key) => {
+          if (key !== "year" && key !== "age" && key !== "totalAmount") {
+            const value = item[key] || 0;
+
+            if (key === "현금" || key === "현금 자산") {
+              // 현금 처리
+              if (value >= 0) {
+                positiveCash += value;
+              } else {
+                negativeCash += value; // 음수 그대로
+              }
+            } else if (value < 0) {
+              // 음수 값은 모두 부채로 처리
+              debtAmount += value; // 음수 그대로
+            } else if (value > 0) {
+              // 양수 값을 카테고리별로 분류
+              if (
+                key.includes("저축") ||
+                key.includes("투자") ||
+                key.includes("예금") ||
+                key.includes("적금") ||
+                key.includes("채권") ||
+                key.includes("주식") ||
+                key.includes("펀드") ||
+                key.includes("ETF")
+              ) {
+                savingAmount += value;
+              } else if (
+                key.includes("연금") ||
+                key.includes("퇴직") ||
+                key.includes("국민연금") ||
+                key.includes("IRP") ||
+                key.includes("DB")
+              ) {
+                pensionAmount += value;
+              } else if (
+                key.includes("부동산") ||
+                key.includes("아파트") ||
+                key.includes("자택") ||
+                key.includes("주택") ||
+                key.includes("토지") ||
+                key.includes("건물") ||
+                key.includes("상가")
+              ) {
+                realEstateAmount += value;
+              } else {
+                // 나머지는 자산
+                assetAmount += value;
+              }
+            }
+          }
+        });
+
+        return {
           age: item.age,
           year: item.year,
           totalAmount: item.totalAmount || item.amount,
@@ -412,242 +476,49 @@ function RechartsAssetChart({
           ),
           familyLabel: familyLabel,
           events: eventsByYear[item.year] || [],
+          // 7개 카테고리 (렌더링 순서: 저축 → 연금 → 부동산 → 자산 → +현금 → -현금 → 부채)
+          저축투자: savingAmount,
+          연금: pensionAmount,
+          부동산: realEstateAmount,
+          자산: assetAmount,
+          양수현금: positiveCash,
+          음수현금: negativeCash,
+          부채: debtAmount,
         };
-
-        // 자산 항목들을 처리
-        Object.keys(item).forEach((key) => {
-          if (key !== "year" && key !== "age" && key !== "totalAmount") {
-            const value = item[key] || 0;
-
-            if (key === "현금") {
-              // 현금은 그대로 표시 (양수/음수 자동 처리)
-              processedItem[key] = value;
-            } else {
-              // 다른 자산들은 그대로 표시
-              processedItem[key] = value;
-            }
-          }
-        });
-
-        return processedItem;
       })
     : [];
 
-  // 동적 자산 항목 추출 (기본 필드 제외)
-  const { allKeys, sampleData } = useMemo(() => {
-    if (!chartData || chartData.length === 0) {
-      return { allKeys: [], sampleData: {} };
+  // 7개 카테고리 (렌더링 순서: 양수 역순, 음수 순서대로)
+  const assetKeys = [
+    "양수현금",
+    "자산",
+    "부동산",
+    "연금",
+    "저축투자",
+    "음수현금",
+    "부채",
+  ];
+
+  // 7개 카테고리 대표 색상 매핑
+  const getAssetColor = (assetName) => {
+    switch (assetName) {
+      case "저축투자":
+        return "#3b82f6"; // 파랑
+      case "연금":
+        return "#fbbf24"; // 노랑
+      case "부동산":
+        return "#8b5cf6"; // 보라
+      case "자산":
+        return "#06b6d4"; // 청록
+      case "양수현금":
+        return "#10b981"; // 초록
+      case "음수현금":
+        return "#ef4444"; // 빨강
+      case "부채":
+        return "#374151"; // 회색
+      default:
+        return "#6b7280"; // 기본 회색
     }
-
-    const keysSet = new Set();
-    const sample = {};
-
-    chartData.forEach((item) => {
-      Object.keys(item).forEach((key) => {
-        if (
-          key === "year" ||
-          key === "age" ||
-          key === "totalAmount" ||
-          key === "formattedAmount" ||
-          key === "familyLabel" ||
-          key === "events"
-        ) {
-          return;
-        }
-        keysSet.add(key);
-        if (sample[key] === undefined && item[key] !== undefined) {
-          sample[key] = item[key];
-        }
-      });
-    });
-
-    return { allKeys: Array.from(keysSet), sampleData: sample };
-  }, [chartData]);
-
-  // 툴팁과 동일한 카테고리별 정렬 로직 적용
-  const categorizeAndSortKeys = (keys, sampleDataForSort) => {
-    const categories = {
-      현금: [],
-      연금: [],
-      자산: [],
-      부채: [],
-    };
-
-    // 각 키를 카테고리별로 분류
-    keys.forEach((key) => {
-      if (key === "현금" || key === "현금 자산") {
-        categories.현금.push(key);
-      } else if (
-        key.includes("연금") ||
-        key.includes("퇴직") ||
-        key.includes("국민연금")
-      ) {
-        categories.연금.push(key);
-      } else if (
-        key.includes("부채") ||
-        key.includes("대출") ||
-        key.includes("빚") ||
-        (sampleDataForSort && sampleDataForSort[key] < 0)
-      ) {
-        categories.부채.push(key);
-      } else {
-        categories.자산.push(key);
-      }
-    });
-
-    // 각 카테고리 내에서 금액이 큰 순서대로 정렬 (바 차트에서 높은 금액이 위에 오도록)
-    Object.keys(categories).forEach((category) => {
-      categories[category].sort((a, b) => {
-        const valueA = sampleDataForSort
-          ? Math.abs(sampleDataForSort[a] || 0)
-          : 0;
-        const valueB = sampleDataForSort
-          ? Math.abs(sampleDataForSort[b] || 0)
-          : 0;
-        return valueB - valueA; // 큰 값이 먼저 (바 차트에서 위에)
-      });
-    });
-
-    // 바 차트 렌더링 순서: 부채(위) → 자산 → 연금 → 현금(아래)
-    // 툴팁 순서는 나중에 reverse로 조정
-    return [
-      ...categories.현금,
-      ...categories.연금,
-      ...categories.자산,
-      ...categories.부채,
-    ];
-  };
-
-  const assetKeys = categorizeAndSortKeys(allKeys, sampleData);
-
-  // 자산별 고정 색상 매핑
-  const getAssetColor = (assetName, value = 0) => {
-    // 현금 관련 - 값이 음수이면 검은색, 양수는 초록 계열
-    if (assetName === "현금" || assetName === "현금 자산") {
-      return value < 0 ? "#ef4444" : "#10b981"; // 음수: 검은색, 양수: 초록색
-    }
-
-    // 연금 관련 (노란 계열) - 10가지 색상
-    if (
-      assetName.includes("연금") ||
-      assetName.includes("퇴직") ||
-      assetName.includes("국민연금")
-    ) {
-      const pensionColors = [
-        "#fbbf24",
-        "#f59e0b",
-        "#eab308",
-        "#d97706",
-        "#ca8a04",
-        "#a16207",
-        "#92400e",
-        "#78350f",
-        "#713f12",
-        "#fcd34d",
-      ];
-      const hash = assetName.split("").reduce((a, b) => {
-        a = (a << 5) - a + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      return pensionColors[Math.abs(hash) % pensionColors.length];
-    }
-
-    // 부채 관련 (회색 계열) - 10가지 색상
-    if (
-      assetName.includes("부채") ||
-      assetName.includes("대출") ||
-      assetName.includes("빚") ||
-      (sampleData && sampleData[assetName] < 0)
-    ) {
-      const debtColors = [
-        "#111827",
-        "#1f2937",
-        "#374151",
-        "#4b5563",
-        "#6b7280",
-        "#9ca3af",
-        "#d1d5db",
-        "#0f172a",
-        "#312e81",
-        "#0b1120",
-      ];
-      const hash = assetName.split("").reduce((a, b) => {
-        a = (a << 5) - a + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      return debtColors[Math.abs(hash) % debtColors.length];
-    }
-
-    // 저축/투자 관련 (파랑 계열) - 10가지 색상
-    if (
-      assetName.includes("저축") ||
-      assetName.includes("투자") ||
-      assetName.includes("예금") ||
-      assetName.includes("적금")
-    ) {
-      const savingColors = [
-        "#3b82f6",
-        "#2563eb",
-        "#1d4ed8",
-        "#1e40af",
-        "#1e3a8a",
-        "#06b6d4",
-        "#0891b2",
-        "#0e7490",
-        "#155e75",
-        "#164e63",
-      ];
-      const hash = assetName.split("").reduce((a, b) => {
-        a = (a << 5) - a + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      return savingColors[Math.abs(hash) % savingColors.length];
-    }
-
-    // 부동산 관련 (보라 계열) - 10가지 색상
-    if (
-      assetName.includes("부동산") ||
-      assetName.includes("아파트") ||
-      assetName.includes("자택") ||
-      assetName.includes("임대")
-    ) {
-      const realEstateColors = [
-        "#8b5cf6",
-        "#7c3aed",
-        "#6d28d9",
-        "#5b21b6",
-        "#4c1d95",
-        "#a78bfa",
-        "#9261f5",
-        "#8162f0",
-        "#7153eb",
-        "#6043d6",
-      ];
-      const hash = assetName.split("").reduce((a, b) => {
-        a = (a << 5) - a + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      return realEstateColors[Math.abs(hash) % realEstateColors.length];
-    }
-
-    // 자산 관련 (청록 계열) - 10가지 색상
-    const assetColors = [
-      "#3b82f6",
-      "#06b6d4",
-      "#8b5cf6",
-      "#6366f1",
-      "#0ea5e9",
-      "#2563eb",
-      "#7c3aed",
-      "#4f46e5",
-      "#0284c7",
-      "#0891b2",
-    ];
-    const hash = assetName.split("").reduce((a, b) => {
-      a = (a << 5) - a + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return assetColors[Math.abs(hash) % assetColors.length];
   };
 
   // 색상 팔레트 (사용하지 않는 변수 제거)
@@ -672,48 +543,42 @@ function RechartsAssetChart({
 
   const yDomain = [-maxAbsValue - padding, maxAbsValue + padding];
 
-  // 모든 연도별 분포 데이터를 미리 계산
+  // 모든 연도별 분포 데이터를 미리 계산 (현금 흐름 차트와 동일한 방식)
   const allDistributionData = useMemo(() => {
-    if (!hasData) return {};
-
-    const keysToExclude = [
-      "year",
-      "age",
-      "totalAmount",
-      "formattedAmount",
-      "events",
-    ];
+    if (!detailedData || detailedData.length === 0) return {};
 
     const distributionMap = {};
 
-    chartData.forEach((entry) => {
+    detailedData.forEach((yearData) => {
       const assetSlices = [];
       const debtSlices = [];
 
-      assetKeys.forEach((key) => {
-        if (keysToExclude.includes(key)) return;
-        const value = entry[key];
-        if (value === undefined || value === 0) return;
+      // 이미 계산된 breakdown 데이터를 그냥 복사
+      if (yearData.breakdown) {
+        (yearData.breakdown.assetItems || []).forEach((item) => {
+          assetSlices.push({
+            name: item.label,
+            value: item.amount,
+            originalValue: item.originalValue,
+            color: item.color,
+          });
+        });
 
-        const slice = {
-          name: key,
-          value: Math.abs(value),
-          originalValue: value,
-          color: getAssetColor(key, value),
-        };
+        (yearData.breakdown.debtItems || []).forEach((item) => {
+          debtSlices.push({
+            name: item.label,
+            value: item.amount,
+            originalValue: item.originalValue,
+            color: item.color,
+          });
+        });
+      }
 
-        if (value < 0) {
-          debtSlices.push(slice);
-        } else {
-          assetSlices.push(slice);
-        }
-      });
-
-      distributionMap[entry.year] = { assetSlices, debtSlices };
+      distributionMap[yearData.year] = { assetSlices, debtSlices };
     });
 
     return distributionMap;
-  }, [chartData, assetKeys, hasData]);
+  }, [detailedData]);
 
   const distributionSlices = useMemo(() => {
     if (!distributionEntry || !allDistributionData[distributionEntry.year]) {
@@ -773,15 +638,21 @@ function RechartsAssetChart({
           bottom: 120,
         }}
         onMouseMove={(state) => {
-          // 현금 흐름 차트처럼 단순하게 직접 호출
+          // 년도가 실제로 바뀌었을 때만 state 업데이트 (불필요한 리렌더링 방지)
           if (state && state.isTooltipActive !== false) {
             const index = state.activeTooltipIndex;
             if (index !== undefined && index >= 0 && chartData[index]) {
-              setHoveredData(chartData[index]);
+              const currentYear = chartData[index].year;
+              // 이전 년도와 다를 때만 업데이트
+              if (currentYear !== lastHoveredYearRef.current) {
+                lastHoveredYearRef.current = currentYear;
+                setHoveredData(chartData[index]);
+              }
             }
           }
         }}
         onMouseLeave={() => {
+          lastHoveredYearRef.current = null;
           setHoveredData(null);
         }}
       >
@@ -821,25 +692,15 @@ function RechartsAssetChart({
             if (active && payload && payload.length > 0) {
               const data = payload[0].payload;
 
-              // 자본 토탈 계산 (양수 자산들)
-              let capitalTotal = 0;
-              let debtTotal = 0;
-
-              Object.keys(data).forEach((key) => {
-                if (
-                  key !== "year" &&
-                  key !== "age" &&
-                  key !== "totalAmount" &&
-                  key !== "formattedAmount"
-                ) {
-                  const value = data[key] || 0;
-                  if (value > 0) {
-                    capitalTotal += value;
-                  } else if (value < 0) {
-                    debtTotal += Math.abs(value);
-                  }
-                }
-              });
+              // 7개 카테고리에서 합산
+              const capitalTotal =
+                (data.저축투자 || 0) +
+                (data.연금 || 0) +
+                (data.부동산 || 0) +
+                (data.자산 || 0) +
+                (data.양수현금 || 0);
+              const debtTotal =
+                Math.abs(data.음수현금 || 0) + Math.abs(data.부채 || 0);
 
               // 총 자산 = 자본 토탈 - 부채 토탈
               const totalAssets = capitalTotal - debtTotal;
@@ -1022,115 +883,85 @@ function RechartsAssetChart({
           />
         )}
 
-        {/* 현금 Bar (별도 처리) - 툴팁 순서 1순위 */}
+        {/* 7개 Bar로 세분화 (양수는 역순) */}
+        {/* 순서: +현금(맨 아래) → 자산 → 부동산 → 연금 → 저축/투자(맨 위) → -현금 → 부채 */}
         <Bar
-          key="현금"
-          dataKey="현금"
+          key="양수현금"
+          dataKey="양수현금"
           stackId="assets"
-          name="현금"
-          fill="#10b981"
+          name="+현금"
+          fill={getAssetColor("양수현금")}
           stroke="#ffffff"
           strokeWidth={1}
           className={!isZoomedView ? styles.clickableBar : undefined}
-          onClick={(data, index) => handleBarSegmentClick(data, isZoomedView)}
-        >
-          {chartData.map((entry, entryIndex) => {
-            const cashValue = entry.현금 || 0;
-            const cashColor = getAssetColor("현금", cashValue);
-
-            return (
-              <Cell
-                key={`현금-cell-${entryIndex}`}
-                fill={cashColor}
-                stroke="#ffffff"
-                strokeWidth={1}
-              />
-            );
-          })}
-        </Bar>
-
-        {/* 현금 자산 Bar (사용자가 추가한 현금 자산) - 툴팁 순서 1순위 */}
-        {assetKeys.includes("현금 자산") && (
-          <Bar
-            key="현금 자산"
-            dataKey="현금 자산"
-            stackId="assets"
-            name="현금"
-            fill="#10b981"
-            stroke="#ffffff"
-            strokeWidth={1}
-            className={!isZoomedView ? styles.clickableBar : undefined}
-            onClick={(data, index) => handleBarSegmentClick(data, isZoomedView)}
-          >
-            {chartData.map((entry, entryIndex) => {
-              const cashAssetValue = entry["현금 자산"] || 0;
-              const cashAssetColor = getAssetColor("현금 자산", cashAssetValue);
-
-              return (
-                <Cell
-                  key={`현금자산-cell-${entryIndex}`}
-                  fill={cashAssetColor}
-                  stroke="#ffffff"
-                  strokeWidth={1}
-                />
-              );
-            })}
-          </Bar>
-        )}
-
-        {/* 다른 자산 항목 Bar들 - 렌더링 순서 조정 (부채 → 자산 → 연금 → 현금) */}
-        {(() => {
-          const pensionKeys = assetKeys.filter(
-            (key) =>
-              key !== "현금" &&
-              key !== "현금 자산" &&
-              (key.includes("연금") ||
-                key.includes("퇴직") ||
-                key.includes("국민연금"))
-          );
-          const debtKeys = assetKeys.filter(
-            (key) =>
-              key !== "현금" &&
-              key !== "현금 자산" &&
-              (key.includes("부채") ||
-                key.includes("대출") ||
-                key.includes("빚"))
-          );
-          const assetOnlyKeys = assetKeys.filter(
-            (key) =>
-              key !== "현금" &&
-              key !== "현금 자산" &&
-              !key.includes("연금") &&
-              !key.includes("퇴직") &&
-              !key.includes("국민연금") &&
-              !key.includes("부채") &&
-              !key.includes("대출") &&
-              !key.includes("빚")
-          );
-
-          // 렌더링 순서: 연금 → 자산 → 부채 (바 차트에서 위에서 아래로)
-          const orderedKeys = [...pensionKeys, ...assetOnlyKeys, ...debtKeys];
-
-          return orderedKeys.map((key, index) => {
-            const assetColor = getAssetColor(key);
-
-            return (
-              <Bar
-                key={`${key}-${index}`}
-                dataKey={key}
-                stackId="assets"
-                fill={assetColor}
-                name={key === "현금 자산" ? "현금" : key}
-                stroke="#ffffff"
-                strokeWidth={1}
-                className={!isZoomedView ? styles.clickableBar : undefined}
-                onClick={(data, barIndex) =>
-                  handleBarSegmentClick(data, isZoomedView)
-                }
-              />
-            );
-          });
-        })()}
+          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+        />
+        <Bar
+          key="자산"
+          dataKey="자산"
+          stackId="assets"
+          name="자산"
+          fill={getAssetColor("자산")}
+          stroke="#ffffff"
+          strokeWidth={1}
+          className={!isZoomedView ? styles.clickableBar : undefined}
+          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+        />
+        <Bar
+          key="부동산"
+          dataKey="부동산"
+          stackId="assets"
+          name="부동산"
+          fill={getAssetColor("부동산")}
+          stroke="#ffffff"
+          strokeWidth={1}
+          className={!isZoomedView ? styles.clickableBar : undefined}
+          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+        />
+        <Bar
+          key="연금"
+          dataKey="연금"
+          stackId="assets"
+          name="연금"
+          fill={getAssetColor("연금")}
+          stroke="#ffffff"
+          strokeWidth={1}
+          className={!isZoomedView ? styles.clickableBar : undefined}
+          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+        />
+        <Bar
+          key="저축투자"
+          dataKey="저축투자"
+          stackId="assets"
+          name="저축/투자"
+          fill={getAssetColor("저축투자")}
+          stroke="#ffffff"
+          strokeWidth={1}
+          className={!isZoomedView ? styles.clickableBar : undefined}
+          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+        />
+        <Bar
+          key="음수현금"
+          dataKey="음수현금"
+          stackId="assets"
+          name="-현금"
+          fill={getAssetColor("음수현금")}
+          stroke="#ffffff"
+          strokeWidth={1}
+          className={!isZoomedView ? styles.clickableBar : undefined}
+          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+        />
+        <Bar
+          key="부채"
+          dataKey="부채"
+          stackId="assets"
+          name="부채"
+          fill={getAssetColor("부채")}
+          stroke="#ffffff"
+          strokeWidth={1}
+          className={!isZoomedView ? styles.clickableBar : undefined}
+          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+        />
 
         {/* 이벤트 마커를 표시하기 위한 투명한 레이어 - 년도별로 작고 화려한 네모 표시 */}
         {Object.keys(eventsByYear).map((year) => {
@@ -1160,147 +991,143 @@ function RechartsAssetChart({
     </ResponsiveContainer>
   );
 
-  // 범례 데이터 추출
-  const getLegendData = () => {
-    const allKeys =
-      chartData.length > 0
-        ? Object.keys(chartData[0]).filter(
-            (key) =>
-              key !== "year" &&
-              key !== "age" &&
-              key !== "totalAmount" &&
-              key !== "formattedAmount" &&
-              key !== "familyLabel" &&
-              key !== "events"
-          )
-        : [];
-
-    const sampleData = chartData.length > 0 ? chartData[0] : {};
-    const assetKeys = categorizeAndSortKeys(allKeys, sampleData);
-
-    const filteredKeys = assetKeys.filter(
-      (key) => key !== "현금" && key !== "현금 자산"
-    );
-
-    return filteredKeys.map((key) => ({
-      value: key,
-      color: getAssetColor(key),
-    }));
-  };
-
-  const legendData = getLegendData();
+  // 범례 데이터 - 7개 카테고리 (렌더링 순서와 동일)
+  const legendData = [
+    { value: "+현금", color: getAssetColor("양수현금") },
+    { value: "자산", color: getAssetColor("자산") },
+    { value: "부동산", color: getAssetColor("부동산") },
+    { value: "연금", color: getAssetColor("연금") },
+    { value: "저축/투자", color: getAssetColor("저축투자") },
+    { value: "-현금", color: getAssetColor("음수현금") },
+    { value: "부채", color: getAssetColor("부채") },
+  ];
 
   // 현재 년도 데이터 가져오기 (기본값)
   const currentYearIndex = chartData.findIndex(
     (item) => item.year === new Date().getFullYear()
   );
 
-  // displayData: 현금 흐름 차트처럼 단순하게 계산 (useMemo 제거)
+  // displayData: 현금 흐름 차트처럼 단순하게 계산
   const displayData = hoveredData
     ? hoveredData
     : currentYearIndex >= 0
     ? chartData[currentYearIndex]
     : chartData[0];
 
-  // 카테고리별 색상 설정
-  const categoryConfig = {
-    asset: { color: "#06b6d4", order: 1, name: "자산" },
-    debt: { color: "#f97316", order: 2, name: "부채" },
-    pension: { color: "#fbbf24", order: 3, name: "연금" },
-    saving: { color: "#3b82f6", order: 4, name: "저축" },
-    realEstate: { color: "#8b5cf6", order: 5, name: "부동산" },
+  // 항목의 카테고리 판별 및 색상 반환 (상세 패널용 순서)
+  const getCategoryAndColor = (label) => {
+    if (label.includes("현금") || label.includes("cash")) {
+      return { category: "현금", order: 5, color: getAssetColor("양수현금") };
+    } else if (
+      label.includes("저축") ||
+      label.includes("투자") ||
+      label.includes("예금") ||
+      label.includes("적금") ||
+      label.includes("채권") ||
+      label.includes("주식") ||
+      label.includes("펀드") ||
+      label.includes("ETF")
+    ) {
+      return {
+        category: "저축투자",
+        order: 1,
+        color: getAssetColor("저축투자"),
+      };
+    } else if (
+      label.includes("연금") ||
+      label.includes("퇴직") ||
+      label.includes("국민연금") ||
+      label.includes("IRP") ||
+      label.includes("DB")
+    ) {
+      return { category: "연금", order: 2, color: getAssetColor("연금") };
+    } else if (
+      label.includes("부동산") ||
+      label.includes("아파트") ||
+      label.includes("자택") ||
+      label.includes("주택") ||
+      label.includes("토지") ||
+      label.includes("건물") ||
+      label.includes("상가")
+    ) {
+      return { category: "부동산", order: 3, color: getAssetColor("부동산") };
+    } else {
+      return { category: "자산", order: 4, color: getAssetColor("자산") };
+    }
   };
 
-  // displayData에서 자산과 부채 항목 추출 (현금 흐름 차트처럼 useMemo 제거, 항목 수 제한 유지)
-  const cashItems = []; // 현금 항목
-  const pensionItems = []; // 연금 항목
-  const assetOnlyItems = []; // 일반 자산 항목
-  const debtItems = []; // 부채 항목
+  // detailedData에서 직접 가져오기 + 카테고리별 정렬 및 색상 적용
+  const yearDetail = useMemo(() => {
+    if (!displayData || !detailedData || detailedData.length === 0) {
+      return {
+        assetItems: [],
+        debtItemsOnly: [],
+        totalAssets: 0,
+        totalDebt: 0,
+        netAssets: 0,
+      };
+    }
 
-  if (displayData && hasData) {
-    // chartData의 키들을 순회하면서 카테고리별로 분리
-    Object.keys(displayData).forEach((key) => {
-      if (
-        key === "year" ||
-        key === "age" ||
-        key === "순자산" ||
-        key === "totalAmount" ||
-        key === "formattedAmount" ||
-        key === "events" ||
-        key === "familyLabel"
-      )
-        return;
+    // detailedData에서 해당 년도 찾기
+    const yearData = detailedData.find(
+      (item) => item.year === displayData.year
+    );
 
-      const value = displayData[key];
-      if (value && typeof value === "number" && value !== 0) {
-        const item = {
-          label: key === "현금 자산" ? "현금" : key,
-          amount: Math.abs(value),
-          originalValue: value,
-          key: key,
+    if (!yearData || !yearData.breakdown) {
+      return {
+        assetItems: [],
+        debtItemsOnly: [],
+        totalAssets: 0,
+        totalDebt: 0,
+        netAssets: 0,
+      };
+    }
+
+    // 자산 항목: 카테고리별 정렬 + 색상 적용
+    const assetItems = yearData.breakdown.assetItems || [];
+    const sortedAssetItems = [...assetItems]
+      .map((item) => {
+        const { category, order, color } = getCategoryAndColor(item.label);
+        return { ...item, category, order, color };
+      })
+      .sort((a, b) => {
+        // 1순위: 카테고리 순서 (저축투자 → 연금 → 부동산 → 자산 → 현금)
+        if (a.order !== b.order) return a.order - b.order;
+        // 2순위: 같은 카테고리 내에서는 절대값 큰 순서
+        return Math.abs(b.amount) - Math.abs(a.amount);
+      });
+
+    // 부채 항목: 현금 먼저, 나머지는 절대값 큰 순서 + 색상 적용
+    const debtItems = yearData.breakdown.debtItems || [];
+    const sortedDebtItems = [...debtItems]
+      .map((item) => {
+        const isCash =
+          item.label?.includes("현금") || item.label?.includes("cash");
+        return {
+          ...item,
+          isCash,
+          color: isCash ? getAssetColor("음수현금") : getAssetColor("부채"),
         };
+      })
+      .sort((a, b) => {
+        // 1순위: 현금이 맨 위
+        if (a.isCash && !b.isCash) return -1;
+        if (!a.isCash && b.isCash) return 1;
+        // 2순위: 절대값 큰 순서
+        return Math.abs(b.amount) - Math.abs(a.amount);
+      });
 
-        // 카테고리 결정 - 우선 값이 음수인지 확인
-        const isNegative = value < 0;
+    return {
+      assetItems: sortedAssetItems,
+      debtItemsOnly: sortedDebtItems,
+      totalAssets: yearData.breakdown.totalAssets || 0,
+      totalDebt: yearData.breakdown.totalDebt || 0,
+      netAssets: yearData.breakdown.netAssets || 0,
+    };
+  }, [displayData, detailedData]);
 
-        if (
-          isNegative ||
-          key.includes("부채") ||
-          key.includes("대출") ||
-          key.includes("빚")
-        ) {
-          // 음수이거나 부채 관련 항목은 모두 부채로 분류
-          item.category = "debt";
-          item.color = getAssetColor(key, value);
-          item.order = 4;
-          debtItems.push(item);
-        } else if (key === "현금" || key === "현금 자산") {
-          // 현금은 양수일 때만 여기 도달 (음수는 위에서 부채로 처리됨)
-          item.category = "cash";
-          item.color = getAssetColor(key, value);
-          item.order = 1;
-          cashItems.push(item);
-        } else if (
-          key.includes("연금") ||
-          key.includes("퇴직") ||
-          key.includes("국민연금")
-        ) {
-          item.category = "pension";
-          item.color = getAssetColor(key);
-          item.order = 2;
-          pensionItems.push(item);
-        } else {
-          // 저축, 부동산, 기타 자산
-          item.category = "asset";
-          item.color = getAssetColor(key);
-          item.order = 3;
-          assetOnlyItems.push(item);
-        }
-      }
-    });
-  }
-
-  // 각 카테고리 내에서는 금액순 정렬 (큰 금액이 먼저)
-  cashItems.sort((a, b) => b.amount - a.amount);
-  pensionItems.sort((a, b) => b.amount - a.amount);
-  assetOnlyItems.sort((a, b) => b.amount - a.amount);
-  debtItems.sort((a, b) => b.amount - a.amount);
-
-  // 자산과 부채 분리
-  const allAssetItems = [...assetOnlyItems, ...pensionItems, ...cashItems];
-  const allDebtItems = [...debtItems];
-
-  // 합계 계산
-  const totalAssets = allAssetItems.reduce((sum, item) => sum + item.amount, 0);
-  const totalDebt = allDebtItems.reduce((sum, item) => sum + item.amount, 0);
-  const netAssets = totalAssets - totalDebt;
-
-  // 성능 최적화: 상위 10개만 표시 (데이터가 많을 때 렌더링 부담 감소)
-  const MAX_ITEMS = 10;
-  const assetItems = allAssetItems.slice(0, MAX_ITEMS);
-  const debtItemsOnly = allDebtItems.slice(0, MAX_ITEMS);
-  const hiddenAssetCount = Math.max(0, allAssetItems.length - MAX_ITEMS);
-  const hiddenDebtCount = Math.max(0, allDebtItems.length - MAX_ITEMS);
+  const { assetItems, debtItemsOnly, totalAssets, totalDebt, netAssets } =
+    yearDetail;
 
   return (
     <>
@@ -1388,13 +1215,6 @@ function RechartsAssetChart({
                         </span>
                       </div>
                     ))}
-                    {hiddenAssetCount > 0 && (
-                      <div className={styles.detailItem} style={{ opacity: 0.6, fontStyle: "italic" }}>
-                        <span className={styles.detailLabel}>
-                          ...외 {hiddenAssetCount}개
-                        </span>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -1429,13 +1249,6 @@ function RechartsAssetChart({
                         </span>
                       </div>
                     ))}
-                    {hiddenDebtCount > 0 && (
-                      <div className={styles.detailItem} style={{ opacity: 0.6, fontStyle: "italic" }}>
-                        <span className={styles.detailLabel}>
-                          ...외 {hiddenDebtCount}개
-                        </span>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -1528,13 +1341,6 @@ function RechartsAssetChart({
                       </span>
                     </div>
                   ))}
-                  {hiddenAssetCount > 0 && (
-                    <div className={styles.detailItem} style={{ opacity: 0.6, fontStyle: "italic" }}>
-                      <span className={styles.detailLabel}>
-                        ...외 {hiddenAssetCount}개
-                      </span>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -1559,13 +1365,6 @@ function RechartsAssetChart({
                       </span>
                     </div>
                   ))}
-                  {hiddenDebtCount > 0 && (
-                    <div className={styles.detailItem} style={{ opacity: 0.6, fontStyle: "italic" }}>
-                      <span className={styles.detailLabel}>
-                        ...외 {hiddenDebtCount}개
-                      </span>
-                    </div>
-                  )}
                 </div>
               )}
 
