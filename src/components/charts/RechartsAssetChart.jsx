@@ -757,6 +757,9 @@ function RechartsAssetChart({
     setIsDistributionOpen(true);
   };
 
+  // 현금 흐름 차트처럼 단순하게 변경 (throttle 제거, 직접 호출)
+  // Mouse move/leave handler는 renderChart 함수 내부에서 직접 처리
+
   // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
   const renderChart = (height = 600, isZoomedView = false) => (
     <ResponsiveContainer width="100%" height={height}>
@@ -770,7 +773,7 @@ function RechartsAssetChart({
           bottom: 120,
         }}
         onMouseMove={(state) => {
-          // activeTooltipIndex를 사용하여 현재 hover 중인 데이터 찾기
+          // 현금 흐름 차트처럼 단순하게 직접 호출
           if (state && state.isTooltipActive !== false) {
             const index = state.activeTooltipIndex;
             if (index !== undefined && index >= 0 && chartData[index]) {
@@ -1192,7 +1195,7 @@ function RechartsAssetChart({
     (item) => item.year === new Date().getFullYear()
   );
 
-  // displayData: hoveredData가 있으면 우선 사용, 없으면 현재 년도 또는 첫 번째 데이터
+  // displayData: 현금 흐름 차트처럼 단순하게 계산 (useMemo 제거)
   const displayData = hoveredData
     ? hoveredData
     : currentYearIndex >= 0
@@ -1208,7 +1211,7 @@ function RechartsAssetChart({
     realEstate: { color: "#8b5cf6", order: 5, name: "부동산" },
   };
 
-  // displayData에서 자산과 부채 항목 추출
+  // displayData에서 자산과 부채 항목 추출 (현금 흐름 차트처럼 useMemo 제거, 항목 수 제한 유지)
   const cashItems = []; // 현금 항목
   const pensionItems = []; // 연금 항목
   const assetOnlyItems = []; // 일반 자산 항목
@@ -1284,14 +1287,20 @@ function RechartsAssetChart({
   debtItems.sort((a, b) => b.amount - a.amount);
 
   // 자산과 부채 분리
-  const assetItems = [...assetOnlyItems, ...pensionItems, ...cashItems];
-
-  const debtItemsOnly = [...debtItems];
+  const allAssetItems = [...assetOnlyItems, ...pensionItems, ...cashItems];
+  const allDebtItems = [...debtItems];
 
   // 합계 계산
-  const totalAssets = assetItems.reduce((sum, item) => sum + item.amount, 0);
-  const totalDebt = debtItemsOnly.reduce((sum, item) => sum + item.amount, 0);
+  const totalAssets = allAssetItems.reduce((sum, item) => sum + item.amount, 0);
+  const totalDebt = allDebtItems.reduce((sum, item) => sum + item.amount, 0);
   const netAssets = totalAssets - totalDebt;
+
+  // 성능 최적화: 상위 10개만 표시 (데이터가 많을 때 렌더링 부담 감소)
+  const MAX_ITEMS = 10;
+  const assetItems = allAssetItems.slice(0, MAX_ITEMS);
+  const debtItemsOnly = allDebtItems.slice(0, MAX_ITEMS);
+  const hiddenAssetCount = Math.max(0, allAssetItems.length - MAX_ITEMS);
+  const hiddenDebtCount = Math.max(0, allDebtItems.length - MAX_ITEMS);
 
   return (
     <>
@@ -1335,7 +1344,7 @@ function RechartsAssetChart({
               <div className={styles.detailPanel}>
                 <div className={styles.detailPanelHeader}>
                   <div className={styles.detailPanelTitle}>
-                    {displayData.year}년 순자산
+                    {displayData?.year || ""}년 순자산
                   </div>
                   <div
                     className={styles.detailPanelTotal}
@@ -1379,6 +1388,13 @@ function RechartsAssetChart({
                         </span>
                       </div>
                     ))}
+                    {hiddenAssetCount > 0 && (
+                      <div className={styles.detailItem} style={{ opacity: 0.6, fontStyle: "italic" }}>
+                        <span className={styles.detailLabel}>
+                          ...외 {hiddenAssetCount}개
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1413,6 +1429,13 @@ function RechartsAssetChart({
                         </span>
                       </div>
                     ))}
+                    {hiddenDebtCount > 0 && (
+                      <div className={styles.detailItem} style={{ opacity: 0.6, fontStyle: "italic" }}>
+                        <span className={styles.detailLabel}>
+                          ...외 {hiddenDebtCount}개
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1453,7 +1476,7 @@ function RechartsAssetChart({
 
                 {assetItems.length === 0 && debtItemsOnly.length === 0 && (
                   <div className={styles.detailEmptyState}>
-                    마우스를 차트에 올려보세요
+                    해당 년도의 자산 정보가 없습니다
                   </div>
                 )}
               </div>
@@ -1481,7 +1504,7 @@ function RechartsAssetChart({
             {/* 오른쪽: 상세 패널 */}
             <div className={styles.detailPanel}>
               <div className={styles.detailPanelTitle}>
-                {displayData.year}년 순자산
+                {displayData?.year || ""}년 순자산
               </div>
 
               {/* 자산 항목 */}
@@ -1505,6 +1528,13 @@ function RechartsAssetChart({
                       </span>
                     </div>
                   ))}
+                  {hiddenAssetCount > 0 && (
+                    <div className={styles.detailItem} style={{ opacity: 0.6, fontStyle: "italic" }}>
+                      <span className={styles.detailLabel}>
+                        ...외 {hiddenAssetCount}개
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1529,6 +1559,13 @@ function RechartsAssetChart({
                       </span>
                     </div>
                   ))}
+                  {hiddenDebtCount > 0 && (
+                    <div className={styles.detailItem} style={{ opacity: 0.6, fontStyle: "italic" }}>
+                      <span className={styles.detailLabel}>
+                        ...외 {hiddenDebtCount}개
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1569,7 +1606,7 @@ function RechartsAssetChart({
 
               {assetItems.length === 0 && debtItemsOnly.length === 0 && (
                 <div className={styles.detailEmptyState}>
-                  마우스를 차트에 올려보세요
+                  해당 년도의 자산 정보가 없습니다
                 </div>
               )}
             </div>

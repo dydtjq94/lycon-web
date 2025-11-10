@@ -11,7 +11,7 @@ const RealEstateList = ({
   if (!realEstates || realEstates.length === 0) {
     return (
       <div className={styles.emptyState}>
-        <p>등록된 부동산이 없습니다.</p>
+        <p>집이 없어요 OoO</p>
         <p>부동산을 추가해보세요.</p>
       </div>
     );
