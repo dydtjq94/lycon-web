@@ -273,7 +273,7 @@ export function calculateCashflowSimulation(
         });
 
         addPositive(
-          `${debt.title} (대출 유입)`,
+          `${debt.title} | 대출 유입`,
           debtAmount,
           "대출 유입",
           `debtInjection-${debt.id || debt.title}`
@@ -308,14 +308,14 @@ export function calculateCashflowSimulation(
               totalDebtInterest += yearlyInterest;
               debtInterestDetails.push({
                 title: debt.title,
-                amount: yearlyInterest,
-              });
-              addNegative(
-                `${debt.title} (이자)`,
-                yearlyInterest,
-                "부채 이자",
-                `debt-interest-${debt.id || debt.title}`
-              );
+              amount: yearlyInterest,
+            });
+            addNegative(
+              `${debt.title} | 이자`,
+              yearlyInterest,
+              "부채 이자",
+              `debt-interest-${debt.id || debt.title}`
+            );
             }
 
             debt.amount = -debtAmount;
@@ -326,27 +326,27 @@ export function calculateCashflowSimulation(
               totalDebtInterest += yearlyInterest;
               debtInterestDetails.push({
                 title: debt.title,
-                amount: yearlyInterest,
-              });
-              addNegative(
-                `${debt.title} (이자)`,
-                yearlyInterest,
-                "부채 이자",
-                `debt-interest-${debt.id || debt.title}`
-              );
+              amount: yearlyInterest,
+            });
+            addNegative(
+              `${debt.title} | 이자`,
+              yearlyInterest,
+              "부채 이자",
+              `debt-interest-${debt.id || debt.title}`
+            );
             }
             if (debtAmount > 0) {
               totalDebtPrincipal += debtAmount;
               debtPrincipalDetails.push({
                 title: debt.title,
-                amount: debtAmount,
-              });
-              addNegative(
-                `${debt.title} (원금 상환)`,
-                debtAmount,
-                "부채 원금 상환",
-                `debt-principal-${debt.id || debt.title}`
-              );
+              amount: debtAmount,
+            });
+            addNegative(
+              `${debt.title} | 원금 상환`,
+              debtAmount,
+              "부채 원금 상환",
+              `debt-principal-${debt.id || debt.title}`
+            );
             }
 
             debt.amount = 0;
@@ -383,27 +383,27 @@ export function calculateCashflowSimulation(
               totalDebtInterest += interestPayment;
               debtInterestDetails.push({
                 title: debt.title,
-                amount: interestPayment,
-              });
-              addNegative(
-                `${debt.title} (이자)`,
-                interestPayment,
-                "부채 이자",
-                `debt-interest-${debt.id || debt.title}`
-              );
+            amount: interestPayment,
+          });
+          addNegative(
+            `${debt.title} | 이자`,
+            interestPayment,
+            "부채 이자",
+            `debt-interest-${debt.id || debt.title}`
+          );
             }
             if (principalPayment > 0) {
               totalDebtPrincipal += principalPayment;
               debtPrincipalDetails.push({
                 title: debt.title,
-                amount: principalPayment,
-              });
-              addNegative(
-                `${debt.title} (원금 상환)`,
-                principalPayment,
-                "부채 원금 상환",
-                `debt-principal-${debt.id || debt.title}`
-              );
+            amount: principalPayment,
+          });
+          addNegative(
+            `${debt.title} | 원금 상환`,
+            principalPayment,
+            "부채 원금 상환",
+            `debt-principal-${debt.id || debt.title}`
+          );
             }
 
             const remainingAfterPayment = Math.max(
@@ -457,14 +457,14 @@ export function calculateCashflowSimulation(
             totalDebtInterest += interestPayment;
             debtInterestDetails.push({
               title: debt.title,
-              amount: interestPayment,
-            });
-            addNegative(
-              `${debt.title} (이자)`,
-              interestPayment,
-              "부채 이자",
-              `debt-interest-${debt.id || debt.title}`
-            );
+            amount: interestPayment,
+          });
+          addNegative(
+            `${debt.title} | 이자`,
+            interestPayment,
+            "부채 이자",
+            `debt-interest-${debt.id || debt.title}`
+          );
           }
           if (principalPayment > 0) {
             totalDebtPrincipal += principalPayment;
@@ -473,7 +473,7 @@ export function calculateCashflowSimulation(
               amount: principalPayment,
             });
             addNegative(
-              `${debt.title} (원금 상환)`,
+              `${debt.title} | 원금 상환`,
               principalPayment,
               "부채 원금 상환",
               `debt-principal-${debt.id || debt.title}`
@@ -533,27 +533,27 @@ export function calculateCashflowSimulation(
               totalDebtInterest += interestPayment;
               debtInterestDetails.push({
                 title: debt.title,
-                amount: interestPayment,
-              });
-              addNegative(
-                `${debt.title} (이자)`,
-                interestPayment,
-                "부채 이자",
-                `debt-interest-${debt.id || debt.title}`
-              );
+            amount: interestPayment,
+          });
+          addNegative(
+            `${debt.title} | 이자`,
+            interestPayment,
+            "부채 이자",
+            `debt-interest-${debt.id || debt.title}`
+          );
             }
             if (principalPayment > 0) {
               totalDebtPrincipal += principalPayment;
               debtPrincipalDetails.push({
                 title: debt.title,
-                amount: principalPayment,
-              });
-              addNegative(
-                `${debt.title} (원금 상환)`,
-                principalPayment,
-                "부채 원금 상환",
-                `debt-principal-${debt.id || debt.title}`
-              );
+            amount: principalPayment,
+          });
+          addNegative(
+            `${debt.title} | 원금 상환`,
+            principalPayment,
+            "부채 원금 상환",
+            `debt-principal-${debt.id || debt.title}`
+          );
             }
 
             const remainingAfterPayment = Math.max(
@@ -611,7 +611,7 @@ export function calculateCashflowSimulation(
           });
 
           addNegative(
-            `${saving.title} (구매)`,
+            `${saving.title} | 구매`,
             currentAmount,
             "저축 구매",
             `saving-purchase-${saving.id || saving.title}`
@@ -716,9 +716,9 @@ export function calculateCashflowSimulation(
         });
 
         addPositive(
-          saving.title,
+          `${saving.title} | 수령`,
           finalAmount,
-          "저축 만료",
+          "저축 수령",
           `saving-maturity-${saving.id || saving.title}`
         );
 
@@ -844,7 +844,7 @@ export function calculateCashflowSimulation(
           });
 
           addPositive(
-            `${saving.title} (배당/이자)`,
+            `${saving.title} | 배당/이자`,
             yearlyIncome,
             "저축 수익",
             `saving-income-${saving.id || saving.title}`
@@ -1079,7 +1079,7 @@ export function calculateCashflowSimulation(
           amount: purchaseAmount,
         });
         addNegative(
-          `${realEstate.title} (구매)`,
+          `${realEstate.title} | 구매`,
           purchaseAmount,
           "부동산 구매",
           `realestate-purchase-${realEstate.id || realEstate.title}`
@@ -1099,7 +1099,7 @@ export function calculateCashflowSimulation(
               : "3.3%",
         });
         addNegative(
-          `${realEstate.title} (취득세)`,
+          `${realEstate.title} | 취득세`,
           acquisitionTax,
           "부동산 취득세",
           `realestate-tax-${realEstate.id || realEstate.title}`
@@ -1117,7 +1117,7 @@ export function calculateCashflowSimulation(
         const yearlyRentalIncome = rentalMonthly * 12;
         totalRentalIncome += yearlyRentalIncome;
         addPositive(
-          `${realEstate.title} (임대소득)`,
+          `${realEstate.title} | 임대소득`,
           yearlyRentalIncome,
           "임대소득",
           `realestate-rent-${realEstate.id || realEstate.title}`
@@ -1135,7 +1135,7 @@ export function calculateCashflowSimulation(
         const yearlyPensionAmount = pensionMonthly * 12;
         totalRealEstatePension += yearlyPensionAmount;
         addPositive(
-          `${realEstate.title} (주택연금)`,
+          `${realEstate.title} | 주택연금`,
           yearlyPensionAmount,
           "주택연금",
           `realestate-pension-${realEstate.id || realEstate.title}`
@@ -1208,9 +1208,9 @@ export function calculateCashflowSimulation(
           amount: finalValue,
         });
         addPositive(
-          `${realEstate.title} (매각)`,
+          `${realEstate.title} | 수령`,
           finalValue,
-          "부동산 매각",
+          "부동산 수령",
           `realestate-sale-${realEstate.id || realEstate.title}`
         );
 
@@ -1247,7 +1247,7 @@ export function calculateCashflowSimulation(
               holdingYears: holdingYears,
             });
             addNegative(
-              `${realEstate.title} (양도세)`,
+              `${realEstate.title} | 양도세`,
               totalTax,
               "양도소득세",
               `realestate-capitalgains-${realEstate.id || realEstate.title}`
@@ -1283,7 +1283,7 @@ export function calculateCashflowSimulation(
           amount: asset.currentValue,
         });
         addNegative(
-          `${asset.title} (구매)`,
+          `${asset.title} | 구매`,
           asset.currentValue,
           "자산 구매",
           `asset-purchase-${asset.id || asset.title}`
@@ -1305,9 +1305,9 @@ export function calculateCashflowSimulation(
         const yearlyIncome = previousYearEndValue * asset.incomeRate;
         totalAssetIncome += yearlyIncome;
         addPositive(
-          `${asset.title} (수익)`,
+          `${asset.title} | 수령`,
           yearlyIncome,
-          "자산 수익",
+          "자산 수령",
           `asset-income-${asset.id || asset.title}`
         );
       }
@@ -1326,9 +1326,9 @@ export function calculateCashflowSimulation(
           amount: finalValue,
         });
         addPositive(
-          `${asset.title} (매각)`,
+          `${asset.title} | 수령`,
           finalValue,
-          "자산 매각",
+          "자산 수령",
           `asset-sale-${asset.id || asset.title}`
         );
 

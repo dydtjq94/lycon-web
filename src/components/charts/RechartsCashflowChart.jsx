@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, memo } from "react";
 import {
   BarChart,
   Bar,
@@ -9,10 +9,51 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Cell,
+  PieChart,
+  Pie,
 } from "recharts";
 import { formatAmountForChart } from "../../utils/format";
 import ChartZoomModal from "./ChartZoomModal";
 import styles from "./RechartsCashflowChart.module.css";
+
+// 파이차트 컴포넌트 최적화
+const OptimizedPieChart = memo(({ data, title }) => {
+  if (!data || data.length === 0) {
+    return <div className={styles.noDistributionData}>{title} 데이터 없음</div>;
+  }
+
+  return (
+    <div className={styles.distributionChart}>
+      <PieChart
+        width={280}
+        height={280}
+        margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      >
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          innerRadius={60}
+          outerRadius={120}
+          paddingAngle={1}
+          animationDuration={0}
+          animationBegin={0}
+          animationEasing="ease"
+          isAnimationActive={false}
+        >
+          {data.map((slice, index) => (
+            <Cell
+              key={`${title}-slice-${slice.name}-${index}`}
+              fill={slice.color}
+            />
+          ))}
+        </Pie>
+      </PieChart>
+    </div>
+  );
+});
+
+OptimizedPieChart.displayName = "OptimizedPieChart";
 
 /**
  * Recharts를 사용한 현금 흐름 시뮬레이션 차트
@@ -32,13 +73,11 @@ function RechartsCashflowChart({
   debts = [],
 }) {
   const [isZoomed, setIsZoomed] = useState(false);
-  if (!data || data.length === 0) {
-    return (
-      <div className={styles.chartContainer}>
-        <div className={styles.noData}>데이터가 없습니다.</div>
-      </div>
-    );
-  }
+  const [hoveredData, setHoveredData] = useState(null); // 마우스 오버된 데이터
+  const [distributionEntry, setDistributionEntry] = useState(null);
+  const [isDistributionOpen, setIsDistributionOpen] = useState(false);
+
+  const hasData = data && data.length > 0;
 
   // 은퇴년도 계산
   const retirementYear =
@@ -397,26 +436,55 @@ function RechartsCashflowChart({
   }, {});
 
   // 차트 데이터 포맷팅
-  const chartData = data.map((item) => ({
-    age: item.age,
-    year: item.year,
-    amount: item.amount,
-    formattedAmount: formatAmountForChart(item.amount),
-    assetPurchases: item.assetPurchases || [],
-    savingPurchases: item.savingPurchases || [], // 저축 구매 추가
-    savingIncomes: item.savingIncomes || [], // 저축 수익 (배당/이자) 추가
-    savingContributions: item.savingContributions || [], // 저축 적립 추가
-    realEstatePurchases: item.realEstatePurchases || [],
-    realEstateTaxes: item.realEstateTaxes || [], // 부동산 취득세 추가
-    capitalGainsTaxes: item.capitalGainsTaxes || [], // 부동산 양도소득세 추가
-    assetSales: item.assetSales || [],
-    realEstateSales: item.realEstateSales || [],
-    debtInjections: item.debtInjections || [],
-    debtInterests: item.debtInterests || [],
-    debtPrincipals: item.debtPrincipals || [],
-    // 이벤트 정보 추가
-    events: eventsByYear[item.year] || [],
-  }));
+  const chartData = data.map((item) => {
+    // 배우자 나이 계산
+    const spouseAge =
+      profileData?.hasSpouse && profileData?.spouseBirthYear
+        ? item.year - parseInt(profileData.spouseBirthYear)
+        : null;
+
+    // 자녀들 나이 계산
+    const childrenAges = profileData?.familyMembers
+      ? profileData.familyMembers
+          .filter((member) => member.relationship === "자녀")
+          .map((child) => ({
+            gender: child.gender || "아들",
+            age: item.year - parseInt(child.birthYear),
+          }))
+          .filter((child) => child.age >= 0)
+      : [];
+
+    // 가족 라벨 생성
+    let familyLabel = `본인 ${item.age}`;
+    if (spouseAge) familyLabel += ` • 배우자 ${spouseAge}`;
+    if (childrenAges.length > 0) {
+      const childrenText = childrenAges
+        .map((child) => `${child.gender} ${child.age}`)
+        .join(", ");
+      familyLabel += ` • ${childrenText}`;
+    }
+
+    return {
+      age: item.age,
+      year: item.year,
+      amount: item.amount,
+      formattedAmount: formatAmountForChart(item.amount),
+      familyLabel: familyLabel,
+      assetPurchases: item.assetPurchases || [],
+      savingPurchases: item.savingPurchases || [],
+      savingIncomes: item.savingIncomes || [],
+      savingContributions: item.savingContributions || [],
+      realEstatePurchases: item.realEstatePurchases || [],
+      realEstateTaxes: item.realEstateTaxes || [],
+      capitalGainsTaxes: item.capitalGainsTaxes || [],
+      assetSales: item.assetSales || [],
+      realEstateSales: item.realEstateSales || [],
+      debtInjections: item.debtInjections || [],
+      debtInterests: item.debtInterests || [],
+      debtPrincipals: item.debtPrincipals || [],
+      events: eventsByYear[item.year] || [],
+    };
+  });
 
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
@@ -449,6 +517,18 @@ function RechartsCashflowChart({
           right: 30,
           left: 40,
           bottom: 120,
+        }}
+        onMouseMove={(state) => {
+          // activeTooltipIndex를 사용하여 현재 hover 중인 데이터 찾기
+          if (state && state.isTooltipActive !== false) {
+            const index = state.activeTooltipIndex;
+            if (index !== undefined && index >= 0 && chartData[index]) {
+              setHoveredData(chartData[index]);
+            }
+          }
+        }}
+        onMouseLeave={() => {
+          setHoveredData(null);
         }}
       >
         {/* 그라데이션 정의 */}
@@ -487,7 +567,7 @@ function RechartsCashflowChart({
           fontSize={12}
         />
 
-        {/* 커스텀 툴팁 */}
+        {/* 커스텀 툴팁 - 간소화 버전 */}
         <Tooltip
           content={({ active, payload, label }) => {
             if (active && payload && payload.length > 0) {
@@ -646,578 +726,6 @@ function RechartsCashflowChart({
                         </span>
                       </div>
                     </div>
-                    <div className={styles.tooltipDetails}>
-                      {/* 모든 항목을 수집하고 +와 -로 분리하여 정렬 */}
-                      {(() => {
-                        const allItems = [];
-
-                        // 수입 항목들
-                        incomes
-                          .filter(
-                            (income) =>
-                              data.year >= income.startYear &&
-                              data.year <= income.endYear
-                          )
-                          .forEach((income, index) => {
-                            const yearsElapsed = data.year - income.startYear;
-                            const growthRate = income.growthRate / 100;
-                            const yearlyAmount =
-                              income.frequency === "monthly"
-                                ? income.amount * 12
-                                : income.amount;
-                            const adjustedAmount =
-                              yearlyAmount *
-                              Math.pow(1 + growthRate, yearsElapsed);
-
-                            allItems.push({
-                              key: `income-${index}`,
-                              label: income.title,
-                              value: adjustedAmount,
-                              type: "positive",
-                              category: "income",
-                            });
-                          });
-
-                        // 지출 항목들
-                        expenses
-                          .filter(
-                            (expense) =>
-                              data.year >= expense.startYear &&
-                              data.year <= expense.endYear
-                          )
-                          .forEach((expense, index) => {
-                            const yearsElapsed = data.year - expense.startYear;
-                            const growthRate = expense.growthRate / 100;
-                            const yearlyAmount =
-                              expense.frequency === "monthly"
-                                ? expense.amount * 12
-                                : expense.amount;
-                            const adjustedAmount =
-                              yearlyAmount *
-                              Math.pow(1 + growthRate, yearsElapsed);
-
-                            allItems.push({
-                              key: `expense-${index}`,
-                              label: expense.title,
-                              value: adjustedAmount,
-                              type: "negative",
-                              category: "expense",
-                            });
-                          });
-
-                        // 연금 항목들 (breakdown 데이터에서 추출)
-                        if (yearData.breakdown) {
-                          // 연금 수입 (국민연금, 퇴직연금, 개인연금, 퇴직금 IRP 수령)
-                          (yearData.breakdown.positives || []).forEach(
-                            (item) => {
-                              if (
-                                item.category === "국민연금" ||
-                                item.category === "퇴직연금" ||
-                                item.category === "개인연금" ||
-                                item.category === "퇴직금 IRP"
-                              ) {
-                                allItems.push({
-                                  key:
-                                    item.key ||
-                                    `pension-positive-${item.label}`,
-                                  label: item.label,
-                                  value: item.amount || 0,
-                                  type: "positive",
-                                  category: "pension",
-                                });
-                              }
-                            }
-                          );
-
-                          // 연금 적립 (개인연금, 퇴직금 IRP 적립)
-                          (yearData.breakdown.negatives || []).forEach(
-                            (item) => {
-                              if (item.category === "연금 적립") {
-                                allItems.push({
-                                  key:
-                                    item.key ||
-                                    `pension-negative-${item.label}`,
-                                  label: item.label,
-                                  value: item.amount || 0,
-                                  type: "negative",
-                                  category: "pension",
-                                });
-                              }
-                            }
-                          );
-                        }
-
-                        // 저축/투자 항목들은 savingContributions, savingIncomes, savingPurchases 배열로 표시됨 (중복 방지)
-
-                        // 부동산 임대 수입
-                        if (yearData.rentalIncome > 0) {
-                          // 해당 년도에 임대 수입이 있는 부동산들 찾기
-                          const rentalRealEstates = realEstates.filter(
-                            (re) =>
-                              re.hasRentalIncome === true &&
-                              data.year >= re.rentalIncomeStartYear &&
-                              data.year <= (re.rentalIncomeEndYear || data.year)
-                          );
-
-                          if (rentalRealEstates.length > 0) {
-                            rentalRealEstates.forEach((re, index) => {
-                              // 연간 임대소득 = 월 임대소득 * 12
-                              const yearlyRentalIncome =
-                                (Number(re.monthlyRentalIncome) || 0) * 12;
-                              allItems.push({
-                                key: `rentalIncome-${index}`,
-                                label: `${re.title} | 임대소득`,
-                                value: yearlyRentalIncome,
-                                type: "positive",
-                                category: "realEstate",
-                              });
-                            });
-                          }
-                        }
-
-                        // 주택 연금 수입
-                        if (yearData.realEstatePension > 0) {
-                          // 해당 연도에 주택 연금을 받는 부동산 찾기
-                          const realEstateWithPension = realEstates.find(
-                            (re) =>
-                              re.convertToPension === true &&
-                              data.year >= re.pensionStartYear
-                          );
-
-                          const label = realEstateWithPension
-                            ? `${realEstateWithPension.title} | 주택연금`
-                            : "주택연금";
-
-                          allItems.push({
-                            key: "realEstatePension",
-                            label: label,
-                            value: yearData.realEstatePension,
-                            type: "positive",
-                            category: "realEstate",
-                          });
-                        }
-
-                        // 부동산 매각 수입 (상세 정보 표시)
-                        if (
-                          data.realEstateSales &&
-                          data.realEstateSales.length > 0
-                        ) {
-                          data.realEstateSales.forEach((sale, index) => {
-                            allItems.push({
-                              key: `realEstateSale-${index}`,
-                              label: `${sale.title} | 매각`,
-                              value: sale.amount,
-                              type: "positive",
-                              category: "realEstate",
-                            });
-                          });
-                        }
-
-                        // 자산 수익 (수익형 자산)
-                        assets
-                          .filter(
-                            (asset) =>
-                              asset.assetType === "income" &&
-                              asset.incomeRate > 0 &&
-                              // 연말 기준: 시작 다음 해부터 수익 발생
-                              data.year > asset.startYear &&
-                              data.year <= asset.endYear
-                          )
-                          .forEach((asset, index) => {
-                            // 전년도 말 자산 가치 기준으로 수익 계산
-                            // 전년도 말 자산 가치 = currentValue * (1 + growthRate)^(year - startYear - 1)
-                            const yearsElapsed = data.year - asset.startYear; // 시작부터 현재 해까지 경과 년수
-                            const growthRate = asset.growthRate || 0;
-
-                            const prevYearEndValue =
-                              asset.currentValue *
-                              Math.pow(1 + growthRate, yearsElapsed - 1);
-
-                            const annualIncome =
-                              prevYearEndValue * asset.incomeRate;
-
-                            allItems.push({
-                              key: `asset-income-${index}`,
-                              label: `${asset.title} | 수익`,
-                              value: annualIncome,
-                              type: "positive",
-                              category: "asset",
-                            });
-                          });
-
-                        // 자산 매각 수입 (상세 정보 표시)
-                        if (data.assetSales && data.assetSales.length > 0) {
-                          data.assetSales.forEach((sale, index) => {
-                            allItems.push({
-                              key: `assetSale-${index}`,
-                              label: `${sale.title} | 매각`,
-                              value: sale.amount,
-                              type: "positive",
-                              category: "asset",
-                            });
-                          });
-                        }
-
-                        // 저축 수익 (배당/이자) - 수익형 저축
-                        if (
-                          data.savingIncomes &&
-                          data.savingIncomes.length > 0
-                        ) {
-                          data.savingIncomes.forEach((income, index) => {
-                            allItems.push({
-                              key: `savingIncome-${index}`,
-                              label: `${income.title} | 배당/이자`,
-                              value: income.amount,
-                              type: "positive",
-                              category: "saving",
-                            });
-                          });
-                        }
-
-                        // 저축 만료
-                        if (yearData.savingMaturity > 0) {
-                          // 저축 만료 상세 정보가 있으면 개별 표시
-                          if (
-                            yearData.savingMaturities &&
-                            yearData.savingMaturities.length > 0
-                          ) {
-                            yearData.savingMaturities.forEach(
-                              (saving, index) => {
-                                allItems.push({
-                                  key: `savingMaturity-${index}`,
-                                  label: `${saving.title} | 매도/만료`,
-                                  value: saving.amount,
-                                  type: "positive",
-                                  category: "saving",
-                                });
-                              }
-                            );
-                          } else {
-                            // 상세 정보가 없으면 기본 표시
-                            allItems.push({
-                              key: "savingMaturity",
-                              label: "저축 | 매도/만료",
-                              value: yearData.savingMaturity,
-                              type: "positive",
-                              category: "saving",
-                            });
-                          }
-                        }
-
-                        // 부동산 구매 (지출)
-                        if (
-                          data.realEstatePurchases &&
-                          data.realEstatePurchases.length > 0
-                        ) {
-                          data.realEstatePurchases.forEach(
-                            (purchase, index) => {
-                              allItems.push({
-                                key: `realEstatePurchase-${index}`,
-                                label: `${purchase.title} | 구매`,
-                                value: purchase.amount,
-                                type: "negative",
-                                category: "realEstate",
-                              });
-                            }
-                          );
-                        }
-
-                        // 부동산 취득세 (지출)
-                        if (
-                          data.realEstateTaxes &&
-                          data.realEstateTaxes.length > 0
-                        ) {
-                          data.realEstateTaxes.forEach((tax, index) => {
-                            allItems.push({
-                              key: `realEstateTax-${index}`,
-                              label: `${tax.title} | 취득세 ${tax.taxRate}`,
-                              value: tax.amount,
-                              type: "negative",
-                              category: "realEstate",
-                            });
-                          });
-                        }
-
-                        // 양도소득세 (지출) - 부동산 + 저축 + 자산
-                        if (
-                          data.capitalGainsTaxes &&
-                          data.capitalGainsTaxes.length > 0
-                        ) {
-                          data.capitalGainsTaxes.forEach((tax, index) => {
-                            // 부동산: holdingYears가 있으면 보유기간 표시
-                            // 저축/자산: title에 이미 세율 포함
-                            let label = tax.title;
-                            if (tax.holdingYears) {
-                              // 소수점이 있으면 소수점 첫째 자리까지 표시
-                              const years =
-                                tax.holdingYears % 1 !== 0
-                                  ? tax.holdingYears.toFixed(1)
-                                  : Math.floor(tax.holdingYears);
-                              label = `${tax.title} | 양도세, 보유 ${years}년`;
-                            }
-                            allItems.push({
-                              key: `capitalGainsTax-${index}`,
-                              label: label,
-                              value: tax.amount,
-                              type: "negative",
-                              category: tax.holdingYears
-                                ? "realEstate"
-                                : "saving",
-                            });
-                          });
-                        }
-
-                        // 저축 적립 (지출)
-                        if (
-                          data.savingContributions &&
-                          data.savingContributions.length > 0
-                        ) {
-                          data.savingContributions.forEach((contrib, index) => {
-                            allItems.push({
-                              key: `savingContrib-${index}`,
-                              label: `${contrib.title} | 적립`,
-                              value: contrib.amount,
-                              type: "negative",
-                              category: "saving",
-                            });
-                          });
-                        }
-
-                        // 저축 구매 (지출)
-                        if (
-                          data.savingPurchases &&
-                          data.savingPurchases.length > 0
-                        ) {
-                          data.savingPurchases.forEach((purchase, index) => {
-                            allItems.push({
-                              key: `savingPurchase-${index}`,
-                              label: `${purchase.title} | 구매`,
-                              value: purchase.amount,
-                              type: "negative",
-                              category: "saving",
-                            });
-                          });
-                        }
-
-                        // 자산 구매 (지출)
-                        if (
-                          data.assetPurchases &&
-                          data.assetPurchases.length > 0
-                        ) {
-                          data.assetPurchases.forEach((purchase, index) => {
-                            allItems.push({
-                              key: `assetPurchase-${index}`,
-                              label: `${purchase.title} | 구매`,
-                              value: purchase.amount,
-                              type: "negative",
-                              category: "asset",
-                            });
-                          });
-                        }
-
-                        // 대출 실행으로 유입된 현금
-                        if (
-                          data.debtInjections &&
-                          data.debtInjections.length > 0
-                        ) {
-                          data.debtInjections.forEach((injection, index) => {
-                            if (injection.amount > 0) {
-                              allItems.push({
-                                key: `debtInjection-${index}`,
-                                label: `${injection.title} | 대출 유입`,
-                                value: injection.amount,
-                                type: "positive",
-                                category: "debt",
-                              });
-                            }
-                          });
-                        }
-
-                        // 부채 이자 지출
-                        if (
-                          data.debtInterests &&
-                          data.debtInterests.length > 0
-                        ) {
-                          data.debtInterests.forEach((payment, index) => {
-                            if (payment.amount > 0) {
-                              allItems.push({
-                                key: `debtInterest-${payment.title}-${index}`,
-                                label: `${payment.title} | 이자`,
-                                value: payment.amount,
-                                type: "negative",
-                                category: "debt",
-                              });
-                            }
-                          });
-                        }
-
-                        // 부채 원금 상환
-                        if (
-                          data.debtPrincipals &&
-                          data.debtPrincipals.length > 0
-                        ) {
-                          data.debtPrincipals.forEach((payment, index) => {
-                            if (payment.amount > 0) {
-                              allItems.push({
-                                key: `debtPrincipal-${payment.title}-${index}`,
-                                label: `${payment.title} | 원금 상환`,
-                                value: payment.amount,
-                                type: "negative",
-                                category: "debt",
-                              });
-                            }
-                          });
-                        }
-
-                        // 카테고리별 색상 및 순서 정의
-                        const categoryConfig = {
-                          income: { color: "#10b981", order: 1, name: "소득" },
-                          expense: { color: "#ef4444", order: 2, name: "지출" },
-                          saving: { color: "#3b82f6", order: 3, name: "저축" },
-                          pension: { color: "#fbbf24", order: 4, name: "연금" },
-                          realEstate: {
-                            color: "#8b5cf6",
-                            order: 5,
-                            name: "부동산",
-                          },
-                          asset: { color: "#06b6d4", order: 6, name: "자산" },
-                          debt: { color: "#f97316", order: 7, name: "부채" },
-                        };
-
-                        // +와 -로 분리하여 카테고리별, 금액별 정렬 (금액이 0인 항목 제외)
-                        const positiveItems = allItems
-                          .filter(
-                            (item) => item.type === "positive" && item.value > 0
-                          )
-                          .sort((a, b) => {
-                            // 1순위: 카테고리 순서
-                            const orderA =
-                              categoryConfig[a.category]?.order || 999;
-                            const orderB =
-                              categoryConfig[b.category]?.order || 999;
-                            if (orderA !== orderB) return orderA - orderB;
-                            // 2순위: 금액 내림차순
-                            return b.value - a.value;
-                          });
-
-                        const negativeItems = allItems
-                          .filter(
-                            (item) => item.type === "negative" && item.value > 0
-                          )
-                          .sort((a, b) => {
-                            // 1순위: 카테고리 순서
-                            const orderA =
-                              categoryConfig[a.category]?.order || 999;
-                            const orderB =
-                              categoryConfig[b.category]?.order || 999;
-                            if (orderA !== orderB) return orderA - orderB;
-                            // 2순위: 금액 내림차순
-                            return b.value - a.value;
-                          });
-
-                        return (
-                          <>
-                            {/* 수입 항목들 (+ 표시) */}
-                            {positiveItems.map((item) => (
-                              <div
-                                key={item.key}
-                                className={styles.tooltipItem}
-                              >
-                                <span className={styles.tooltipLabelWithDot}>
-                                  <span
-                                    className={styles.tooltipCategoryDot}
-                                    style={{
-                                      backgroundColor:
-                                        categoryConfig[item.category]?.color ||
-                                        "#9ca3af",
-                                    }}
-                                  />
-                                  <span className={styles.tooltipLabel}>
-                                    {item.label}:
-                                  </span>
-                                </span>
-                                <span
-                                  className={styles.tooltipValue}
-                                  style={{ color: "#10b981" }}
-                                >
-                                  +{formatAmountForChart(item.value)}
-                                </span>
-                              </div>
-                            ))}
-
-                            {/* 지출 항목들 (- 표시) */}
-                            {negativeItems.map((item) => (
-                              <div
-                                key={item.key}
-                                className={styles.tooltipItem}
-                              >
-                                <span className={styles.tooltipLabelWithDot}>
-                                  <span
-                                    className={styles.tooltipCategoryDot}
-                                    style={{
-                                      backgroundColor:
-                                        categoryConfig[item.category]?.color ||
-                                        "#9ca3af",
-                                    }}
-                                  />
-                                  <span className={styles.tooltipLabel}>
-                                    {item.label}:
-                                  </span>
-                                </span>
-                                <span
-                                  className={styles.tooltipValue}
-                                  style={{ color: "#ef4444" }}
-                                >
-                                  -{formatAmountForChart(item.value)}
-                                </span>
-                              </div>
-                            ))}
-                          </>
-                        );
-                      })()}
-                    </div>
-
-                    {/* 이벤트 정보 표시 */}
-                    {eventsByYear[data.year] &&
-                      eventsByYear[data.year].length > 0 && (
-                        <div className={styles.tooltipEvents}>
-                          <div className={styles.tooltipDivider}></div>
-
-                          {eventsByYear[data.year].map((event, index) => (
-                            <div
-                              key={index}
-                              className={styles.tooltipEventItem}
-                            >
-                              <span
-                                className={styles.tooltipEventDot}
-                                style={{
-                                  backgroundColor:
-                                    event.category === "income"
-                                      ? "#10b981"
-                                      : event.category === "expense"
-                                      ? "#ef4444"
-                                      : event.category === "saving"
-                                      ? "#3b82f6"
-                                      : event.category === "pension"
-                                      ? "#fbbf24"
-                                      : event.category === "realEstate"
-                                      ? "#8b5cf6"
-                                      : event.category === "asset"
-                                      ? "#06b6d4"
-                                      : event.category === "debt"
-                                      ? "#374151"
-                                      : "#374151", // 기본값
-                                  width: "6px",
-                                  height: "6px",
-                                }}
-                              ></span>
-                              <span className={styles.tooltipEventText}>
-                                {event.title}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                   </div>
                 );
               }
@@ -1244,7 +752,7 @@ function RechartsCashflowChart({
             label={{
               value: "은퇴",
               position: "top",
-              offset: 10, // 위로 10px 올림
+              offset: 10,
               style: { fill: "#9ca3af", fontSize: "12px" },
             }}
           />
@@ -1260,22 +768,24 @@ function RechartsCashflowChart({
             label={{
               value: "배우자 은퇴",
               position: "top",
-              offset: spouseRetirementYear === retirementYear ? 30 : 10, // 은퇴 년도가 같으면 위로 30px, 다르면 10px 올림
+              offset: spouseRetirementYear === retirementYear ? 30 : 10,
               style: { fill: "#a78bfa", fontSize: "12px" },
             }}
           />
         )}
 
         {/* Bar 그래프 */}
-        <Bar dataKey="amount" radius={[0, 0, 0, 0]} strokeWidth={0}>
+        <Bar
+          dataKey="amount"
+          radius={[0, 0, 0, 0]}
+          strokeWidth={0}
+          onClick={handleBarClick}
+          style={{ cursor: "pointer" }}
+        >
           {chartData.map((entry, index) => (
             <Cell
               key={`cell-${index}`}
-              fill={
-                entry.amount >= 0
-                  ? "#10b981" // 초록색 (양수)
-                  : "#ef4444" // 빨간색 (음수)
-              }
+              fill={entry.amount >= 0 ? "#10b981" : "#ef4444"}
             />
           ))}
         </Bar>
@@ -1308,46 +818,646 @@ function RechartsCashflowChart({
     </ResponsiveContainer>
   );
 
+  // 현재 년도 데이터 가져오기 (기본값)
+  const currentYearIndex = chartData.findIndex(
+    (item) => item.year === new Date().getFullYear()
+  );
+
+  // displayData: hoveredData가 있으면 우선 사용, 없으면 현재 년도 또는 첫 번째 데이터
+  const displayData = hoveredData
+    ? hoveredData
+    : currentYearIndex >= 0
+    ? chartData[currentYearIndex]
+    : chartData[0];
+
+  // 카테고리별 색상 설정 (한글 카테고리를 키로 사용)
+  const categoryConfig = {
+    소득: { color: "#10b981", order: 1, name: "소득" },
+    지출: { color: "#ef4444", order: 2, name: "지출" },
+    저축: { color: "#3b82f6", order: 3, name: "저축" },
+    "저축 구매": { color: "#2563eb", order: 3, name: "저축" },
+    "저축 적립": { color: "#1d4ed8", order: 3, name: "저축" },
+    "저축 수령": { color: "#0891b2", order: 3, name: "저축" },
+    "저축 수익": { color: "#06b6d4", order: 3, name: "저축" },
+    "저축 만기": { color: "#0891b2", order: 3, name: "저축" },
+    "저축 만료": { color: "#0891b2", order: 3, name: "저축" },
+    국민연금: { color: "#fbbf24", order: 4, name: "연금" },
+    퇴직연금: { color: "#f59e0b", order: 4, name: "연금" },
+    개인연금: { color: "#eab308", order: 4, name: "연금" },
+    "퇴직금 IRP": { color: "#d97706", order: 4, name: "연금" },
+    "퇴직금 IRP 적립": { color: "#b45309", order: 4, name: "연금" },
+    "연금 적립": { color: "#ca8a04", order: 4, name: "연금" },
+    부동산: { color: "#8b5cf6", order: 5, name: "부동산" },
+    임대소득: { color: "#a78bfa", order: 5, name: "부동산" },
+    "임대 소득": { color: "#a78bfa", order: 5, name: "부동산" },
+    "부동산 구매": { color: "#7c3aed", order: 5, name: "부동산" },
+    "부동산 수령": { color: "#6d28d9", order: 5, name: "부동산" },
+    "부동산 취득세": { color: "#5b21b6", order: 5, name: "부동산" },
+    주택연금: { color: "#a78bfa", order: 5, name: "부동산" },
+    취득세: { color: "#5b21b6", order: 5, name: "부동산" },
+    양도소득세: { color: "#4c1d95", order: 5, name: "부동산" },
+    양도세: { color: "#4c1d95", order: 8, name: "세금" },
+    자산: { color: "#06b6d4", order: 6, name: "자산" },
+    "자산 구매": { color: "#155e75", order: 6, name: "자산" },
+    "자산 수령": { color: "#0891b2", order: 6, name: "자산" },
+    대출: { color: "#374151", order: 7, name: "부채" },
+    "대출 유입": { color: "#4b5563", order: 7, name: "부채" },
+    이자: { color: "#6b7280", order: 7, name: "부채" },
+    "부채 이자": { color: "#6b7280", order: 7, name: "부채" },
+    "원금 상환": { color: "#9ca3af", order: 7, name: "부채" },
+    "부채 원금 상환": { color: "#9ca3af", order: 7, name: "부채" },
+  };
+
+  // displayData에서 상세 정보 수집
+  const yearData = detailedData.find((item) => item.year === displayData.year);
+  const allItems = [];
+
+  if (yearData && yearData.breakdown) {
+    // breakdown의 positives와 negatives를 allItems에 추가
+    (yearData.breakdown.positives || []).forEach((item) => {
+      allItems.push({
+        ...item,
+        type: "positive",
+      });
+    });
+    (yearData.breakdown.negatives || []).forEach((item) => {
+      allItems.push({
+        ...item,
+        type: "negative",
+      });
+    });
+  }
+
+  // 카테고리별로 정렬
+  const sortedItems = allItems.sort((a, b) => {
+    const orderA = categoryConfig[a.category]?.order || 999;
+    const orderB = categoryConfig[b.category]?.order || 999;
+    if (orderA !== orderB) return orderA - orderB;
+    return b.amount - a.amount;
+  });
+
+  // 수입과 지출 분리
+  const positiveItems = sortedItems.filter(
+    (item) => item.type === "positive" && item.amount > 0
+  );
+  const negativeItems = sortedItems.filter(
+    (item) => item.type === "negative" && item.amount > 0
+  );
+
+  // 합계 계산
+  const totalPositive = positiveItems.reduce(
+    (sum, item) => sum + item.amount,
+    0
+  );
+  const totalNegative = negativeItems.reduce(
+    (sum, item) => sum + item.amount,
+    0
+  );
+  const netCashflow = totalPositive - totalNegative;
+
+  // 수입/지출 분포 데이터 생성 (파이 차트용)
+  const allDistributionData = useMemo(() => {
+    const distributionByYear = {};
+
+    detailedData.forEach((yearData) => {
+      const positives = [];
+      const negatives = [];
+
+      if (yearData.breakdown) {
+        (yearData.breakdown.positives || []).forEach((item) => {
+          positives.push({
+            name: item.label,
+            value: item.amount,
+            originalValue: item.amount,
+            color: categoryConfig[item.category]?.color || "#9ca3af",
+          });
+        });
+
+        (yearData.breakdown.negatives || []).forEach((item) => {
+          negatives.push({
+            name: item.label,
+            value: item.amount,
+            originalValue: item.amount,
+            color: categoryConfig[item.category]?.color || "#9ca3af",
+          });
+        });
+      }
+
+      distributionByYear[yearData.year] = { positives, negatives };
+    });
+
+    return distributionByYear;
+  }, [detailedData]);
+
+  const distributionSlices = useMemo(() => {
+    if (!distributionEntry || !allDistributionData[distributionEntry.year]) {
+      return { positives: [], negatives: [] };
+    }
+    return allDistributionData[distributionEntry.year];
+  }, [distributionEntry, allDistributionData]);
+
+  // 정렬된 분포 데이터 (금액 순)
+  const sortedDistribution = useMemo(() => {
+    return {
+      positives: [...distributionSlices.positives].sort(
+        (a, b) => b.value - a.value
+      ),
+      negatives: [...distributionSlices.negatives].sort(
+        (a, b) => b.value - a.value
+      ),
+    };
+  }, [distributionSlices]);
+
+  // 총 합계 계산
+  const totalPositiveValue = useMemo(() => {
+    return distributionSlices.positives.reduce(
+      (sum, item) => sum + item.value,
+      0
+    );
+  }, [distributionSlices.positives]);
+
+  const totalNegativeValue = useMemo(() => {
+    return distributionSlices.negatives.reduce(
+      (sum, item) => sum + item.value,
+      0
+    );
+  }, [distributionSlices.negatives]);
+
+  // 바 클릭 핸들러
+  const handleBarClick = (barData) => {
+    if (!barData || !barData.payload) return;
+    setDistributionEntry(barData.payload);
+    setIsDistributionOpen(true);
+  };
+
   return (
     <>
       <div className={styles.chartContainer}>
-        <div className={styles.chartHeader}>
-          <div className={styles.chartTitleWrapper}>
-            <div className={styles.chartTitle}>가계 현금 흐름</div>
-            <button
-              className={styles.zoomButton}
-              onClick={() => setIsZoomed(true)}
-              title="크게 보기"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div className={styles.chartWrapper}>{renderChart()}</div>
+        {!hasData ? (
+          <div className={styles.noData}>데이터가 없습니다.</div>
+        ) : (
+          <>
+            {/* 타이틀 영역 */}
+            <div className={styles.chartHeader}>
+              <div className={styles.chartTitleWrapper}>
+                <div className={styles.chartTitle}>가계 현금 흐름</div>
+                <button
+                  className={styles.zoomButton}
+                  onClick={() => setIsZoomed(true)}
+                  title="크게 보기"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* 컨텐츠 영역: 그래프(왼쪽) + 상세정보(오른쪽) */}
+            <div className={styles.chartContent}>
+              {/* 왼쪽: 그래프 */}
+              <div className={styles.chartArea}>
+                <div className={styles.chartWrapper}>{renderChart()}</div>
+              </div>
+
+              {/* 오른쪽: 상세 패널 */}
+              <div className={styles.detailPanel}>
+                <div className={styles.detailPanelHeader}>
+                  <div className={styles.detailPanelTitle}>
+                    {displayData.year}년 순 현금흐름
+                  </div>
+                  <div
+                    className={styles.detailPanelTotal}
+                    style={{
+                      color: netCashflow >= 0 ? "#10b981" : "#ef4444",
+                    }}
+                  >
+                    {netCashflow >= 0 ? "+" : ""}
+                    {formatAmountForChart(netCashflow)}
+                  </div>
+                </div>
+
+                {/* 수입 항목 */}
+                {positiveItems.length > 0 && (
+                  <div className={styles.detailSection}>
+                    <div className={styles.detailSectionHeader}>
+                      <div className={styles.detailSectionTitle}>수입</div>
+                      <div
+                        className={styles.detailSectionTotal}
+                        style={{ color: "#10b981" }}
+                      >
+                        +{formatAmountForChart(totalPositive)}
+                      </div>
+                    </div>
+                    {positiveItems.map((item, index) => (
+                      <div
+                        key={`positive-${index}`}
+                        className={styles.detailItem}
+                      >
+                        <span className={styles.detailLabelWithDot}>
+                          <span
+                            className={styles.detailCategoryDot}
+                            style={{
+                              backgroundColor:
+                                categoryConfig[item.category]?.color ||
+                                "#9ca3af",
+                            }}
+                          />
+                          <span className={styles.detailLabel}>
+                            {item.label}
+                          </span>
+                        </span>
+                        <span
+                          className={styles.detailValue}
+                          style={{ color: "#10b981" }}
+                        >
+                          +{formatAmountForChart(item.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 지출 항목 */}
+                {negativeItems.length > 0 && (
+                  <div className={styles.detailSection}>
+                    <div className={styles.detailSectionHeader}>
+                      <div className={styles.detailSectionTitle}>지출</div>
+                      <div
+                        className={styles.detailSectionTotal}
+                        style={{ color: "#ef4444" }}
+                      >
+                        -{formatAmountForChart(totalNegative)}
+                      </div>
+                    </div>
+                    {negativeItems.map((item, index) => (
+                      <div
+                        key={`negative-${index}`}
+                        className={styles.detailItem}
+                      >
+                        <span className={styles.detailLabelWithDot}>
+                          <span
+                            className={styles.detailCategoryDot}
+                            style={{
+                              backgroundColor:
+                                categoryConfig[item.category]?.color ||
+                                "#9ca3af",
+                            }}
+                          />
+                          <span className={styles.detailLabel}>
+                            {item.label}
+                          </span>
+                        </span>
+                        <span
+                          className={styles.detailValue}
+                          style={{ color: "#ef4444" }}
+                        >
+                          -{formatAmountForChart(item.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 이벤트 */}
+                {displayData.events && displayData.events.length > 0 && (
+                  <div className={styles.detailSection}>
+                    <div className={styles.detailDivider} />
+                    <div className={styles.detailSectionTitle}>이벤트</div>
+                    {displayData.events.map((event, index) => (
+                      <div
+                        key={`event-${index}`}
+                        className={styles.detailEventItem}
+                      >
+                        <span
+                          className={styles.detailEventDot}
+                          style={{
+                            backgroundColor:
+                              event.category === "income"
+                                ? "#10b981"
+                                : event.category === "expense"
+                                ? "#ef4444"
+                                : event.category === "saving"
+                                ? "#3b82f6"
+                                : event.category === "pension"
+                                ? "#fbbf24"
+                                : event.category === "realEstate"
+                                ? "#8b5cf6"
+                                : event.category === "asset"
+                                ? "#06b6d4"
+                                : event.category === "debt"
+                                ? "#374151"
+                                : "#374151",
+                          }}
+                        />
+                        <span className={styles.detailEventText}>
+                          {event.title}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {positiveItems.length === 0 && negativeItems.length === 0 && (
+                  <div className={styles.detailEmptyState}>
+                    마우스를 차트에 올려보세요
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 확대 모달 */}
-      <ChartZoomModal
-        isOpen={isZoomed}
-        onClose={() => setIsZoomed(false)}
-        title="가계 현금 흐름"
-      >
-        <div style={{ width: "100%", height: "100%" }}>
-          {renderChart("100%", true)}
-        </div>
-      </ChartZoomModal>
+      {hasData && (
+        <ChartZoomModal
+          isOpen={isZoomed}
+          onClose={() => setIsZoomed(false)}
+          title="가계 현금 흐름"
+        >
+          <div className={styles.chartContent} style={{ height: "100%" }}>
+            {/* 왼쪽: 그래프 */}
+            <div className={styles.chartArea}>
+              <div style={{ width: "100%", height: "100%" }}>
+                {renderChart("100%", true)}
+              </div>
+            </div>
+
+            {/* 오른쪽: 상세 패널 */}
+            <div className={styles.detailPanel}>
+              <div className={styles.detailPanelHeader}>
+                <div className={styles.detailPanelTitle}>
+                  {displayData.year}년 순 현금흐름
+                </div>
+                <div
+                  className={styles.detailPanelTotal}
+                  style={{
+                    color: netCashflow >= 0 ? "#10b981" : "#ef4444",
+                  }}
+                >
+                  {netCashflow >= 0 ? "+" : ""}
+                  {formatAmountForChart(netCashflow)}
+                </div>
+              </div>
+
+              {/* 수입 항목 */}
+              {positiveItems.length > 0 && (
+                <div className={styles.detailSection}>
+                  <div className={styles.detailSectionHeader}>
+                    <div className={styles.detailSectionTitle}>수입</div>
+                    <div
+                      className={styles.detailSectionTotal}
+                      style={{ color: "#10b981" }}
+                    >
+                      +{formatAmountForChart(totalPositive)}
+                    </div>
+                  </div>
+                  {positiveItems.map((item, index) => (
+                    <div
+                      key={`positive-${index}`}
+                      className={styles.detailItem}
+                    >
+                      <span className={styles.detailLabelWithDot}>
+                        <span
+                          className={styles.detailCategoryDot}
+                          style={{
+                            backgroundColor:
+                              categoryConfig[item.category]?.color || "#9ca3af",
+                          }}
+                        />
+                        <span className={styles.detailLabel}>{item.label}</span>
+                      </span>
+                      <span
+                        className={styles.detailValue}
+                        style={{ color: "#10b981" }}
+                      >
+                        +{formatAmountForChart(item.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 지출 항목 */}
+              {negativeItems.length > 0 && (
+                <div className={styles.detailSection}>
+                  <div className={styles.detailSectionHeader}>
+                    <div className={styles.detailSectionTitle}>지출</div>
+                    <div
+                      className={styles.detailSectionTotal}
+                      style={{ color: "#ef4444" }}
+                    >
+                      -{formatAmountForChart(totalNegative)}
+                    </div>
+                  </div>
+                  {negativeItems.map((item, index) => (
+                    <div
+                      key={`negative-${index}`}
+                      className={styles.detailItem}
+                    >
+                      <span className={styles.detailLabelWithDot}>
+                        <span
+                          className={styles.detailCategoryDot}
+                          style={{
+                            backgroundColor:
+                              categoryConfig[item.category]?.color || "#9ca3af",
+                          }}
+                        />
+                        <span className={styles.detailLabel}>{item.label}</span>
+                      </span>
+                      <span
+                        className={styles.detailValue}
+                        style={{ color: "#ef4444" }}
+                      >
+                        -{formatAmountForChart(item.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 이벤트 */}
+              {displayData.events && displayData.events.length > 0 && (
+                <div className={styles.detailSection}>
+                  <div className={styles.detailDivider} />
+                  <div className={styles.detailSectionTitle}>이벤트</div>
+                  {displayData.events.map((event, index) => (
+                    <div
+                      key={`event-${index}`}
+                      className={styles.detailEventItem}
+                    >
+                      <span
+                        className={styles.detailEventDot}
+                        style={{
+                          backgroundColor:
+                            event.category === "income"
+                              ? "#10b981"
+                              : event.category === "expense"
+                              ? "#ef4444"
+                              : event.category === "saving"
+                              ? "#3b82f6"
+                              : event.category === "pension"
+                              ? "#fbbf24"
+                              : event.category === "realEstate"
+                              ? "#8b5cf6"
+                              : event.category === "asset"
+                              ? "#06b6d4"
+                              : event.category === "debt"
+                              ? "#374151"
+                              : "#374151",
+                        }}
+                      />
+                      <span className={styles.detailEventText}>
+                        {event.title}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {positiveItems.length === 0 && negativeItems.length === 0 && (
+                <div className={styles.detailEmptyState}>
+                  마우스를 차트에 올려보세요
+                </div>
+              )}
+            </div>
+          </div>
+        </ChartZoomModal>
+      )}
+
+      {/* 수입/지출 분포 모달 (파이 차트) */}
+      {hasData && (
+        <ChartZoomModal
+          isOpen={isDistributionOpen}
+          onClose={() => {
+            setIsDistributionOpen(false);
+            setDistributionEntry(null);
+          }}
+          title={
+            distributionEntry
+              ? `${distributionEntry.year}년 현금 흐름 구성`
+              : "현금 흐름 구성"
+          }
+        >
+          <div className={styles.distributionModalContent}>
+            {distributionSlices.positives.length === 0 &&
+            distributionSlices.negatives.length === 0 ? (
+              <div className={styles.noDistributionData}>
+                해당 연도의 현금 흐름 구성을 계산할 수 없습니다.
+              </div>
+            ) : (
+              <>
+                {/* 수입 섹션 */}
+                {sortedDistribution.positives.length > 0 && (
+                  <div className={styles.distributionSection}>
+                    <h4>수입</h4>
+                    <OptimizedPieChart
+                      data={sortedDistribution.positives}
+                      title="수입"
+                    />
+                    <div className={styles.totalValue}>
+                      총 수입: +{formatAmountForChart(totalPositiveValue)}
+                    </div>
+                    <div className={styles.distributionList}>
+                      {sortedDistribution.positives.map((slice) => {
+                        const percent =
+                          totalPositiveValue > 0
+                            ? (
+                                (slice.value / totalPositiveValue) *
+                                100
+                              ).toFixed(1)
+                            : "0.0";
+                        return (
+                          <div
+                            key={`positive-list-${slice.name}`}
+                            className={styles.distributionRow}
+                          >
+                            <span className={styles.distributionLabel}>
+                              <span
+                                className={styles.distributionDot}
+                                style={{ backgroundColor: slice.color }}
+                              />
+                              {slice.name}
+                            </span>
+                            <span className={styles.distributionValue}>
+                              +
+                              {formatAmountForChart(
+                                Math.abs(slice.originalValue)
+                              )}
+                              <span className={styles.distributionPercent}>
+                                {percent}%
+                              </span>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 지출 섹션 */}
+                {sortedDistribution.negatives.length > 0 && (
+                  <div className={styles.distributionSection}>
+                    <h4>지출</h4>
+                    <OptimizedPieChart
+                      data={sortedDistribution.negatives}
+                      title="지출"
+                    />
+                    <div className={styles.totalValue}>
+                      총 지출: -{formatAmountForChart(totalNegativeValue)}
+                    </div>
+                    <div className={styles.distributionList}>
+                      {sortedDistribution.negatives.map((slice) => {
+                        const percent =
+                          totalNegativeValue > 0
+                            ? (
+                                (slice.value / totalNegativeValue) *
+                                100
+                              ).toFixed(1)
+                            : "0.0";
+                        return (
+                          <div
+                            key={`negative-list-${slice.name}`}
+                            className={styles.distributionRow}
+                          >
+                            <span className={styles.distributionLabel}>
+                              <span
+                                className={styles.distributionDot}
+                                style={{ backgroundColor: slice.color }}
+                              />
+                              {slice.name}
+                            </span>
+                            <span className={styles.distributionValue}>
+                              -
+                              {formatAmountForChart(
+                                Math.abs(slice.originalValue)
+                              )}
+                              <span className={styles.distributionPercent}>
+                                {percent}%
+                              </span>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </ChartZoomModal>
+      )}
     </>
   );
 }

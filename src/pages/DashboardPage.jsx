@@ -2973,14 +2973,14 @@ ${JSON.stringify(analysisData, null, 2)}`;
         <div className={styles.mainContent}>
           <div className={styles.chartSection}>
             <div className={styles.chartGrid}>
+              {/* 순 자산 차트 - 첫 번째로 표시 */}
               <div className={styles.chartContainer}>
-                <RechartsCashflowChart
-                  data={simulationData.cashflow}
+                <RechartsAssetChart
+                  data={simulationData.assets}
                   retirementAge={profileData.retirementAge}
-                  detailedData={simulationData.cashflowDetailed}
-                  profileData={profileData} // 배우자 은퇴 정보를 위해 전체 프로필 데이터 전달
-                  incomes={incomes}
-                  expenses={expenses}
+                  spouseRetirementAge={profileData.spouseRetirementAge}
+                  targetAssets={profileData.targetAssets}
+                  profileData={profileData}
                   savings={savings}
                   pensions={pensions}
                   realEstates={realEstates}
@@ -2989,13 +2989,15 @@ ${JSON.stringify(analysisData, null, 2)}`;
                 />
               </div>
 
+              {/* 현금 흐름 차트 - 두 번째로 표시 */}
               <div className={styles.chartContainer}>
-                <RechartsAssetChart
-                  data={simulationData.assets}
+                <RechartsCashflowChart
+                  data={simulationData.cashflow}
                   retirementAge={profileData.retirementAge}
-                  spouseRetirementAge={profileData.spouseRetirementAge}
-                  targetAssets={profileData.targetAssets}
-                  profileData={profileData}
+                  detailedData={simulationData.cashflowDetailed}
+                  profileData={profileData} // 배우자 은퇴 정보를 위해 전체 프로필 데이터 전달
+                  incomes={incomes}
+                  expenses={expenses}
                   savings={savings}
                   pensions={pensions}
                   realEstates={realEstates}
