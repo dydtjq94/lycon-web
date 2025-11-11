@@ -789,6 +789,14 @@ function RechartsAssetChart({
     setIsDistributionOpen(true);
   };
 
+  // 차트 클릭 핸들러 (연도 선택하여 패널 업데이트)
+  const handleChartClick = (data) => {
+    if (data && data.activePayload && data.activePayload.length > 0) {
+      const clickedData = data.activePayload[0].payload;
+      setHoveredData(clickedData);
+    }
+  };
+
   // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
   const renderChart = (height = 600, isZoomedView = false) => (
     <ResponsiveContainer width="100%" height={height}>
@@ -801,18 +809,8 @@ function RechartsAssetChart({
           left: 40,
           bottom: 120,
         }}
-        onMouseMove={(state) => {
-          // activeTooltipIndex를 사용하여 현재 hover 중인 데이터 찾기
-          if (state && state.isTooltipActive !== false) {
-            const index = state.activeTooltipIndex;
-            if (index !== undefined && index >= 0 && chartData[index]) {
-              setHoveredData(chartData[index]);
-            }
-          }
-        }}
-        onMouseLeave={() => {
-          setHoveredData(null);
-        }}
+        onClick={handleChartClick}
+        style={{ cursor: "pointer" }}
       >
         {/* 그라데이션 정의 */}
         <defs>
@@ -922,12 +920,376 @@ function RechartsAssetChart({
           />
         )}
 
-        {/* 마우스 위치 표시용 투명 툴팁 (시각적 피드백만 제공) */}
+        {/* 마우스 위치 표시용 툴팁 (간략 정보) */}
         <Tooltip
           cursor={{
-            fill: "rgba(59, 130, 246, 0.1)",
+            fill: "rgba(59, 130, 246, 0.15)",
+            stroke: "#3b82f6",
+            strokeWidth: 2,
           }}
-          content={() => null}
+          content={({ active, payload }) => {
+            if (active && payload && payload.length > 0) {
+              const data = payload[0].payload;
+
+              // 해당 연도의 상세 데이터 찾기
+              const yearData = detailedData.find(
+                (item) => item.year === data.year
+              );
+              const totalAssets = yearData?.breakdown?.totalAssets || 0;
+              const totalDebt = yearData?.breakdown?.totalDebt || 0;
+              const netAssets = yearData?.breakdown?.netAssets || 0;
+
+              return (
+                <div
+                  style={{
+                    background: "rgba(255, 255, 255, 0.7)",
+                    backdropFilter: "blur(12px)",
+                    padding: "14px 18px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(0, 0, 0, 0.08)",
+                    color: "#1f2937",
+                    fontSize: "13px",
+                    pointerEvents: "none",
+                    minWidth: "240px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {/* 년도 */}
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      marginBottom: "8px",
+                      borderBottom: "1px solid rgba(0,0,0,0.1)",
+                      paddingBottom: "6px",
+                      color: "#111827",
+                    }}
+                  >
+                    {data.year}년
+                  </div>
+
+                  {/* 가족 구성 */}
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: "#6b7280",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    {data.familyLabel}
+                  </div>
+
+                  {/* 순자산 */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "8px",
+                      fontWeight: "bold",
+                      color: "#374151",
+                    }}
+                  >
+                    <span>순자산</span>
+                    <span
+                      style={{ color: netAssets >= 0 ? "#10b981" : "#ef4444" }}
+                    >
+                      {formatAmountForChart(netAssets)}
+                    </span>
+                  </div>
+
+                  {/* 자산 */}
+                  <div style={{ marginBottom: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "13px",
+                        marginBottom: "6px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      <span style={{ color: "#4b5563" }}>자산</span>
+                      <span style={{ color: "#10b981" }}>
+                        +{formatAmountForChart(totalAssets)}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        paddingLeft: "12px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "3px",
+                      }}
+                    >
+                      {/* 저축/투자: 0이 아닐 때만 표시 */}
+                      {data.저축투자 > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-block",
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              backgroundColor: getAssetColor("저축투자"),
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ color: getAssetColor("저축투자") }}>
+                            저축/투자
+                          </span>
+                          <span
+                            style={{
+                              marginLeft: "auto",
+                              color: getAssetColor("저축투자"),
+                              fontWeight: "500",
+                            }}
+                          >
+                            {formatAmountForChart(data.저축투자)}
+                          </span>
+                        </div>
+                      )}
+                      {/* 연금: 0이 아닐 때만 표시 */}
+                      {data.연금 > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-block",
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              backgroundColor: getAssetColor("연금"),
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ color: getAssetColor("연금") }}>
+                            연금
+                          </span>
+                          <span
+                            style={{
+                              marginLeft: "auto",
+                              color: getAssetColor("연금"),
+                              fontWeight: "500",
+                            }}
+                          >
+                            {formatAmountForChart(data.연금)}
+                          </span>
+                        </div>
+                      )}
+                      {/* 부동산: 0이 아닐 때만 표시 */}
+                      {data.부동산 > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-block",
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              backgroundColor: getAssetColor("부동산"),
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ color: getAssetColor("부동산") }}>
+                            부동산
+                          </span>
+                          <span
+                            style={{
+                              marginLeft: "auto",
+                              color: getAssetColor("부동산"),
+                              fontWeight: "500",
+                            }}
+                          >
+                            {formatAmountForChart(data.부동산)}
+                          </span>
+                        </div>
+                      )}
+                      {/* 자산: 0이 아닐 때만 표시 */}
+                      {data.자산 > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-block",
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              backgroundColor: getAssetColor("자산"),
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ color: getAssetColor("자산") }}>
+                            자산
+                          </span>
+                          <span
+                            style={{
+                              marginLeft: "auto",
+                              color: getAssetColor("자산"),
+                              fontWeight: "500",
+                            }}
+                          >
+                            {formatAmountForChart(data.자산)}
+                          </span>
+                        </div>
+                      )}
+                      {/* 현금: 0이 아닐 때만 표시 */}
+                      {data.양수현금 > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-block",
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              backgroundColor: getAssetColor("양수현금"),
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ color: getAssetColor("양수현금") }}>
+                            현금
+                          </span>
+                          <span
+                            style={{
+                              marginLeft: "auto",
+                              color: getAssetColor("양수현금"),
+                              fontWeight: "500",
+                            }}
+                          >
+                            {formatAmountForChart(data.양수현금)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 부채 */}
+                  {totalDebt > 0 && (
+                    <div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "13px",
+                          marginBottom: "6px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        <span style={{ color: "#4b5563" }}>부채</span>
+                        <span style={{ color: "#ef4444" }}>
+                          -{formatAmountForChart(totalDebt)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          paddingLeft: "12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "3px",
+                        }}
+                      >
+                        {/* -현금: 0이 아닐 때만 표시 */}
+                        {data.음수현금 !== 0 && (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                backgroundColor: getAssetColor("음수현금"),
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span style={{ color: getAssetColor("음수현금") }}>
+                              -현금
+                            </span>
+                            <span
+                              style={{
+                                marginLeft: "auto",
+                                color: getAssetColor("음수현금"),
+                                fontWeight: "500",
+                              }}
+                            >
+                              {formatAmountForChart(Math.abs(data.음수현금))}
+                            </span>
+                          </div>
+                        )}
+                        {/* 부채: 0이 아닐 때만 표시 */}
+                        {data.부채 !== 0 && (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                backgroundColor: getAssetColor("부채"),
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span style={{ color: getAssetColor("부채") }}>
+                              부채
+                            </span>
+                            <span
+                              style={{
+                                marginLeft: "auto",
+                                color: getAssetColor("부채"),
+                                fontWeight: "500",
+                              }}
+                            >
+                              {formatAmountForChart(Math.abs(data.부채))}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            return null;
+          }}
           animationDuration={0}
           isAnimationActive={false}
         />
