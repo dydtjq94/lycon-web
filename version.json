@@ -1,7 +1,27 @@
 {
-  "version": "0.30.92",
-  "today": "2025-11-10",
+  "version": "0.30.94",
+  "today": "2025-11-11",
   "history": [
+    {
+      "version": "0.30.94",
+      "date": "2025-11-11",
+      "changes": [
+        "🐛 AI 데이터 추출 assetData.slice 오류 수정",
+        "calculateAssetSimulation 반환값 형식 변경 대응",
+        "자산 데이터가 객체 형태로 반환되는 구조 반영",
+        "배열 타입 체크 추가로 안정성 강화"
+      ]
+    },
+    {
+      "version": "0.30.93",
+      "date": "2025-11-11",
+      "changes": [
+        "🐛 AI 데이터 추출 버튼 오류 수정",
+        "fetchSimulationFinancialData가 null을 반환할 때 발생하는 오류 해결",
+        "데이터 로드 실패 시 적절한 오류 메시지 표시",
+        "AI 데이터 추출 기능 안정성 개선"
+      ]
+    },
     {
       "version": "0.30.92",
       "date": "2025-11-10",

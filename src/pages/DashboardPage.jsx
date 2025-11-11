@@ -2290,10 +2290,25 @@ function DashboardPage() {
 
   // AI 분석 데이터 생성 핸들러 (옵션: "single" 또는 "compare")
   const handleGenerateAIAnalysis = async (option = "single") => {
-    if (!profileData) return;
+    if (!profileData) {
+      alert("프로필 데이터가 로드되지 않았습니다. 페이지를 새로고침해주세요.");
+      trackEvent("AI 데이터 추출 실패", {
+        reason: "프로필 데이터 없음",
+        profileId,
+      });
+      return;
+    }
 
     setIsGeneratingAI(true);
     setIsAIOptionModalOpen(false);
+
+    // Mixpanel 이벤트 트래킹 - 시도
+    trackEvent("AI 데이터 추출 시도", {
+      profileId,
+      option,
+      activeSimulationId,
+    });
+
     try {
       // 현재 선택된 시뮬레이션 정보
       const currentSimulation = simulations.find(
@@ -2315,6 +2330,24 @@ function DashboardPage() {
         const defaultData = await fetchSimulationFinancialData(
           defaultSimulation.id
         );
+
+        // 데이터 로드 실패 체크
+        if (!defaultData) {
+          alert(
+            "기본 시뮬레이션 데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요."
+          );
+          // Mixpanel 이벤트 트래킹 - 실패
+          trackEvent("AI 데이터 추출 실패", {
+            profileId,
+            option: "compare",
+            activeSimulationId,
+            errorType: "default_simulation_data_load_failed",
+            errorMessage: "기본 시뮬레이션 데이터를 불러올 수 없습니다.",
+          });
+          setIsGeneratingAI(false);
+          return;
+        }
+
         const defaultAnalysisData = extractAIAnalysisData(
           profileData,
           defaultData.incomes,
@@ -2395,6 +2428,14 @@ ${JSON.stringify(defaultAnalysisData, null, 2)}
 
 ### B: ${simulationTitle} (선택된 시뮬레이션)
 ${JSON.stringify(currentAnalysisData, null, 2)}`;
+
+        // Mixpanel 이벤트 트래킹 - 성공 (비교 분석)
+        trackEvent("AI 데이터 추출 성공", {
+          profileId,
+          option: "compare",
+          activeSimulationId,
+          defaultSimulationId: defaultSimulation.id,
+        });
 
         alert(
           "현재 데이터와 선택된 시뮬레이션 데이터가 비교 형식으로 클립보드에 복사되었습니다!\nChatGPT에 붙여넣기하여 AI 비교 분석을 받아보세요."
@@ -2484,6 +2525,13 @@ ${JSON.stringify(currentAnalysisData, null, 2)}`;
 ## 재무 데이터
 ${JSON.stringify(analysisData, null, 2)}`;
 
+        // Mixpanel 이벤트 트래킹 - 성공 (단일 분석)
+        trackEvent("AI 데이터 추출 성공", {
+          profileId,
+          option: "single",
+          activeSimulationId,
+        });
+
         alert(
           "AI 분석용 프롬프트와 데이터가 클립보드에 복사되었습니다!\nChatGPT에 붙여넣기하여 AI 조언을 받아보세요."
         );
@@ -2493,7 +2541,33 @@ ${JSON.stringify(analysisData, null, 2)}`;
       await navigator.clipboard.writeText(promptText);
     } catch (error) {
       console.error("AI 분석 데이터 생성 오류:", error);
-      alert("AI 분석 데이터 생성 중 오류가 발생했습니다.");
+
+      // 오류 타입에 따른 상세한 메시지
+      let errorMessage = "AI 분석 데이터 생성 중 오류가 발생했습니다.";
+      let errorType = "unknown";
+
+      if (error.name === "NotAllowedError") {
+        errorMessage =
+          "클립보드 접근 권한이 없습니다. 브라우저 설정에서 클립보드 권한을 허용해주세요.";
+        errorType = "clipboard_permission_denied";
+      } else if (error.message?.includes("clipboard")) {
+        errorMessage = "클립보드에 복사하는 중 오류가 발생했습니다.";
+        errorType = "clipboard_error";
+      } else if (error.message?.includes("extractAIAnalysisData")) {
+        errorMessage = "데이터 추출 중 오류가 발생했습니다.";
+        errorType = "data_extraction_error";
+      }
+
+      // Mixpanel 이벤트 트래킹 - 실패
+      trackEvent("AI 데이터 추출 실패", {
+        profileId,
+        option,
+        activeSimulationId,
+        errorType,
+        errorMessage: error.message,
+      });
+
+      alert(errorMessage);
     } finally {
       setIsGeneratingAI(false);
     }

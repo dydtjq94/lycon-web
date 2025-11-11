@@ -2743,7 +2743,7 @@ export function extractAIAnalysisData(
   );
 
   // 자산 시뮬레이션 계산
-  const assetData = calculateAssetSimulation(
+  const assetSimulationResult = calculateAssetSimulation(
     profileData,
     incomes,
     expenses,
@@ -2754,6 +2754,9 @@ export function extractAIAnalysisData(
     cashflowData,
     debts
   );
+
+  // calculateAssetSimulation은 { data: [...], detailedData: [...] } 객체를 반환
+  const assetData = assetSimulationResult.data || assetSimulationResult;
 
   // AI 분석용 데이터 구성 (핵심 필드만 추출, 0과 빈 배열 제거)
   const aiAnalysisData = {
@@ -2773,7 +2776,9 @@ export function extractAIAnalysisData(
     // 시뮬레이션 데이터 (최대 20년간, 0과 빈 배열 제거)
     simulation: {
       cashflow: cleanSimulationData(cashflowData.slice(0, 20)),
-      assets: cleanSimulationData(assetData.slice(0, 20)),
+      assets: cleanSimulationData(
+        Array.isArray(assetData) ? assetData.slice(0, 20) : []
+      ),
     },
 
     // 원시 데이터 (핵심 필드만 포함, 메타데이터 제외)
