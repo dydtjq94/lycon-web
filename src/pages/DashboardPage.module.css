@@ -970,10 +970,11 @@
   background: #f3f4f6;
 }
 
-.chartTab.active {
-  color: #111827;
-  border-bottom-color: #111827;
-  background: white;
+.chartTabActive {
+  color: #111827 !important;
+  border-bottom-color: #111827 !important;
+  background: white !important;
+  font-weight: 600;
 }
 
 .chartContainer {
@@ -1093,6 +1094,18 @@
 
   .dataInputSection {
     padding: 1.5rem;
+  }
+
+  /* 차트 탭 모바일 스타일 */
+  .chartTabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chartTab {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
   }
 }
 

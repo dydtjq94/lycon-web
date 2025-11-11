@@ -887,13 +887,11 @@ function RechartsAssetChart({
                               flexShrink: 0,
                             }}
                           />
-                          <span style={{ color: getAssetColor("저축투자") }}>
-                            저축/투자
-                          </span>
+                          <span style={{ color: "#1f2937" }}>저축/투자</span>
                           <span
                             style={{
                               marginLeft: "auto",
-                              color: getAssetColor("저축투자"),
+                              color: "#1f2937",
                               fontWeight: "500",
                             }}
                           >
@@ -920,13 +918,11 @@ function RechartsAssetChart({
                               flexShrink: 0,
                             }}
                           />
-                          <span style={{ color: getAssetColor("연금") }}>
-                            연금
-                          </span>
+                          <span style={{ color: "#1f2937" }}>연금</span>
                           <span
                             style={{
                               marginLeft: "auto",
-                              color: getAssetColor("연금"),
+                              color: "#1f2937",
                               fontWeight: "500",
                             }}
                           >
@@ -953,13 +949,11 @@ function RechartsAssetChart({
                               flexShrink: 0,
                             }}
                           />
-                          <span style={{ color: getAssetColor("부동산") }}>
-                            부동산
-                          </span>
+                          <span style={{ color: "#1f2937" }}>부동산</span>
                           <span
                             style={{
                               marginLeft: "auto",
-                              color: getAssetColor("부동산"),
+                              color: "#1f2937",
                               fontWeight: "500",
                             }}
                           >
@@ -986,13 +980,11 @@ function RechartsAssetChart({
                               flexShrink: 0,
                             }}
                           />
-                          <span style={{ color: getAssetColor("자산") }}>
-                            자산
-                          </span>
+                          <span style={{ color: "#1f2937" }}>자산</span>
                           <span
                             style={{
                               marginLeft: "auto",
-                              color: getAssetColor("자산"),
+                              color: "#1f2937",
                               fontWeight: "500",
                             }}
                           >
@@ -1019,13 +1011,11 @@ function RechartsAssetChart({
                               flexShrink: 0,
                             }}
                           />
-                          <span style={{ color: getAssetColor("양수현금") }}>
-                            현금
-                          </span>
+                          <span style={{ color: "#1f2937" }}>현금</span>
                           <span
                             style={{
                               marginLeft: "auto",
-                              color: getAssetColor("양수현금"),
+                              color: "#1f2937",
                               fontWeight: "500",
                             }}
                           >
@@ -1081,13 +1071,11 @@ function RechartsAssetChart({
                                 flexShrink: 0,
                               }}
                             />
-                            <span style={{ color: getAssetColor("음수현금") }}>
-                              현금
-                            </span>
+                            <span style={{ color: "#1f2937" }}>현금</span>
                             <span
                               style={{
                                 marginLeft: "auto",
-                                color: getAssetColor("음수현금"),
+                                color: "#1f2937",
                                 fontWeight: "500",
                               }}
                             >
@@ -1114,13 +1102,11 @@ function RechartsAssetChart({
                                 flexShrink: 0,
                               }}
                             />
-                            <span style={{ color: getAssetColor("부채") }}>
-                              부채
-                            </span>
+                            <span style={{ color: "#1f2937" }}>부채</span>
                             <span
                               style={{
                                 marginLeft: "auto",
-                                color: getAssetColor("부채"),
+                                color: "#1f2937",
                                 fontWeight: "500",
                               }}
                             >

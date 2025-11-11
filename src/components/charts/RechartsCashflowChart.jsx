@@ -866,13 +866,13 @@ function RechartsCashflowChart({
                                     flexShrink: 0,
                                   }}
                                 />
-                                <span style={{ color: item.color }}>
+                                <span style={{ color: "#1f2937" }}>
                                   {item.label}
                                 </span>
                                 <span
                                   style={{
                                     marginLeft: "auto",
-                                    color: item.color,
+                                    color: "#1f2937",
                                     fontWeight: "500",
                                   }}
                                 >
@@ -932,13 +932,13 @@ function RechartsCashflowChart({
                                     flexShrink: 0,
                                   }}
                                 />
-                                <span style={{ color: item.color }}>
+                                <span style={{ color: "#1f2937" }}>
                                   {item.label}
                                 </span>
                                 <span
                                   style={{
                                     marginLeft: "auto",
-                                    color: item.color,
+                                    color: "#1f2937",
                                     fontWeight: "500",
                                   }}
                                 >

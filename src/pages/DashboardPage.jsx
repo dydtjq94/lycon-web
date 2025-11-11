@@ -72,7 +72,7 @@ function DashboardPage() {
   const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeChart, setActiveChart] = useState("cashflow");
+  const [activeChart, setActiveChart] = useState("assets"); // 기본값: 순 자산 규모
   const [simulationData, setSimulationData] = useState({
     cashflow: [],
     assets: [],
@@ -2882,8 +2882,11 @@ ${JSON.stringify(analysisData, null, 2)}`;
             )}
           </div>
         </div>
-        {/* 프로필 하단 빈 공간 */}
-        <ProfileSummary />
+        {/* 프로필 하단 차트 선택 탭 */}
+        <ProfileSummary
+          activeChart={activeChart}
+          onChartChange={setActiveChart}
+        />
       </div>
 
       {/* 메인 대시보드 */}
@@ -3047,40 +3050,43 @@ ${JSON.stringify(analysisData, null, 2)}`;
         {/* 우측 메인 콘텐츠 - 그래프만 */}
         <div className={styles.mainContent}>
           <div className={styles.chartSection}>
+            {/* 선택된 차트 렌더링 */}
             <div className={styles.chartGrid}>
-              {/* 순 자산 차트 - 첫 번째로 표시 */}
-              <div className={styles.chartContainer}>
-                <RechartsAssetChart
-                  data={simulationData.assets}
-                  retirementAge={profileData.retirementAge}
-                  spouseRetirementAge={profileData.spouseRetirementAge}
-                  targetAssets={profileData.targetAssets}
-                  profileData={profileData}
-                  detailedData={simulationData.assetsDetailed}
-                  savings={savings}
-                  pensions={pensions}
-                  realEstates={realEstates}
-                  assets={assets}
-                  debts={debts}
-                />
-              </div>
+              {activeChart === "assets" && (
+                <div className={styles.chartContainer}>
+                  <RechartsAssetChart
+                    data={simulationData.assets}
+                    retirementAge={profileData.retirementAge}
+                    spouseRetirementAge={profileData.spouseRetirementAge}
+                    targetAssets={profileData.targetAssets}
+                    profileData={profileData}
+                    detailedData={simulationData.assetsDetailed}
+                    savings={savings}
+                    pensions={pensions}
+                    realEstates={realEstates}
+                    assets={assets}
+                    debts={debts}
+                  />
+                </div>
+              )}
 
-              {/* 현금 흐름 차트 - 두 번째로 표시 */}
-              <div className={styles.chartContainer}>
-                <RechartsCashflowChart
-                  data={simulationData.cashflow}
-                  retirementAge={profileData.retirementAge}
-                  detailedData={simulationData.cashflowDetailed}
-                  profileData={profileData} // 배우자 은퇴 정보를 위해 전체 프로필 데이터 전달
-                  incomes={incomes}
-                  expenses={expenses}
-                  savings={savings}
-                  pensions={pensions}
-                  realEstates={realEstates}
-                  assets={assets}
-                  debts={debts}
-                />
-              </div>
+              {activeChart === "cashflow" && (
+                <div className={styles.chartContainer}>
+                  <RechartsCashflowChart
+                    data={simulationData.cashflow}
+                    retirementAge={profileData.retirementAge}
+                    detailedData={simulationData.cashflowDetailed}
+                    profileData={profileData} // 배우자 은퇴 정보를 위해 전체 프로필 데이터 전달
+                    incomes={incomes}
+                    expenses={expenses}
+                    savings={savings}
+                    pensions={pensions}
+                    realEstates={realEstates}
+                    assets={assets}
+                    debts={debts}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
