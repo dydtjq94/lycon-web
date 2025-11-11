@@ -1091,7 +1091,7 @@ function RechartsAssetChart({
                                 fontWeight: "500",
                               }}
                             >
-                              {formatAmountForChart(Math.abs(data.음수현금))}
+                              -{formatAmountForChart(Math.abs(data.음수현금))}
                             </span>
                           </div>
                         )}
@@ -1124,7 +1124,7 @@ function RechartsAssetChart({
                                 fontWeight: "500",
                               }}
                             >
-                              {formatAmountForChart(Math.abs(data.부채))}
+                              -{formatAmountForChart(Math.abs(data.부채))}
                             </span>
                           </div>
                         )}
