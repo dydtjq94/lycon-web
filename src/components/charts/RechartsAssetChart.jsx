@@ -620,11 +620,25 @@ function RechartsAssetChart({
     setIsDistributionOpen(true);
   };
 
-  // 차트 클릭 핸들러 (연도 선택하여 패널 업데이트)
+  // 차트 클릭 핸들러 (연도 선택하여 패널 업데이트 + 모달 열기)
   const handleChartClick = (data) => {
-    if (data && data.activePayload && data.activePayload.length > 0) {
+    // activeLabel로 년도 찾기 (빈 공간 클릭 시)
+    if (data && data.activeLabel) {
+      const year = parseInt(data.activeLabel);
+      const clickedData = chartData.find((d) => d.year === year);
+      if (clickedData) {
+        setHoveredData(clickedData);
+        // 모달도 열기
+        setDistributionEntry(clickedData);
+        setIsDistributionOpen(true);
+      }
+    } else if (data && data.activePayload && data.activePayload.length > 0) {
+      // Bar 클릭 시
       const clickedData = data.activePayload[0].payload;
       setHoveredData(clickedData);
+      // 모달도 열기
+      setDistributionEntry(clickedData);
+      setIsDistributionOpen(true);
     }
   };
 

@@ -517,6 +517,19 @@ function RechartsCashflowChart({
           left: 40,
           bottom: 120,
         }}
+        onClick={(e) => {
+          // 클릭한 위치의 년도 데이터 찾기
+          if (e && e.activeLabel) {
+            const year = parseInt(e.activeLabel);
+            const clickedData = chartData.find((d) => d.year === year);
+            if (clickedData) {
+              handleBarClick({ payload: clickedData });
+            }
+          } else if (e && e.activePayload && e.activePayload[0]) {
+            handleBarClick(e.activePayload[0]);
+          }
+        }}
+        style={{ cursor: "pointer" }}
       >
         {/* 그라데이션 정의 */}
         <defs>
@@ -960,6 +973,7 @@ function RechartsCashflowChart({
             <Cell
               key={`cell-${index}`}
               fill={entry.amount >= 0 ? "#10b981" : "#ef4444"}
+              style={{ cursor: "pointer" }}
             />
           ))}
         </Bar>
