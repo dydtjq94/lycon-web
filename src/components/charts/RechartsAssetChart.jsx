@@ -56,175 +56,6 @@ const OptimizedPieChart = memo(({ data, title }) => {
 
 OptimizedPieChart.displayName = "OptimizedPieChart";
 
-// 오른쪽 상세 패널 컴포넌트 (성능 최적화)
-const AssetDetailPanel = memo(
-  ({
-    displayData,
-    profileData,
-    assetItems,
-    debtItemsOnly,
-    totalAssets,
-    totalDebt,
-    netAssets,
-  }) => {
-    return (
-      <div className={styles.detailPanel}>
-        <div className={styles.detailPanelHeader}>
-          <div className={styles.detailPanelInfo}>
-            <div className={styles.detailPanelTitle}>
-              {displayData?.year || ""}년 순자산
-            </div>
-            <div className={styles.detailPanelMeta}>
-              {/* 본인 나이 */}
-              본인 {displayData?.age || 0}세{/* 배우자 나이 */}
-              {profileData?.hasSpouse && profileData?.spouseBirthYear && (
-                <>
-                  {" "}
-                  • 배우자{" "}
-                  {displayData?.year - parseInt(profileData.spouseBirthYear)}세
-                </>
-              )}
-              {/* 자녀 나이 */}
-              {profileData?.familyMembers &&
-                profileData.familyMembers
-                  .filter((member) => member.relationship === "자녀")
-                  .map((child) => ({
-                    gender: child.gender || "아들",
-                    age: displayData?.year - parseInt(child.birthYear),
-                  }))
-                  .filter((child) => child.age >= 0).length > 0 && (
-                  <>
-                    <br />
-                    {profileData.familyMembers
-                      .filter((member) => member.relationship === "자녀")
-                      .map((child) => ({
-                        gender: child.gender || "아들",
-                        age: displayData?.year - parseInt(child.birthYear),
-                      }))
-                      .filter((child) => child.age >= 0)
-                      .map((child) => `${child.gender} ${child.age}세`)
-                      .join(", ")}
-                  </>
-                )}
-            </div>
-          </div>
-          <div
-            className={styles.detailPanelTotal}
-            style={{
-              color: netAssets >= 0 ? "#10b981" : "#ef4444",
-            }}
-          >
-            {netAssets >= 0 ? "+" : ""}
-            {formatAmountForChart(netAssets)}
-          </div>
-        </div>
-
-        {/* 자산 항목 */}
-        {assetItems.length > 0 && (
-          <div className={styles.detailSection}>
-            <div className={styles.detailSectionHeader}>
-              <div className={styles.detailSectionTitle}>자산</div>
-              <div
-                className={styles.detailSectionTotal}
-                style={{ color: "#10b981" }}
-              >
-                +{formatAmountForChart(totalAssets)}
-              </div>
-            </div>
-            {assetItems.map((item, index) => (
-              <div key={`asset-${index}`} className={styles.detailItem}>
-                <span className={styles.detailLabelWithDot}>
-                  <span
-                    className={styles.detailCategoryDot}
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className={styles.detailLabel}>{item.label}</span>
-                </span>
-                <span
-                  className={styles.detailValue}
-                  style={{ color: "#10b981" }}
-                >
-                  {formatAmountForChart(item.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 부채 항목 */}
-        {debtItemsOnly.length > 0 && (
-          <div className={styles.detailSection}>
-            <div className={styles.detailSectionHeader}>
-              <div className={styles.detailSectionTitle}>부채</div>
-              <div
-                className={styles.detailSectionTotal}
-                style={{ color: "#ef4444" }}
-              >
-                -{formatAmountForChart(totalDebt)}
-              </div>
-            </div>
-            {debtItemsOnly.map((item, index) => (
-              <div key={`debt-${index}`} className={styles.detailItem}>
-                <span className={styles.detailLabelWithDot}>
-                  <span
-                    className={styles.detailCategoryDot}
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className={styles.detailLabel}>{item.label}</span>
-                </span>
-                <span
-                  className={styles.detailValue}
-                  style={{ color: "#ef4444" }}
-                >
-                  -{formatAmountForChart(item.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 이벤트 */}
-        {displayData.events && displayData.events.length > 0 && (
-          <div className={styles.detailSection}>
-            <div className={styles.detailDivider} />
-            <div className={styles.detailSectionTitle}>이벤트</div>
-            {displayData.events.map((event, index) => (
-              <div key={`event-${index}`} className={styles.detailEventItem}>
-                <span
-                  className={styles.detailEventDot}
-                  style={{
-                    backgroundColor:
-                      event.category === "asset"
-                        ? "#06b6d4"
-                        : event.category === "debt"
-                        ? "#374151"
-                        : event.category === "pension"
-                        ? "#fbbf24"
-                        : event.category === "saving"
-                        ? "#3b82f6"
-                        : event.category === "realEstate"
-                        ? "#8b5cf6"
-                        : "#374151",
-                  }}
-                />
-                <span className={styles.detailEventText}>{event.title}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {assetItems.length === 0 && debtItemsOnly.length === 0 && (
-          <div className={styles.detailEmptyState}>
-            해당 년도의 자산 정보가 없습니다
-          </div>
-        )}
-      </div>
-    );
-  }
-);
-
-AssetDetailPanel.displayName = "AssetDetailPanel";
-
 /**
  * Recharts를 사용한 자산 시뮬레이션 차트
  */
@@ -570,7 +401,7 @@ function RechartsAssetChart({
       if (childrenAges.length > 0) {
         const childrenText = childrenAges
           .map((child) => `${child.gender} ${child.age}`)
-          .join(", ");
+          .join(" • ");
         familyLabel += ` • ${childrenText}`;
       }
 
@@ -672,7 +503,7 @@ function RechartsAssetChart({
       case "저축투자":
         return "#3b82f6"; // 파랑
       case "연금":
-        return "#fbbf24"; // 노랑
+        return "#eab308"; // 어두운 노랑
       case "부동산":
         return "#8b5cf6"; // 보라
       case "자산":
@@ -957,7 +788,7 @@ function RechartsAssetChart({
                   {/* 년도 */}
                   <div
                     style={{
-                      fontSize: "14px",
+                      fontSize: "15px",
                       fontWeight: "bold",
                       marginBottom: "8px",
                       borderBottom: "1px solid rgba(0,0,0,0.1)",
@@ -971,7 +802,7 @@ function RechartsAssetChart({
                   {/* 가족 구성 */}
                   <div
                     style={{
-                      fontSize: "11px",
+                      fontSize: "12px",
                       color: "#6b7280",
                       marginBottom: "10px",
                     }}
@@ -987,6 +818,7 @@ function RechartsAssetChart({
                       marginBottom: "8px",
                       fontWeight: "bold",
                       color: "#374151",
+                      fontSize: "14px",
                     }}
                   >
                     <span>순자산</span>
@@ -1003,7 +835,7 @@ function RechartsAssetChart({
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        fontSize: "13px",
+                        fontSize: "14px",
                         marginBottom: "6px",
                         fontWeight: "600",
                       }}
@@ -1015,11 +847,11 @@ function RechartsAssetChart({
                     </div>
                     <div
                       style={{
-                        fontSize: "11px",
+                        fontSize: "12px",
                         paddingLeft: "12px",
                         display: "flex",
                         flexDirection: "column",
-                        gap: "3px",
+                        gap: "4px",
                       }}
                     >
                       {/* 저축/투자: 0이 아닐 때만 표시 */}
@@ -1197,7 +1029,7 @@ function RechartsAssetChart({
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
-                          fontSize: "13px",
+                          fontSize: "14px",
                           marginBottom: "6px",
                           fontWeight: "600",
                         }}
@@ -1209,11 +1041,11 @@ function RechartsAssetChart({
                       </div>
                       <div
                         style={{
-                          fontSize: "11px",
+                          fontSize: "12px",
                           paddingLeft: "12px",
                           display: "flex",
                           flexDirection: "column",
-                          gap: "3px",
+                          gap: "4px",
                         }}
                       >
                         {/* -현금: 0이 아닐 때만 표시 */}
@@ -1236,7 +1068,7 @@ function RechartsAssetChart({
                               }}
                             />
                             <span style={{ color: getAssetColor("음수현금") }}>
-                              -현금
+                              현금
                             </span>
                             <span
                               style={{
@@ -1595,23 +1427,9 @@ function RechartsAssetChart({
               </div>
             </div>
 
-            {/* 컨텐츠 영역: 그래프(왼쪽) + 상세정보(오른쪽) */}
+            {/* 컨텐츠 영역: 그래프 */}
             <div className={styles.chartContent}>
-              {/* 왼쪽: 그래프 */}
-              <div className={styles.chartArea}>
-                <div className={styles.chartWrapper}>{renderChart()}</div>
-              </div>
-
-              {/* 오른쪽: 상세 패널 (컴포넌트로 분리하여 성능 최적화) */}
-              <AssetDetailPanel
-                displayData={displayData}
-                profileData={profileData}
-                assetItems={assetItems}
-                debtItemsOnly={debtItemsOnly}
-                totalAssets={totalAssets}
-                totalDebt={totalDebt}
-                netAssets={netAssets}
-              />
+              <div className={styles.chartWrapper}>{renderChart()}</div>
             </div>
           </>
         ) : (
@@ -1625,109 +1443,8 @@ function RechartsAssetChart({
           onClose={() => setIsZoomed(false)}
           title="순 자산 규모"
         >
-          <div className={styles.chartContent} style={{ height: "100%" }}>
-            {/* 왼쪽: 그래프 */}
-            <div className={styles.chartArea}>
-              <div style={{ width: "100%", height: "100%" }}>
-                {renderChart("100%", true)}
-              </div>
-            </div>
-
-            {/* 오른쪽: 상세 패널 */}
-            <div className={styles.detailPanel}>
-              <div className={styles.detailPanelTitle}>
-                {displayData?.year || ""}년 순자산
-              </div>
-
-              {/* 자산 항목 */}
-              {assetItems.length > 0 && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailSectionTitle}>자산</div>
-                  {assetItems.map((item, index) => (
-                    <div key={`asset-${index}`} className={styles.detailItem}>
-                      <span className={styles.detailLabelWithDot}>
-                        <span
-                          className={styles.detailCategoryDot}
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className={styles.detailLabel}>{item.label}</span>
-                      </span>
-                      <span
-                        className={styles.detailValue}
-                        style={{ color: "#10b981" }}
-                      >
-                        {formatAmountForChart(item.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 부채 항목 */}
-              {debtItemsOnly.length > 0 && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailSectionTitle}>부채</div>
-                  {debtItemsOnly.map((item, index) => (
-                    <div key={`debt-${index}`} className={styles.detailItem}>
-                      <span className={styles.detailLabelWithDot}>
-                        <span
-                          className={styles.detailCategoryDot}
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className={styles.detailLabel}>{item.label}</span>
-                      </span>
-                      <span
-                        className={styles.detailValue}
-                        style={{ color: "#ef4444" }}
-                      >
-                        -{formatAmountForChart(item.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 이벤트 */}
-              {displayData.events && displayData.events.length > 0 && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailDivider} />
-                  <div className={styles.detailSectionTitle}>이벤트</div>
-                  {displayData.events.map((event, index) => (
-                    <div
-                      key={`event-${index}`}
-                      className={styles.detailEventItem}
-                    >
-                      <span
-                        className={styles.detailEventDot}
-                        style={{
-                          backgroundColor:
-                            event.category === "asset"
-                              ? "#06b6d4"
-                              : event.category === "debt"
-                              ? "#374151"
-                              : event.category === "pension"
-                              ? "#fbbf24"
-                              : event.category === "saving"
-                              ? "#3b82f6"
-                              : event.category === "realEstate"
-                              ? "#8b5cf6"
-                              : "#374151",
-                        }}
-                      />
-                      <span className={styles.detailEventText}>
-                        {event.title}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {assetItems.length === 0 && debtItemsOnly.length === 0 && (
-                <div className={styles.detailEmptyState}>
-                  해당 년도의 자산 정보가 없습니다
-                </div>
-              )}
-            </div>
+          <div style={{ width: "100%", height: "100%" }}>
+            {renderChart("100%", true)}
           </div>
         </ChartZoomModal>
       )}

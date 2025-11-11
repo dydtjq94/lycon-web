@@ -73,7 +73,6 @@ function RechartsCashflowChart({
   debts = [],
 }) {
   const [isZoomed, setIsZoomed] = useState(false);
-  const [hoveredData, setHoveredData] = useState(null); // 마우스 오버된 데이터
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
 
@@ -518,18 +517,6 @@ function RechartsCashflowChart({
           left: 40,
           bottom: 120,
         }}
-        onMouseMove={(state) => {
-          // activeTooltipIndex를 사용하여 현재 hover 중인 데이터 찾기
-          if (state && state.isTooltipActive !== false) {
-            const index = state.activeTooltipIndex;
-            if (index !== undefined && index >= 0 && chartData[index]) {
-              setHoveredData(chartData[index]);
-            }
-          }
-        }}
-        onMouseLeave={() => {
-          setHoveredData(null);
-        }}
       >
         {/* 그라데이션 정의 */}
         <defs>
@@ -607,12 +594,354 @@ function RechartsCashflowChart({
           />
         )}
 
-        {/* 마우스 위치 표시용 투명 툴팁 (시각적 피드백만 제공) */}
+        {/* 툴팁 */}
         <Tooltip
           cursor={{
-            fill: "rgba(59, 130, 246, 0.1)",
+            fill: "rgba(59, 130, 246, 0.15)",
+            stroke: "#3b82f6",
+            strokeWidth: 2,
           }}
-          content={() => null}
+          content={({ active, payload }) => {
+            if (active && payload && payload.length > 0) {
+              const data = payload[0].payload;
+              const detailData = detailedData.find(
+                (item) => item.year === data.year
+              );
+
+              // 카테고리별 색상 설정 (모달과 동일)
+              const categoryConfig = {
+                소득: { color: "#10b981", name: "소득" },
+                지출: { color: "#ef4444", name: "지출" },
+                저축: { color: "#3b82f6", name: "저축/투자" },
+                "저축 구매": { color: "#2563eb", name: "저축/투자" },
+                "저축 적립": { color: "#1d4ed8", name: "저축/투자" },
+                "저축 수령": { color: "#0891b2", name: "저축/투자" },
+                "저축 수익": { color: "#06b6d4", name: "저축/투자" },
+                "저축 만기": { color: "#0891b2", name: "저축/투자" },
+                "저축 만료": { color: "#0891b2", name: "저축/투자" },
+                국민연금: { color: "#fbbf24", name: "연금" },
+                퇴직연금: { color: "#f59e0b", name: "연금" },
+                개인연금: { color: "#eab308", name: "연금" },
+                "퇴직금 IRP": { color: "#d97706", name: "연금" },
+                "퇴직금 IRP 적립": { color: "#b45309", name: "연금" },
+                "연금 적립": { color: "#ca8a04", name: "연금" },
+                부동산: { color: "#8b5cf6", name: "부동산" },
+                임대소득: { color: "#a78bfa", name: "부동산" },
+                "임대 소득": { color: "#a78bfa", name: "부동산" },
+                "부동산 구매": { color: "#7c3aed", name: "부동산" },
+                "부동산 수령": { color: "#6d28d9", name: "부동산" },
+                "부동산 취득세": { color: "#5b21b6", name: "부동산" },
+                주택연금: { color: "#a78bfa", name: "부동산" },
+                취득세: { color: "#5b21b6", name: "부동산" },
+                양도소득세: { color: "#4c1d95", name: "부동산" },
+                양도세: { color: "#4c1d95", name: "세금" },
+                자산: { color: "#06b6d4", name: "자산" },
+                "자산 구매": { color: "#155e75", name: "자산" },
+                "자산 수령": { color: "#0891b2", name: "자산" },
+                대출: { color: "#374151", name: "부채" },
+                "대출 유입": { color: "#4b5563", name: "부채" },
+                이자: { color: "#6b7280", name: "부채" },
+                "부채 이자": { color: "#6b7280", name: "부채" },
+                "원금 상환": { color: "#9ca3af", name: "부채" },
+                "부채 원금 상환": { color: "#9ca3af", name: "부채" },
+              };
+
+              // breakdown에서 수입/지출 데이터 가져오기 (카테고리별로 그룹화)
+              const positivesByCategory = {};
+              const negativesByCategory = {};
+
+              if (detailData && detailData.breakdown) {
+                (detailData.breakdown.positives || []).forEach((item) => {
+                  const categoryName =
+                    categoryConfig[item.category]?.name ||
+                    categoryConfig[item.label]?.name ||
+                    "기타";
+                  const color =
+                    categoryConfig[item.category]?.color ||
+                    categoryConfig[item.label]?.color ||
+                    "#9ca3af";
+
+                  if (!positivesByCategory[categoryName]) {
+                    positivesByCategory[categoryName] = {
+                      color:
+                        categoryConfig[item.category]?.color ||
+                        categoryConfig[item.label]?.color ||
+                        "#9ca3af",
+                      items: [],
+                    };
+                  }
+                  positivesByCategory[categoryName].items.push({
+                    label: item.label,
+                    amount: item.amount,
+                    color: color,
+                  });
+                });
+
+                (detailData.breakdown.negatives || []).forEach((item) => {
+                  const categoryName =
+                    categoryConfig[item.category]?.name ||
+                    categoryConfig[item.label]?.name ||
+                    "기타";
+                  const color =
+                    categoryConfig[item.category]?.color ||
+                    categoryConfig[item.label]?.color ||
+                    "#9ca3af";
+
+                  if (!negativesByCategory[categoryName]) {
+                    negativesByCategory[categoryName] = {
+                      color:
+                        categoryConfig[item.category]?.color ||
+                        categoryConfig[item.label]?.color ||
+                        "#9ca3af",
+                      items: [],
+                    };
+                  }
+                  negativesByCategory[categoryName].items.push({
+                    label: item.label,
+                    amount: item.amount,
+                    color: color,
+                  });
+                });
+              }
+
+              // 전체 합계를 위한 배열 생성
+              const positives = Object.values(positivesByCategory)
+                .map((cat) => cat.items)
+                .flat();
+              const negatives = Object.values(negativesByCategory)
+                .map((cat) => cat.items)
+                .flat();
+
+              const totalPositive = positives.reduce(
+                (sum, item) => sum + item.amount,
+                0
+              );
+              const totalNegative = negatives.reduce(
+                (sum, item) => sum + item.amount,
+                0
+              );
+              const netCashflow = data.amount || 0;
+
+              return (
+                <div
+                  style={{
+                    background: "rgba(255, 255, 255, 0.7)",
+                    backdropFilter: "blur(12px)",
+                    padding: "14px 18px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(0, 0, 0, 0.08)",
+                    color: "#1f2937",
+                    fontSize: "13px",
+                    pointerEvents: "none",
+                    minWidth: "240px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {/* 년도 */}
+                  <div
+                    style={{
+                      fontSize: "15px",
+                      fontWeight: "bold",
+                      marginBottom: "8px",
+                      borderBottom: "1px solid rgba(0,0,0,0.1)",
+                      paddingBottom: "6px",
+                      color: "#111827",
+                    }}
+                  >
+                    {data.year}년
+                  </div>
+
+                  {/* 가족 구성 */}
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    본인 {data.age}세
+                    {profileData?.hasSpouse &&
+                      profileData?.spouseBirthYear &&
+                      ` • 배우자 ${
+                        data.year - parseInt(profileData.spouseBirthYear)
+                      }세`}
+                    {profileData?.familyMembers &&
+                      profileData.familyMembers
+                        .filter((member) => member.relationship === "자녀")
+                        .map((child) => ({
+                          gender: child.gender || "아들",
+                          age: data.year - parseInt(child.birthYear),
+                        }))
+                        .filter((child) => child.age >= 0).length > 0 &&
+                      ` • ${profileData.familyMembers
+                        .filter((member) => member.relationship === "자녀")
+                        .map((child) => ({
+                          gender: child.gender || "아들",
+                          age: data.year - parseInt(child.birthYear),
+                        }))
+                        .filter((child) => child.age >= 0)
+                        .map((child) => `${child.gender} ${child.age}세`)
+                        .join(" • ")}`}
+                  </div>
+
+                  {/* 순 현금흐름 */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "8px",
+                      fontWeight: "bold",
+                      color: "#374151",
+                      fontSize: "14px",
+                    }}
+                  >
+                    <span>순 현금흐름</span>
+                    <span
+                      style={{
+                        color: netCashflow >= 0 ? "#10b981" : "#ef4444",
+                      }}
+                    >
+                      {netCashflow >= 0 ? "+" : ""}
+                      {formatAmountForChart(netCashflow)}
+                    </span>
+                  </div>
+
+                  {/* 수입 */}
+                  {positives.length > 0 && (
+                    <div style={{ marginBottom: "8px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "14px",
+                          marginBottom: "6px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        <span style={{ color: "#4b5563" }}>수입</span>
+                        <span style={{ color: "#10b981" }}>
+                          +{formatAmountForChart(totalPositive)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          paddingLeft: "12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "4px",
+                        }}
+                      >
+                        {Object.entries(positivesByCategory).map(
+                          ([categoryName, categoryData]) =>
+                            categoryData.items.map((item, index) => (
+                              <div
+                                key={`positive-${categoryName}-${index}`}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    width: "8px",
+                                    height: "8px",
+                                    borderRadius: "50%",
+                                    backgroundColor: item.color,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                <span style={{ color: item.color }}>
+                                  {item.label}
+                                </span>
+                                <span
+                                  style={{
+                                    marginLeft: "auto",
+                                    color: item.color,
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  +{formatAmountForChart(item.amount)}
+                                </span>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 지출 */}
+                  {negatives.length > 0 && (
+                    <div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "14px",
+                          marginBottom: "6px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        <span style={{ color: "#4b5563" }}>지출</span>
+                        <span style={{ color: "#ef4444" }}>
+                          -{formatAmountForChart(totalNegative)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          paddingLeft: "12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "4px",
+                        }}
+                      >
+                        {Object.entries(negativesByCategory).map(
+                          ([categoryName, categoryData]) =>
+                            categoryData.items.map((item, index) => (
+                              <div
+                                key={`negative-${categoryName}-${index}`}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    width: "8px",
+                                    height: "8px",
+                                    borderRadius: "50%",
+                                    backgroundColor: item.color,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                <span style={{ color: item.color }}>
+                                  {item.label}
+                                </span>
+                                <span
+                                  style={{
+                                    marginLeft: "auto",
+                                    color: item.color,
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  -{formatAmountForChart(item.amount)}
+                                </span>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            return null;
+          }}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -663,18 +992,6 @@ function RechartsCashflowChart({
     </ResponsiveContainer>
   );
 
-  // 현재 년도 데이터 가져오기 (기본값)
-  const currentYearIndex = chartData.findIndex(
-    (item) => item.year === new Date().getFullYear()
-  );
-
-  // displayData: hoveredData가 있으면 우선 사용, 없으면 현재 년도 또는 첫 번째 데이터
-  const displayData = hoveredData
-    ? hoveredData
-    : currentYearIndex >= 0
-    ? chartData[currentYearIndex]
-    : chartData[0];
-
   // 카테고리별 색상 설정 (한글 카테고리를 키로 사용)
   const categoryConfig = {
     소득: { color: "#10b981", order: 1, name: "소득" },
@@ -712,53 +1029,6 @@ function RechartsCashflowChart({
     "원금 상환": { color: "#9ca3af", order: 7, name: "부채" },
     "부채 원금 상환": { color: "#9ca3af", order: 7, name: "부채" },
   };
-
-  // displayData에서 상세 정보 수집
-  const yearData = detailedData.find((item) => item.year === displayData.year);
-  const allItems = [];
-
-  if (yearData && yearData.breakdown) {
-    // breakdown의 positives와 negatives를 allItems에 추가
-    (yearData.breakdown.positives || []).forEach((item) => {
-      allItems.push({
-        ...item,
-        type: "positive",
-      });
-    });
-    (yearData.breakdown.negatives || []).forEach((item) => {
-      allItems.push({
-        ...item,
-        type: "negative",
-      });
-    });
-  }
-
-  // 카테고리별로 정렬
-  const sortedItems = allItems.sort((a, b) => {
-    const orderA = categoryConfig[a.category]?.order || 999;
-    const orderB = categoryConfig[b.category]?.order || 999;
-    if (orderA !== orderB) return orderA - orderB;
-    return b.amount - a.amount;
-  });
-
-  // 수입과 지출 분리
-  const positiveItems = sortedItems.filter(
-    (item) => item.type === "positive" && item.amount > 0
-  );
-  const negativeItems = sortedItems.filter(
-    (item) => item.type === "negative" && item.amount > 0
-  );
-
-  // 합계 계산
-  const totalPositive = positiveItems.reduce(
-    (sum, item) => sum + item.amount,
-    0
-  );
-  const totalNegative = negativeItems.reduce(
-    (sum, item) => sum + item.amount,
-    0
-  );
-  const netCashflow = totalPositive - totalNegative;
 
   // 수입/지출 분포 데이터 생성 (파이 차트용)
   const allDistributionData = useMemo(() => {
@@ -868,199 +1138,8 @@ function RechartsCashflowChart({
               </div>
             </div>
 
-            {/* 컨텐츠 영역: 그래프(왼쪽) + 상세정보(오른쪽) */}
-            <div className={styles.chartContent}>
-              {/* 왼쪽: 그래프 */}
-              <div className={styles.chartArea}>
-                <div className={styles.chartWrapper}>{renderChart()}</div>
-              </div>
-
-              {/* 오른쪽: 상세 패널 */}
-              <div className={styles.detailPanel}>
-                <div className={styles.detailPanelHeader}>
-                  <div className={styles.detailPanelInfo}>
-                    <div className={styles.detailPanelTitle}>
-                      {displayData.year}년 순 현금흐름
-                    </div>
-                    <div className={styles.detailPanelMeta}>
-                      {/* 본인 나이 */}
-                      본인 {displayData?.age || 0}세{/* 배우자 나이 */}
-                      {profileData?.hasSpouse &&
-                        profileData?.spouseBirthYear && (
-                          <>
-                            {" "}
-                            • 배우자{" "}
-                            {displayData.year -
-                              parseInt(profileData.spouseBirthYear)}
-                            세
-                          </>
-                        )}
-                      {/* 자녀 나이 */}
-                      {profileData?.familyMembers &&
-                        profileData.familyMembers
-                          .filter((member) => member.relationship === "자녀")
-                          .map((child) => ({
-                            gender: child.gender || "아들",
-                            age: displayData.year - parseInt(child.birthYear),
-                          }))
-                          .filter((child) => child.age >= 0).length > 0 && (
-                          <>
-                            <br />
-                            {profileData.familyMembers
-                              .filter(
-                                (member) => member.relationship === "자녀"
-                              )
-                              .map((child) => ({
-                                gender: child.gender || "아들",
-                                age:
-                                  displayData.year - parseInt(child.birthYear),
-                              }))
-                              .filter((child) => child.age >= 0)
-                              .map((child) => `${child.gender} ${child.age}세`)
-                              .join(", ")}
-                          </>
-                        )}
-                    </div>
-                  </div>
-                  <div
-                    className={styles.detailPanelTotal}
-                    style={{
-                      color: netCashflow >= 0 ? "#10b981" : "#ef4444",
-                    }}
-                  >
-                    {netCashflow >= 0 ? "+" : ""}
-                    {formatAmountForChart(netCashflow)}
-                  </div>
-                </div>
-
-                {/* 수입 항목 */}
-                {positiveItems.length > 0 && (
-                  <div className={styles.detailSection}>
-                    <div className={styles.detailSectionHeader}>
-                      <div className={styles.detailSectionTitle}>수입</div>
-                      <div
-                        className={styles.detailSectionTotal}
-                        style={{ color: "#10b981" }}
-                      >
-                        +{formatAmountForChart(totalPositive)}
-                      </div>
-                    </div>
-                    {positiveItems.map((item, index) => (
-                      <div
-                        key={`positive-${index}`}
-                        className={styles.detailItem}
-                      >
-                        <span className={styles.detailLabelWithDot}>
-                          <span
-                            className={styles.detailCategoryDot}
-                            style={{
-                              backgroundColor:
-                                categoryConfig[item.category]?.color ||
-                                "#9ca3af",
-                            }}
-                          />
-                          <span className={styles.detailLabel}>
-                            {item.label}
-                          </span>
-                        </span>
-                        <span
-                          className={styles.detailValue}
-                          style={{ color: "#10b981" }}
-                        >
-                          +{formatAmountForChart(item.amount)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* 지출 항목 */}
-                {negativeItems.length > 0 && (
-                  <div className={styles.detailSection}>
-                    <div className={styles.detailSectionHeader}>
-                      <div className={styles.detailSectionTitle}>지출</div>
-                      <div
-                        className={styles.detailSectionTotal}
-                        style={{ color: "#ef4444" }}
-                      >
-                        -{formatAmountForChart(totalNegative)}
-                      </div>
-                    </div>
-                    {negativeItems.map((item, index) => (
-                      <div
-                        key={`negative-${index}`}
-                        className={styles.detailItem}
-                      >
-                        <span className={styles.detailLabelWithDot}>
-                          <span
-                            className={styles.detailCategoryDot}
-                            style={{
-                              backgroundColor:
-                                categoryConfig[item.category]?.color ||
-                                "#9ca3af",
-                            }}
-                          />
-                          <span className={styles.detailLabel}>
-                            {item.label}
-                          </span>
-                        </span>
-                        <span
-                          className={styles.detailValue}
-                          style={{ color: "#ef4444" }}
-                        >
-                          -{formatAmountForChart(item.amount)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* 이벤트 */}
-                {displayData.events && displayData.events.length > 0 && (
-                  <div className={styles.detailSection}>
-                    <div className={styles.detailDivider} />
-                    <div className={styles.detailSectionTitle}>이벤트</div>
-                    {displayData.events.map((event, index) => (
-                      <div
-                        key={`event-${index}`}
-                        className={styles.detailEventItem}
-                      >
-                        <span
-                          className={styles.detailEventDot}
-                          style={{
-                            backgroundColor:
-                              event.category === "income"
-                                ? "#10b981"
-                                : event.category === "expense"
-                                ? "#ef4444"
-                                : event.category === "saving"
-                                ? "#3b82f6"
-                                : event.category === "pension"
-                                ? "#fbbf24"
-                                : event.category === "realEstate"
-                                ? "#8b5cf6"
-                                : event.category === "asset"
-                                ? "#06b6d4"
-                                : event.category === "debt"
-                                ? "#374151"
-                                : "#374151",
-                          }}
-                        />
-                        <span className={styles.detailEventText}>
-                          {event.title}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {positiveItems.length === 0 && negativeItems.length === 0 && (
-                  <div className={styles.detailEmptyState}>
-                    마우스를 차트에 올려보세요
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* 컨텐츠 영역: 그래프 */}
+            <div className={styles.chartWrapper}>{renderChart()}</div>
           </>
         )}
       </div>
@@ -1072,152 +1151,8 @@ function RechartsCashflowChart({
           onClose={() => setIsZoomed(false)}
           title="가계 현금 흐름"
         >
-          <div className={styles.chartContent} style={{ height: "100%" }}>
-            {/* 왼쪽: 그래프 */}
-            <div className={styles.chartArea}>
-              <div style={{ width: "100%", height: "100%" }}>
-                {renderChart("100%", true)}
-              </div>
-            </div>
-
-            {/* 오른쪽: 상세 패널 */}
-            <div className={styles.detailPanel}>
-              <div className={styles.detailPanelHeader}>
-                <div className={styles.detailPanelTitle}>
-                  {displayData.year}년 순 현금흐름
-                </div>
-                <div
-                  className={styles.detailPanelTotal}
-                  style={{
-                    color: netCashflow >= 0 ? "#10b981" : "#ef4444",
-                  }}
-                >
-                  {netCashflow >= 0 ? "+" : ""}
-                  {formatAmountForChart(netCashflow)}
-                </div>
-              </div>
-
-              {/* 수입 항목 */}
-              {positiveItems.length > 0 && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailSectionHeader}>
-                    <div className={styles.detailSectionTitle}>수입</div>
-                    <div
-                      className={styles.detailSectionTotal}
-                      style={{ color: "#10b981" }}
-                    >
-                      +{formatAmountForChart(totalPositive)}
-                    </div>
-                  </div>
-                  {positiveItems.map((item, index) => (
-                    <div
-                      key={`positive-${index}`}
-                      className={styles.detailItem}
-                    >
-                      <span className={styles.detailLabelWithDot}>
-                        <span
-                          className={styles.detailCategoryDot}
-                          style={{
-                            backgroundColor:
-                              categoryConfig[item.category]?.color || "#9ca3af",
-                          }}
-                        />
-                        <span className={styles.detailLabel}>{item.label}</span>
-                      </span>
-                      <span
-                        className={styles.detailValue}
-                        style={{ color: "#10b981" }}
-                      >
-                        +{formatAmountForChart(item.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 지출 항목 */}
-              {negativeItems.length > 0 && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailSectionHeader}>
-                    <div className={styles.detailSectionTitle}>지출</div>
-                    <div
-                      className={styles.detailSectionTotal}
-                      style={{ color: "#ef4444" }}
-                    >
-                      -{formatAmountForChart(totalNegative)}
-                    </div>
-                  </div>
-                  {negativeItems.map((item, index) => (
-                    <div
-                      key={`negative-${index}`}
-                      className={styles.detailItem}
-                    >
-                      <span className={styles.detailLabelWithDot}>
-                        <span
-                          className={styles.detailCategoryDot}
-                          style={{
-                            backgroundColor:
-                              categoryConfig[item.category]?.color || "#9ca3af",
-                          }}
-                        />
-                        <span className={styles.detailLabel}>{item.label}</span>
-                      </span>
-                      <span
-                        className={styles.detailValue}
-                        style={{ color: "#ef4444" }}
-                      >
-                        -{formatAmountForChart(item.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 이벤트 */}
-              {displayData.events && displayData.events.length > 0 && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailDivider} />
-                  <div className={styles.detailSectionTitle}>이벤트</div>
-                  {displayData.events.map((event, index) => (
-                    <div
-                      key={`event-${index}`}
-                      className={styles.detailEventItem}
-                    >
-                      <span
-                        className={styles.detailEventDot}
-                        style={{
-                          backgroundColor:
-                            event.category === "income"
-                              ? "#10b981"
-                              : event.category === "expense"
-                              ? "#ef4444"
-                              : event.category === "saving"
-                              ? "#3b82f6"
-                              : event.category === "pension"
-                              ? "#fbbf24"
-                              : event.category === "realEstate"
-                              ? "#8b5cf6"
-                              : event.category === "asset"
-                              ? "#06b6d4"
-                              : event.category === "debt"
-                              ? "#374151"
-                              : "#374151",
-                        }}
-                      />
-                      <span className={styles.detailEventText}>
-                        {event.title}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {positiveItems.length === 0 && negativeItems.length === 0 && (
-                <div className={styles.detailEmptyState}>
-                  마우스를 차트에 올려보세요
-                </div>
-              )}
-            </div>
+          <div style={{ width: "100%", height: "100%" }}>
+            {renderChart("100%", true)}
           </div>
         </ChartZoomModal>
       )}
