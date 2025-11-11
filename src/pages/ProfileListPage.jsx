@@ -19,6 +19,7 @@ function ProfileListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false); // 휴지통 모달
+  const [activeTab, setActiveTab] = useState("sample"); // 기본 탭: 샘플
 
   // 프로필 목록 로드
   useEffect(() => {
@@ -54,6 +55,12 @@ function ProfileListPage() {
       setLoading(false);
     }
   };
+
+  // 현재 탭에 따라 필터링된 프로필 목록
+  const filteredProfiles = profiles.filter((profile) => {
+    const status = profile.status || "sample"; // 기본값: sample
+    return status === activeTab;
+  });
 
   // 로그아웃 핸들러
   const handleLogout = () => {
@@ -154,14 +161,55 @@ function ProfileListPage() {
         </div>
       </div>
 
+      {/* 탭 네비게이션 */}
+      <div className={styles.tabNav}>
+        <button
+          className={`${styles.tabButton} ${
+            activeTab === "sample" ? styles.tabButtonActive : ""
+          }`}
+          onClick={() => setActiveTab("sample")}
+        >
+          샘플 ({profiles.filter((p) => (p.status || "sample") === "sample").length})
+        </button>
+        <button
+          className={`${styles.tabButton} ${
+            activeTab === "inProgress" ? styles.tabButtonActive : ""
+          }`}
+          onClick={() => setActiveTab("inProgress")}
+        >
+          제작중 ({profiles.filter((p) => p.status === "inProgress").length})
+        </button>
+        <button
+          className={`${styles.tabButton} ${
+            activeTab === "beforeConsult" ? styles.tabButtonActive : ""
+          }`}
+          onClick={() => setActiveTab("beforeConsult")}
+        >
+          상담 전 ({profiles.filter((p) => p.status === "beforeConsult").length})
+        </button>
+        <button
+          className={`${styles.tabButton} ${
+            activeTab === "afterConsult" ? styles.tabButtonActive : ""
+          }`}
+          onClick={() => setActiveTab("afterConsult")}
+        >
+          상담 후 ({profiles.filter((p) => p.status === "afterConsult").length})
+        </button>
+      </div>
+
       <div className={styles.profileList}>
-        {profiles.length === 0 && (
+        {filteredProfiles.length === 0 && (
           <div className={styles.emptyState}>
-            <p>등록된 프로필이 없습니다</p>
+            <p>
+              {activeTab === "sample" && "샘플 프로필이 없습니다"}
+              {activeTab === "inProgress" && "제작중인 프로필이 없습니다"}
+              {activeTab === "beforeConsult" && "상담 전 프로필이 없습니다"}
+              {activeTab === "afterConsult" && "상담 후 프로필이 없습니다"}
+            </p>
           </div>
         )}
 
-        {profiles.map((profile) => (
+        {filteredProfiles.map((profile) => (
           <div
             key={profile.id}
             className={styles.profileItem}

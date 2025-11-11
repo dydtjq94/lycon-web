@@ -241,8 +241,8 @@ function AssetModal({
       newErrors.growthRate = "상승률은 -100%와 1000% 사이의 숫자여야 합니다.";
     }
 
-    if (!formData.endYear || parseInt(formData.endYear) <= formData.startYear) {
-      newErrors.endYear = "종료 연도는 시작 연도보다 커야 합니다.";
+    if (!formData.endYear || parseInt(formData.endYear) < formData.startYear) {
+      newErrors.endYear = "종료 연도는 시작 연도보다 크거나 같아야 합니다.";
     }
 
     if (formData.assetType === "income") {

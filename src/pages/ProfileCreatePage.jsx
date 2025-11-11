@@ -678,6 +678,7 @@ function ProfileCreatePage() {
         currentLivingExpenses: parseInt(formData.currentLivingExpenses), // 현재 생활비로 변경
         targetAssets: parseInt(formData.targetAssets),
         currentCash: parseInt(formData.currentCash) || 0, // 현재 현금 추가
+        status: "sample", // 기본 상태: 샘플
         hasSpouse: formData.spouse !== null,
         spouseName: formData.spouse?.name || "",
         spouseBirthYear: formData.spouse?.birthYear || "",

@@ -91,6 +91,52 @@
   font-size: 0.9rem;
 }
 
+/* ========== 프로필 상태 선택 (최상단) ========== */
+.statusSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+}
+
+.statusLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.statusSelect {
+  flex: 1;
+  max-width: 200px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  outline: none;
+}
+
+.statusSelect:hover {
+  border-color: #9ca3af;
+}
+
+.statusSelect:focus {
+  border-color: #111827;
+}
+
+.statusSelect:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f9fafb;
+}
+
 /* ========== 2단 레이아웃 ========== */
 .twoColumnLayout {
   display: grid;

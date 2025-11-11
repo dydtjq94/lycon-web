@@ -21,6 +21,7 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
     retirementAge: 55,
     targetAssets: "",
     currentCash: "",
+    status: "sample", // 프로필 상태 (샘플/제작중/상담 전/상담 후)
     hasSpouse: false,
     spouseName: "",
     spouseBirthYear: "",
@@ -79,6 +80,7 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         retirementAge: profileData.retirementAge || 55,
         targetAssets: profileData.targetAssets || "",
         currentCash: profileData.currentCash || "",
+        status: profileData.status || "sample", // 기본값: 샘플
         hasSpouse: profileData.hasSpouse || false,
         spouseName: profileData.spouseName || "",
         spouseBirthYear: profileData.spouseBirthYear || "",
@@ -421,6 +423,7 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
             : parseInt(formData.retirementAge, 10) || 55,
         currentCash: parseInt(formData.currentCash) || 0,
         targetAssets: parseInt(formData.targetAssets) || 0,
+        status: formData.status || "sample", // 프로필 상태 저장
         currentKoreanAge: calculateKoreanAge(formData.birthYear),
         hasSpouse: formData.hasSpouse,
         spouseName: formData.hasSpouse ? formData.spouseName : "",
@@ -532,6 +535,28 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
           {errors.form && (
             <div className={styles.errorBanner}>{errors.form}</div>
           )}
+
+          {/* 프로필 상태 선택 (최상단) */}
+          <div className={styles.statusSection}>
+            <label htmlFor="status" className={styles.statusLabel}>
+              프로필 상태
+            </label>
+            <select
+              id="status"
+              name="status"
+              value={formData.status}
+              onChange={(e) =>
+                setFormData({ ...formData, status: e.target.value })
+              }
+              className={styles.statusSelect}
+              disabled={isSubmitting}
+            >
+              <option value="sample">샘플</option>
+              <option value="inProgress">제작중</option>
+              <option value="beforeConsult">상담 전</option>
+              <option value="afterConsult">상담 후</option>
+            </select>
+          </div>
 
           <div className={styles.twoColumnLayout}>
             {/* 왼쪽: 기본 정보 */}
