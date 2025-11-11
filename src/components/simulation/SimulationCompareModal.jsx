@@ -232,7 +232,7 @@ function SimulationCompareModal({
 
   const defaultAssetsTimeline = useMemo(() => {
     if (!profileData || !defaultData || !isOpen) return null;
-    return calculateAssetSimulation(
+    const result = calculateAssetSimulation(
       profileData,
       defaultData.incomes || [],
       defaultData.expenses || [],
@@ -243,11 +243,13 @@ function SimulationCompareModal({
       defaultData.cashflow || [],
       defaultData.debts || []
     );
+    // detailedData를 반환 (breakdown 정보 포함)
+    return result?.detailedData || result?.timeline || result;
   }, [defaultData, profileData, isOpen]);
 
   const targetAssetsTimeline = useMemo(() => {
     if (!profileData || !targetData || !isOpen) return null;
-    return calculateAssetSimulation(
+    const result = calculateAssetSimulation(
       profileData,
       targetData.incomes || [],
       targetData.expenses || [],
@@ -258,6 +260,8 @@ function SimulationCompareModal({
       targetData.cashflow || [],
       targetData.debts || []
     );
+    // detailedData를 반환 (breakdown 정보 포함)
+    return result?.detailedData || result?.timeline || result;
   }, [targetData, profileData, isOpen]);
 
   const showDefaultColumn =
@@ -627,20 +631,47 @@ function SimulationCompareModal({
   const buildAssetBreakdown = (entry) => {
     if (!entry || typeof entry !== "object") return [];
 
-    // 시스템 필드들을 명시적으로 제외
-    const systemFields = ["totalAmount", "year", "age"];
+    // breakdown 정보가 있으면 이를 사용 (새로운 데이터 구조)
+    if (entry.breakdown) {
+      const items = [];
+      
+      // assetItems에서 자산 항목 추출
+      if (entry.breakdown.assetItems && Array.isArray(entry.breakdown.assetItems)) {
+        entry.breakdown.assetItems.forEach(item => {
+          items.push({
+            name: item.label || item.name,
+            amount: item.amount,
+            isAsset: true,
+          });
+        });
+      }
 
-    // 모든 자산과 부채 항목을 포함 (시스템 필드 제외)
+      // debtItems에서 부채 항목 추출
+      if (entry.breakdown.debtItems && Array.isArray(entry.breakdown.debtItems)) {
+        entry.breakdown.debtItems.forEach(item => {
+          items.push({
+            name: item.label || item.name,
+            amount: -Math.abs(item.amount), // 부채는 음수로
+            isAsset: false,
+          });
+        });
+      }
+
+      // 금액 절댓값 기준으로 정렬하고 상위 8개만
+      return items
+        .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+        .slice(0, 8);
+    }
+
+    // 구 데이터 구조 지원 (fallback)
+    const systemFields = ["totalAmount", "year", "age", "breakdown"];
     const items = [];
 
     Object.entries(entry).forEach(([key, value]) => {
-      // 시스템 필드 제외
       if (systemFields.includes(key)) return;
-
-      // 숫자가 아니면 제외
       if (typeof value !== "number") return;
+      if (value === 0) return;
 
-      // 0이 아닌 모든 항목 포함 (양수는 자산, 음수는 부채)
       items.push({
         name: key,
         amount: value,
@@ -648,25 +679,6 @@ function SimulationCompareModal({
       });
     });
 
-    // 디버깅: 모든 항목과 총합 확인
-    console.log("Asset breakdown:", {
-      entry,
-      items,
-      totalAmount: entry.totalAmount,
-      calculatedSum: items.reduce((sum, item) => sum + item.amount, 0),
-      allKeys: Object.keys(entry),
-      filteredKeys: Object.keys(entry).filter(
-        (key) => !systemFields.includes(key)
-      ),
-      allValues: Object.entries(entry).map(([key, value]) => ({
-        key,
-        value,
-        type: typeof value,
-        isSystemField: systemFields.includes(key),
-      })),
-    });
-
-    // 금액 절댓값 기준으로 정렬
     return items
       .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
       .slice(0, 8);
@@ -744,7 +756,13 @@ function SimulationCompareModal({
       const calculateNetWorth = (entry) => {
         if (!entry) return null;
 
-        const systemFields = ["totalAmount", "year", "age"];
+        // breakdown 정보가 있으면 이를 우선 사용 (새로운 데이터 구조)
+        if (entry.breakdown && typeof entry.breakdown.netAssets === "number") {
+          return entry.breakdown.netAssets;
+        }
+
+        // 구 데이터 구조 지원 (fallback)
+        const systemFields = ["totalAmount", "year", "age", "breakdown"];
         let netWorth = 0;
 
         Object.entries(entry).forEach(([key, value]) => {

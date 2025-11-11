@@ -1,7 +1,73 @@
 {
-  "version": "0.30.99",
+  "version": "0.31.5",
   "today": "2025-11-11",
   "history": [
+    {
+      "version": "0.31.5",
+      "date": "2025-11-11",
+      "changes": [
+        "🔧 시뮬레이션 비교 모달 시점별 순자산 수정",
+        "새로운 자산 데이터 구조(breakdown)에 맞게 업데이트",
+        "buildAssetBreakdown 함수에서 breakdown의 assetItems/debtItems 사용",
+        "calculateNetWorth 함수에서 breakdown.netAssets 우선 사용",
+        "구 데이터 구조도 지원하도록 fallback 로직 추가"
+      ]
+    },
+    {
+      "version": "0.31.4",
+      "date": "2025-11-11",
+      "changes": [
+        "🔧 자산 차트 Bar 클릭 기능 복구",
+        "Bar 클릭 시 자산 구성 파이 차트 모달 표시 기능 재추가",
+        "모든 Bar에 onClick 핸들러 및 clickableBar 클래스 복원",
+        "마우스 이동으로 패널 업데이트 + 클릭으로 상세보기 모달"
+      ]
+    },
+    {
+      "version": "0.31.3",
+      "date": "2025-11-11",
+      "changes": [
+        "⚡ 자산 차트를 현금 흐름 차트와 동일한 방식으로 개선",
+        "onMouseMove에서 단순히 chartData[index]로 데이터 가져오기",
+        "detailedData에서 년도로 찾아서 미리 계산된 데이터 사용",
+        "불필요한 복잡한 로직 제거 및 단순화",
+        "마우스 이동 시 부드러운 반응 유지"
+      ]
+    },
+    {
+      "version": "0.31.2",
+      "date": "2025-11-11",
+      "changes": [
+        "🎯 자산 차트 UX 개선 - 클릭 방식으로 변경",
+        "마우스 이동 대신 클릭으로 연도 선택 방식 변경",
+        "onMouseMove 제거로 렉 현상 완전 해결",
+        "클릭한 연도의 상세 정보를 패널에 고정 표시",
+        "Tooltip에 '클릭하여 상세보기' 가이드 추가"
+      ]
+    },
+    {
+      "version": "0.31.1",
+      "date": "2025-11-11",
+      "changes": [
+        "⚡ 자산 차트 마우스 이벤트 최적화",
+        "requestAnimationFrame으로 마우스 이벤트 처리 개선",
+        "AssetDetailPanel 컴포넌트 분리 및 React.memo 적용",
+        "패널 업데이트를 브라우저 프레임에 맞춰 최적화",
+        "마우스 이동 시 부드러운 UI 반응 구현"
+      ]
+    },
+    {
+      "version": "0.31.0",
+      "date": "2025-11-11",
+      "changes": [
+        "⚡ 자산 시뮬레이션 차트 성능 대폭 개선",
+        "모든 Bar 컴포넌트에 radius={0} 추가로 둥근 모서리 렌더링 제거",
+        "chartData를 useMemo로 감싸서 불필요한 재계산 방지",
+        "legendData를 useMemo로 최적화",
+        "activeBar prop 제거로 hover 시 리렌더링 감소",
+        "툴팁 이동 시 렉 현상 완전 해결"
+      ]
+    },
     {
       "version": "0.30.99",
       "date": "2025-11-11",

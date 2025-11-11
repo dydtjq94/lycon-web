@@ -56,6 +56,175 @@ const OptimizedPieChart = memo(({ data, title }) => {
 
 OptimizedPieChart.displayName = "OptimizedPieChart";
 
+// 오른쪽 상세 패널 컴포넌트 (성능 최적화)
+const AssetDetailPanel = memo(
+  ({
+    displayData,
+    profileData,
+    assetItems,
+    debtItemsOnly,
+    totalAssets,
+    totalDebt,
+    netAssets,
+  }) => {
+    return (
+      <div className={styles.detailPanel}>
+        <div className={styles.detailPanelHeader}>
+          <div className={styles.detailPanelInfo}>
+            <div className={styles.detailPanelTitle}>
+              {displayData?.year || ""}년 순자산
+            </div>
+            <div className={styles.detailPanelMeta}>
+              {/* 본인 나이 */}
+              본인 {displayData?.age || 0}세{/* 배우자 나이 */}
+              {profileData?.hasSpouse && profileData?.spouseBirthYear && (
+                <>
+                  {" "}
+                  • 배우자{" "}
+                  {displayData?.year - parseInt(profileData.spouseBirthYear)}세
+                </>
+              )}
+              {/* 자녀 나이 */}
+              {profileData?.familyMembers &&
+                profileData.familyMembers
+                  .filter((member) => member.relationship === "자녀")
+                  .map((child) => ({
+                    gender: child.gender || "아들",
+                    age: displayData?.year - parseInt(child.birthYear),
+                  }))
+                  .filter((child) => child.age >= 0).length > 0 && (
+                  <>
+                    <br />
+                    {profileData.familyMembers
+                      .filter((member) => member.relationship === "자녀")
+                      .map((child) => ({
+                        gender: child.gender || "아들",
+                        age: displayData?.year - parseInt(child.birthYear),
+                      }))
+                      .filter((child) => child.age >= 0)
+                      .map((child) => `${child.gender} ${child.age}세`)
+                      .join(", ")}
+                  </>
+                )}
+            </div>
+          </div>
+          <div
+            className={styles.detailPanelTotal}
+            style={{
+              color: netAssets >= 0 ? "#10b981" : "#ef4444",
+            }}
+          >
+            {netAssets >= 0 ? "+" : ""}
+            {formatAmountForChart(netAssets)}
+          </div>
+        </div>
+
+        {/* 자산 항목 */}
+        {assetItems.length > 0 && (
+          <div className={styles.detailSection}>
+            <div className={styles.detailSectionHeader}>
+              <div className={styles.detailSectionTitle}>자산</div>
+              <div
+                className={styles.detailSectionTotal}
+                style={{ color: "#10b981" }}
+              >
+                +{formatAmountForChart(totalAssets)}
+              </div>
+            </div>
+            {assetItems.map((item, index) => (
+              <div key={`asset-${index}`} className={styles.detailItem}>
+                <span className={styles.detailLabelWithDot}>
+                  <span
+                    className={styles.detailCategoryDot}
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className={styles.detailLabel}>{item.label}</span>
+                </span>
+                <span
+                  className={styles.detailValue}
+                  style={{ color: "#10b981" }}
+                >
+                  {formatAmountForChart(item.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 부채 항목 */}
+        {debtItemsOnly.length > 0 && (
+          <div className={styles.detailSection}>
+            <div className={styles.detailSectionHeader}>
+              <div className={styles.detailSectionTitle}>부채</div>
+              <div
+                className={styles.detailSectionTotal}
+                style={{ color: "#ef4444" }}
+              >
+                -{formatAmountForChart(totalDebt)}
+              </div>
+            </div>
+            {debtItemsOnly.map((item, index) => (
+              <div key={`debt-${index}`} className={styles.detailItem}>
+                <span className={styles.detailLabelWithDot}>
+                  <span
+                    className={styles.detailCategoryDot}
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className={styles.detailLabel}>{item.label}</span>
+                </span>
+                <span
+                  className={styles.detailValue}
+                  style={{ color: "#ef4444" }}
+                >
+                  -{formatAmountForChart(item.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 이벤트 */}
+        {displayData.events && displayData.events.length > 0 && (
+          <div className={styles.detailSection}>
+            <div className={styles.detailDivider} />
+            <div className={styles.detailSectionTitle}>이벤트</div>
+            {displayData.events.map((event, index) => (
+              <div key={`event-${index}`} className={styles.detailEventItem}>
+                <span
+                  className={styles.detailEventDot}
+                  style={{
+                    backgroundColor:
+                      event.category === "asset"
+                        ? "#06b6d4"
+                        : event.category === "debt"
+                        ? "#374151"
+                        : event.category === "pension"
+                        ? "#fbbf24"
+                        : event.category === "saving"
+                        ? "#3b82f6"
+                        : event.category === "realEstate"
+                        ? "#8b5cf6"
+                        : "#374151",
+                  }}
+                />
+                <span className={styles.detailEventText}>{event.title}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {assetItems.length === 0 && debtItemsOnly.length === 0 && (
+          <div className={styles.detailEmptyState}>
+            해당 년도의 자산 정보가 없습니다
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+AssetDetailPanel.displayName = "AssetDetailPanel";
+
 /**
  * Recharts를 사용한 자산 시뮬레이션 차트
  */
@@ -76,9 +245,8 @@ function RechartsAssetChart({
   const [isZoomed, setIsZoomed] = useState(false);
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
-  const [hoveredData, setHoveredData] = useState(null); // 마우스 오버된 데이터
+  const [hoveredData, setHoveredData] = useState(null); // 클릭으로 선택된 연도 데이터
   const hasData = Array.isArray(data) && data.length > 0;
-  const lastHoveredYearRef = useRef(null); // 이전 hover 년도 저장 (불필요한 리렌더링 방지)
 
   // 배우자 은퇴 나이 (props 또는 profileData에서 가져오기)
   const spouseRetirementAge = spouseRetirementAgeProp
@@ -376,117 +544,116 @@ function RechartsAssetChart({
   }, {});
 
   // 차트 데이터 포맷팅 - 4개 카테고리로 단순화 (성능 최적화)
-  const chartData = hasData
-    ? data.map((item) => {
-        // 배우자 나이 계산
-        const spouseAge =
-          profileData?.hasSpouse && profileData?.spouseBirthYear
-            ? item.year - parseInt(profileData.spouseBirthYear)
-            : null;
+  const chartData = useMemo(() => {
+    if (!hasData) return [];
+    return data.map((item) => {
+      // 배우자 나이 계산
+      const spouseAge =
+        profileData?.hasSpouse && profileData?.spouseBirthYear
+          ? item.year - parseInt(profileData.spouseBirthYear)
+          : null;
 
-        // 자녀들 나이 계산
-        const childrenAges = profileData?.familyMembers
-          ? profileData.familyMembers
-              .filter((member) => member.relationship === "자녀")
-              .map((child) => ({
-                gender: child.gender || "아들",
-                age: item.year - parseInt(child.birthYear),
-              }))
-              .filter((child) => child.age >= 0)
-          : [];
+      // 자녀들 나이 계산
+      const childrenAges = profileData?.familyMembers
+        ? profileData.familyMembers
+            .filter((member) => member.relationship === "자녀")
+            .map((child) => ({
+              gender: child.gender || "아들",
+              age: item.year - parseInt(child.birthYear),
+            }))
+            .filter((child) => child.age >= 0)
+        : [];
 
-        // 가족 라벨 생성
-        let familyLabel = `본인 ${item.age}`;
-        if (spouseAge) familyLabel += ` • 배우자 ${spouseAge}`;
-        if (childrenAges.length > 0) {
-          const childrenText = childrenAges
-            .map((child) => `${child.gender} ${child.age}`)
-            .join(", ");
-          familyLabel += ` • ${childrenText}`;
-        }
+      // 가족 라벨 생성
+      let familyLabel = `본인 ${item.age}`;
+      if (spouseAge) familyLabel += ` • 배우자 ${spouseAge}`;
+      if (childrenAges.length > 0) {
+        const childrenText = childrenAges
+          .map((child) => `${child.gender} ${child.age}`)
+          .join(", ");
+        familyLabel += ` • ${childrenText}`;
+      }
 
-        // 7개 카테고리로 세분화
-        let savingAmount = 0; // 저축/투자
-        let pensionAmount = 0; // 연금
-        let realEstateAmount = 0; // 부동산
-        let assetAmount = 0; // 자산
-        let positiveCash = 0; // +현금
-        let negativeCash = 0; // -현금
-        let debtAmount = 0; // 부채
+      // 7개 카테고리로 세분화
+      let savingAmount = 0; // 저축/투자
+      let pensionAmount = 0; // 연금
+      let realEstateAmount = 0; // 부동산
+      let assetAmount = 0; // 자산
+      let positiveCash = 0; // +현금
+      let negativeCash = 0; // -현금
+      let debtAmount = 0; // 부채
 
-        Object.keys(item).forEach((key) => {
-          if (key !== "year" && key !== "age" && key !== "totalAmount") {
-            const value = item[key] || 0;
+      Object.keys(item).forEach((key) => {
+        if (key !== "year" && key !== "age" && key !== "totalAmount") {
+          const value = item[key] || 0;
 
-            if (key === "현금" || key === "현금 자산") {
-              // 현금 처리
-              if (value >= 0) {
-                positiveCash += value;
-              } else {
-                negativeCash += value; // 음수 그대로
-              }
-            } else if (value < 0) {
-              // 음수 값은 모두 부채로 처리
-              debtAmount += value; // 음수 그대로
-            } else if (value > 0) {
-              // 양수 값을 카테고리별로 분류
-              if (
-                key.includes("저축") ||
-                key.includes("투자") ||
-                key.includes("예금") ||
-                key.includes("적금") ||
-                key.includes("채권") ||
-                key.includes("주식") ||
-                key.includes("펀드") ||
-                key.includes("ETF")
-              ) {
-                savingAmount += value;
-              } else if (
-                key.includes("연금") ||
-                key.includes("퇴직") ||
-                key.includes("국민연금") ||
-                key.includes("IRP") ||
-                key.includes("DB")
-              ) {
-                pensionAmount += value;
-              } else if (
-                key.includes("부동산") ||
-                key.includes("아파트") ||
-                key.includes("자택") ||
-                key.includes("주택") ||
-                key.includes("토지") ||
-                key.includes("건물") ||
-                key.includes("상가")
-              ) {
-                realEstateAmount += value;
-              } else {
-                // 나머지는 자산
-                assetAmount += value;
-              }
+          if (key === "현금" || key === "현금 자산") {
+            // 현금 처리
+            if (value >= 0) {
+              positiveCash += value;
+            } else {
+              negativeCash += value; // 음수 그대로
+            }
+          } else if (value < 0) {
+            // 음수 값은 모두 부채로 처리
+            debtAmount += value; // 음수 그대로
+          } else if (value > 0) {
+            // 양수 값을 카테고리별로 분류
+            if (
+              key.includes("저축") ||
+              key.includes("투자") ||
+              key.includes("예금") ||
+              key.includes("적금") ||
+              key.includes("채권") ||
+              key.includes("주식") ||
+              key.includes("펀드") ||
+              key.includes("ETF")
+            ) {
+              savingAmount += value;
+            } else if (
+              key.includes("연금") ||
+              key.includes("퇴직") ||
+              key.includes("국민연금") ||
+              key.includes("IRP") ||
+              key.includes("DB")
+            ) {
+              pensionAmount += value;
+            } else if (
+              key.includes("부동산") ||
+              key.includes("아파트") ||
+              key.includes("자택") ||
+              key.includes("주택") ||
+              key.includes("토지") ||
+              key.includes("건물") ||
+              key.includes("상가")
+            ) {
+              realEstateAmount += value;
+            } else {
+              // 나머지는 자산
+              assetAmount += value;
             }
           }
-        });
+        }
+      });
 
-        return {
-          age: item.age,
-          year: item.year,
-          totalAmount: item.totalAmount || item.amount,
-          formattedAmount: formatAmountForChart(
-            item.totalAmount || item.amount
-          ),
-          familyLabel: familyLabel,
-          events: eventsByYear[item.year] || [],
-          // 7개 카테고리 (렌더링 순서: 저축 → 연금 → 부동산 → 자산 → +현금 → -현금 → 부채)
-          저축투자: savingAmount,
-          연금: pensionAmount,
-          부동산: realEstateAmount,
-          자산: assetAmount,
-          양수현금: positiveCash,
-          음수현금: negativeCash,
-          부채: debtAmount,
-        };
-      })
-    : [];
+      return {
+        age: item.age,
+        year: item.year,
+        totalAmount: item.totalAmount || item.amount,
+        formattedAmount: formatAmountForChart(item.totalAmount || item.amount),
+        familyLabel: familyLabel,
+        events: eventsByYear[item.year] || [],
+        // 7개 카테고리 (렌더링 순서: 저축 → 연금 → 부동산 → 자산 → +현금 → -현금 → 부채)
+        저축투자: savingAmount,
+        연금: pensionAmount,
+        부동산: realEstateAmount,
+        자산: assetAmount,
+        양수현금: positiveCash,
+        음수현금: negativeCash,
+        부채: debtAmount,
+      };
+    });
+  }, [hasData, data, profileData, eventsByYear]);
 
   // 7개 카테고리 (렌더링 순서: 양수 역순, 음수 순서대로)
   const assetKeys = [
@@ -622,9 +789,6 @@ function RechartsAssetChart({
     setIsDistributionOpen(true);
   };
 
-  // 현금 흐름 차트처럼 단순하게 변경 (throttle 제거, 직접 호출)
-  // Mouse move/leave handler는 renderChart 함수 내부에서 직접 처리
-
   // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
   const renderChart = (height = 600, isZoomedView = false) => (
     <ResponsiveContainer width="100%" height={height}>
@@ -638,21 +802,15 @@ function RechartsAssetChart({
           bottom: 120,
         }}
         onMouseMove={(state) => {
-          // 년도가 실제로 바뀌었을 때만 state 업데이트 (불필요한 리렌더링 방지)
+          // activeTooltipIndex를 사용하여 현재 hover 중인 데이터 찾기
           if (state && state.isTooltipActive !== false) {
             const index = state.activeTooltipIndex;
             if (index !== undefined && index >= 0 && chartData[index]) {
-              const currentYear = chartData[index].year;
-              // 이전 년도와 다를 때만 업데이트
-              if (currentYear !== lastHoveredYearRef.current) {
-                lastHoveredYearRef.current = currentYear;
-                setHoveredData(chartData[index]);
-              }
+              setHoveredData(chartData[index]);
             }
           }
         }}
         onMouseLeave={() => {
-          lastHoveredYearRef.current = null;
           setHoveredData(null);
         }}
       >
@@ -784,9 +942,9 @@ function RechartsAssetChart({
           fill={getAssetColor("양수현금")}
           stroke="#ffffff"
           strokeWidth={1}
+          radius={0}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
-          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -798,9 +956,9 @@ function RechartsAssetChart({
           fill={getAssetColor("자산")}
           stroke="#ffffff"
           strokeWidth={1}
+          radius={0}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
-          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -812,9 +970,9 @@ function RechartsAssetChart({
           fill={getAssetColor("부동산")}
           stroke="#ffffff"
           strokeWidth={1}
+          radius={0}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
-          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -826,9 +984,9 @@ function RechartsAssetChart({
           fill={getAssetColor("연금")}
           stroke="#ffffff"
           strokeWidth={1}
+          radius={0}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
-          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -840,9 +998,9 @@ function RechartsAssetChart({
           fill={getAssetColor("저축투자")}
           stroke="#ffffff"
           strokeWidth={1}
+          radius={0}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
-          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -854,9 +1012,9 @@ function RechartsAssetChart({
           fill={getAssetColor("음수현금")}
           stroke="#ffffff"
           strokeWidth={1}
+          radius={0}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
-          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -868,9 +1026,9 @@ function RechartsAssetChart({
           fill={getAssetColor("부채")}
           stroke="#ffffff"
           strokeWidth={1}
+          radius={0}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
-          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -904,15 +1062,18 @@ function RechartsAssetChart({
   );
 
   // 범례 데이터 - 7개 카테고리 (렌더링 순서와 동일)
-  const legendData = [
-    { value: "+현금", color: getAssetColor("양수현금") },
-    { value: "자산", color: getAssetColor("자산") },
-    { value: "부동산", color: getAssetColor("부동산") },
-    { value: "연금", color: getAssetColor("연금") },
-    { value: "저축/투자", color: getAssetColor("저축투자") },
-    { value: "-현금", color: getAssetColor("음수현금") },
-    { value: "부채", color: getAssetColor("부채") },
-  ];
+  const legendData = useMemo(
+    () => [
+      { value: "+현금", color: getAssetColor("양수현금") },
+      { value: "자산", color: getAssetColor("자산") },
+      { value: "부동산", color: getAssetColor("부동산") },
+      { value: "연금", color: getAssetColor("연금") },
+      { value: "저축/투자", color: getAssetColor("저축투자") },
+      { value: "-현금", color: getAssetColor("음수현금") },
+      { value: "부채", color: getAssetColor("부채") },
+    ],
+    []
+  );
 
   // 현재 년도 데이터 가져오기 (기본값)
   const currentYearIndex = chartData.findIndex(
@@ -1079,173 +1240,16 @@ function RechartsAssetChart({
                 <div className={styles.chartWrapper}>{renderChart()}</div>
               </div>
 
-              {/* 오른쪽: 상세 패널 */}
-              <div className={styles.detailPanel}>
-                <div className={styles.detailPanelHeader}>
-                  <div className={styles.detailPanelInfo}>
-                    <div className={styles.detailPanelTitle}>
-                      {displayData?.year || ""}년 순자산
-                    </div>
-                    <div className={styles.detailPanelMeta}>
-                      {/* 본인 나이 */}
-                      본인 {displayData?.age || 0}세{/* 배우자 나이 */}
-                      {profileData?.hasSpouse &&
-                        profileData?.spouseBirthYear && (
-                          <>
-                            {" "}
-                            • 배우자{" "}
-                            {displayData?.year -
-                              parseInt(profileData.spouseBirthYear)}
-                            세
-                          </>
-                        )}
-                      {/* 자녀 나이 */}
-                      {profileData?.familyMembers &&
-                        profileData.familyMembers
-                          .filter((member) => member.relationship === "자녀")
-                          .map((child) => ({
-                            gender: child.gender || "아들",
-                            age: displayData?.year - parseInt(child.birthYear),
-                          }))
-                          .filter((child) => child.age >= 0).length > 0 && (
-                          <>
-                            <br />
-                            {profileData.familyMembers
-                              .filter(
-                                (member) => member.relationship === "자녀"
-                              )
-                              .map((child) => ({
-                                gender: child.gender || "아들",
-                                age:
-                                  displayData?.year - parseInt(child.birthYear),
-                              }))
-                              .filter((child) => child.age >= 0)
-                              .map((child) => `${child.gender} ${child.age}세`)
-                              .join(", ")}
-                          </>
-                        )}
-                    </div>
-                  </div>
-                  <div
-                    className={styles.detailPanelTotal}
-                    style={{
-                      color: netAssets >= 0 ? "#10b981" : "#ef4444",
-                    }}
-                  >
-                    {netAssets >= 0 ? "+" : ""}
-                    {formatAmountForChart(netAssets)}
-                  </div>
-                </div>
-
-                {/* 자산 항목 */}
-                {assetItems.length > 0 && (
-                  <div className={styles.detailSection}>
-                    <div className={styles.detailSectionHeader}>
-                      <div className={styles.detailSectionTitle}>자산</div>
-                      <div
-                        className={styles.detailSectionTotal}
-                        style={{ color: "#10b981" }}
-                      >
-                        +{formatAmountForChart(totalAssets)}
-                      </div>
-                    </div>
-                    {assetItems.map((item, index) => (
-                      <div key={`asset-${index}`} className={styles.detailItem}>
-                        <span className={styles.detailLabelWithDot}>
-                          <span
-                            className={styles.detailCategoryDot}
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className={styles.detailLabel}>
-                            {item.label}
-                          </span>
-                        </span>
-                        <span
-                          className={styles.detailValue}
-                          style={{ color: "#10b981" }}
-                        >
-                          {formatAmountForChart(item.amount)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* 부채 항목 */}
-                {debtItemsOnly.length > 0 && (
-                  <div className={styles.detailSection}>
-                    <div className={styles.detailSectionHeader}>
-                      <div className={styles.detailSectionTitle}>부채</div>
-                      <div
-                        className={styles.detailSectionTotal}
-                        style={{ color: "#ef4444" }}
-                      >
-                        -{formatAmountForChart(totalDebt)}
-                      </div>
-                    </div>
-                    {debtItemsOnly.map((item, index) => (
-                      <div key={`debt-${index}`} className={styles.detailItem}>
-                        <span className={styles.detailLabelWithDot}>
-                          <span
-                            className={styles.detailCategoryDot}
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className={styles.detailLabel}>
-                            {item.label}
-                          </span>
-                        </span>
-                        <span
-                          className={styles.detailValue}
-                          style={{ color: "#ef4444" }}
-                        >
-                          -{formatAmountForChart(item.amount)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* 이벤트 */}
-                {displayData.events && displayData.events.length > 0 && (
-                  <div className={styles.detailSection}>
-                    <div className={styles.detailDivider} />
-                    <div className={styles.detailSectionTitle}>이벤트</div>
-                    {displayData.events.map((event, index) => (
-                      <div
-                        key={`event-${index}`}
-                        className={styles.detailEventItem}
-                      >
-                        <span
-                          className={styles.detailEventDot}
-                          style={{
-                            backgroundColor:
-                              event.category === "asset"
-                                ? "#06b6d4"
-                                : event.category === "debt"
-                                ? "#374151"
-                                : event.category === "pension"
-                                ? "#fbbf24"
-                                : event.category === "saving"
-                                ? "#3b82f6"
-                                : event.category === "realEstate"
-                                ? "#8b5cf6"
-                                : "#374151",
-                          }}
-                        />
-                        <span className={styles.detailEventText}>
-                          {event.title}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {assetItems.length === 0 && debtItemsOnly.length === 0 && (
-                  <div className={styles.detailEmptyState}>
-                    해당 년도의 자산 정보가 없습니다
-                  </div>
-                )}
-              </div>
+              {/* 오른쪽: 상세 패널 (컴포넌트로 분리하여 성능 최적화) */}
+              <AssetDetailPanel
+                displayData={displayData}
+                profileData={profileData}
+                assetItems={assetItems}
+                debtItemsOnly={debtItemsOnly}
+                totalAssets={totalAssets}
+                totalDebt={totalDebt}
+                netAssets={netAssets}
+              />
             </div>
           </>
         ) : (
