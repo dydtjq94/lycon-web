@@ -519,15 +519,29 @@
 .detailPanelHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.75rem;
   border-bottom: 2px solid #e5e7eb;
+}
+
+.detailPanelInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detailPanelMeta {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+  margin-top: 0.25rem;
 }
 
 .detailPanelTotal {
   font-size: 0.875rem;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .detailSection {

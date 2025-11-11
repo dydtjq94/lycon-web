@@ -2230,16 +2230,12 @@ export function calculateAssetSimulation(
         label: "현금",
         amount: currentCash,
         originalValue: currentCash,
-        category: "cash",
-        color: getCategoryColor("현금", currentCash),
       });
     } else if (currentCash < 0) {
       debtItems.push({
         label: "현금",
         amount: Math.abs(currentCash),
         originalValue: currentCash,
-        category: "cash",
-        color: getCategoryColor("현금", currentCash),
       });
     }
 
@@ -2251,8 +2247,6 @@ export function calculateAssetSimulation(
           label: saving.title,
           amount: saving.amount,
           originalValue: saving.amount,
-          category: "saving",
-          color: getCategoryColor(saving.title),
         });
       }
     });
@@ -2265,8 +2259,6 @@ export function calculateAssetSimulation(
           label: title,
           amount: pension.amount,
           originalValue: pension.amount,
-          category: "pension",
-          color: getCategoryColor(title),
         });
       }
     });
@@ -2279,8 +2271,6 @@ export function calculateAssetSimulation(
           label: title,
           amount: realEstate.amount,
           originalValue: realEstate.amount,
-          category: "realEstate",
-          color: getCategoryColor(title),
         });
       }
     });
@@ -2294,8 +2284,6 @@ export function calculateAssetSimulation(
           label: displayTitle,
           amount: asset.amount,
           originalValue: asset.amount,
-          category: "asset",
-          color: getCategoryColor(displayTitle),
         });
       }
     });
@@ -2308,14 +2296,72 @@ export function calculateAssetSimulation(
           label: title,
           amount: Math.abs(debt.amount),
           originalValue: debt.amount,
-          category: "debt",
-          color: getCategoryColor(title, debt.amount),
         });
       }
     });
 
+    // 색상 매핑 함수 (bar 차트와 동일한 색상)
+    const getAssetColor = (assetName) => {
+      switch (assetName) {
+        case "저축투자":
+          return "#3b82f6"; // 파랑
+        case "연금":
+          return "#fbbf24"; // 노랑
+        case "부동산":
+          return "#8b5cf6"; // 보라
+        case "자산":
+          return "#06b6d4"; // 청록
+        case "양수현금":
+          return "#10b981"; // 초록
+        case "음수현금":
+          return "#ef4444"; // 빨강
+        case "부채":
+          return "#374151"; // 회색
+        default:
+          return "#6b7280"; // 기본 회색
+      }
+    };
+
+    // 카테고리 판별 및 색상 반환 함수
+    const getCategoryAndColor = (label) => {
+      if (label.includes("현금") || label.includes("cash")) {
+        return { category: "현금", color: getAssetColor("양수현금") };
+      } else if (
+        label.includes("저축") ||
+        label.includes("투자") ||
+        label.includes("예금") ||
+        label.includes("적금") ||
+        label.includes("채권") ||
+        label.includes("주식") ||
+        label.includes("펀드") ||
+        label.includes("ETF")
+      ) {
+        return { category: "저축투자", color: getAssetColor("저축투자") };
+      } else if (
+        label.includes("연금") ||
+        label.includes("퇴직") ||
+        label.includes("국민연금") ||
+        label.includes("IRP") ||
+        label.includes("DB")
+      ) {
+        return { category: "연금", color: getAssetColor("연금") };
+      } else if (
+        label.includes("부동산") ||
+        label.includes("아파트") ||
+        label.includes("자택") ||
+        label.includes("주택") ||
+        label.includes("토지") ||
+        label.includes("건물") ||
+        label.includes("상가")
+      ) {
+        return { category: "부동산", color: getAssetColor("부동산") };
+      } else {
+        return { category: "자산", color: getAssetColor("자산") };
+      }
+    };
+
     // bar 차트와 동일한 순서로 정렬 (미리 계산하여 hover 시 렉 방지)
-    // 1. 카테고리별 분류
+    // 1. 카테고리별 분류 + 색상 할당
     const categorizedAssets = {
       현금: [],
       연금: [],
@@ -2328,24 +2374,33 @@ export function calculateAssetSimulation(
     };
 
     assetItems.forEach((item) => {
+      const { category, color } = getCategoryAndColor(item.label);
+      const itemWithColor = { ...item, color };
+
       if (item.label === "현금" || item.label === "현금 자산") {
-        categorizedAssets.현금.push(item);
+        categorizedAssets.현금.push(itemWithColor);
       } else if (
         item.label.includes("연금") ||
         item.label.includes("퇴직") ||
         item.label.includes("국민연금")
       ) {
-        categorizedAssets.연금.push(item);
+        categorizedAssets.연금.push(itemWithColor);
       } else {
-        categorizedAssets.자산.push(item);
+        categorizedAssets.자산.push(itemWithColor);
       }
     });
 
     debtItems.forEach((item) => {
+      const color =
+        item.label === "현금"
+          ? getAssetColor("음수현금")
+          : getAssetColor("부채");
+      const itemWithColor = { ...item, color };
+
       if (item.label === "현금") {
-        categorizedDebts.현금.push(item);
+        categorizedDebts.현금.push(itemWithColor);
       } else {
-        categorizedDebts.기타.push(item);
+        categorizedDebts.기타.push(itemWithColor);
       }
     });
 

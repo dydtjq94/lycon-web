@@ -5,13 +5,13 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
   ReferenceLine,
   Legend,
   Cell,
   PieChart,
   Pie,
+  Tooltip,
 } from "recharts";
 import { formatAmountForChart } from "../../utils/format";
 import ChartZoomModal from "./ChartZoomModal";
@@ -686,125 +686,6 @@ function RechartsAssetChart({
           fontSize={12}
         />
 
-        {/* 커스텀 툴팁 */}
-        <Tooltip
-          content={({ active, payload, label }) => {
-            if (active && payload && payload.length > 0) {
-              const data = payload[0].payload;
-
-              // 7개 카테고리에서 합산
-              const capitalTotal =
-                (data.저축투자 || 0) +
-                (data.연금 || 0) +
-                (data.부동산 || 0) +
-                (data.자산 || 0) +
-                (data.양수현금 || 0);
-              const debtTotal =
-                Math.abs(data.음수현금 || 0) + Math.abs(data.부채 || 0);
-
-              // 총 자산 = 자본 토탈 - 부채 토탈
-              const totalAssets = capitalTotal - debtTotal;
-
-              // 배우자 나이 계산
-              const spouseAge =
-                profileData?.hasSpouse && profileData?.spouseBirthYear
-                  ? data.year - parseInt(profileData.spouseBirthYear)
-                  : null;
-
-              // 배우자 은퇴 나이 (툴팁 내부에서 명시적으로 가져오기)
-              const tooltipSpouseRetirementAge =
-                profileData?.spouseRetirementAge
-                  ? parseInt(profileData.spouseRetirementAge)
-                  : spouseRetirementAge;
-
-              // 자녀들 나이 계산
-              const childrenAges = profileData?.familyMembers
-                ? profileData.familyMembers
-                    .filter((member) => member.relationship === "자녀")
-                    .map((child) => ({
-                      gender: child.gender || "아들",
-                      age: data.year - parseInt(child.birthYear),
-                    }))
-                    .filter((child) => child.age >= 0) // 태어난 자녀만 표시
-                : [];
-
-              // 자녀 나이 텍스트 생성 (예: "아들 4, 딸 2")
-              const childrenAgeText =
-                childrenAges.length > 0
-                  ? childrenAges
-                      .map((child) => `${child.gender} ${child.age}`)
-                      .join(", ")
-                  : "";
-
-              return (
-                <div
-                  className={styles.customTooltip}
-                  data-zoomed={isZoomedView}
-                >
-                  <div className={styles.tooltipHeader}>
-                    <div className={styles.tooltipYearRow}>
-                      <div className={styles.tooltipYear}>{data.year}</div>
-                      <div className={styles.tooltipBadges}>
-                        {/* 이벤트 표시를 년도 오른쪽으로 이동 */}
-                        {data.age === retirementAge && (
-                          <div className={styles.retirementWarning}>은퇴</div>
-                        )}
-                        {spouseAge &&
-                          spouseAge === tooltipSpouseRetirementAge && (
-                            <div className={styles.spouseRetirementWarning}>
-                              배우자 은퇴
-                            </div>
-                          )}
-                        {cashNegativeTransition &&
-                          data.age === cashNegativeTransition.age && (
-                            <div className={styles.cashWarning}>현금 위험</div>
-                          )}
-                      </div>
-                    </div>
-                    <div className={styles.tooltipAge}>
-                      본인 {data.age}
-                      {spouseAge && ` • 배우자 ${spouseAge}`}
-                    </div>
-                    {childrenAgeText && (
-                      <div className={styles.tooltipChildren}>
-                        {childrenAgeText}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className={styles.tooltipBreakdown}>
-                    <div className={styles.tooltipItem}>
-                      <span className={styles.tooltipLabel}>순자산:</span>
-                      <span
-                        className={`${styles.tooltipValue} ${styles.tooltipValueBold}`}
-                        style={{
-                          color: totalAssets >= 0 ? "#059669" : "#dc2626",
-                        }}
-                      >
-                        {totalAssets >= 0 ? "+" : ""}
-                        {formatAmountForChart(totalAssets)}
-                      </span>
-                    </div>
-                    <div className={styles.tooltipItem}>
-                      <span className={styles.tooltipLabel}>자산:</span>
-                      <span className={styles.tooltipValue}>
-                        +{formatAmountForChart(capitalTotal)}
-                      </span>
-                    </div>
-                    <div className={styles.tooltipItem}>
-                      <span className={styles.tooltipLabel}>부채:</span>
-                      <span className={styles.tooltipValue}>
-                        -{formatAmountForChart(debtTotal)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          }}
-        />
-
         {/* 은퇴 시점 표시 */}
         {retirementData && retirementYear && (
           <ReferenceLine
@@ -883,6 +764,16 @@ function RechartsAssetChart({
           />
         )}
 
+        {/* 마우스 위치 표시용 투명 툴팁 (시각적 피드백만 제공) */}
+        <Tooltip
+          cursor={{
+            fill: "rgba(59, 130, 246, 0.1)",
+          }}
+          content={() => null}
+          animationDuration={0}
+          isAnimationActive={false}
+        />
+
         {/* 7개 Bar로 세분화 (양수는 역순) */}
         {/* 순서: +현금(맨 아래) → 자산 → 부동산 → 연금 → 저축/투자(맨 위) → -현금 → 부채 */}
         <Bar
@@ -895,6 +786,9 @@ function RechartsAssetChart({
           strokeWidth={1}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
+          animationDuration={0}
+          isAnimationActive={false}
         />
         <Bar
           key="자산"
@@ -906,6 +800,9 @@ function RechartsAssetChart({
           strokeWidth={1}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
+          animationDuration={0}
+          isAnimationActive={false}
         />
         <Bar
           key="부동산"
@@ -917,6 +814,9 @@ function RechartsAssetChart({
           strokeWidth={1}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
+          animationDuration={0}
+          isAnimationActive={false}
         />
         <Bar
           key="연금"
@@ -928,6 +828,9 @@ function RechartsAssetChart({
           strokeWidth={1}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
+          animationDuration={0}
+          isAnimationActive={false}
         />
         <Bar
           key="저축투자"
@@ -939,6 +842,9 @@ function RechartsAssetChart({
           strokeWidth={1}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
+          animationDuration={0}
+          isAnimationActive={false}
         />
         <Bar
           key="음수현금"
@@ -950,6 +856,9 @@ function RechartsAssetChart({
           strokeWidth={1}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
+          animationDuration={0}
+          isAnimationActive={false}
         />
         <Bar
           key="부채"
@@ -961,6 +870,9 @@ function RechartsAssetChart({
           strokeWidth={1}
           className={!isZoomedView ? styles.clickableBar : undefined}
           onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          activeBar={{ opacity: 1, stroke: "#3b82f6", strokeWidth: 2 }}
+          animationDuration={0}
+          isAnimationActive={false}
         />
 
         {/* 이벤트 마커를 표시하기 위한 투명한 레이어 - 년도별로 작고 화려한 네모 표시 */}
@@ -1170,8 +1082,49 @@ function RechartsAssetChart({
               {/* 오른쪽: 상세 패널 */}
               <div className={styles.detailPanel}>
                 <div className={styles.detailPanelHeader}>
-                  <div className={styles.detailPanelTitle}>
-                    {displayData?.year || ""}년 순자산
+                  <div className={styles.detailPanelInfo}>
+                    <div className={styles.detailPanelTitle}>
+                      {displayData?.year || ""}년 순자산
+                    </div>
+                    <div className={styles.detailPanelMeta}>
+                      {/* 본인 나이 */}
+                      본인 {displayData?.age || 0}세{/* 배우자 나이 */}
+                      {profileData?.hasSpouse &&
+                        profileData?.spouseBirthYear && (
+                          <>
+                            {" "}
+                            • 배우자{" "}
+                            {displayData?.year -
+                              parseInt(profileData.spouseBirthYear)}
+                            세
+                          </>
+                        )}
+                      {/* 자녀 나이 */}
+                      {profileData?.familyMembers &&
+                        profileData.familyMembers
+                          .filter((member) => member.relationship === "자녀")
+                          .map((child) => ({
+                            gender: child.gender || "아들",
+                            age: displayData?.year - parseInt(child.birthYear),
+                          }))
+                          .filter((child) => child.age >= 0).length > 0 && (
+                          <>
+                            <br />
+                            {profileData.familyMembers
+                              .filter(
+                                (member) => member.relationship === "자녀"
+                              )
+                              .map((child) => ({
+                                gender: child.gender || "아들",
+                                age:
+                                  displayData?.year - parseInt(child.birthYear),
+                              }))
+                              .filter((child) => child.age >= 0)
+                              .map((child) => `${child.gender} ${child.age}세`)
+                              .join(", ")}
+                          </>
+                        )}
+                    </div>
                   </div>
                   <div
                     className={styles.detailPanelTotal}
