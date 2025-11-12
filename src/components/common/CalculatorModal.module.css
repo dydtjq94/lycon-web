@@ -250,6 +250,71 @@
   color: #1f2937;
 }
 
+/* 월 공제 내역 섹션 */
+.deductionSection {
+  background: #fef3c7;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #fde68a;
+  margin-bottom: 16px;
+}
+
+.deductionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.deductionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.deductionItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #fde68a;
+}
+
+.deductionItem.totalDeduction {
+  grid-column: 1 / -1;
+  background: #fef9e7;
+  border: 2px solid #f59e0b;
+}
+
+.deductionLabel {
+  font-size: 13px;
+  color: #78350f;
+  font-weight: 500;
+}
+
+.deductionItem.totalDeduction .deductionLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.deductionValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #b45309;
+}
+
+.deductionItem.totalDeduction .deductionValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #92400e;
+}
+
 /* 계산 방법 설명 */
 .calculationInfo {
   background: #eff6ff;
@@ -353,6 +418,19 @@
     font-size: 15px;
   }
 
+  .deductionSection {
+    padding: 12px;
+  }
+
+  .deductionGrid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .deductionItem {
+    padding: 8px 10px;
+  }
+
   .calculationInfo {
     padding: 12px;
   }
@@ -423,6 +501,27 @@
 
   .resultTitle {
     font-size: 15px;
+  }
+
+  .deductionSection {
+    padding: 10px;
+  }
+
+  .deductionTitle {
+    font-size: 13px;
+  }
+
+  .deductionLabel {
+    font-size: 12px;
+  }
+
+  .deductionValue {
+    font-size: 13px;
+  }
+
+  .deductionItem.totalDeduction .deductionLabel,
+  .deductionItem.totalDeduction .deductionValue {
+    font-size: 13px;
   }
 
   .calculationInfo {

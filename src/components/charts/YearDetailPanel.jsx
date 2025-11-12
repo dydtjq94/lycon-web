@@ -3,74 +3,61 @@ import { PieChart, Pie, Cell, Label } from "recharts";
 import { formatAmount, formatAmountForChart } from "../../utils/format";
 import styles from "./YearDetailPanel.module.css";
 
-// 카테고리별로 그룹화된 자산 파이차트 (비율 표시 포함)
+// 카테고리별로 그룹화된 자산 파이차트 (왼쪽 차트 + 오른쪽 범례)
 const SimplePieChart = memo(({ assetData }) => {
   if (!assetData || assetData.length === 0) {
     return <div className={styles.noDistributionData}>데이터 없음</div>;
   }
 
-  // 라벨 렌더링 함수 (카테고리명 + 비율)
-  const renderLabel = (entry) => {
-    const RADIAN = Math.PI / 180;
-    const { cx, cy, midAngle, outerRadius, name, percent } = entry;
-
-    // 라벨 위치 계산
-    const radius = outerRadius + 30;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <g>
-        <text
-          x={x}
-          y={y - 8}
-          textAnchor={x > cx ? "start" : "end"}
-          dominantBaseline="central"
-          style={{ fontSize: "0.7rem", fontWeight: 600, fill: "#374151" }}
-        >
-          {name}
-        </text>
-        <text
-          x={x}
-          y={y + 8}
-          textAnchor={x > cx ? "start" : "end"}
-          dominantBaseline="central"
-          style={{ fontSize: "0.75rem", fontWeight: 700, fill: entry.fill }}
-        >
-          {`${(percent * 100).toFixed(1)}%`}
-        </text>
-      </g>
-    );
-  };
+  // 총 합계 계산
+  const totalValue = assetData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className={styles.distributionChart}>
-      <PieChart
-        width={340}
-        height={280}
-        margin={{ top: 20, right: 50, bottom: 20, left: 50 }}
-      >
-        <Pie
-          data={assetData}
-          dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          outerRadius={85}
-          innerRadius={50}
-          paddingAngle={2}
-          animationDuration={500}
-          animationBegin={0}
-          animationEasing="ease-out"
-          isAnimationActive={true}
-          label={renderLabel}
-          labelLine={true}
+    <div className={styles.pieChartContainer}>
+      {/* 왼쪽: 파이 차트 */}
+      <div className={styles.pieChartLeft}>
+        <PieChart
+          width={200}
+          height={200}
+          margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
         >
-          {assetData.map((slice, index) => (
-            <Cell key={`asset-${index}`} fill={slice.color} />
-          ))}
-        </Pie>
-      </PieChart>
+          <Pie
+            data={assetData}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={80}
+            innerRadius={45}
+            paddingAngle={2}
+            animationDuration={500}
+            animationBegin={0}
+            animationEasing="ease-out"
+            isAnimationActive={true}
+          >
+            {assetData.map((slice, index) => (
+              <Cell key={`asset-${index}`} fill={slice.color} />
+            ))}
+          </Pie>
+        </PieChart>
+      </div>
+
+      {/* 오른쪽: 범례 */}
+      <div className={styles.pieChartLegend}>
+        {assetData.map((item, index) => {
+          const percent = ((item.value / totalValue) * 100).toFixed(1);
+          return (
+            <div key={index} className={styles.legendItem}>
+              <span
+                className={styles.legendDot}
+                style={{ backgroundColor: item.color }}
+              />
+              <span className={styles.legendName}>{item.name}</span>
+              <span className={styles.legendPercent}>{percent}%</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 });

@@ -129,25 +129,67 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
    * 출처: https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=6594&cntntsId=7873
    */
   const TAX_BRACKETS = [
-    { min: 0, max: 1400, rate: 0.06, deduction: 0 },
-    { min: 1400, max: 5000, rate: 0.15, deduction: 126 },
-    { min: 5000, max: 8800, rate: 0.24, deduction: 576 },
-    { min: 8800, max: 15000, rate: 0.35, deduction: 1544 },
-    { min: 15000, max: 30000, rate: 0.38, deduction: 1994 },
-    { min: 30000, max: 50000, rate: 0.4, deduction: 2594 },
-    { min: 50000, max: 100000, rate: 0.42, deduction: 3594 },
-    { min: 100000, max: Infinity, rate: 0.45, deduction: 6594 },
+    { min: 0, max: 1400, baseAmount: 0, rate: 0.06 },
+    { min: 1400, max: 5000, baseAmount: 84, rate: 0.15 },
+    { min: 5000, max: 8800, baseAmount: 624, rate: 0.24 },
+    { min: 8800, max: 15000, baseAmount: 1536, rate: 0.35 },
+    { min: 15000, max: 30000, baseAmount: 3706, rate: 0.38 },
+    { min: 30000, max: 50000, baseAmount: 9406, rate: 0.4 },
+    { min: 50000, max: 100000, baseAmount: 17406, rate: 0.42 },
+    { min: 100000, max: Infinity, baseAmount: 38406, rate: 0.45 },
   ];
 
   /**
    * 4대 보험 공제율 (2024년 기준)
-   * - 국민연금: 4.5%
+   * - 국민연금: 4.5% (상한액 27.8만원 = 277,650원)
    * - 건강보험: 3.545%
    * - 장기요양보험: 0.4591% (건강보험료의 12.95%)
    * - 고용보험: 0.9%
-   * - 합계: 약 9.4041%
    */
-  const INSURANCE_RATE = 0.094041;
+  const NATIONAL_PENSION_RATE = 0.045;
+  const NATIONAL_PENSION_MAX = 27.8; // 만원 단위, 최대 27.8만원 (277,650원)
+  const HEALTH_INSURANCE_RATE = 0.03545;
+  const LONG_TERM_CARE_RATE = 0.1295; // 건강보험의 12.95%
+  const EMPLOYMENT_INSURANCE_RATE = 0.009;
+
+  /**
+   * 소득세 계산 함수
+   * 과세표준에 따라 소득세 계산
+   */
+  const calculateIncomeTax = (taxableIncome) => {
+    // 만원 단위로 계산
+    if (taxableIncome <= 0) return 0;
+
+    let incomeTax = 0;
+
+    if (taxableIncome <= 1400) {
+      // 1,400만원 이하: 과세표준의 6%
+      incomeTax = taxableIncome * 0.06;
+    } else if (taxableIncome <= 5000) {
+      // 1,400만원 초과~5,000만원 이하: 84만원 + (1,400만원 초과금액의 15%)
+      incomeTax = 84 + (taxableIncome - 1400) * 0.15;
+    } else if (taxableIncome <= 8800) {
+      // 5,000만원 초과~8,800만원 이하: 624만원 + (5,000만원 초과금액의 24%)
+      incomeTax = 624 + (taxableIncome - 5000) * 0.24;
+    } else if (taxableIncome <= 15000) {
+      // 8,800만원 초과~1억5천만원 이하: 1,536만원 + (8,800만원 초과금액의 35%)
+      incomeTax = 1536 + (taxableIncome - 8800) * 0.35;
+    } else if (taxableIncome <= 30000) {
+      // 1억5천만원 초과~3억원 이하: 3,706만원 + (1억5천만원 초과금액의 38%)
+      incomeTax = 3706 + (taxableIncome - 15000) * 0.38;
+    } else if (taxableIncome <= 50000) {
+      // 3억원 초과~5억원 이하: 9,406만원 + (3억원 초과금액의 40%)
+      incomeTax = 9406 + (taxableIncome - 30000) * 0.4;
+    } else if (taxableIncome <= 100000) {
+      // 5억원 초과~10억원 이하: 17,406만원 + (5억원 초과금액의 42%)
+      incomeTax = 17406 + (taxableIncome - 50000) * 0.42;
+    } else {
+      // 10억원 초과: 38,406만원 + (10억원 초과금액의 45%)
+      incomeTax = 38406 + (taxableIncome - 100000) * 0.45;
+    }
+
+    return incomeTax;
+  };
 
   /**
    * 세후 월급으로부터 세전 월급 역산
@@ -163,28 +205,40 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
     while (iteration < maxIterations) {
       const annualPreTax = estimatedPreTax * 12;
 
-      // 4대 보험 공제
-      const insurance = estimatedPreTax * INSURANCE_RATE;
+      // 1. 국민연금 (4.5%, 최대 25만원)
+      const nationalPension = Math.min(
+        estimatedPreTax * NATIONAL_PENSION_RATE,
+        NATIONAL_PENSION_MAX
+      );
+
+      // 2. 건강보험 (3.545%)
+      const healthInsurance = estimatedPreTax * HEALTH_INSURANCE_RATE;
+
+      // 3. 장기요양보험 (건강보험의 12.95%)
+      const longTermCare = healthInsurance * LONG_TERM_CARE_RATE;
+
+      // 4. 고용보험 (0.9%)
+      const employmentInsurance = estimatedPreTax * EMPLOYMENT_INSURANCE_RATE;
 
       // 소득 공제 (간이세액표 기준 - 기본공제 150만원 가정)
       const deduction = 150; // 만원 단위
       const taxableIncome = Math.max(0, annualPreTax - deduction);
 
       // 소득세 계산
-      let incomeTax = 0;
-      for (const bracket of TAX_BRACKETS) {
-        if (taxableIncome > bracket.min) {
-          incomeTax = taxableIncome * bracket.rate - bracket.deduction;
-          break;
-        }
-      }
-      const monthlyIncomeTax = incomeTax / 12;
+      const annualIncomeTax = calculateIncomeTax(taxableIncome);
+      const monthlyIncomeTax = annualIncomeTax / 12;
 
       // 지방소득세 (소득세의 10%)
       const localTax = monthlyIncomeTax * 0.1;
 
       // 총 공제액
-      const totalDeduction = insurance + monthlyIncomeTax + localTax;
+      const totalDeduction =
+        nationalPension +
+        healthInsurance +
+        longTermCare +
+        employmentInsurance +
+        monthlyIncomeTax +
+        localTax;
 
       // 세후 월급 계산
       const calculatedAfterTax = estimatedPreTax - totalDeduction;
@@ -233,6 +287,40 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
     // 소득세 구간 확인
     const taxBracket = getTaxBracket(annualPreTax);
 
+    // 각 공제 항목 계산
+    // 1. 국민연금 (4.5%, 최대 25만원)
+    const nationalPension = Math.min(
+      preTaxMonthly * NATIONAL_PENSION_RATE,
+      NATIONAL_PENSION_MAX
+    );
+
+    // 2. 건강보험 (3.545%)
+    const healthInsurance = preTaxMonthly * HEALTH_INSURANCE_RATE;
+
+    // 3. 장기요양보험 (건강보험의 12.95%)
+    const longTermCare = healthInsurance * LONG_TERM_CARE_RATE;
+
+    // 4. 고용보험 (0.9%)
+    const employmentInsurance = preTaxMonthly * EMPLOYMENT_INSURANCE_RATE;
+
+    // 5. 소득세 계산
+    const deduction = 150; // 만원 단위 기본공제
+    const taxableIncome = Math.max(0, annualPreTax - deduction);
+    const annualIncomeTax = calculateIncomeTax(taxableIncome);
+    const monthlyIncomeTax = annualIncomeTax / 12;
+
+    // 6. 지방소득세 (소득세의 10%)
+    const localTax = monthlyIncomeTax * 0.1;
+
+    // 총 공제액
+    const totalDeduction =
+      nationalPension +
+      healthInsurance +
+      longTermCare +
+      employmentInsurance +
+      monthlyIncomeTax +
+      localTax;
+
     // DC 적립금 (연봉의 1/12, 즉 세전 월급과 동일)
     const annualDC = preTaxMonthly;
 
@@ -243,6 +331,15 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
         min: taxBracket.min,
         max: taxBracket.max === Infinity ? "초과" : taxBracket.max,
         rate: (taxBracket.rate * 100).toFixed(0),
+      },
+      deductions: {
+        nationalPension: Math.round(nationalPension * 10) / 10, // 소수점 1자리
+        healthInsurance: Math.round(healthInsurance * 10) / 10,
+        longTermCare: Math.round(longTermCare * 10) / 10,
+        employmentInsurance: Math.round(employmentInsurance * 10) / 10,
+        incomeTax: Math.round(monthlyIncomeTax * 10) / 10,
+        localTax: Math.round(localTax * 10) / 10,
+        total: Math.round(totalDeduction * 10) / 10,
       },
       annualDC: Math.round(annualDC),
     };
@@ -551,6 +648,8 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
               {dcResult && (
                 <div className={styles.result}>
                   <h4 className={styles.resultTitle}>계산 결과</h4>
+                  
+                  {/* 기본 정보 */}
                   <div className={styles.resultGrid}>
                     <div className={styles.resultItem}>
                       <span className={styles.resultLabel}>
@@ -588,18 +687,75 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                     </div>
                   </div>
 
+                  {/* 월 공제 내역 */}
+                  <div className={styles.deductionSection}>
+                    <h5 className={styles.deductionTitle}>💰 월 공제 내역</h5>
+                    <div className={styles.deductionGrid}>
+                      <div className={styles.deductionItem}>
+                        <span className={styles.deductionLabel}>국민연금</span>
+                        <span className={styles.deductionValue}>
+                          {dcResult.deductions.nationalPension.toLocaleString()}만원
+                        </span>
+                      </div>
+                      <div className={styles.deductionItem}>
+                        <span className={styles.deductionLabel}>건강보험</span>
+                        <span className={styles.deductionValue}>
+                          {dcResult.deductions.healthInsurance.toLocaleString()}만원
+                        </span>
+                      </div>
+                      <div className={styles.deductionItem}>
+                        <span className={styles.deductionLabel}>장기요양보험</span>
+                        <span className={styles.deductionValue}>
+                          {dcResult.deductions.longTermCare.toLocaleString()}만원
+                        </span>
+                      </div>
+                      <div className={styles.deductionItem}>
+                        <span className={styles.deductionLabel}>고용보험</span>
+                        <span className={styles.deductionValue}>
+                          {dcResult.deductions.employmentInsurance.toLocaleString()}만원
+                        </span>
+                      </div>
+                      <div className={styles.deductionItem}>
+                        <span className={styles.deductionLabel}>소득세</span>
+                        <span className={styles.deductionValue}>
+                          {dcResult.deductions.incomeTax.toLocaleString()}만원
+                        </span>
+                      </div>
+                      <div className={styles.deductionItem}>
+                        <span className={styles.deductionLabel}>지방소득세</span>
+                        <span className={styles.deductionValue}>
+                          {dcResult.deductions.localTax.toLocaleString()}만원
+                        </span>
+                      </div>
+                      <div className={`${styles.deductionItem} ${styles.totalDeduction}`}>
+                        <span className={styles.deductionLabel}>총 공제액</span>
+                        <span className={styles.deductionValue}>
+                          {dcResult.deductions.total.toLocaleString()}만원
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* 계산 방법 설명 */}
                   <div className={styles.calculationInfo}>
                     <h5 className={styles.infoTitle}>💡 계산 방법</h5>
                     <ul className={styles.infoList}>
                       <li>
-                        <strong>4대 보험 공제율:</strong> 약 9.4% (국민연금
-                        4.5%, 건강보험 3.545%, 장기요양보험 0.46%, 고용보험
-                        0.9%)
+                        <strong>국민연금:</strong> 세전 월급의 4.5% (상한액: 월
+                        27.8만원)
                       </li>
                       <li>
-                        <strong>소득세율:</strong> 2024년 국세청 소득세율표
-                        적용
+                        <strong>건강보험:</strong> 세전 월급의 3.545%
+                      </li>
+                      <li>
+                        <strong>장기요양보험:</strong> 건강보험료의 12.95%
+                      </li>
+                      <li>
+                        <strong>고용보험:</strong> 세전 월급의 0.9%
+                      </li>
+                      <li>
+                        <strong>소득세:</strong> 2024년 국세청 소득세율표 적용
+                        (과세표준 기준)
                       </li>
                       <li>
                         <strong>지방소득세:</strong> 소득세의 10%
