@@ -16,25 +16,64 @@ function CashflowInvestmentModal({
   positiveYears = [], // 양수 현금흐름이 있는 년도 목록
   onSave,
 }) {
-  // 초기 배분: 현금 100%
-  const [allocations, setAllocations] = useState([
-    { targetType: "cash", targetId: "", ratio: 100 },
-  ]);
-
   // 선택된 년도들 (기본: 현재 년도만)
   const [selectedYears, setSelectedYears] = useState([year]);
 
+  // 범위 슬라이더용 상태 (인덱스 기반)
+  const [rangeStartIdx, setRangeStartIdx] = useState(0);
+  const [rangeEndIdx, setRangeEndIdx] = useState(0);
+
+  // 배분 비율 (현금 + 각 저축 상품별)
+  const [ratios, setRatios] = useState({
+    cash: 100, // 현금은 기본 100%
+  });
+
+  // 모달이 열릴 때 배경 스크롤 방지
   useEffect(() => {
-    if (currentRule && currentRule.allocations) {
-      setAllocations(currentRule.allocations);
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
     } else {
-      // 기본값: 현금 100%
-      setAllocations([{ targetType: "cash", targetId: "", ratio: 100 }]);
+      document.body.style.overflow = "unset";
     }
 
+    // cleanup: 컴포넌트 unmount 시 원래대로
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     // 선택된 년도 초기화 (현재 년도만)
     setSelectedYears([year]);
-  }, [currentRule, isOpen, year]);
+
+    // 현재 년도의 인덱스 찾기
+    const currentYearIdx = positiveYears.findIndex(
+      (item) => item.year === year
+    );
+    if (currentYearIdx !== -1) {
+      setRangeStartIdx(currentYearIdx);
+      setRangeEndIdx(currentYearIdx);
+    } else {
+      setRangeStartIdx(0);
+      setRangeEndIdx(0);
+    }
+
+    // 기존 규칙이 있으면 로드
+    if (currentRule && currentRule.allocations) {
+      const newRatios = { cash: 0 };
+      currentRule.allocations.forEach((allocation) => {
+        if (allocation.targetType === "cash") {
+          newRatios.cash = allocation.ratio;
+        } else if (allocation.targetType === "saving") {
+          newRatios[allocation.targetId] = allocation.ratio;
+        }
+      });
+      setRatios(newRatios);
+    } else {
+      // 기본값: 현금 100%
+      setRatios({ cash: 100 });
+    }
+  }, [currentRule, isOpen, year, positiveYears]);
 
   // ESC 키로 모달 닫기
   useEffect(() => {
@@ -58,45 +97,31 @@ function CashflowInvestmentModal({
   );
 
   // 총 비율 계산
-  const totalRatio = allocations.reduce((sum, item) => sum + item.ratio, 0);
+  const totalRatio = Object.values(ratios).reduce(
+    (sum, ratio) => sum + (ratio || 0),
+    0
+  );
 
-  // 배분 항목 추가
-  const handleAddAllocation = () => {
-    setAllocations([
-      ...allocations,
-      { targetType: "cash", targetId: "", ratio: 0 },
-    ]);
+  // 비율 업데이트
+  const handleRatioChange = (key, value) => {
+    const numValue = value === "" ? 0 : parseInt(value);
+    setRatios({
+      ...ratios,
+      [key]: isNaN(numValue) ? 0 : Math.min(100, Math.max(0, numValue)),
+    });
   };
 
-  // 배분 항목 제거
-  const handleRemoveAllocation = (index) => {
-    if (allocations.length > 1) {
-      setAllocations(allocations.filter((_, i) => i !== index));
-    }
-  };
+  // 범위 변경 시 선택된 년도 업데이트
+  useEffect(() => {
+    if (positiveYears.length === 0) return;
 
-  // 배분 항목 업데이트
-  const handleUpdateAllocation = (index, field, value) => {
-    const updated = [...allocations];
-    if (field === "targetType") {
-      updated[index].targetType = value;
-      updated[index].targetId = ""; // 타입 변경 시 ID 초기화
-    } else {
-      updated[index][field] = value;
-    }
-    setAllocations(updated);
-  };
+    // 인덱스 범위 내의 양수 현금흐름 년도만 선택
+    const yearsInRange = positiveYears
+      .slice(rangeStartIdx, rangeEndIdx + 1)
+      .map((item) => item.year);
 
-  // 년도 선택/해제 토글
-  const toggleYear = (toggleYear) => {
-    if (selectedYears.includes(toggleYear)) {
-      // 현재 년도는 항상 선택되어야 함
-      if (toggleYear === year) return;
-      setSelectedYears(selectedYears.filter((y) => y !== toggleYear));
-    } else {
-      setSelectedYears([...selectedYears, toggleYear].sort((a, b) => a - b));
-    }
-  };
+    setSelectedYears(yearsInRange);
+  }, [rangeStartIdx, rangeEndIdx, positiveYears]);
 
   // 저장
   const handleSave = () => {
@@ -106,18 +131,31 @@ function CashflowInvestmentModal({
       return;
     }
 
-    // 저축 선택 시 ID가 없으면 경고
-    const hasInvalidSaving = allocations.some(
-      (item) => item.targetType === "saving" && !item.targetId
-    );
-    if (hasInvalidSaving) {
-      alert("저축/투자 상품을 선택해주세요.");
-      return;
+    // allocations 배열 생성
+    const allocations = [];
+
+    // 현금
+    if (ratios.cash > 0) {
+      allocations.push({
+        targetType: "cash",
+        targetId: "",
+        ratio: ratios.cash,
+      });
     }
 
-    const rule = {
-      allocations: allocations.filter((item) => item.ratio > 0),
-    };
+    // 저축 상품들
+    activeSavings.forEach((saving) => {
+      const ratio = ratios[saving.id] || 0;
+      if (ratio > 0) {
+        allocations.push({
+          targetType: "saving",
+          targetId: saving.id,
+          ratio: ratio,
+        });
+      }
+    });
+
+    const rule = { allocations };
 
     // 선택된 년도들에 적용
     onSave(selectedYears, rule);
@@ -126,7 +164,7 @@ function CashflowInvestmentModal({
 
   // 초기화
   const handleReset = () => {
-    setAllocations([{ targetType: "cash", targetId: "", ratio: 100 }]);
+    setRatios({ cash: 100 });
   };
 
   return (
@@ -142,49 +180,117 @@ function CashflowInvestmentModal({
 
         {/* 본문 */}
         <div className={styles.modalBody}>
-          {/* 현금흐름 정보 */}
-          <div className={styles.infoBox}>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>연도</span>
-              <span className={styles.infoValue}>{year}년</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>순 현금흐름</span>
-              <span className={styles.infoValue}>
-                +{formatAmount(Math.round(amount))}
-              </span>
-            </div>
-          </div>
-
-          {/* 다른 년도에도 적용 */}
+          {/* 적용 범위 선택 - 범위 슬라이더 */}
           {positiveYears.length > 1 && (
-            <div className={styles.applyToOthersSection}>
-              <div className={styles.sectionLabel}>
-                다른 년도에도 적용 (선택)
-              </div>
-              <div className={styles.yearGrid}>
-                {positiveYears.map((item) => (
-                  <label
-                    key={item.year}
-                    className={`${styles.yearChip} ${
-                      selectedYears.includes(item.year) ? styles.selected : ""
-                    } ${item.year === year ? styles.current : ""}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedYears.includes(item.year)}
-                      onChange={() => toggleYear(item.year)}
-                      disabled={item.year === year}
+            <div className={styles.rangeSliderSection}>
+              <div className={styles.sectionLabel}>적용 범위 선택</div>
+
+              {/* 슬라이더 컨테이너 */}
+              <div className={styles.sliderContainer}>
+                {/* 듀얼 슬라이더 */}
+                <div className={styles.dualSlider}>
+                  {/* 배경 트랙 */}
+                  <div className={styles.sliderTrack}>
+                    {/* 선택된 범위 표시 */}
+                    <div
+                      className={styles.sliderRange}
+                      style={{
+                        left:
+                          rangeStartIdx === 0
+                            ? "0px"
+                            : `calc(${
+                                (rangeStartIdx / (positiveYears.length - 1)) *
+                                100
+                              }% - 12px)`,
+                        right:
+                          rangeEndIdx === positiveYears.length - 1
+                            ? "0px"
+                            : `calc(${
+                                100 -
+                                (rangeEndIdx / (positiveYears.length - 1)) * 100
+                              }% - 12px)`,
+                      }}
                     />
-                    <span className={styles.yearText}>{item.year}</span>
-                    <span className={styles.yearAmountSmall}>
-                      +{formatAmount(Math.round(item.amount))}
-                    </span>
-                  </label>
-                ))}
+                  </div>
+
+                  {/* 시작 슬라이더 (아래쪽) */}
+                  <input
+                    type="range"
+                    min={0}
+                    max={positiveYears.length - 1}
+                    value={rangeStartIdx}
+                    onChange={(e) => {
+                      const newStartIdx = parseInt(e.target.value);
+                      if (newStartIdx <= rangeEndIdx) {
+                        setRangeStartIdx(newStartIdx);
+                      }
+                    }}
+                    className={`${styles.sliderInput} ${styles.sliderInputStart}`}
+                  />
+
+                  {/* 끝 슬라이더 (위쪽) */}
+                  <input
+                    type="range"
+                    min={0}
+                    max={positiveYears.length - 1}
+                    value={rangeEndIdx}
+                    onChange={(e) => {
+                      const newEndIdx = parseInt(e.target.value);
+                      if (newEndIdx >= rangeStartIdx) {
+                        setRangeEndIdx(newEndIdx);
+                      }
+                    }}
+                    className={`${styles.sliderInput} ${styles.sliderInputEnd}`}
+                  />
+                </div>
+
+                {/* 최소/최대 년도 표시 */}
+                <div className={styles.minMaxLabels}>
+                  <span>{positiveYears[0]?.year}</span>
+                  <span>{positiveYears[positiveYears.length - 1]?.year}</span>
+                </div>
               </div>
-              <div className={styles.yearHint}>
-                💡 {selectedYears.length}개 년도에 적용됩니다
+
+              {/* 선택된 범위 정보 */}
+              <div className={styles.rangeInfo}>
+                {rangeStartIdx === rangeEndIdx ? (
+                  <span className={styles.rangeYears}>
+                    {positiveYears[rangeStartIdx]?.year}년
+                  </span>
+                ) : (
+                  <span className={styles.rangeYears}>
+                    {positiveYears[rangeStartIdx]?.year}년 ~{" "}
+                    {positiveYears[rangeEndIdx]?.year}년
+                  </span>
+                )}
+                <span className={styles.totalAmount}>
+                  {formatAmount(
+                    Math.round(
+                      selectedYears.reduce((sum, y) => {
+                        const item = positiveYears.find(
+                          (item) => item.year === y
+                        );
+                        return sum + (item ? item.amount : 0);
+                      }, 0)
+                    )
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* 단일 년도인 경우 간단한 정보만 표시 */}
+          {positiveYears.length === 1 && (
+            <div className={styles.singleYearInfo}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>적용 년도</span>
+                <span className={styles.infoValue}>{year}년</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>잉여 현금</span>
+                <span className={styles.infoValue}>
+                  +{formatAmount(Math.round(amount))}
+                </span>
               </div>
             </div>
           )}
@@ -204,105 +310,53 @@ function CashflowInvestmentModal({
               </span>
             </div>
 
-            {allocations.map((allocation, index) => (
-              <div key={index} className={styles.allocationItem}>
-                {/* 투자 대상 선택 */}
+            {/* 현금 */}
+            <div className={styles.allocationItem}>
+              <div className={styles.allocationRow}>
+                <span className={styles.targetName}>현금</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={ratios.cash === 0 ? "" : ratios.cash}
+                  placeholder="0"
+                  onChange={(e) => handleRatioChange("cash", e.target.value)}
+                  onWheel={(e) => e.target.blur()}
+                  className={styles.ratioInput}
+                />
+                <span className={styles.percent}>%</span>
+              </div>
+            </div>
+
+            {/* 저축 상품들 */}
+            {activeSavings.map((saving) => (
+              <div key={saving.id} className={styles.allocationItem}>
                 <div className={styles.allocationRow}>
-                  <select
-                    className={styles.select}
-                    value={allocation.targetType}
-                    onChange={(e) =>
-                      handleUpdateAllocation(
-                        index,
-                        "targetType",
-                        e.target.value
-                      )
+                  <span className={styles.targetName}>{saving.title}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={
+                      ratios[saving.id] === 0 ? "" : ratios[saving.id] || ""
                     }
-                  >
-                    <option value="cash">현금</option>
-                    <option value="saving">저축/투자</option>
-                  </select>
-
-                  {/* 저축 상품 선택 */}
-                  {allocation.targetType === "saving" && (
-                    <select
-                      className={styles.select}
-                      value={allocation.targetId}
-                      onChange={(e) =>
-                        handleUpdateAllocation(
-                          index,
-                          "targetId",
-                          e.target.value
-                        )
-                      }
-                    >
-                      <option value="">상품 선택</option>
-                      {activeSavings.map((saving) => (
-                        <option key={saving.id} value={saving.id}>
-                          {saving.title}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-
-                  {/* 비율 입력 */}
-                  <div className={styles.ratioInput}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={allocation.ratio === 0 ? "" : allocation.ratio}
-                      placeholder="0"
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // 빈 문자열이면 0으로, 숫자가 있으면 parseInt 적용
-                        const numValue = value === "" ? 0 : parseInt(value);
-                        handleUpdateAllocation(
-                          index,
-                          "ratio",
-                          isNaN(numValue)
-                            ? 0
-                            : Math.min(100, Math.max(0, numValue))
-                        );
-                      }}
-                    />
-                    <span>%</span>
-                  </div>
-
-                  {/* 삭제 버튼 */}
-                  {allocations.length > 1 && (
-                    <button
-                      className={styles.removeButton}
-                      onClick={() => handleRemoveAllocation(index)}
-                      title="삭제"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-
-                {/* 예상 투자액 */}
-                <div className={styles.allocationAmount}>
-                  예상 투자액:{" "}
-                  {formatAmount(Math.round((amount * allocation.ratio) / 100))}
+                    placeholder="0"
+                    onChange={(e) =>
+                      handleRatioChange(saving.id, e.target.value)
+                    }
+                    onWheel={(e) => e.target.blur()}
+                    className={styles.ratioInput}
+                  />
+                  <span className={styles.percent}>%</span>
                 </div>
               </div>
             ))}
 
-            {/* 추가 버튼 */}
-            {activeSavings.length > 0 && (
-              <button
-                className={styles.addButton}
-                onClick={handleAddAllocation}
-              >
-                + 배분 추가
-              </button>
+            {activeSavings.length === 0 && (
+              <div className={styles.noSavings}>
+                해당 년도에 활성화된 저축/투자 상품이 없습니다.
+              </div>
             )}
-          </div>
-
-          {/* 설명 */}
-          <div className={styles.description}>
-            <p>💡 투자된 금액은 다음 해부터 해당 자산의 수익률이 적용됩니다.</p>
           </div>
         </div>
 
