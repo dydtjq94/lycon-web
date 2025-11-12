@@ -1561,13 +1561,13 @@ export function calculateAssetSimulation(
         currentAmount: saving.currentAmount || 0, // 현재 보유 금액 저장
         startYear: startYear,
         endYear: endYear,
-        interestRate: saving.interestRate || 0.03, // 이자율 (소수로 저장됨)
-        yearlyGrowthRate: saving.yearlyGrowthRate || 0, // 년간 저축 상승률
+        interestRate: saving.interestRate !== undefined && saving.interestRate !== null ? saving.interestRate : 0.03, // 이자율 (0 허용)
+        yearlyGrowthRate: saving.yearlyGrowthRate !== undefined && saving.yearlyGrowthRate !== null ? saving.yearlyGrowthRate : 0, // 년간 저축 상승률 (0 허용)
         frequency: saving.frequency,
         originalAmount: saving.amount,
         title: saving.title, // 제목도 저장
         savingType: saving.savingType || "standard", // "standard" 또는 "income"
-        incomeRate: saving.incomeRate || 0, // 수익형 저축의 수익률
+        incomeRate: saving.incomeRate !== undefined && saving.incomeRate !== null ? saving.incomeRate : 0, // 수익형 저축의 수익률 (0 허용)
         isActive: false, // 시작년도 전에는 비활성
         totalInvested: 0, // 잉여 현금 투자 누적액 (자산 시뮬레이션에서 추가됨)
       };
