@@ -507,8 +507,6 @@ function YearDetailPanel({
     return () => window.removeEventListener("keydown", handleEscKey);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   // 총 자산/부채 계산
   const totalAssetValue = yearDetail.totalAssets || 0;
   const totalDebtValue = yearDetail.totalDebt || 0;
@@ -534,8 +532,12 @@ function YearDetailPanel({
           <h2 className={styles.title}>
             {yearData?.year}년 ({yearData?.age}세)
           </h2>
-          <button className={styles.closeButton} onClick={onClose}>
-            ✕
+          <button
+            className={styles.closeButton}
+            onClick={onClose}
+            type="button"
+          >
+            →
           </button>
         </div>
 

@@ -1508,11 +1508,6 @@ function RechartsAssetChart({
       <div className={styles.chartContainer}>
         {hasData ? (
           <>
-            {/* 타이틀 영역 */}
-            <div className={styles.chartHeader}>
-              <div className={styles.chartTitle}>순 자산 규모</div>
-            </div>
-
             {/* 컨텐츠 영역: 그래프 */}
             <div className={styles.chartContent}>
               <div className={styles.chartWrapper}>{renderChart()}</div>

@@ -1231,11 +1231,6 @@ function RechartsCashflowChart({
           <div className={styles.noData}>데이터가 없습니다.</div>
         ) : (
           <>
-            {/* 타이틀 영역 */}
-            <div className={styles.chartHeader}>
-              <div className={styles.chartTitle}>가계 현금 흐름</div>
-            </div>
-
             {/* 컨텐츠 영역: 그래프 */}
             <div className={styles.chartWrapper}>{renderChart()}</div>
           </>
