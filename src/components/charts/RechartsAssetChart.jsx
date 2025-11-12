@@ -37,10 +37,10 @@ const OptimizedPieChart = memo(({ data, title }) => {
           innerRadius={60}
           outerRadius={120}
           paddingAngle={1}
-          animationDuration={0}
+          animationDuration={500}
           animationBegin={0}
-          animationEasing="ease"
-          isAnimationActive={false}
+          animationEasing="ease-out"
+          isAnimationActive={true}
         >
           {data.map((slice, index) => (
             <Cell
@@ -1126,8 +1126,8 @@ function RechartsAssetChart({
             }
             return null;
           }}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={150}
+          isAnimationActive={true}
         />
 
         {/* 7개 Bar로 세분화 (양수는 역순) */}
@@ -1143,8 +1143,9 @@ function RechartsAssetChart({
           radius={0}
           className={styles.clickableBar}
           onClick={(data) => handleBarSegmentClick(data)}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={400}
+          animationBegin={0}
+          isAnimationActive={true}
         />
         <Bar
           key="자산"
@@ -1157,8 +1158,9 @@ function RechartsAssetChart({
           radius={0}
           className={styles.clickableBar}
           onClick={(data) => handleBarSegmentClick(data)}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={400}
+          animationBegin={0}
+          isAnimationActive={true}
         />
         <Bar
           key="부동산"
@@ -1171,8 +1173,9 @@ function RechartsAssetChart({
           radius={0}
           className={styles.clickableBar}
           onClick={(data) => handleBarSegmentClick(data)}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={400}
+          animationBegin={0}
+          isAnimationActive={true}
         />
         <Bar
           key="연금"
@@ -1185,8 +1188,9 @@ function RechartsAssetChart({
           radius={0}
           className={styles.clickableBar}
           onClick={(data) => handleBarSegmentClick(data)}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={400}
+          animationBegin={0}
+          isAnimationActive={true}
         />
         <Bar
           key="저축투자"
@@ -1199,8 +1203,9 @@ function RechartsAssetChart({
           radius={0}
           className={styles.clickableBar}
           onClick={(data) => handleBarSegmentClick(data)}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={400}
+          animationBegin={0}
+          isAnimationActive={true}
         />
         <Bar
           key="음수현금"
@@ -1213,8 +1218,9 @@ function RechartsAssetChart({
           radius={0}
           className={styles.clickableBar}
           onClick={(data) => handleBarSegmentClick(data)}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={400}
+          animationBegin={0}
+          isAnimationActive={true}
         />
         <Bar
           key="부채"
@@ -1227,8 +1233,9 @@ function RechartsAssetChart({
           radius={0}
           className={styles.clickableBar}
           onClick={(data) => handleBarSegmentClick(data)}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={400}
+          animationBegin={0}
+          isAnimationActive={true}
         />
 
         {/* 이벤트 마커를 표시하기 위한 투명한 레이어 - 년도별로 작고 화려한 네모 표시 */}

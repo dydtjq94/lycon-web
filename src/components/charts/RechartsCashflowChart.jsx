@@ -37,10 +37,10 @@ const OptimizedPieChart = memo(({ data, title }) => {
           innerRadius={60}
           outerRadius={120}
           paddingAngle={1}
-          animationDuration={0}
+          animationDuration={500}
           animationBegin={0}
-          animationEasing="ease"
-          isAnimationActive={false}
+          animationEasing="ease-out"
+          isAnimationActive={true}
         >
           {data.map((slice, index) => (
             <Cell
@@ -964,8 +964,8 @@ function RechartsCashflowChart({
             }
             return null;
           }}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={150}
+          isAnimationActive={true}
         />
 
         {/* Bar 그래프 */}
@@ -975,8 +975,9 @@ function RechartsCashflowChart({
           strokeWidth={0}
           onClick={handleBarClick}
           style={{ cursor: "pointer" }}
-          animationDuration={0}
-          isAnimationActive={false}
+          animationDuration={400}
+          animationBegin={0}
+          isAnimationActive={true}
           label={(props) => {
             const { x, y, width, value, index } = props;
             const entry = chartData[index];
@@ -1211,14 +1212,13 @@ function RechartsCashflowChart({
       year: entry.year,
       amount: entry.amount,
       currentRule,
-      positiveYears, // 양수 현금흐름 년도 목록 추가
+      positiveYears,
     });
   };
 
-  // 투자 규칙 저장 핸들러 (여러 년도 지원)
+  // 투자 규칙 저장 핸들러
   const handleSaveInvestmentRule = (years, rule) => {
     if (onUpdateInvestmentRule) {
-      // 배열이든 단일이든 그대로 전달 (DashboardPage에서 처리)
       onUpdateInvestmentRule(years, rule);
     }
     setInvestmentModalData(null);

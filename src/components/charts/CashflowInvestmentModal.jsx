@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import styles from "./CashflowInvestmentModal.module.css";
+import { formatAmount } from "../../utils/format";
 
 /**
- * 현금흐름 투자 설정 모달 (고급 버전)
+ * 현금흐름 투자 설정 모달
  * 특정 연도의 잉여 현금을 여러 자산에 비율로 분배
  */
 function CashflowInvestmentModal({
@@ -12,7 +13,7 @@ function CashflowInvestmentModal({
   amount,
   savings = [],
   currentRule = null, // { allocations: [{targetType, targetId, ratio}] }
-  positiveYears = [], // 양수 현금흐름이 있는 모든 년도 목록
+  positiveYears = [], // 양수 현금흐름이 있는 년도 목록
   onSave,
 }) {
   // 초기 배분: 현금 100%
@@ -20,7 +21,7 @@ function CashflowInvestmentModal({
     { targetType: "cash", targetId: "", ratio: 100 },
   ]);
 
-  // 선택된 년도 목록 (기본: 현재 년도만 선택)
+  // 선택된 년도들 (기본: 현재 년도만)
   const [selectedYears, setSelectedYears] = useState([year]);
 
   useEffect(() => {
@@ -30,7 +31,8 @@ function CashflowInvestmentModal({
       // 기본값: 현금 100%
       setAllocations([{ targetType: "cash", targetId: "", ratio: 100 }]);
     }
-    // 년도 초기화
+
+    // 선택된 년도 초기화 (현재 년도만)
     setSelectedYears([year]);
   }, [currentRule, isOpen, year]);
 
@@ -86,25 +88,13 @@ function CashflowInvestmentModal({
   };
 
   // 년도 선택/해제 토글
-  const toggleYear = (yearToToggle) => {
-    if (selectedYears.includes(yearToToggle)) {
-      // 최소 1개는 선택되어야 함
-      if (selectedYears.length > 1) {
-        setSelectedYears(selectedYears.filter((y) => y !== yearToToggle));
-      }
+  const toggleYear = (toggleYear) => {
+    if (selectedYears.includes(toggleYear)) {
+      // 현재 년도는 항상 선택되어야 함
+      if (toggleYear === year) return;
+      setSelectedYears(selectedYears.filter((y) => y !== toggleYear));
     } else {
-      setSelectedYears([...selectedYears, yearToToggle].sort((a, b) => a - b));
-    }
-  };
-
-  // 모두 선택/해제
-  const toggleAllYears = () => {
-    if (selectedYears.length === positiveYears.length) {
-      // 모두 선택된 상태 -> 현재 년도만 선택
-      setSelectedYears([year]);
-    } else {
-      // 일부만 선택된 상태 -> 모두 선택
-      setSelectedYears(positiveYears.map((item) => item.year));
+      setSelectedYears([...selectedYears, toggleYear].sort((a, b) => a - b));
     }
   };
 
@@ -129,7 +119,7 @@ function CashflowInvestmentModal({
       allocations: allocations.filter((item) => item.ratio > 0),
     };
 
-    // 선택된 년도들에 모두 적용
+    // 선택된 년도들에 적용
     onSave(selectedYears, rule);
     onClose();
   };
@@ -161,49 +151,40 @@ function CashflowInvestmentModal({
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>순 현금흐름</span>
               <span className={styles.infoValue}>
-                +{Math.round(amount).toLocaleString()}만원
+                +{formatAmount(Math.round(amount))}
               </span>
             </div>
           </div>
 
-          {/* 적용 년도 선택 */}
+          {/* 다른 년도에도 적용 */}
           {positiveYears.length > 1 && (
-            <div className={styles.section}>
-              <div className={styles.sectionHeader}>
-                <label className={styles.sectionLabel}>적용 년도 선택</label>
-                <button
-                  className={styles.toggleAllButton}
-                  onClick={toggleAllYears}
-                  type="button"
-                >
-                  {selectedYears.length === positiveYears.length
-                    ? "현재만"
-                    : "모두 선택"}
-                </button>
+            <div className={styles.applyToOthersSection}>
+              <div className={styles.sectionLabel}>
+                다른 년도에도 적용 (선택)
               </div>
-              <div className={styles.yearSelectGrid}>
+              <div className={styles.yearGrid}>
                 {positiveYears.map((item) => (
-                  <label key={item.year} className={styles.yearCheckbox}>
+                  <label
+                    key={item.year}
+                    className={`${styles.yearChip} ${
+                      selectedYears.includes(item.year) ? styles.selected : ""
+                    } ${item.year === year ? styles.current : ""}`}
+                  >
                     <input
                       type="checkbox"
                       checked={selectedYears.includes(item.year)}
                       onChange={() => toggleYear(item.year)}
-                      disabled={
-                        item.year === year && selectedYears.length === 1
-                      }
+                      disabled={item.year === year}
                     />
-                    <span className={styles.yearLabel}>
-                      {item.year}년
-                      <span className={styles.yearAmount}>
-                        +{Math.round(item.amount).toLocaleString()}
-                      </span>
+                    <span className={styles.yearText}>{item.year}</span>
+                    <span className={styles.yearAmountSmall}>
+                      +{formatAmount(Math.round(item.amount))}
                     </span>
                   </label>
                 ))}
               </div>
-              <div className={styles.yearSelectHint}>
-                💡 선택한 {selectedYears.length}개 년도에 동일한 투자 규칙이
-                적용됩니다
+              <div className={styles.yearHint}>
+                💡 {selectedYears.length}개 년도에 적용됩니다
               </div>
             </div>
           )}
@@ -231,7 +212,11 @@ function CashflowInvestmentModal({
                     className={styles.select}
                     value={allocation.targetType}
                     onChange={(e) =>
-                      handleUpdateAllocation(index, "targetType", e.target.value)
+                      handleUpdateAllocation(
+                        index,
+                        "targetType",
+                        e.target.value
+                      )
                     }
                   >
                     <option value="cash">현금</option>
@@ -244,7 +229,11 @@ function CashflowInvestmentModal({
                       className={styles.select}
                       value={allocation.targetId}
                       onChange={(e) =>
-                        handleUpdateAllocation(index, "targetId", e.target.value)
+                        handleUpdateAllocation(
+                          index,
+                          "targetId",
+                          e.target.value
+                        )
                       }
                     >
                       <option value="">상품 선택</option>
@@ -271,7 +260,9 @@ function CashflowInvestmentModal({
                         handleUpdateAllocation(
                           index,
                           "ratio",
-                          isNaN(numValue) ? 0 : Math.min(100, Math.max(0, numValue))
+                          isNaN(numValue)
+                            ? 0
+                            : Math.min(100, Math.max(0, numValue))
                         );
                       }}
                     />
@@ -292,7 +283,8 @@ function CashflowInvestmentModal({
 
                 {/* 예상 투자액 */}
                 <div className={styles.allocationAmount}>
-                  예상 투자액: {Math.round((amount * allocation.ratio) / 100).toLocaleString()}만원
+                  예상 투자액:{" "}
+                  {formatAmount(Math.round((amount * allocation.ratio) / 100))}
                 </div>
               </div>
             ))}

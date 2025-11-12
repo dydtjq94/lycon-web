@@ -124,89 +124,93 @@
   font-weight: 500;
 }
 
-/* 년도 선택 */
-.yearSelectGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 8px;
+
+/* 다른 년도 적용 섹션 */
+.applyToOthersSection {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.applyToOthersSection .sectionLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.yearGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-bottom: 10px;
 }
 
-.yearCheckbox {
-  display: flex;
+.yearChip {
+  display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  padding: 8px 10px 6px 10px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  position: relative;
+  min-width: 70px;
 }
 
-.yearCheckbox:has(input:checked) {
+.yearChip input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.yearChip:hover:not(.current) {
+  border-color: #111827;
+}
+
+.yearChip.selected {
   background: #111827;
   border-color: #111827;
 }
 
-.yearCheckbox:has(input:checked) .yearLabel {
+.yearChip.selected .yearText,
+.yearChip.selected .yearAmountSmall {
   color: white;
 }
 
-.yearCheckbox:has(input:checked) .yearAmount {
-  color: #d1d5db;
+.yearChip.current {
+  border-color: #3b82f6;
+  background: #dbeafe;
 }
 
-.yearCheckbox:has(input:disabled) {
-  opacity: 0.6;
-  cursor: not-allowed;
+.yearChip.current .yearText {
+  color: #1e40af;
+  font-weight: 600;
 }
 
-.yearCheckbox:hover:not(:has(input:disabled)) {
-  border-color: #9ca3af;
+.yearChip.current .yearAmountSmall {
+  color: #3b82f6;
 }
 
-.yearCheckbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #111827;
-}
-
-.yearLabel {
-  flex: 1;
+.yearText {
   font-size: 13px;
-  color: #374151;
   font-weight: 500;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.yearAmount {
-  font-size: 11px;
-  color: #6b7280;
-  font-weight: 400;
-}
-
-.toggleAllButton {
-  padding: 4px 10px;
-  border: 1px solid #d1d5db;
-  background: white;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.toggleAllButton:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
   color: #374151;
+  margin-bottom: 2px;
 }
 
-.yearSelectHint {
+.yearAmountSmall {
+  font-size: 10px;
+  color: #9ca3af;
+  line-height: 1.2;
+}
+
+.yearHint {
   font-size: 12px;
   color: #6b7280;
   padding: 8px;
@@ -438,7 +442,4 @@
     width: 100%;
   }
 
-  .yearSelectGrid {
-    grid-template-columns: 1fr;
-  }
 }
