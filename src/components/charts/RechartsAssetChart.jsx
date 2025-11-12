@@ -73,7 +73,6 @@ function RechartsAssetChart({
   assets = [],
   debts = [],
 }) {
-  const [isZoomed, setIsZoomed] = useState(false);
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
   const [hoveredData, setHoveredData] = useState(null); // 클릭으로 선택된 연도 데이터
@@ -106,7 +105,6 @@ function RechartsAssetChart({
 
   useEffect(() => {
     if (!hasData) {
-      setIsZoomed(false);
       setIsDistributionOpen(false);
       setDistributionEntry(null);
     }
@@ -613,8 +611,8 @@ function RechartsAssetChart({
     );
   }, [distributionSlices]);
 
-  const handleBarSegmentClick = (barData, isZoomedView) => {
-    if (!hasData || isZoomedView) return;
+  const handleBarSegmentClick = (barData) => {
+    if (!hasData) return;
     if (!barData || !barData.payload) return;
     setDistributionEntry(barData.payload);
     setIsDistributionOpen(true);
@@ -642,8 +640,8 @@ function RechartsAssetChart({
     }
   };
 
-  // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
-  const renderChart = (height = 600, isZoomedView = false) => (
+  // 차트 렌더링 함수
+  const renderChart = (height = 600) => (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
@@ -799,29 +797,35 @@ function RechartsAssetChart({
                     boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
                   }}
                 >
-                  {/* 년도 */}
+                  {/* 년도 및 가족 구성 */}
                   <div
                     style={{
-                      fontSize: "15px",
-                      fontWeight: "bold",
-                      marginBottom: "8px",
                       borderBottom: "1px solid rgba(0,0,0,0.1)",
-                      paddingBottom: "6px",
-                      color: "#111827",
-                    }}
-                  >
-                    {data.year}년
-                  </div>
-
-                  {/* 가족 구성 */}
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#6b7280",
+                      paddingBottom: "10px",
                       marginBottom: "10px",
                     }}
                   >
-                    {data.familyLabel}
+                    {/* 년도 */}
+                    <div
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: "bold",
+                        marginBottom: "6px",
+                        color: "#111827",
+                      }}
+                    >
+                      {data.year}년
+                    </div>
+
+                    {/* 가족 구성 */}
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#6b7280",
+                      }}
+                    >
+                      {data.familyLabel}
+                    </div>
                   </div>
 
                   {/* 순자산 */}
@@ -1137,8 +1141,8 @@ function RechartsAssetChart({
           stroke="#ffffff"
           strokeWidth={1}
           radius={0}
-          className={!isZoomedView ? styles.clickableBar : undefined}
-          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          className={styles.clickableBar}
+          onClick={(data) => handleBarSegmentClick(data)}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -1151,8 +1155,8 @@ function RechartsAssetChart({
           stroke="#ffffff"
           strokeWidth={1}
           radius={0}
-          className={!isZoomedView ? styles.clickableBar : undefined}
-          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          className={styles.clickableBar}
+          onClick={(data) => handleBarSegmentClick(data)}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -1165,8 +1169,8 @@ function RechartsAssetChart({
           stroke="#ffffff"
           strokeWidth={1}
           radius={0}
-          className={!isZoomedView ? styles.clickableBar : undefined}
-          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          className={styles.clickableBar}
+          onClick={(data) => handleBarSegmentClick(data)}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -1179,8 +1183,8 @@ function RechartsAssetChart({
           stroke="#ffffff"
           strokeWidth={1}
           radius={0}
-          className={!isZoomedView ? styles.clickableBar : undefined}
-          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          className={styles.clickableBar}
+          onClick={(data) => handleBarSegmentClick(data)}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -1193,8 +1197,8 @@ function RechartsAssetChart({
           stroke="#ffffff"
           strokeWidth={1}
           radius={0}
-          className={!isZoomedView ? styles.clickableBar : undefined}
-          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          className={styles.clickableBar}
+          onClick={(data) => handleBarSegmentClick(data)}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -1207,8 +1211,8 @@ function RechartsAssetChart({
           stroke="#ffffff"
           strokeWidth={1}
           radius={0}
-          className={!isZoomedView ? styles.clickableBar : undefined}
-          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          className={styles.clickableBar}
+          onClick={(data) => handleBarSegmentClick(data)}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -1221,8 +1225,8 @@ function RechartsAssetChart({
           stroke="#ffffff"
           strokeWidth={1}
           radius={0}
-          className={!isZoomedView ? styles.clickableBar : undefined}
-          onClick={(data) => handleBarSegmentClick(data, isZoomedView)}
+          className={styles.clickableBar}
+          onClick={(data) => handleBarSegmentClick(data)}
           animationDuration={0}
           isAnimationActive={false}
         />
@@ -1403,28 +1407,7 @@ function RechartsAssetChart({
           <>
             {/* 타이틀 영역 */}
             <div className={styles.chartHeader}>
-              <div className={styles.chartTitleWrapper}>
-                <div className={styles.chartTitle}>순 자산 규모</div>
-                <button
-                  className={styles.zoomButton}
-                  onClick={() => setIsZoomed(true)}
-                  title="크게 보기"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35" />
-                  </svg>
-                </button>
-              </div>
+              <div className={styles.chartTitle}>순 자산 규모</div>
             </div>
 
             {/* 컨텐츠 영역: 그래프 */}
@@ -1436,18 +1419,6 @@ function RechartsAssetChart({
           <div className={styles.noData}>데이터가 없습니다.</div>
         )}
       </div>
-
-      {hasData && (
-        <ChartZoomModal
-          isOpen={isZoomed}
-          onClose={() => setIsZoomed(false)}
-          title="순 자산 규모"
-        >
-          <div style={{ width: "100%", height: "100%" }}>
-            {renderChart("100%", true)}
-          </div>
-        </ChartZoomModal>
-      )}
 
       {hasData && (
         <ChartZoomModal
@@ -1489,6 +1460,13 @@ function RechartsAssetChart({
                                   1
                                 )
                               : "0.0";
+                          
+                          // 해당 자산에 대한 잉여 현금 투자 정보 확인
+                          const yearData = detailedData.find(
+                            (item) => item.year === distributionEntry?.year
+                          );
+                          const investmentAmount = yearData?.investmentInfo?.[slice.name] || 0;
+                          
                           return (
                             <div
                               key={`asset-list-${slice.name}`}
@@ -1499,7 +1477,14 @@ function RechartsAssetChart({
                                   className={styles.distributionDot}
                                   style={{ backgroundColor: slice.color }}
                                 />
-                                {slice.name}
+                                <span className={styles.assetNameWrapper}>
+                                  {slice.name}
+                                  {investmentAmount > 0 && (
+                                    <span className={styles.investmentBadge}>
+                                      잉여현금 +{formatAmountForChart(investmentAmount)}
+                                    </span>
+                                  )}
+                                </span>
                               </span>
                               <span className={styles.distributionValue}>
                                 {formatAmountForChart(

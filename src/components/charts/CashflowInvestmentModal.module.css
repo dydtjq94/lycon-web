@@ -1,0 +1,444 @@
+/* 모달 오버레이 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+/* 모달 컨텐츠 */
+.modalContent {
+  background: white;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 헤더 */
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modalHeader h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.closeButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: #374151;
+}
+
+/* 본문 */
+.modalBody {
+  padding: 20px;
+}
+
+/* 정보 박스 */
+.infoBox {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 20px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.infoRow:not(:last-child) {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.infoLabel {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.infoValue {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 500;
+}
+
+/* 섹션 */
+.section {
+  margin-bottom: 20px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sectionLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ratioStatus {
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.ratioStatusError {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* 년도 선택 */
+.yearSelectGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.yearCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.yearCheckbox:has(input:checked) {
+  background: #111827;
+  border-color: #111827;
+}
+
+.yearCheckbox:has(input:checked) .yearLabel {
+  color: white;
+}
+
+.yearCheckbox:has(input:checked) .yearAmount {
+  color: #d1d5db;
+}
+
+.yearCheckbox:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.yearCheckbox:hover:not(:has(input:disabled)) {
+  border-color: #9ca3af;
+}
+
+.yearCheckbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #111827;
+}
+
+.yearLabel {
+  flex: 1;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.yearAmount {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.toggleAllButton {
+  padding: 4px 10px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggleAllButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.yearSelectHint {
+  font-size: 12px;
+  color: #6b7280;
+  padding: 8px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+}
+
+/* 배분 항목 */
+.allocationItem {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.allocationRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.allocationAmount {
+  font-size: 12px;
+  color: #6b7280;
+  padding-left: 4px;
+}
+
+/* 셀렉트 박스 */
+.select {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #9ca3af;
+}
+
+/* 비율 입력 */
+.ratioInput {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  width: 80px;
+}
+
+.ratioInput input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  text-align: right;
+}
+
+.ratioInput span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* 삭제 버튼 */
+.removeButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.removeButton:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* 추가 버튼 */
+.addButton {
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed #d1d5db;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addButton:hover {
+  border-color: #9ca3af;
+  color: #374151;
+  background: #f9fafb;
+}
+
+/* 설명 */
+.description {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 12px;
+  color: #0369a1;
+  line-height: 1.5;
+}
+
+.description p {
+  margin: 0;
+}
+
+/* 푸터 */
+.modalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+  gap: 8px;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.resetButton,
+.cancelButton,
+.saveButton {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.resetButton {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.resetButton:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.cancelButton {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.cancelButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.saveButton {
+  background: #111827;
+  color: white;
+}
+
+.saveButton:hover {
+  background: #1f2937;
+}
+
+.saveButton:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .modalContent {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modalHeader {
+    padding: 16px;
+  }
+
+  .modalHeader h2 {
+    font-size: 15px;
+  }
+
+  .modalBody {
+    padding: 16px;
+  }
+
+  .modalFooter {
+    padding: 12px 16px;
+    flex-direction: column-reverse;
+  }
+
+  .buttonGroup {
+    width: 100%;
+  }
+
+  .resetButton,
+  .cancelButton,
+  .saveButton {
+    flex: 1;
+  }
+
+  .allocationRow {
+    flex-wrap: wrap;
+  }
+
+  .ratioInput {
+    width: 100%;
+  }
+
+  .yearSelectGrid {
+    grid-template-columns: 1fr;
+  }
+}

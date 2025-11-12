@@ -59,6 +59,50 @@ import { trackEvent, trackPageView } from "../libs/mixpanel";
 import styles from "./DashboardPage.module.css";
 
 /**
+ * 프로필 레벨의 투자 규칙을 시뮬레이션별로 마이그레이션
+ * (기존 프로필에 cashflowInvestmentRules가 있으면 모든 시뮬레이션에 복사하고 프로필에서 삭제)
+ */
+async function migrateInvestmentRulesToSimulations(profileId, simulationList) {
+  try {
+    // 프로필 데이터 가져오기
+    const profile = await profileService.getProfile(profileId);
+
+    // 프로필에 cashflowInvestmentRules가 있는지 확인
+    if (
+      !profile.cashflowInvestmentRules ||
+      Object.keys(profile.cashflowInvestmentRules).length === 0
+    ) {
+      // 마이그레이션할 데이터 없음
+      return;
+    }
+
+    console.log(
+      "프로필 레벨 투자 규칙 발견, 시뮬레이션으로 마이그레이션 시작..."
+    );
+
+    // 모든 시뮬레이션에 투자 규칙 복사
+    const migrationPromises = simulationList.map((sim) =>
+      simulationService.updateInvestmentRules(
+        profileId,
+        sim.id,
+        profile.cashflowInvestmentRules
+      )
+    );
+
+    await Promise.all(migrationPromises);
+
+    // 프로필에서 cashflowInvestmentRules 삭제
+    await profileService.updateProfile(profileId, {
+      cashflowInvestmentRules: {},
+    });
+
+    console.log("투자 규칙 마이그레이션 완료");
+  } catch (error) {
+    console.error("투자 규칙 마이그레이션 오류:", error);
+  }
+}
+
+/**
  * 프로필 대시보드 페이지
  * 재무 상담사가 내담자의 재무 상태를 관리하고 시뮬레이션을 확인할 수 있습니다.
  */
@@ -133,8 +177,15 @@ function DashboardPage() {
       const sortedAssets = sortByCreatedAt(assetsData);
       const sortedDebts = sortByCreatedAt(debtData);
 
+      // 해당 시뮬레이션의 투자 규칙 가져오기
+      const simulation = simulations.find((sim) => sim.id === simulationId);
+      const profileDataWithSimulation = {
+        ...profileData,
+        cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
+      };
+
       const cashflow = calculateCashflowSimulation(
-        profileData,
+        profileDataWithSimulation, // 투자 규칙이 포함된 profileData 사용
         sortedIncomes,
         sortedExpenses,
         sortedSavings,
@@ -155,7 +206,7 @@ function DashboardPage() {
         cashflow,
       };
     },
-    [profileId, profileData]
+    [profileId, profileData, simulations]
   );
 
   const loadProfileChecklist = useCallback(async () => {
@@ -228,10 +279,16 @@ function DashboardPage() {
     targetData: null,
     defaultTitle: "",
     targetTitle: "",
+    defaultSimulationId: null,
+    targetSimulationId: null,
   });
   const defaultSimulationEntry = useMemo(
     () => simulations.find((sim) => sim.isDefault),
     [simulations]
+  );
+  const currentSimulation = useMemo(
+    () => simulations.find((sim) => sim.id === activeSimulationId),
+    [simulations, activeSimulationId]
   );
   const isActiveSimulationDefault = !!(
     defaultSimulationEntry &&
@@ -419,6 +476,9 @@ function DashboardPage() {
           // 기본 시뮬레이션이 없으면 첫 번째 시뮬레이션 활성화
           setActiveSimulationId(simulationList[0].id);
         }
+
+        // 프로필 레벨 투자 규칙 마이그레이션 체크 및 실행
+        await migrateInvestmentRulesToSimulations(profileId, simulationList);
       } catch (error) {
         console.error("시뮬레이션 목록 조회 오류:", error);
       }
@@ -572,9 +632,15 @@ function DashboardPage() {
       years.push({ year, age });
     }
 
+    // 프로필 데이터에 시뮬레이션 투자 규칙 병합
+    const profileDataWithSimulation = {
+      ...profileData,
+      cashflowInvestmentRules: currentSimulation?.cashflowInvestmentRules || {},
+    };
+
     // 실제 소득 데이터를 기반으로 현금흐름 시뮬레이션 계산
     const cashflow = calculateCashflowSimulation(
-      profileData,
+      profileDataWithSimulation,
       incomes,
       expenses, // 지출 데이터 사용
       savings, // 저축/투자 데이터 사용
@@ -586,7 +652,7 @@ function DashboardPage() {
 
     // 자산 시뮬레이션 데이터 계산 (현금 흐름 데이터 포함)
     const assetSimulation = calculateAssetSimulation(
-      profileData,
+      profileDataWithSimulation,
       incomes,
       expenses,
       savings, // 저축/투자 데이터 사용
@@ -605,6 +671,7 @@ function DashboardPage() {
     };
   }, [
     profileData,
+    currentSimulation,
     incomes,
     expenses,
     savings,
@@ -686,6 +753,64 @@ function DashboardPage() {
         console.error("재무 데이터 리로드 오류:", error);
         // 데이터 리로드 실패해도 프로필 업데이트는 성공으로 처리
       }
+    }
+  };
+
+  // 현금흐름 투자 규칙 업데이트 핸들러 (시뮬레이션별, 단일 또는 여러 년도 지원)
+  const handleUpdateInvestmentRule = async (years, rule) => {
+    if (!checkEditPermission("투자 규칙 설정")) return;
+    if (!activeSimulationId) {
+      alert("활성화된 시뮬레이션이 없습니다.");
+      return;
+    }
+
+    try {
+      // 현재 시뮬레이션의 투자 규칙 가져오기
+      const currentRules = await simulationService.getInvestmentRules(
+        profileId,
+        activeSimulationId
+      );
+
+      // 업데이트할 규칙 준비
+      const updatedRules = { ...currentRules };
+
+      // 배열인 경우 모든 년도에 적용, 아니면 단일 년도에만 적용
+      if (Array.isArray(years)) {
+        years.forEach((year) => {
+          updatedRules[year] = rule;
+        });
+      } else {
+        updatedRules[years] = rule;
+      }
+
+      // 시뮬레이션 업데이트 (한 번만 호출)
+      await simulationService.updateInvestmentRules(
+        profileId,
+        activeSimulationId,
+        updatedRules
+      );
+
+      // 시뮬레이션 목록 다시 로드 (투자 규칙 반영)
+      const updatedSimulations = await simulationService.getSimulations(
+        profileId
+      );
+      setSimulations(updatedSimulations);
+
+      if (Array.isArray(years)) {
+        console.log(
+          `${years.length}개 년도 투자 규칙 저장 완료 (시뮬레이션: ${activeSimulationId}):`,
+          years,
+          rule
+        );
+      } else {
+        console.log(
+          `${years}년 투자 규칙 저장 완료 (시뮬레이션: ${activeSimulationId}):`,
+          rule
+        );
+      }
+    } catch (error) {
+      console.error("투자 규칙 저장 오류:", error);
+      alert("투자 규칙 저장 중 오류가 발생했습니다.");
     }
   };
 
@@ -2089,6 +2214,8 @@ function DashboardPage() {
           targetData: null, // null로 설정하여 비교하지 않음
           defaultTitle: defaultSimulationEntry.title || "현재",
           targetTitle: null,
+          defaultSimulationId: defaultSimulationEntry.id, // 시뮬레이션 ID 추가
+          targetSimulationId: null,
         });
       } else {
         // 기존처럼 두 시뮬레이션 비교
@@ -2105,6 +2232,8 @@ function DashboardPage() {
           targetData,
           defaultTitle: defaultSimulationEntry.title || "현재",
           targetTitle: targetSimulation.title || "선택된 시뮬레이션",
+          defaultSimulationId: defaultSimulationEntry.id, // 시뮬레이션 ID 추가
+          targetSimulationId: activeSimulationId, // 시뮬레이션 ID 추가
         });
       }
     } catch (error) {
@@ -2115,6 +2244,8 @@ function DashboardPage() {
         targetData: null,
         defaultTitle: "",
         targetTitle: "",
+        defaultSimulationId: null,
+        targetSimulationId: null,
       });
     } finally {
       setIsCompareLoading(false);
@@ -3077,6 +3208,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                     retirementAge={profileData.retirementAge}
                     detailedData={simulationData.cashflowDetailed}
                     profileData={profileData} // 배우자 은퇴 정보를 위해 전체 프로필 데이터 전달
+                    currentSimulation={currentSimulation} // 현재 시뮬레이션 데이터 (투자 규칙 포함)
                     incomes={incomes}
                     expenses={expenses}
                     savings={savings}
@@ -3084,6 +3216,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                     realEstates={realEstates}
                     assets={assets}
                     debts={debts}
+                    onUpdateInvestmentRule={handleUpdateInvestmentRule} // 투자 규칙 업데이트 콜백
                   />
                 </div>
               )}
@@ -3364,6 +3497,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
         targetTitle={comparisonData.targetTitle}
         defaultData={comparisonData.defaultData}
         targetData={comparisonData.targetData}
+        defaultSimulationId={comparisonData.defaultSimulationId}
+        targetSimulationId={comparisonData.targetSimulationId}
         profileData={profileData}
         currentSimulationId={activeSimulationId}
         simulations={simulations}

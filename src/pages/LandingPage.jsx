@@ -5,7 +5,7 @@ import styles from "./LandingPage.module.css";
 /**
  * LandingPage 컴포넌트
  * 서비스 메인 소개 페이지
- * 은퇴 재무 상담 서비스 Lycon Retire의 랜딩 페이지
+ * 은퇴 재무 상담 서비스 Lycon Retire의 심플한 랜딩 페이지
  */
 function LandingPage() {
   const navigate = useNavigate();
@@ -20,149 +20,178 @@ function LandingPage() {
     navigate("/consult");
   };
 
+  // 로그인 페이지로 이동
+  const handleLogin = () => {
+    // Mixpanel 트래킹: 로그인 버튼 클릭
+    if (window.mixpanel) {
+      window.mixpanel.track("Landing - Login Clicked");
+    }
+
+    navigate("/login");
+  };
+
   return (
     <div className={styles.landingContainer}>
       {/* 헤더 섹션 */}
       <header className={styles.header}>
-        <div className={styles.logo}>
-          <h1>Lycon Retire</h1>
-        </div>
+        <div className={styles.logo}>Lycon Retire</div>
+        <button className={styles.loginButton} onClick={handleLogin}>
+          로그인
+        </button>
       </header>
 
-      {/* 메인 히어로 섹션 */}
-      <section className={styles.hero}>
-        <div className={styles.heroContent}>
-          <h2 className={styles.mainTitle}>
-            은퇴 후 삶,
+      {/* 메인 섹션 */}
+      <main className={styles.main}>
+        {/* 타이틀 영역 */}
+        <div className={styles.titleSection}>
+          <div className={styles.badge}>전문가 은퇴 재무 상담</div>
+          <h1 className={styles.mainTitle}>
+            은퇴 후 <span className={styles.highlight}>돈이 떨어지지 않을까</span>
             <br />
-            <span className={styles.highlight}>제대로 준비하고 계신가요?</span>
-          </h2>
-
-          <p className={styles.description}>
-            은퇴자와 은퇴 준비자를 위한 재무 상태 분석 및 시뮬레이션 서비스
-          </p>
-
-          <button className={styles.startButton} onClick={handleStartService}>
-            무료로 시작하기
-          </button>
-
-          <p className={styles.subText}>
-            회원가입 없이 바로 시작할 수 있습니다
+            걱정되시나요?
+          </h1>
+          <p className={styles.subtitle}>
+            전문가와 함께 은퇴 재무를 체계적으로 준비하세요
           </p>
         </div>
 
-        {/* 히어로 이미지 또는 일러스트 영역 */}
-        <div className={styles.heroImage}>
-          <div className={styles.imagePlaceholder}>
-            {/* 추후 실제 이미지나 일러스트로 교체 */}
-            <div className={styles.mockChart}>
-              <div className={styles.chartBar} style={{ height: "60%" }}></div>
-              <div className={styles.chartBar} style={{ height: "80%" }}></div>
-              <div className={styles.chartBar} style={{ height: "70%" }}></div>
-              <div className={styles.chartBar} style={{ height: "90%" }}></div>
-              <div className={styles.chartBar} style={{ height: "75%" }}></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 주요 기능 섹션 */}
-      <section className={styles.features}>
-        <h3 className={styles.sectionTitle}>주요 기능</h3>
-
-        <div className={styles.featureGrid}>
-          {/* 기능 1: 재무 상태 분석 */}
-          <div className={styles.featureCard}>
-            <div className={styles.featureIcon}>
-              <span className={styles.iconEmoji}>📊</span>
-            </div>
-            <h4>재무 상태 한눈에 분석</h4>
-            <p>
-              자산, 부채, 수입, 지출을 체계적으로 입력하고 한눈에 파악할 수 있는
-              대시보드를 제공합니다.
-            </p>
-          </div>
-
-          {/* 기능 2: 은퇴 시뮬레이션 */}
-          <div className={styles.featureCard}>
-            <div className={styles.featureIcon}>
-              <span className={styles.iconEmoji}>📈</span>
-            </div>
-            <h4>은퇴 후 현금흐름 시뮬레이션</h4>
-            <p>
-              연령대별 수입/지출 변화를 시뮬레이션하여 은퇴 후 재무 상태를 미리
-              예측할 수 있습니다.
-            </p>
-          </div>
-
-          {/* 기능 3: 시각화 */}
-          <div className={styles.featureCard}>
-            <div className={styles.featureIcon}>
-              <span className={styles.iconEmoji}>📉</span>
-            </div>
-            <h4>직관적인 차트와 그래프</h4>
-            <p>
-              복잡한 재무 데이터를 알기 쉬운 차트로 시각화하여 이해하기 쉽게
-              제공합니다.
-            </p>
-          </div>
-
-          {/* 기능 4: 데이터 관리 */}
-          <div className={styles.featureCard}>
-            <div className={styles.featureIcon}>
-              <span className={styles.iconEmoji}>💾</span>
-            </div>
-            <h4>안전한 데이터 저장</h4>
-            <p>
-              브라우저 로컬 스토리지에 데이터를 안전하게 보관하고 언제든지
-              불러와서 수정할 수 있습니다.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 사용 대상 섹션 */}
-      <section className={styles.targetUsers}>
-        <h3 className={styles.sectionTitle}>이런 분들께 추천합니다</h3>
-
-        <div className={styles.userList}>
-          <div className={styles.userItem}>
-            <span className={styles.userIcon}>👴</span>
-            <p>이미 은퇴하셨고 재무 관리가 필요하신 분</p>
-          </div>
-          <div className={styles.userItem}>
-            <span className={styles.userIcon}>👨‍💼</span>
-            <p>은퇴를 앞두고 계획을 세우시는 분</p>
-          </div>
-          <div className={styles.userItem}>
-            <span className={styles.userIcon}>👨‍👩‍👧‍👦</span>
-            <p>부모님의 재무 상태를 관리해드리고 싶으신 분</p>
-          </div>
-          <div className={styles.userItem}>
-            <span className={styles.userIcon}>💼</span>
-            <p>재무 상담사로 고객 관리가 필요하신 분</p>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA(Call To Action) 섹션 */}
-      <section className={styles.cta}>
-        <h3 className={styles.ctaTitle}>지금 바로 시작해보세요</h3>
-        <p className={styles.ctaDescription}>
-          복잡한 가입 절차 없이 바로 사용할 수 있습니다
-        </p>
-        <button className={styles.ctaButton} onClick={handleStartService}>
-          무료로 시작하기
+        {/* 시작 버튼 */}
+        <button className={styles.startButton} onClick={handleStartService}>
+          무료 사전상담 시작하기
         </button>
-      </section>
+        <p className={styles.subCta}>먼저 간단히 재무 상태를 확인해보세요</p>
+
+        {/* 상담 프로세스 */}
+        <div className={styles.processSection}>
+          <div className={styles.processItem}>
+            <div className={styles.processStep}>
+              <div className={styles.processNumber}>1</div>
+              <div className={styles.processLabel}>사전 상담</div>
+            </div>
+            <div className={styles.processDesc}>
+              <div className={styles.processTitle}>무료 재무 진단</div>
+              <div className={styles.processDetail}>
+                우리 프로그램으로 직접 재무 상태를 입력하고 시뮬레이션해보세요
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.processArrow}>→</div>
+
+          <div className={styles.processItem}>
+            <div className={styles.processStep}>
+              <div className={styles.processNumber}>2</div>
+              <div className={styles.processLabel}>본 상담</div>
+            </div>
+            <div className={styles.processDesc}>
+              <div className={styles.processTitle}>전문가 1:1 상담</div>
+              <div className={styles.processDetail}>
+                전문가가 맞춤형 은퇴 계획을 함께 수립해드립니다
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.processArrow}>→</div>
+
+          <div className={styles.processItem}>
+            <div className={styles.processStep}>
+              <div className={styles.processNumber}>3</div>
+              <div className={styles.processLabel}>프로그램 이용</div>
+            </div>
+            <div className={styles.processDesc}>
+              <div className={styles.processTitle}>무제한 관리</div>
+              <div className={styles.processDetail}>
+                상담 후 프로그램을 무제한으로 이용하며 지속 관리하세요
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 왜 우리 서비스인가 */}
+        <div className={styles.whyUsSection}>
+          <h2 className={styles.sectionTitle}>왜 라이콘 은퇴 상담인가요?</h2>
+          <div className={styles.benefits}>
+            <div className={styles.benefitItem}>
+              <div className={styles.benefitTitle}>전문가와 함께</div>
+              <div className={styles.benefitDesc}>
+                은퇴 재무 전문가가 1:1로 맞춤형 상담을 제공합니다
+              </div>
+            </div>
+
+            <div className={styles.benefitItem}>
+              <div className={styles.benefitTitle}>체계적인 프로그램</div>
+              <div className={styles.benefitDesc}>
+                상담 후 프로그램을 무제한으로 이용하며 지속적으로 관리할 수 있습니다
+              </div>
+            </div>
+
+            <div className={styles.benefitItem}>
+              <div className={styles.benefitTitle}>데이터 기반 분석</div>
+              <div className={styles.benefitDesc}>
+                100세까지 시뮬레이션하며 다양한 시나리오를 비교 분석합니다
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 프로그램 기능 */}
+        <div className={styles.featuresSection}>
+          <h2 className={styles.sectionTitle}>
+            상담 후 이용 가능한 프로그램 기능
+          </h2>
+          <div className={styles.features}>
+            <div className={styles.featureItem}>
+              <div className={styles.featureTitle}>재무 데이터 관리</div>
+              <div className={styles.featureDesc}>
+                자산, 부채, 수입, 지출, 연금을 한 곳에서 관리하고 실시간으로
+                순자산을 확인하세요
+              </div>
+            </div>
+
+            <div className={styles.featureItem}>
+              <div className={styles.featureTitle}>현금흐름 시뮬레이션</div>
+              <div className={styles.featureDesc}>
+                100세까지 나이별 현금흐름을 시뮬레이션하고 자산 고갈 시점을
+                미리 확인하세요
+              </div>
+            </div>
+
+            <div className={styles.featureItem}>
+              <div className={styles.featureTitle}>시나리오 비교</div>
+              <div className={styles.featureDesc}>
+                다양한 재무 전략을 무제한으로 비교하며 최적의 은퇴 계획을
+                수립하세요
+              </div>
+            </div>
+
+            <div className={styles.featureItem}>
+              <div className={styles.featureTitle}>체크리스트 관리</div>
+              <div className={styles.featureDesc}>
+                은퇴 준비 항목들을 체크하며 놓치는 것 없이 체계적으로
+                준비하세요
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 마지막 CTA */}
+        <div className={styles.finalCta}>
+          <h2 className={styles.ctaTitle}>무료 사전상담으로 시작하세요</h2>
+          <p className={styles.ctaSubtitle}>
+            먼저 프로그램으로 직접 재무 상태를 확인해보세요
+            <br />
+            전문가 상담이 필요하시면 언제든 연결해드립니다
+          </p>
+          <button className={styles.ctaButton} onClick={handleStartService}>
+            무료 사전상담 시작하기
+          </button>
+        </div>
+      </main>
 
       {/* 푸터 */}
       <footer className={styles.footer}>
         <div className={styles.footerContent}>
-          <p className={styles.footerText}>
-            © 2025 Lycon Retire. All rights reserved.
-          </p>
-          <p className={styles.footerVersion}>Version 0.25.0</p>
+          © 2025 Lycon Retire
         </div>
       </footer>
     </div>

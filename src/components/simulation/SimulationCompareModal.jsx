@@ -79,11 +79,33 @@ function SimulationCompareModal({
   targetTitle,
   defaultData,
   targetData,
+  defaultSimulationId, // 기본 시뮬레이션 ID
+  targetSimulationId, // 비교 대상 시뮬레이션 ID
   profileData,
   currentSimulationId,
   simulations,
 }) {
   if (!isOpen) return null;
+
+  // 각 시뮬레이션의 투자 규칙을 포함한 profileData 생성
+  const defaultSimulation = simulations.find((sim) => sim.id === defaultSimulationId);
+  const targetSimulation = simulations.find((sim) => sim.id === targetSimulationId);
+
+  const defaultProfileData = useMemo(() => {
+    if (!profileData) return null;
+    return {
+      ...profileData,
+      cashflowInvestmentRules: defaultSimulation?.cashflowInvestmentRules || {},
+    };
+  }, [profileData, defaultSimulation]);
+
+  const targetProfileData = useMemo(() => {
+    if (!profileData) return null;
+    return {
+      ...profileData,
+      cashflowInvestmentRules: targetSimulation?.cashflowInvestmentRules || {},
+    };
+  }, [profileData, targetSimulation]);
 
   // 세부 항목 토글 상태 (기본값: 접혀있음)
   const [expandedRows, setExpandedRows] = useState({});
@@ -231,9 +253,9 @@ function SimulationCompareModal({
   }, [targetData, isOpen, cashflowPeriod, retirementYear]);
 
   const defaultAssetsTimeline = useMemo(() => {
-    if (!profileData || !defaultData || !isOpen) return null;
+    if (!defaultProfileData || !defaultData || !isOpen) return null;
     const result = calculateAssetSimulation(
-      profileData,
+      defaultProfileData, // 투자 규칙이 포함된 profileData 사용
       defaultData.incomes || [],
       defaultData.expenses || [],
       defaultData.savings || [],
@@ -245,12 +267,12 @@ function SimulationCompareModal({
     );
     // detailedData를 반환 (breakdown 정보 포함)
     return result?.detailedData || result?.timeline || result;
-  }, [defaultData, profileData, isOpen]);
+  }, [defaultData, defaultProfileData, isOpen]);
 
   const targetAssetsTimeline = useMemo(() => {
-    if (!profileData || !targetData || !isOpen) return null;
+    if (!targetProfileData || !targetData || !isOpen) return null;
     const result = calculateAssetSimulation(
-      profileData,
+      targetProfileData, // 투자 규칙이 포함된 profileData 사용
       targetData.incomes || [],
       targetData.expenses || [],
       targetData.savings || [],
@@ -262,7 +284,7 @@ function SimulationCompareModal({
     );
     // detailedData를 반환 (breakdown 정보 포함)
     return result?.detailedData || result?.timeline || result;
-  }, [targetData, profileData, isOpen]);
+  }, [targetData, targetProfileData, isOpen]);
 
   const showDefaultColumn =
     Boolean(defaultTitle) || Boolean(defaultPV) || Boolean(defaultData);

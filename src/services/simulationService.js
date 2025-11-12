@@ -387,4 +387,46 @@ export const simulationService = {
       throw error;
     }
   },
+
+  /**
+   * 시뮬레이션의 현금흐름 투자 규칙 업데이트
+   * @param {string} profileId - 프로필 ID
+   * @param {string} simulationId - 시뮬레이션 ID
+   * @param {object} investmentRules - 투자 규칙 객체 {year: {allocations: [...]}}
+   */
+  async updateInvestmentRules(profileId, simulationId, investmentRules) {
+    try {
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId
+      );
+      await updateDoc(docRef, {
+        cashflowInvestmentRules: investmentRules,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("투자 규칙 업데이트 완료:", simulationId);
+    } catch (error) {
+      console.error("투자 규칙 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 시뮬레이션의 현금흐름 투자 규칙 조회
+   * @param {string} profileId - 프로필 ID
+   * @param {string} simulationId - 시뮬레이션 ID
+   * @returns {Promise<object>} - 투자 규칙 객체
+   */
+  async getInvestmentRules(profileId, simulationId) {
+    try {
+      const simulation = await this.getSimulation(profileId, simulationId);
+      return simulation.cashflowInvestmentRules || {};
+    } catch (error) {
+      console.error("투자 규칙 조회 오류:", error);
+      return {};
+    }
+  },
 };

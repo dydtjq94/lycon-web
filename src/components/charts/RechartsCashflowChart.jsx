@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from "recharts";
 import { formatAmountForChart } from "../../utils/format";
+import CashflowInvestmentModal from "./CashflowInvestmentModal";
 import ChartZoomModal from "./ChartZoomModal";
 import styles from "./RechartsCashflowChart.module.css";
 
@@ -63,6 +64,7 @@ function RechartsCashflowChart({
   retirementAge,
   deathAge = 90,
   profileData = null, // 배우자 은퇴 정보를 위해 프로필 데이터 추가
+  currentSimulation = null, // 현재 시뮬레이션 데이터 (투자 규칙 포함)
   detailedData = [],
   incomes = [],
   expenses = [],
@@ -71,10 +73,11 @@ function RechartsCashflowChart({
   realEstates = [],
   assets = [],
   debts = [],
+  onUpdateInvestmentRule, // 투자 규칙 업데이트 콜백
 }) {
-  const [isZoomed, setIsZoomed] = useState(false);
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
+  const [investmentModalData, setInvestmentModalData] = useState(null);
 
   const hasData = data && data.length > 0;
 
@@ -506,8 +509,8 @@ function RechartsCashflowChart({
     }
   }
 
-  // 차트 렌더링 함수 (일반 뷰와 확대 모달에서 재사용)
-  const renderChart = (height = 600, isZoomedView = false) => (
+  // 차트 렌더링 함수
+  const renderChart = (height = 600) => (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
@@ -750,51 +753,57 @@ function RechartsCashflowChart({
                     boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
                   }}
                 >
-                  {/* 년도 */}
+                  {/* 년도 및 가족 구성 */}
                   <div
                     style={{
-                      fontSize: "15px",
-                      fontWeight: "bold",
-                      marginBottom: "8px",
                       borderBottom: "1px solid rgba(0,0,0,0.1)",
-                      paddingBottom: "6px",
-                      color: "#111827",
-                    }}
-                  >
-                    {data.year}년
-                  </div>
-
-                  {/* 가족 구성 */}
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#6b7280",
+                      paddingBottom: "10px",
                       marginBottom: "10px",
                     }}
                   >
-                    본인 {data.age}세
-                    {profileData?.hasSpouse &&
-                      profileData?.spouseBirthYear &&
-                      ` • 배우자 ${
-                        data.year - parseInt(profileData.spouseBirthYear)
-                      }세`}
-                    {profileData?.familyMembers &&
-                      profileData.familyMembers
-                        .filter((member) => member.relationship === "자녀")
-                        .map((child) => ({
-                          gender: child.gender || "아들",
-                          age: data.year - parseInt(child.birthYear),
-                        }))
-                        .filter((child) => child.age >= 0).length > 0 &&
-                      ` • ${profileData.familyMembers
-                        .filter((member) => member.relationship === "자녀")
-                        .map((child) => ({
-                          gender: child.gender || "아들",
-                          age: data.year - parseInt(child.birthYear),
-                        }))
-                        .filter((child) => child.age >= 0)
-                        .map((child) => `${child.gender} ${child.age}세`)
-                        .join(" • ")}`}
+                    {/* 년도 */}
+                    <div
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: "bold",
+                        marginBottom: "6px",
+                        color: "#111827",
+                      }}
+                    >
+                      {data.year}년
+                    </div>
+
+                    {/* 가족 구성 */}
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#6b7280",
+                      }}
+                    >
+                      본인 {data.age}세
+                      {profileData?.hasSpouse &&
+                        profileData?.spouseBirthYear &&
+                        ` • 배우자 ${
+                          data.year - parseInt(profileData.spouseBirthYear)
+                        }세`}
+                      {profileData?.familyMembers &&
+                        profileData.familyMembers
+                          .filter((member) => member.relationship === "자녀")
+                          .map((child) => ({
+                            gender: child.gender || "아들",
+                            age: data.year - parseInt(child.birthYear),
+                          }))
+                          .filter((child) => child.age >= 0).length > 0 &&
+                        ` • ${profileData.familyMembers
+                          .filter((member) => member.relationship === "자녀")
+                          .map((child) => ({
+                            gender: child.gender || "아들",
+                            age: data.year - parseInt(child.birthYear),
+                          }))
+                          .filter((child) => child.age >= 0)
+                          .map((child) => `${child.gender} ${child.age}세`)
+                          .join(" • ")}`}
+                    </div>
                   </div>
 
                   {/* 순 현금흐름 */}
@@ -968,6 +977,69 @@ function RechartsCashflowChart({
           style={{ cursor: "pointer" }}
           animationDuration={0}
           isAnimationActive={false}
+          label={(props) => {
+            const { x, y, width, value, index } = props;
+            const entry = chartData[index];
+
+            // 양수인 경우에만 설정 아이콘 표시
+            if (value > 0) {
+              // 투자 규칙 확인 (현금 100%가 아닌 경우 파란색)
+              const investmentRule =
+                currentSimulation?.cashflowInvestmentRules?.[entry.year];
+              const hasSavingInvestment = investmentRule?.allocations?.some(
+                (allocation) =>
+                  allocation.targetType === "saving" && allocation.ratio > 0
+              );
+
+              const baseColor = hasSavingInvestment ? "#3b82f6" : "#9ca3af"; // 파란색 or 회색
+              const hoverColor = hasSavingInvestment ? "#2563eb" : "#374151"; // 진한 파란색 or 진한 회색
+
+              return (
+                <g>
+                  <foreignObject
+                    x={x + width / 2 - 8}
+                    y={y - 20}
+                    width={16}
+                    height={16}
+                    style={{ pointerEvents: "auto" }}
+                  >
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        color: baseColor,
+                        fontSize: "14px",
+                        opacity: hasSavingInvestment ? 0.8 : 0.6,
+                        transition: "opacity 0.2s, color 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = "1";
+                        e.currentTarget.style.color = hoverColor;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = hasSavingInvestment
+                          ? "0.8"
+                          : "0.6";
+                        e.currentTarget.style.color = baseColor;
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleInvestmentSettingClick(entry);
+                      }}
+                      title="투자 설정"
+                    >
+                      ◎
+                    </div>
+                  </foreignObject>
+                </g>
+              );
+            }
+            return null;
+          }}
         >
           {chartData.map((entry, index) => (
             <Cell
@@ -1119,6 +1191,39 @@ function RechartsCashflowChart({
     setIsDistributionOpen(true);
   };
 
+  // 투자 설정 아이콘 클릭 핸들러
+  const handleInvestmentSettingClick = (entry) => {
+    if (!entry || entry.amount <= 0) return;
+
+    // 양수 현금흐름이 있는 모든 년도 목록 계산
+    const positiveYears = chartData
+      .filter((item) => item.amount > 0)
+      .map((item) => ({
+        year: item.year,
+        amount: item.amount,
+      }));
+
+    // 현재 설정된 투자 규칙 가져오기
+    const currentRule =
+      currentSimulation?.cashflowInvestmentRules?.[entry.year] || null;
+
+    setInvestmentModalData({
+      year: entry.year,
+      amount: entry.amount,
+      currentRule,
+      positiveYears, // 양수 현금흐름 년도 목록 추가
+    });
+  };
+
+  // 투자 규칙 저장 핸들러 (여러 년도 지원)
+  const handleSaveInvestmentRule = (years, rule) => {
+    if (onUpdateInvestmentRule) {
+      // 배열이든 단일이든 그대로 전달 (DashboardPage에서 처리)
+      onUpdateInvestmentRule(years, rule);
+    }
+    setInvestmentModalData(null);
+  };
+
   return (
     <>
       <div className={styles.chartContainer}>
@@ -1128,28 +1233,7 @@ function RechartsCashflowChart({
           <>
             {/* 타이틀 영역 */}
             <div className={styles.chartHeader}>
-              <div className={styles.chartTitleWrapper}>
-                <div className={styles.chartTitle}>가계 현금 흐름</div>
-                <button
-                  className={styles.zoomButton}
-                  onClick={() => setIsZoomed(true)}
-                  title="크게 보기"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35" />
-                  </svg>
-                </button>
-              </div>
+              <div className={styles.chartTitle}>가계 현금 흐름</div>
             </div>
 
             {/* 컨텐츠 영역: 그래프 */}
@@ -1157,19 +1241,6 @@ function RechartsCashflowChart({
           </>
         )}
       </div>
-
-      {/* 확대 모달 */}
-      {hasData && (
-        <ChartZoomModal
-          isOpen={isZoomed}
-          onClose={() => setIsZoomed(false)}
-          title="가계 현금 흐름"
-        >
-          <div style={{ width: "100%", height: "100%" }}>
-            {renderChart("100%", true)}
-          </div>
-        </ChartZoomModal>
-      )}
 
       {/* 수입/지출 분포 모달 (파이 차트) */}
       {hasData && (
@@ -1292,6 +1363,20 @@ function RechartsCashflowChart({
             )}
           </div>
         </ChartZoomModal>
+      )}
+
+      {/* 잉여 현금 투자 설정 모달 */}
+      {investmentModalData && (
+        <CashflowInvestmentModal
+          isOpen={!!investmentModalData}
+          onClose={() => setInvestmentModalData(null)}
+          year={investmentModalData.year}
+          amount={investmentModalData.amount}
+          savings={savings}
+          currentRule={investmentModalData.currentRule}
+          positiveYears={investmentModalData.positiveYears || []}
+          onSave={handleSaveInvestmentRule}
+        />
       )}
     </>
   );
