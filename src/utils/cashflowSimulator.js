@@ -747,37 +747,12 @@ export function calculateCashflowSimulation(
         );
 
         // 양도세 계산 (종료년도에 바로 처리)
+        // 간단 방식: 수령액에 대해 양도세율만큼 세금 납부
         const taxRate = saving.capitalGainsTaxRate || 0;
-        if (taxRate > 0) {
-          let capitalGainsTax = 0;
+        if (taxRate > 0 && finalAmount > 0) {
+          // 양도세 = 수령액 × 세율
+          const capitalGainsTax = finalAmount * taxRate;
 
-          if (saving.frequency !== "one_time") {
-            // 월간/연간 저축: 총 적립금 계산
-            const monthlyAmount =
-              saving.frequency === "monthly"
-                ? saving.amount
-                : saving.amount / 12;
-
-            let totalContribution = currentAmount || 0;
-            for (let i = 0; i <= yearsElapsed; i++) {
-              const adjustedMonthlyAmount =
-                monthlyAmount * Math.pow(1 + yearlyGrowthRate, i);
-              const yearlyAmount = adjustedMonthlyAmount * 12;
-              totalContribution += yearlyAmount;
-            }
-
-            // 양도소득 = 최종가치 - 총 적립금
-            const capitalGain = Math.max(0, finalAmount - totalContribution);
-            capitalGainsTax = capitalGain * taxRate;
-          } else {
-            // 일회성 저축: 수익 = 최종가치 - 원금
-            const principal =
-              (Number(currentAmount) || 0) + (Number(saving.amount) || 0);
-            const capitalGain = Math.max(0, finalAmount - principal);
-            capitalGainsTax = capitalGain * taxRate;
-          }
-
-          // 양도세를 종료년도에 바로 지출 처리
           if (capitalGainsTax > 0) {
             // 소수점이 있으면 소수점 첫째 자리까지 표시
             const taxRatePercent = taxRate * 100;
@@ -800,6 +775,8 @@ export function calculateCashflowSimulation(
               "양도세",
               `saving-tax-${saving.id || saving.title}`
             );
+            
+            console.log(`${year}년: ${saving.title} 양도세 - 수령액: ${Math.round(finalAmount * 100) / 100}만원, 세율: ${taxRateFormatted}%, 양도세: ${Math.round(capitalGainsTax * 100) / 100}만원`);
           }
         }
       }
