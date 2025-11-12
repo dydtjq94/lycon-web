@@ -856,8 +856,28 @@ export function calculateCashflowSimulation(
           previousYearEndValue = accumulated;
         }
 
-        // 매년 수익 = 전년도 말 자산 가치 * 수익률
-        const yearlyIncome = previousYearEndValue * saving.incomeRate;
+        // ⚠️ 중요: 잉여 현금 투자 금액도 배당/이자 계산에 포함
+        // 전년도까지 투자한 금액에 대한 가치 계산 (전년도 말 기준)
+        let investedValue = 0;
+        if (savingInvestments[saving.id]) {
+          Object.keys(savingInvestments[saving.id]).forEach((investYear) => {
+            const investYearNum = parseInt(investYear);
+            if (investYearNum < year) {
+              // 전년도까지 투자한 금액만 포함
+              const investAmount = savingInvestments[saving.id][investYear];
+              const yearsFromInvestment = year - investYearNum - 1; // 전년도 말 기준
+              // 투자한 해의 다음 해부터 수익률 적용
+              const investmentValue = investAmount * Math.pow(1 + interestRate, yearsFromInvestment);
+              investedValue += investmentValue;
+            }
+          });
+        }
+
+        // 전년도 말 총 자산 가치 = 정기 적립 자산 + 잉여 현금 투자 자산
+        const totalPreviousYearEndValue = previousYearEndValue + investedValue;
+
+        // 매년 수익 = 전년도 말 총 자산 가치 * 수익률
+        const yearlyIncome = totalPreviousYearEndValue * saving.incomeRate;
         if (yearlyIncome > 0) {
           totalSavingIncome += yearlyIncome; // 저축 수익 합계에 추가
 
@@ -873,6 +893,8 @@ export function calculateCashflowSimulation(
             "저축 수익",
             `saving-income-${saving.id || saving.title}`
           );
+          
+          console.log(`${year}년: ${saving.title} 배당/이자 ${Math.round(yearlyIncome * 100) / 100}만원 (정기 적립: ${Math.round(previousYearEndValue * 100) / 100}만원 + 잉여 투자: ${Math.round(investedValue * 100) / 100}만원) × 수익률 ${(saving.incomeRate * 100).toFixed(1)}%`);
         }
       }
     });
@@ -1413,8 +1435,8 @@ export function calculateCashflowSimulation(
       totalCapitalGainsTax;
 
     // 잉여 현금 투자 규칙 처리 (현금흐름이 양수인 경우)
-    // 저축에 투자하는 경우 자금 수요로 반영
-    const investmentSavingContributions = []; // 투자로 인한 저축 적립 상세 정보
+    // ⚠️ 중요: 잉여 현금 투자는 지출이 아니라 자산 이동이므로 현금 흐름에 영향 없음
+    // 자산 시뮬레이션에서만 처리 (1869-1908번 줄)
     
     if (netCashflow > 0 && profileData.cashflowInvestmentRules) {
       const investmentRule = profileData.cashflowInvestmentRules[year];
@@ -1427,7 +1449,7 @@ export function calculateCashflowSimulation(
           const investAmount = Math.round((netCashflow * (allocation.ratio / 100)) * 100) / 100;
           
           if (investAmount > 0 && allocation.targetType === "saving" && allocation.targetId) {
-            // 저축 상품에 대한 년도별 투자 금액 기록
+            // 저축 상품에 대한 년도별 투자 금액 기록만 함 (현금 흐름에는 반영 안 함)
             if (!savingInvestments[allocation.targetId]) {
               savingInvestments[allocation.targetId] = {};
             }
@@ -1436,28 +1458,14 @@ export function calculateCashflowSimulation(
             }
             savingInvestments[allocation.targetId][year] = Math.round((savingInvestments[allocation.targetId][year] + investAmount) * 100) / 100;
             
-            // 저축 적립 상세 정보에 추가
-            const savingItem = savings.find((s) => s.id === allocation.targetId);
-            if (savingItem) {
-              investmentSavingContributions.push({
-                title: `${savingItem.title} (잉여현금 투자)`,
-                amount: investAmount,
-              });
-            }
-            
-            console.log(`${year}년: ${investAmount}만원을 저축 ID ${allocation.targetId}에 투자 기록 (자금 수요 반영)`);
+            console.log(`${year}년: ${investAmount}만원을 저축 ID ${allocation.targetId}에 투자 기록 (현금 흐름 지출에는 미반영)`);
           }
         });
       }
     }
     
-    // 투자로 인한 저축 적립을 savingContributions에 추가
-    const allSavingContributions = [...savingContributions, ...investmentSavingContributions];
-    
-    // 투자로 인한 저축을 negativeBreakdown에 추가 (자금 수요로만 표시)
-    investmentSavingContributions.forEach((contribution) => {
-      addNegative(contribution.title, contribution.amount, "저축", `saving-investment-${year}`);
-    });
+    // ⚠️ 투자 금액은 savingContributions에 포함하지 않음 (지출이 아니므로)
+    const allSavingContributions = [...savingContributions];
 
     cashflowData.push({
       year,
