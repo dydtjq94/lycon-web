@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { formatAmountForChart } from "../../utils/format";
 import ChartZoomModal from "./ChartZoomModal";
+import YearDetailPanel from "./YearDetailPanel";
 import styles from "./RechartsAssetChart.module.css";
 
 // 파이차트 컴포넌트 최적화
@@ -72,9 +73,12 @@ function RechartsAssetChart({
   realEstates = [],
   assets = [],
   debts = [],
+  incomes = [],
+  expenses = [],
 }) {
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false); // 년도 상세 패널
   const [hoveredData, setHoveredData] = useState(null); // 클릭으로 선택된 연도 데이터
   const hasData = Array.isArray(data) && data.length > 0;
 
@@ -355,6 +359,68 @@ function RechartsAssetChart({
   const assetEvents = getAssetEvents();
   const debtEvents = getDebtEvents();
 
+  // 소득 이벤트 추출 (시작/종료)
+  const getIncomeEvents = () => {
+    const events = [];
+    if (hasData && incomes && incomes.length > 0) {
+      incomes.forEach((income) => {
+        // 시작 이벤트
+        events.push({
+          year: income.startYear,
+          age: income.startYear - (data[0]?.year - data[0]?.age),
+          type: "start",
+          category: "income",
+          title: `${income.title} | 시작`,
+        });
+
+        // 종료 이벤트
+        if (income.endYear) {
+          events.push({
+            year: income.endYear,
+            age: income.endYear - (data[0]?.year - data[0]?.age),
+            type: "end",
+            category: "income",
+            title: `${income.title} | 종료`,
+          });
+        }
+      });
+    }
+    return events;
+  };
+
+  const incomeEvents = getIncomeEvents();
+
+  // 지출 이벤트 추출 (시작/종료)
+  const getExpenseEvents = () => {
+    const events = [];
+    if (hasData && expenses && expenses.length > 0) {
+      expenses.forEach((expense) => {
+        // 시작 이벤트
+        events.push({
+          year: expense.startYear,
+          age: expense.startYear - (data[0]?.year - data[0]?.age),
+          type: "start",
+          category: "expense",
+          title: `${expense.title} | 시작`,
+        });
+
+        // 종료 이벤트
+        if (expense.endYear) {
+          events.push({
+            year: expense.endYear,
+            age: expense.endYear - (data[0]?.year - data[0]?.age),
+            type: "end",
+            category: "expense",
+            title: `${expense.title} | 종료`,
+          });
+        }
+      });
+    }
+    return events;
+  };
+
+  const expenseEvents = getExpenseEvents();
+
   // 이벤트를 년도별로 그룹화
   const allEvents = [
     ...savingEvents,
@@ -362,6 +428,8 @@ function RechartsAssetChart({
     ...realEstateEvents,
     ...assetEvents,
     ...debtEvents,
+    ...incomeEvents,
+    ...expenseEvents,
   ];
 
   const eventsByYear = allEvents.reduce((acc, event) => {
@@ -615,10 +683,10 @@ function RechartsAssetChart({
     if (!hasData) return;
     if (!barData || !barData.payload) return;
     setDistributionEntry(barData.payload);
-    setIsDistributionOpen(true);
+    setIsPanelOpen(true); // 패널 열기
   };
 
-  // 차트 클릭 핸들러 (연도 선택하여 패널 업데이트 + 모달 열기)
+  // 차트 클릭 핸들러 (연도 선택하여 패널 열기)
   const handleChartClick = (data) => {
     // activeLabel로 년도 찾기 (빈 공간 클릭 시)
     if (data && data.activeLabel) {
@@ -626,17 +694,15 @@ function RechartsAssetChart({
       const clickedData = chartData.find((d) => d.year === year);
       if (clickedData) {
         setHoveredData(clickedData);
-        // 모달도 열기
         setDistributionEntry(clickedData);
-        setIsDistributionOpen(true);
+        setIsPanelOpen(true); // 패널 열기
       }
     } else if (data && data.activePayload && data.activePayload.length > 0) {
       // Bar 클릭 시
       const clickedData = data.activePayload[0].payload;
       setHoveredData(clickedData);
-      // 모달도 열기
       setDistributionEntry(clickedData);
-      setIsDistributionOpen(true);
+      setIsPanelOpen(true); // 패널 열기
     }
   };
 
@@ -1292,8 +1358,35 @@ function RechartsAssetChart({
     ? chartData[currentYearIndex]
     : chartData[0];
 
-  // 항목의 카테고리 판별 및 색상 반환 (상세 패널용 순서)
-  const getCategoryAndColor = (label) => {
+  // 항목의 카테고리 판별 및 색상 반환 (sourceType 기반)
+  const getCategoryAndColor = (item) => {
+    // sourceType이 있으면 우선 사용
+    if (item.sourceType) {
+      switch (item.sourceType) {
+        case "cash":
+          return { category: "현금", order: 5, color: getAssetColor("양수현금") };
+        case "saving":
+          return {
+            category: "저축투자",
+            order: 1,
+            color: getAssetColor("저축투자"),
+          };
+        case "pension":
+          return { category: "연금", order: 2, color: getAssetColor("연금") };
+        case "realEstate":
+          return { category: "부동산", order: 3, color: getAssetColor("부동산") };
+        case "asset":
+          return { category: "자산", order: 4, color: getAssetColor("자산") };
+        case "debt":
+          return { category: "부채", order: 7, color: getAssetColor("부채") };
+        default:
+          return { category: "자산", order: 4, color: getAssetColor("자산") };
+      }
+    }
+
+    // sourceType이 없으면 라벨로 판별 (하위 호환성)
+    const label = item.label || "";
+    
     if (label.includes("현금") || label.includes("cash")) {
       return { category: "현금", order: 5, color: getAssetColor("양수현금") };
     } else if (
@@ -1304,7 +1397,10 @@ function RechartsAssetChart({
       label.includes("채권") ||
       label.includes("주식") ||
       label.includes("펀드") ||
-      label.includes("ETF")
+      label.includes("ETF") ||
+      label.includes("ISA") ||
+      label.includes("CMA") ||
+      label.includes("청약")
     ) {
       return {
         category: "저축투자",
@@ -1365,7 +1461,7 @@ function RechartsAssetChart({
     const assetItems = yearData.breakdown.assetItems || [];
     const sortedAssetItems = [...assetItems]
       .map((item) => {
-        const { category, order, color } = getCategoryAndColor(item.label);
+        const { category, order, color } = getCategoryAndColor(item);
         return { ...item, category, order, color };
       })
       .sort((a, b) => {
@@ -1560,6 +1656,24 @@ function RechartsAssetChart({
           </div>
         </ChartZoomModal>
       )}
+
+      {/* 년도 상세 패널 (오른쪽 슬라이드) */}
+      <YearDetailPanel
+        isOpen={isPanelOpen}
+        onClose={() => {
+          setIsPanelOpen(false);
+          setDistributionEntry(null);
+        }}
+        yearData={distributionEntry}
+        detailedData={detailedData}
+        savings={savings}
+        pensions={pensions}
+        realEstates={realEstates}
+        assets={assets}
+        debts={debts}
+        incomes={incomes}
+        expenses={expenses}
+      />
     </>
   );
 }

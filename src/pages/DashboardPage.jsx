@@ -3197,6 +3197,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
                     realEstates={realEstates}
                     assets={assets}
                     debts={debts}
+                    incomes={incomes}
+                    expenses={expenses}
                   />
                 </div>
               )}

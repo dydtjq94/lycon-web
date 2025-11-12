@@ -87,7 +87,7 @@ function LandingPage() {
               <div className={styles.processTitle}>전문가 1:1 상담</div>
               <div className={styles.processDetail}>
                 전문가가 맞춤형 은퇴 계획을 함께 수립해드립니다
-              </div>
+        </div>
             </div>
           </div>
 
@@ -105,7 +105,7 @@ function LandingPage() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
         {/* 왜 우리 서비스인가 */}
         <div className={styles.whyUsSection}>
@@ -123,7 +123,7 @@ function LandingPage() {
               <div className={styles.benefitDesc}>
                 상담 후 프로그램을 무제한으로 이용하며 지속적으로 관리할 수 있습니다
               </div>
-            </div>
+          </div>
 
             <div className={styles.benefitItem}>
               <div className={styles.benefitTitle}>데이터 기반 분석</div>
@@ -162,15 +162,15 @@ function LandingPage() {
                 다양한 재무 전략을 무제한으로 비교하며 최적의 은퇴 계획을
                 수립하세요
               </div>
-            </div>
+          </div>
 
             <div className={styles.featureItem}>
               <div className={styles.featureTitle}>체크리스트 관리</div>
               <div className={styles.featureDesc}>
                 은퇴 준비 항목들을 체크하며 놓치는 것 없이 체계적으로
                 준비하세요
-              </div>
-            </div>
+          </div>
+          </div>
           </div>
         </div>
 
@@ -181,10 +181,10 @@ function LandingPage() {
             먼저 프로그램으로 직접 재무 상태를 확인해보세요
             <br />
             전문가 상담이 필요하시면 언제든 연결해드립니다
-          </p>
-          <button className={styles.ctaButton} onClick={handleStartService}>
+        </p>
+        <button className={styles.ctaButton} onClick={handleStartService}>
             무료 사전상담 시작하기
-          </button>
+        </button>
         </div>
       </main>
 

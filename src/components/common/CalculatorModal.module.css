@@ -17,7 +17,7 @@
   background: white;
   border-radius: 12px;
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
@@ -54,6 +54,44 @@
   background: #f3f4f6;
 }
 
+/* 계산기 선택 탭 */
+.calculatorTabs {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px 0;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.tabButton {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 8px 8px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabButton:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.tabButton.active {
+  background: white;
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+  font-weight: 600;
+}
+
 .modalBody {
   padding: 24px;
 }
@@ -85,7 +123,7 @@
   font-size: 14px;
   color: #6b7280;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .form {
@@ -185,6 +223,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+  margin-bottom: 20px;
 }
 
 .resultItem {
@@ -211,6 +250,46 @@
   color: #1f2937;
 }
 
+/* 계산 방법 설명 */
+.calculationInfo {
+  background: #eff6ff;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #bfdbfe;
+}
+
+.infoTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.infoList {
+  margin: 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.infoList li {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.infoList li:last-child {
+  margin-bottom: 0;
+}
+
+.infoList strong {
+  color: #1e40af;
+  font-weight: 600;
+}
+
 /* 모바일 반응형 */
 @media (max-width: 768px) {
   .modalOverlay {
@@ -219,6 +298,7 @@
 
   .modalContent {
     max-height: 95vh;
+    max-width: 100%;
   }
 
   .modalHeader {
@@ -227,6 +307,16 @@
 
   .modalTitle {
     font-size: 18px;
+  }
+
+  .calculatorTabs {
+    padding: 12px 16px 0;
+    gap: 4px;
+  }
+
+  .tabButton {
+    padding: 10px 12px;
+    font-size: 13px;
   }
 
   .modalBody {
@@ -262,6 +352,22 @@
   .resultValue {
     font-size: 15px;
   }
+
+  .calculationInfo {
+    padding: 12px;
+  }
+
+  .infoTitle {
+    font-size: 13px;
+  }
+
+  .infoList {
+    padding-left: 16px;
+  }
+
+  .infoList li {
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -271,6 +377,25 @@
 
   .modalHeader {
     padding: 12px 16px;
+  }
+
+  .calculatorTabs {
+    padding: 8px 12px 0;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tabButton {
+    padding: 10px;
+    font-size: 12px;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    border-radius: 8px;
+  }
+
+  .tabButton.active {
+    border-bottom: none;
+    border-left-color: #3b82f6;
   }
 
   .modalBody {
@@ -289,6 +414,7 @@
   .calculateButton {
     padding: 8px 16px;
     font-size: 13px;
+    width: 100%;
   }
 
   .result {
@@ -297,5 +423,13 @@
 
   .resultTitle {
     font-size: 15px;
+  }
+
+  .calculationInfo {
+    padding: 10px;
+  }
+
+  .infoList {
+    padding-left: 14px;
   }
 }

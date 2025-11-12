@@ -1,7 +1,403 @@
 {
-  "version": "0.31.76",
+  "version": "0.31.109",
   "today": "2025-11-12",
   "history": [
+    {
+      "version": "0.31.109",
+      "date": "2025-11-12",
+      "changes": [
+        "🧮 계산기 모달을 여러 계산기 지원 구조로 개선",
+        "목표 계산기 → 계산기로 이름 변경",
+        "계산기 선택 탭 UI 추가 (목표 금액 계산기, DC형 퇴직연금 계산기)",
+        "DC형 퇴직연금 적립금액 계산기 추가",
+        "세후 월급 입력 시 세전 월급과 DC 적립금 자동 계산",
+        "2024년 소득세율표 및 4대보험 공제율 적용",
+        "소득세 구간 표시 기능 추가"
+      ]
+    },
+    {
+      "version": "0.31.108",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 파이 차트 카테고리명 개선",
+        "양수현금 → 현금으로 표시 (더 직관적)",
+        "파이 차트에서만 표시명 변경, 내부 로직은 동일",
+        "사용자 친화적인 카테고리명 적용"
+      ]
+    },
+    {
+      "version": "0.31.107",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 파이 차트 크기 조정 및 라벨 최적화",
+        "차트 너비: 280px → 340px (좌우 확장)",
+        "좌우 여백: 20px → 50px (라벨 잘림 방지)",
+        "카테고리명: 0.75rem → 0.7rem",
+        "비율: 0.85rem → 0.75rem",
+        "라벨이 완전히 보이도록 충분한 공간 확보"
+      ]
+    },
+    {
+      "version": "0.31.106",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 파이 차트 라벨에 카테고리명 + 비율 표시",
+        "바깥쪽 라벨을 2줄로 표시",
+        "위: 카테고리명 (회색, 0.75rem)",
+        "아래: 비율 (해당 카테고리 색상, 0.85rem, 볼드)",
+        "커스텀 렌더링으로 각 항목마다 카테고리와 비율 표시",
+        "라벨 위치를 outerRadius + 30으로 조정하여 선과 함께 표시"
+      ]
+    },
+    {
+      "version": "0.31.105",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 파이 차트 중앙에 주요 카테고리 표시",
+        "가장 큰 비율을 차지하는 카테고리를 중앙에 표시",
+        "위: 카테고리명 (회색, 0.9rem, 볼드)",
+        "아래: 비율 (해당 카테고리 색상, 1.1rem, 볼드)",
+        "Recharts Label 컴포넌트로 중앙 텍스트 렌더링",
+        "도넛 차트 중심부에 깔끔하게 정보 표시"
+      ]
+    },
+    {
+      "version": "0.31.104",
+      "date": "2025-11-12",
+      "changes": [
+        "✨ 카테고리 판별을 sourceType 기반으로 완전히 변경",
+        "cashflowSimulator.js: 모든 breakdown 항목에 sourceType 추가",
+        "sourceType: cash, saving, pension, realEstate, asset, debt",
+        "getCategoryAndColor: sourceType 우선 판별, 없으면 라벨 판별(하위 호환)",
+        "이제 자산 이름이 'ㅋㅋㅋ'여도 정확한 카테고리로 분류됨",
+        "라벨 기반 판별의 한계 완전 해결",
+        "YearDetailPanel, RechartsAssetChart 모두 적용"
+      ]
+    },
+    {
+      "version": "0.31.103",
+      "date": "2025-11-12",
+      "changes": [
+        "🐛 RechartsAssetChart 카테고리 판별 로직 통일",
+        "getCategoryAndColor에 '청약', 'ISA', 'CMA' 키워드 추가",
+        "YearDetailPanel과 RechartsAssetChart 모두 동일한 카테고리 판별 적용",
+        "주택청약이 모든 차트와 툴팁에서 저축투자로 일관되게 표시",
+        "자산 시뮬레이션 그래프와 상세 패널의 색상/카테고리 통일"
+      ]
+    },
+    {
+      "version": "0.31.102",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 파이 차트 라벨 간소화 및 카테고리 수정",
+        "라벨에서 카테고리명 제거 (비율만 표시)",
+        "주택청약을 저축/투자 카테고리로 분류",
+        "getCategoryAndColor 함수에 '청약' 키워드 추가",
+        "청약 조건을 먼저 체크하여 부동산이 아닌 저축투자로 분류"
+      ]
+    },
+    {
+      "version": "0.31.101",
+      "date": "2025-11-12",
+      "changes": [
+        "✨ YearDetailPanel 파이 차트 라벨에 카테고리명 추가",
+        "라벨 표시: 비율만 → 카테고리명 + 비율",
+        "예시: '45.0%' → '부동산 45.0%'",
+        "어떤 자산인지 명확히 파악 가능",
+        "저축투자, 연금, 부동산, 현금 등 카테고리 표시"
+      ]
+    },
+    {
+      "version": "0.31.100",
+      "date": "2025-11-12",
+      "changes": [
+        "🐛 YearDetailPanel 파이 차트 비율 계산 수정",
+        "entry.percent는 0~1 사이의 소수값이므로 *100 필요",
+        "수정: entry.percent.toFixed(1) → (entry.percent * 100).toFixed(1)",
+        "이제 비율이 정확하게 표시됨 (예: 50.0% 대신 0.5% 표시되던 문제 해결)"
+      ]
+    },
+    {
+      "version": "0.31.99",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 파이 차트 크기 확대 (라벨 잘림 방지)",
+        "차트 크기: 240x240 → 280x280",
+        "여백: 10px → 20px",
+        "outerRadius: 80 → 85",
+        "innerRadius: 45 → 50",
+        "라벨이 완전히 보이도록 충분한 공간 확보"
+      ]
+    },
+    {
+      "version": "0.31.98",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 파이 차트 라벨을 바깥쪽에 선으로 연결하여 표시",
+        "labelLine={true}로 변경하여 선 표시",
+        "차트 크기: 240x240, 여백: 10px",
+        "라벨 선 스타일: 회색(#9ca3af), 1px 두께",
+        "라벨 텍스트: 회색(#374151), 0.7rem, 600 굵기",
+        "비율이 명확하게 보이도록 개선"
+      ]
+    },
+    {
+      "version": "0.31.97",
+      "date": "2025-11-12",
+      "changes": [
+        "🐛 YearDetailPanel 파이 차트 비율 라벨 표시 수정",
+        "차트 크기 확대: 200x200 → 220x220",
+        "차트 여백 추가: margin 0 → 5px",
+        "커스텀 라벨 렌더링 함수로 위치 정확히 조정",
+        "라벨을 파이 안쪽 70% 위치에 배치 (잘림 방지)",
+        "흰색 텍스트, 0.7rem 크기, 600 굵기"
+      ]
+    },
+    {
+      "version": "0.31.96",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 파이 차트 재구성: 자산만 카테고리별 표시",
+        "부채 파이 차트 제거 (자산만 표시)",
+        "같은 재무 카테고리 자산을 하나로 합쳐서 표시",
+        "파이 차트에 각 카테고리별 비율(%) 라벨 표시",
+        "TwoLevelPieChart → SimplePieChart로 변경",
+        "자산 리스트는 개별 항목으로 상세 표시 유지",
+        "부채 리스트는 하단에 별도 표시 유지"
+      ]
+    },
+    {
+      "version": "0.31.95",
+      "date": "2025-11-12",
+      "changes": [
+        "🔒 YearDetailPanel 열릴 때 배경 스크롤 방지",
+        "useEffect로 isOpen 감지하여 document.body.style.overflow 제어",
+        "패널 열릴 때: overflow = 'hidden'",
+        "패널 닫힐 때: overflow = 'unset'",
+        "cleanup 함수로 overflow 복원"
+      ]
+    },
+    {
+      "version": "0.31.94",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 너비 축소 및 잉여현금 표시 개선",
+        "패널 너비: 420px → 360px",
+        "잉여현금 배지: '+500만원' 형태로 표시 (공백 포함)"
+      ]
+    },
+    {
+      "version": "0.31.93",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 순 자산 표시 제거 및 패딩 최소화",
+        "차트 아래 '순 자산' 표시 완전 제거",
+        "차트 래퍼 패딩: 0.5rem 0 → 0.25rem 0",
+        "차트 래퍼 gap: 0.25rem → 0",
+        "파이 그래프만 심플하게 표시"
+      ]
+    },
+    {
+      "version": "0.31.92",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 패딩 및 border 완전 제거",
+        "차트 래퍼 패딩: 0.75rem → 0.5rem 0 (위아래만)",
+        "차트 래퍼 gap: 0.5rem → 0.25rem",
+        "chartWrapper border 제거, 배경 transparent",
+        "compactSection border 제거, 배경 transparent",
+        "compactSection 패딩: 0.5rem → 0.5rem 0 (위아래만)",
+        "더 깔끔하고 심플한 디자인"
+      ]
+    },
+    {
+      "version": "0.31.91",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 이벤트 섹션 개선",
+        "'이 해의 이벤트 (2)' → '이벤트 | 2' 형태로 변경",
+        "이벤트 섹션도 compactTitleRow 적용하여 통일성 확보",
+        "타이틀 아래 border-bottom 추가",
+        "이벤트 개수를 오른쪽 끝에 회색(#6b7280)으로 표시"
+      ]
+    },
+    {
+      "version": "0.31.90",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 요약 정보 개선",
+        "차트 아래: '총 자산 | 총 부채' → '순 자산' 표시로 단순화",
+        "summaryRow 배경색 제거 (transparent)",
+        "자산 타이틀 오른쪽에 총 자산 금액 표시 (초록색 #10b981)",
+        "부채 타이틀 오른쪽에 총 부채 금액 표시 (빨간색 #ef4444)",
+        "compactTitleRow 추가하여 제목과 금액을 양 끝에 배치",
+        "순 자산 레이블과 값을 가로로 배치 (row)"
+      ]
+    },
+    {
+      "version": "0.31.89",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 툴팁 스타일로 완전 최소화",
+        "패널 너비: 800px → 420px",
+        "파이 차트: 240x240 → 200x200",
+        "리스트 간격: gap 0.25rem → 0.125rem",
+        "행 패딩: 0.375rem → 0.25rem",
+        "폰트: 0.75rem → 0.7rem, 퍼센트: 0.65rem → 0.6rem",
+        "배경: #fafafa → transparent (섹션만 white + border)",
+        "차트 래퍼: #f9fafb → white with border",
+        "요약 행: 별도 배경(#fafafa) + 작은 폰트",
+        "컴팩트 섹션: border로 구분, 내부 투명 배경"
+      ]
+    },
+    {
+      "version": "0.31.88",
+      "date": "2025-11-12",
+      "changes": [
+        "🎯 YearDetailPanel을 Two Level Pie Chart로 완전 재구성",
+        "자산(바깥) + 부채(안쪽) 하나의 파이 차트로 통합 (240x240)",
+        "바깥쪽 자산: outerRadius 100, innerRadius 70",
+        "안쪽 부채: outerRadius 65, innerRadius 35",
+        "총 자산 | 총 부채를 차트 아래 한 줄로 요약 표시",
+        "자산/부채 리스트를 세로로 심플하게 나열 (compactSection)",
+        "툴팁처럼 깔끔한 디자인 적용 (#fafafa 배경)",
+        "Recharts Two Level Pie Chart 방식 구현",
+        "공간 절약 + 직관적 시각화"
+      ]
+    },
+    {
+      "version": "0.31.87",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel UI 컴팩트화 (파이 그래프 및 정보 축소)",
+        "파이 차트 크기: 280x280 → 200x200 (innerRadius: 60→40, outerRadius: 120→80)",
+        "섹션 타이틀: 1rem → 0.875rem",
+        "총액 표시: 1rem → 0.875rem",
+        "리스트 행 폰트: 0.875rem → 0.75rem",
+        "금액 표시: 0.9rem → 0.75rem",
+        "퍼센트: 0.75rem → 0.65rem",
+        "점/네모 크기: 10px → 8px",
+        "배지 폰트: 0.75rem → 0.65rem",
+        "패딩 및 간격 전반적으로 축소"
+      ]
+    },
+    {
+      "version": "0.31.86",
+      "date": "2025-11-12",
+      "changes": [
+        "✨ YearDetailPanel에 잉여현금 투자 정보 표시 추가",
+        "자산 리스트에서 각 항목별로 투자된 잉여현금 금액을 배지로 표시",
+        "investmentInfo 객체를 detailedData에서 가져와서 사용",
+        "assetNameWrapper와 investmentBadge 스타일 추가 (원래 모달과 동일)",
+        "배지 스타일: 연한 파랑 배경(#f0f9ff), 진한 파랑 텍스트(#0369a1)"
+      ]
+    },
+    {
+      "version": "0.31.85",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 디자인 세부 조정",
+        "자산/부채 리스트: 원형 점(●) 사용 (border-radius: 999px)",
+        "이벤트: 네모(■) 사용 (border-radius: 2px)",
+        "+현금(양수 현금): 초록색 #10b981로 표시",
+        "-현금(음수 현금): 빨강색 #ef4444로 표시",
+        "getCategoryAndColor 함수에 amount 파라미터 추가하여 현금 색상 동적 결정"
+      ]
+    },
+    {
+      "version": "0.31.84",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 색상을 RechartsAssetChart와 완전히 동일하게 통일",
+        "저축투자: #3b82f6 (파랑)",
+        "연금: #eab308 (어두운 노랑)",
+        "부동산: #8b5cf6 (보라)",
+        "자산: #06b6d4 (청록)",
+        "양수현금: #10b981 (초록)",
+        "음수현금: #ef4444 (빨강)",
+        "부채: #374151 (회색)",
+        "자산 리스트 및 이벤트 색상 모두 통일"
+      ]
+    },
+    {
+      "version": "0.31.83",
+      "date": "2025-11-12",
+      "changes": [
+        "📐 YearDetailPanel 너비 확장 (480px → 800px)",
+        "max-width: 90vw 추가하여 화면 크기 대응",
+        "자산/부채가 가로 배치되어도 충분한 공간 확보"
+      ]
+    },
+    {
+      "version": "0.31.82",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel 자산/부채를 가로로 나란히 배치",
+        "assetDebtContainer를 grid 2열 레이아웃으로 구성",
+        "자산(왼쪽) | 부채(오른쪽) 배치",
+        "모바일에서는 세로로 쌓이도록 반응형 적용"
+      ]
+    },
+    {
+      "version": "0.31.81",
+      "date": "2025-11-12",
+      "changes": [
+        "🔧 YearDetailPanel 데이터 표시 버그 수정",
+        "yearData.breakdown 대신 detailedData에서 해당 년도의 breakdown 찾도록 수정",
+        "detailedData.find()로 올바른 년도 데이터 검색",
+        "자산과 부채 항목이 정상적으로 표시되도록 수정"
+      ]
+    },
+    {
+      "version": "0.31.80",
+      "date": "2025-11-12",
+      "changes": [
+        "🎨 YearDetailPanel UI를 원래 모달 스타일로 완전히 재구성",
+        "OptimizedPieChart 컴포넌트 추가 (RechartsAssetChart와 동일)",
+        "distributionSection, distributionList, distributionRow 스타일 적용",
+        "색상 네모(distributionDot)로 카테고리 구분 표시",
+        "자산/부채 리스트에 퍼센트 표시",
+        "이벤트 리스트에도 색상 네모로 카테고리 표시",
+        "totalValue 스타일로 총액 강조",
+        "원래 ChartZoomModal과 동일한 디자인 적용"
+      ]
+    },
+    {
+      "version": "0.31.79",
+      "date": "2025-11-12",
+      "changes": [
+        "⌨️ YearDetailPanel ESC 키로 닫기 기능 추가",
+        "useEffect로 keydown 이벤트 리스너 추가",
+        "Escape 키 감지 시 onClose 호출",
+        "cleanup 함수로 이벤트 리스너 정리",
+        "🔧 React Hooks 순서 오류 수정 (useEffect를 모든 useMemo 다음에 배치)"
+      ]
+    },
+    {
+      "version": "0.31.78",
+      "date": "2025-11-12",
+      "changes": [
+        "🔧 자산 차트 이벤트 마커 버그 수정",
+        "소득(income) 이벤트 추출 함수 추가",
+        "지출(expense) 이벤트 추출 함수 추가",
+        "allEvents 배열에 소득/지출 이벤트 포함",
+        "이제 모든 이벤트가 차트 하단에 네모점으로 표시됨"
+      ]
+    },
+    {
+      "version": "0.31.77",
+      "date": "2025-11-12",
+      "changes": [
+        "🎯 자산 시뮬레이션 년도 클릭 시 오른쪽 슬라이드 패널 추가",
+        "YearDetailPanel 컴포넌트 생성",
+        "자산 구성 파이 차트 표시",
+        "부채 구성 파이 차트 표시",
+        "해당 년도의 모든 이벤트 목록 표시",
+        "오른쪽에서 슬라이드 애니메이션",
+        "배경 오버레이 클릭으로 닫기",
+        "순자산 요약 정보 표시"
+      ]
+    },
     {
       "version": "0.31.76",
       "date": "2025-11-12",

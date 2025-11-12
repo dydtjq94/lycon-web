@@ -2346,12 +2346,14 @@ export function calculateAssetSimulation(
         label: "현금",
         amount: currentCash,
         originalValue: currentCash,
+        sourceType: "cash", // 데이터 출처
       });
     } else if (currentCash < 0) {
       debtItems.push({
         label: "현금",
         amount: Math.abs(currentCash),
         originalValue: currentCash,
+        sourceType: "cash", // 데이터 출처
       });
     }
 
@@ -2363,6 +2365,7 @@ export function calculateAssetSimulation(
           label: saving.title,
           amount: saving.amount,
           originalValue: saving.amount,
+          sourceType: "saving", // 데이터 출처
         });
       }
     });
@@ -2375,6 +2378,7 @@ export function calculateAssetSimulation(
           label: title,
           amount: pension.amount,
           originalValue: pension.amount,
+          sourceType: "pension", // 데이터 출처
         });
       }
     });
@@ -2387,6 +2391,7 @@ export function calculateAssetSimulation(
           label: title,
           amount: realEstate.amount,
           originalValue: realEstate.amount,
+          sourceType: "realEstate", // 데이터 출처
         });
       }
     });
@@ -2400,6 +2405,7 @@ export function calculateAssetSimulation(
           label: displayTitle,
           amount: asset.amount,
           originalValue: asset.amount,
+          sourceType: "asset", // 데이터 출처
         });
       }
     });
@@ -2412,6 +2418,7 @@ export function calculateAssetSimulation(
           label: title,
           amount: Math.abs(debt.amount),
           originalValue: debt.amount,
+          sourceType: "debt", // 데이터 출처
         });
       }
     });
