@@ -1141,10 +1141,8 @@ function RechartsCashflowChart({
     const distributionByYear = {};
 
     detailedData.forEach((yearData) => {
-      const positiveItems = [];
-      const negativeItems = [];
-      const positiveCategoryMap = {}; // 카테고리별 합계 (파이 차트용)
-      const negativeCategoryMap = {}; // 카테고리별 합계 (파이 차트용)
+      const positiveCategoryMap = {}; // 카테고리별 데이터 (파이 차트 + 리스트용)
+      const negativeCategoryMap = {}; // 카테고리별 데이터 (파이 차트 + 리스트용)
 
       if (yearData.breakdown) {
         // 수입 항목 처리
@@ -1152,24 +1150,25 @@ function RechartsCashflowChart({
           const category = categoryConfig[item.category]?.name || "기타";
           const color = categoryConfig[item.category]?.color || "#9ca3af";
 
-          // 개별 항목 저장 (리스트용)
-          positiveItems.push({
-            name: item.label,
-            category: category,
-            value: item.amount,
-            originalValue: item.amount,
-            color: color,
-          });
-
-          // 카테고리별 합계 계산 (파이 차트용)
+          // 카테고리별 데이터 구조 생성
           if (!positiveCategoryMap[category]) {
             positiveCategoryMap[category] = {
               name: category,
               value: 0,
               color: color,
+              items: [], // 해당 카테고리의 개별 항목들
             };
           }
+
+          // 카테고리 합계 증가
           positiveCategoryMap[category].value += item.amount;
+
+          // 개별 항목 추가
+          positiveCategoryMap[category].items.push({
+            name: item.label,
+            value: item.amount,
+            originalValue: item.amount,
+          });
         });
 
         // 지출 항목 처리
@@ -1177,32 +1176,31 @@ function RechartsCashflowChart({
           const category = categoryConfig[item.category]?.name || "기타";
           const color = categoryConfig[item.category]?.color || "#9ca3af";
 
-          // 개별 항목 저장 (리스트용)
-          negativeItems.push({
-            name: item.label,
-            category: category,
-            value: item.amount,
-            originalValue: item.amount,
-            color: color,
-          });
-
-          // 카테고리별 합계 계산 (파이 차트용)
+          // 카테고리별 데이터 구조 생성
           if (!negativeCategoryMap[category]) {
             negativeCategoryMap[category] = {
               name: category,
               value: 0,
               color: color,
+              items: [], // 해당 카테고리의 개별 항목들
             };
           }
+
+          // 카테고리 합계 증가
           negativeCategoryMap[category].value += item.amount;
+
+          // 개별 항목 추가
+          negativeCategoryMap[category].items.push({
+            name: item.label,
+            value: item.amount,
+            originalValue: item.amount,
+          });
         });
       }
 
       distributionByYear[yearData.year] = {
-        positiveItems, // 개별 항목 (리스트용)
-        negativeItems, // 개별 항목 (리스트용)
-        positiveCategories: Object.values(positiveCategoryMap), // 카테고리별 합계 (파이 차트용)
-        negativeCategories: Object.values(negativeCategoryMap), // 카테고리별 합계 (파이 차트용)
+        positiveCategories: Object.values(positiveCategoryMap), // 카테고리별 데이터 (파이 차트 + 리스트용)
+        negativeCategories: Object.values(negativeCategoryMap), // 카테고리별 데이터 (파이 차트 + 리스트용)
       };
     });
 
@@ -1212,8 +1210,6 @@ function RechartsCashflowChart({
   const distributionSlices = useMemo(() => {
     if (!distributionEntry || !allDistributionData[distributionEntry.year]) {
       return {
-        positiveItems: [],
-        negativeItems: [],
         positiveCategories: [],
         negativeCategories: [],
       };
@@ -1221,21 +1217,44 @@ function RechartsCashflowChart({
     return allDistributionData[distributionEntry.year];
   }, [distributionEntry, allDistributionData]);
 
-  // 정렬된 분포 데이터 (금액 순)
+  // 정렬된 분포 데이터 (카테고리별로 그룹화된 항목들)
   const sortedDistribution = useMemo(() => {
+    // 카테고리를 금액 순으로 정렬하고, 각 항목에 카테고리 정보 추가
+    const sortedPositiveItems = [];
+    [...distributionSlices.positiveCategories]
+      .sort((a, b) => b.value - a.value)
+      .forEach((category) => {
+        const sortedItems = [...category.items].sort(
+          (a, b) => b.value - a.value
+        );
+        sortedItems.forEach((item) => {
+          sortedPositiveItems.push({
+            ...item,
+            categoryName: category.name,
+            categoryColor: category.color,
+          });
+        });
+      });
+
+    const sortedNegativeItems = [];
+    [...distributionSlices.negativeCategories]
+      .sort((a, b) => b.value - a.value)
+      .forEach((category) => {
+        const sortedItems = [...category.items].sort(
+          (a, b) => b.value - a.value
+        );
+        sortedItems.forEach((item) => {
+          sortedNegativeItems.push({
+            ...item,
+            categoryName: category.name,
+            categoryColor: category.color,
+          });
+        });
+      });
+
     return {
-      positiveItems: [...distributionSlices.positiveItems].sort(
-        (a, b) => b.value - a.value
-      ),
-      negativeItems: [...distributionSlices.negativeItems].sort(
-        (a, b) => b.value - a.value
-      ),
-      positiveCategories: [...distributionSlices.positiveCategories].sort(
-        (a, b) => b.value - a.value
-      ),
-      negativeCategories: [...distributionSlices.negativeCategories].sort(
-        (a, b) => b.value - a.value
-      ),
+      positiveItems: sortedPositiveItems,
+      negativeItems: sortedNegativeItems,
     };
   }, [distributionSlices]);
 
@@ -1329,17 +1348,17 @@ function RechartsCashflowChart({
             ) : (
               <>
                 {/* 수입 섹션 (파이 차트 + 리스트) */}
-                {sortedDistribution.positiveCategories.length > 0 && (
+                {sortedDistribution.positiveItems.length > 0 && (
                   <>
                     {/* 수입 파이 차트 (카테고리별) */}
                     <div className={styles.pieChartWrapper}>
                       <SimplePieChart
-                        data={sortedDistribution.positiveCategories}
+                        data={distributionSlices.positiveCategories}
                         totalValue={totalPositiveValue}
                       />
                     </div>
 
-                    {/* 수입 리스트 (개별 항목) */}
+                    {/* 수입 리스트 (카테고리별 그룹화) */}
                     <div className={styles.compactSection}>
                       <div className={styles.compactTitleRow}>
                         <h5 className={styles.compactTitle}>수입</h5>
@@ -1358,13 +1377,15 @@ function RechartsCashflowChart({
                               : "0.0";
                           return (
                             <div
-                              key={`positive-list-${item.name}`}
+                              key={`positive-item-${item.name}`}
                               className={styles.compactRow}
                             >
                               <span className={styles.compactLabel}>
                                 <span
                                   className={styles.distributionDot}
-                                  style={{ backgroundColor: item.color }}
+                                  style={{
+                                    backgroundColor: item.categoryColor,
+                                  }}
                                 />
                                 {item.name}
                               </span>
@@ -1386,17 +1407,17 @@ function RechartsCashflowChart({
                 )}
 
                 {/* 지출 섹션 (파이 차트 + 리스트) */}
-                {sortedDistribution.negativeCategories.length > 0 && (
+                {sortedDistribution.negativeItems.length > 0 && (
                   <>
                     {/* 지출 파이 차트 (카테고리별) */}
                     <div className={styles.pieChartWrapper}>
                       <SimplePieChart
-                        data={sortedDistribution.negativeCategories}
+                        data={distributionSlices.negativeCategories}
                         totalValue={totalNegativeValue}
                       />
                     </div>
 
-                    {/* 지출 리스트 (개별 항목) */}
+                    {/* 지출 리스트 (카테고리별 그룹화) */}
                     <div className={styles.compactSection}>
                       <div className={styles.compactTitleRow}>
                         <h5 className={styles.compactTitle}>지출</h5>
@@ -1415,13 +1436,15 @@ function RechartsCashflowChart({
                               : "0.0";
                           return (
                             <div
-                              key={`negative-list-${item.name}`}
+                              key={`negative-item-${item.name}`}
                               className={styles.compactRow}
                             >
                               <span className={styles.compactLabel}>
                                 <span
                                   className={styles.distributionDot}
-                                  style={{ backgroundColor: item.color }}
+                                  style={{
+                                    backgroundColor: item.categoryColor,
+                                  }}
                                 />
                                 {item.name}
                               </span>
