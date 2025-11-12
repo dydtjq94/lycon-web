@@ -2,7 +2,7 @@
 .versionDisplay {
   position: fixed;
   bottom: 10px;
-  right: 10px;
+  left: 10px;
   z-index: 9999;
 }
 
@@ -27,7 +27,7 @@
 .historyTooltip {
   position: absolute;
   bottom: 100%;
-  right: 0;
+  left: 0;
   margin-bottom: 8px;
   background: white;
   border: 1px solid #e5e7eb;
@@ -159,11 +159,10 @@
   .historyTooltip {
     width: calc(100vw - 40px);
     max-width: 400px;
-    right: auto;
-    left: 10px;
+    left: 0;
   }
 
   .versionDisplay {
-    right: 10px;
+    left: 10px;
   }
 }
