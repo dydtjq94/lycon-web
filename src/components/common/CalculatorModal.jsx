@@ -220,8 +220,8 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
       // 4. 고용보험 (0.9%)
       const employmentInsurance = estimatedPreTax * EMPLOYMENT_INSURANCE_RATE;
 
-      // 소득 공제 (간이세액표 기준 - 기본공제 150만원 가정)
-      const deduction = 150; // 만원 단위
+      // 소득 공제 (근로소득공제 등 2,500만원 적용)
+      const deduction = 2500; // 만원 단위
       const taxableIncome = Math.max(0, annualPreTax - deduction);
 
       // 소득세 계산
@@ -303,8 +303,8 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
     // 4. 고용보험 (0.9%)
     const employmentInsurance = preTaxMonthly * EMPLOYMENT_INSURANCE_RATE;
 
-    // 5. 소득세 계산
-    const deduction = 150; // 만원 단위 기본공제
+    // 5. 소득세 계산 (근로소득공제 등 2,500만원 적용)
+    const deduction = 2500; // 만원 단위
     const taxableIncome = Math.max(0, annualPreTax - deduction);
     const annualIncomeTax = calculateIncomeTax(taxableIncome);
     const monthlyIncomeTax = annualIncomeTax / 12;
@@ -754,8 +754,8 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                         <strong>고용보험:</strong> 세전 월급의 0.9%
                       </li>
                       <li>
-                        <strong>소득세:</strong> 2024년 국세청 소득세율표 적용
-                        (과세표준 기준)
+                        <strong>소득세:</strong> 과세표준(세전 연봉 - 2,500만원)에
+                        2024년 국세청 소득세율표 적용
                       </li>
                       <li>
                         <strong>지방소득세:</strong> 소득세의 10%
