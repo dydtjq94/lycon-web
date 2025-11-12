@@ -17,44 +17,63 @@ import CashflowInvestmentModal from "./CashflowInvestmentModal";
 import ChartZoomModal from "./ChartZoomModal";
 import styles from "./RechartsCashflowChart.module.css";
 
-// 파이차트 컴포넌트 최적화
-const OptimizedPieChart = memo(({ data, title }) => {
+// 파이차트 컴포넌트 (YearDetailPanel의 SimplePieChart와 동일)
+const SimplePieChart = memo(({ data, totalValue }) => {
   if (!data || data.length === 0) {
-    return <div className={styles.noDistributionData}>{title} 데이터 없음</div>;
+    return <div className={styles.noDistributionData}>데이터 없음</div>;
   }
 
   return (
-    <div className={styles.distributionChart}>
-      <PieChart
-        width={280}
-        height={280}
-        margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
-      >
-        <Pie
-          data={data}
-          dataKey="value"
-          nameKey="name"
-          innerRadius={60}
-          outerRadius={120}
-          paddingAngle={1}
-          animationDuration={500}
-          animationBegin={0}
-          animationEasing="ease-out"
-          isAnimationActive={true}
+    <div className={styles.pieChartContainer}>
+      {/* 왼쪽: 파이 차트 */}
+      <div className={styles.pieChartLeft}>
+        <PieChart
+          width={200}
+          height={200}
+          margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
         >
-          {data.map((slice, index) => (
-            <Cell
-              key={`${title}-slice-${slice.name}-${index}`}
-              fill={slice.color}
-            />
-          ))}
-        </Pie>
-      </PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={80}
+            innerRadius={45}
+            paddingAngle={2}
+            animationDuration={500}
+            animationBegin={0}
+            animationEasing="ease-out"
+            isAnimationActive={true}
+          >
+            {data.map((slice, index) => (
+              <Cell key={`slice-${index}`} fill={slice.color} />
+            ))}
+          </Pie>
+        </PieChart>
+      </div>
+
+      {/* 오른쪽: 범례 */}
+      <div className={styles.pieChartLegend}>
+        {data.map((item, index) => {
+          const percent = ((item.value / totalValue) * 100).toFixed(1);
+          return (
+            <div key={index} className={styles.legendItem}>
+              <span
+                className={styles.legendDot}
+                style={{ backgroundColor: item.color }}
+              />
+              <span className={styles.legendName}>{item.name}</span>
+              <span className={styles.legendPercent}>{percent}%</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 });
 
-OptimizedPieChart.displayName = "OptimizedPieChart";
+SimplePieChart.displayName = "SimplePieChart";
 
 /**
  * Recharts를 사용한 현금 흐름 시뮬레이션 차트
@@ -1117,35 +1136,74 @@ function RechartsCashflowChart({
     "부채 원금 상환": { color: "#374151", order: 7, name: "부채" },
   };
 
-  // 수입/지출 분포 데이터 생성 (파이 차트용)
+  // 수입/지출 분포 데이터 생성 (파이 차트용 - 카테고리별 그룹화)
   const allDistributionData = useMemo(() => {
     const distributionByYear = {};
 
     detailedData.forEach((yearData) => {
-      const positives = [];
-      const negatives = [];
+      const positiveItems = [];
+      const negativeItems = [];
+      const positiveCategoryMap = {}; // 카테고리별 합계 (파이 차트용)
+      const negativeCategoryMap = {}; // 카테고리별 합계 (파이 차트용)
 
       if (yearData.breakdown) {
+        // 수입 항목 처리
         (yearData.breakdown.positives || []).forEach((item) => {
-          positives.push({
+          const category = categoryConfig[item.category]?.name || "기타";
+          const color = categoryConfig[item.category]?.color || "#9ca3af";
+
+          // 개별 항목 저장 (리스트용)
+          positiveItems.push({
             name: item.label,
+            category: category,
             value: item.amount,
             originalValue: item.amount,
-            color: categoryConfig[item.category]?.color || "#9ca3af",
+            color: color,
           });
+
+          // 카테고리별 합계 계산 (파이 차트용)
+          if (!positiveCategoryMap[category]) {
+            positiveCategoryMap[category] = {
+              name: category,
+              value: 0,
+              color: color,
+            };
+          }
+          positiveCategoryMap[category].value += item.amount;
         });
 
+        // 지출 항목 처리
         (yearData.breakdown.negatives || []).forEach((item) => {
-          negatives.push({
+          const category = categoryConfig[item.category]?.name || "기타";
+          const color = categoryConfig[item.category]?.color || "#9ca3af";
+
+          // 개별 항목 저장 (리스트용)
+          negativeItems.push({
             name: item.label,
+            category: category,
             value: item.amount,
             originalValue: item.amount,
-            color: categoryConfig[item.category]?.color || "#9ca3af",
+            color: color,
           });
+
+          // 카테고리별 합계 계산 (파이 차트용)
+          if (!negativeCategoryMap[category]) {
+            negativeCategoryMap[category] = {
+              name: category,
+              value: 0,
+              color: color,
+            };
+          }
+          negativeCategoryMap[category].value += item.amount;
         });
       }
 
-      distributionByYear[yearData.year] = { positives, negatives };
+      distributionByYear[yearData.year] = {
+        positiveItems, // 개별 항목 (리스트용)
+        negativeItems, // 개별 항목 (리스트용)
+        positiveCategories: Object.values(positiveCategoryMap), // 카테고리별 합계 (파이 차트용)
+        negativeCategories: Object.values(negativeCategoryMap), // 카테고리별 합계 (파이 차트용)
+      };
     });
 
     return distributionByYear;
@@ -1153,7 +1211,12 @@ function RechartsCashflowChart({
 
   const distributionSlices = useMemo(() => {
     if (!distributionEntry || !allDistributionData[distributionEntry.year]) {
-      return { positives: [], negatives: [] };
+      return {
+        positiveItems: [],
+        negativeItems: [],
+        positiveCategories: [],
+        negativeCategories: [],
+      };
     }
     return allDistributionData[distributionEntry.year];
   }, [distributionEntry, allDistributionData]);
@@ -1161,10 +1224,16 @@ function RechartsCashflowChart({
   // 정렬된 분포 데이터 (금액 순)
   const sortedDistribution = useMemo(() => {
     return {
-      positives: [...distributionSlices.positives].sort(
+      positiveItems: [...distributionSlices.positiveItems].sort(
         (a, b) => b.value - a.value
       ),
-      negatives: [...distributionSlices.negatives].sort(
+      negativeItems: [...distributionSlices.negativeItems].sort(
+        (a, b) => b.value - a.value
+      ),
+      positiveCategories: [...distributionSlices.positiveCategories].sort(
+        (a, b) => b.value - a.value
+      ),
+      negativeCategories: [...distributionSlices.negativeCategories].sort(
         (a, b) => b.value - a.value
       ),
     };
@@ -1172,18 +1241,18 @@ function RechartsCashflowChart({
 
   // 총 합계 계산
   const totalPositiveValue = useMemo(() => {
-    return distributionSlices.positives.reduce(
+    return distributionSlices.positiveCategories.reduce(
       (sum, item) => sum + item.value,
       0
     );
-  }, [distributionSlices.positives]);
+  }, [distributionSlices.positiveCategories]);
 
   const totalNegativeValue = useMemo(() => {
-    return distributionSlices.negatives.reduce(
+    return distributionSlices.negativeCategories.reduce(
       (sum, item) => sum + item.value,
       0
     );
-  }, [distributionSlices.negatives]);
+  }, [distributionSlices.negativeCategories]);
 
   // 바 클릭 핸들러
   const handleBarClick = (barData) => {
@@ -1252,107 +1321,125 @@ function RechartsCashflowChart({
           }
         >
           <div className={styles.distributionModalContent}>
-            {distributionSlices.positives.length === 0 &&
-            distributionSlices.negatives.length === 0 ? (
+            {distributionSlices.positiveCategories.length === 0 &&
+            distributionSlices.negativeCategories.length === 0 ? (
               <div className={styles.noDistributionData}>
                 해당 연도의 현금 흐름 구성을 계산할 수 없습니다.
               </div>
             ) : (
               <>
-                {/* 수입 섹션 */}
-                {sortedDistribution.positives.length > 0 && (
-                  <div className={styles.distributionSection}>
-                    <h4>수입</h4>
-                    <OptimizedPieChart
-                      data={sortedDistribution.positives}
-                      title="수입"
-                    />
-                    <div className={styles.totalValue}>
-                      총 수입: +{formatAmountForChart(totalPositiveValue)}
+                {/* 수입 섹션 (파이 차트 + 리스트) */}
+                {sortedDistribution.positiveCategories.length > 0 && (
+                  <>
+                    {/* 수입 파이 차트 (카테고리별) */}
+                    <div className={styles.pieChartWrapper}>
+                      <SimplePieChart
+                        data={sortedDistribution.positiveCategories}
+                        totalValue={totalPositiveValue}
+                      />
                     </div>
-                    <div className={styles.distributionList}>
-                      {sortedDistribution.positives.map((slice) => {
-                        const percent =
-                          totalPositiveValue > 0
-                            ? (
-                                (slice.value / totalPositiveValue) *
-                                100
-                              ).toFixed(1)
-                            : "0.0";
-                        return (
-                          <div
-                            key={`positive-list-${slice.name}`}
-                            className={styles.distributionRow}
-                          >
-                            <span className={styles.distributionLabel}>
-                              <span
-                                className={styles.distributionDot}
-                                style={{ backgroundColor: slice.color }}
-                              />
-                              {slice.name}
-                            </span>
-                            <span className={styles.distributionValue}>
-                              +
-                              {formatAmountForChart(
-                                Math.abs(slice.originalValue)
-                              )}
-                              <span className={styles.distributionPercent}>
-                                {percent}%
+
+                    {/* 수입 리스트 (개별 항목) */}
+                    <div className={styles.compactSection}>
+                      <div className={styles.compactTitleRow}>
+                        <h5 className={styles.compactTitle}>수입</h5>
+                        <span className={styles.compactTotalPositive}>
+                          +{formatAmountForChart(totalPositiveValue)}
+                        </span>
+                      </div>
+                      <div className={styles.compactList}>
+                        {sortedDistribution.positiveItems.map((item) => {
+                          const percent =
+                            totalPositiveValue > 0
+                              ? (
+                                  (item.value / totalPositiveValue) *
+                                  100
+                                ).toFixed(1)
+                              : "0.0";
+                          return (
+                            <div
+                              key={`positive-list-${item.name}`}
+                              className={styles.compactRow}
+                            >
+                              <span className={styles.compactLabel}>
+                                <span
+                                  className={styles.distributionDot}
+                                  style={{ backgroundColor: item.color }}
+                                />
+                                {item.name}
                               </span>
-                            </span>
-                          </div>
-                        );
-                      })}
+                              <span className={styles.compactValue}>
+                                +
+                                {formatAmountForChart(
+                                  Math.abs(item.originalValue)
+                                )}
+                                <span className={styles.compactPercent}>
+                                  {percent}%
+                                </span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
 
-                {/* 지출 섹션 */}
-                {sortedDistribution.negatives.length > 0 && (
-                  <div className={styles.distributionSection}>
-                    <h4>지출</h4>
-                    <OptimizedPieChart
-                      data={sortedDistribution.negatives}
-                      title="지출"
-                    />
-                    <div className={styles.totalValue}>
-                      총 지출: -{formatAmountForChart(totalNegativeValue)}
+                {/* 지출 섹션 (파이 차트 + 리스트) */}
+                {sortedDistribution.negativeCategories.length > 0 && (
+                  <>
+                    {/* 지출 파이 차트 (카테고리별) */}
+                    <div className={styles.pieChartWrapper}>
+                      <SimplePieChart
+                        data={sortedDistribution.negativeCategories}
+                        totalValue={totalNegativeValue}
+                      />
                     </div>
-                    <div className={styles.distributionList}>
-                      {sortedDistribution.negatives.map((slice) => {
-                        const percent =
-                          totalNegativeValue > 0
-                            ? (
-                                (slice.value / totalNegativeValue) *
-                                100
-                              ).toFixed(1)
-                            : "0.0";
-                        return (
-                          <div
-                            key={`negative-list-${slice.name}`}
-                            className={styles.distributionRow}
-                          >
-                            <span className={styles.distributionLabel}>
-                              <span
-                                className={styles.distributionDot}
-                                style={{ backgroundColor: slice.color }}
-                              />
-                              {slice.name}
-                            </span>
-                            <span className={styles.distributionValue}>
-                              -
-                              {formatAmountForChart(
-                                Math.abs(slice.originalValue)
-                              )}
-                              <span className={styles.distributionPercent}>
-                                {percent}%
+
+                    {/* 지출 리스트 (개별 항목) */}
+                    <div className={styles.compactSection}>
+                      <div className={styles.compactTitleRow}>
+                        <h5 className={styles.compactTitle}>지출</h5>
+                        <span className={styles.compactTotalNegative}>
+                          -{formatAmountForChart(totalNegativeValue)}
+                        </span>
+                      </div>
+                      <div className={styles.compactList}>
+                        {sortedDistribution.negativeItems.map((item) => {
+                          const percent =
+                            totalNegativeValue > 0
+                              ? (
+                                  (item.value / totalNegativeValue) *
+                                  100
+                                ).toFixed(1)
+                              : "0.0";
+                          return (
+                            <div
+                              key={`negative-list-${item.name}`}
+                              className={styles.compactRow}
+                            >
+                              <span className={styles.compactLabel}>
+                                <span
+                                  className={styles.distributionDot}
+                                  style={{ backgroundColor: item.color }}
+                                />
+                                {item.name}
                               </span>
-                            </span>
-                          </div>
-                        );
-                      })}
+                              <span className={styles.compactValue}>
+                                -
+                                {formatAmountForChart(
+                                  Math.abs(item.originalValue)
+                                )}
+                                <span className={styles.compactPercent}>
+                                  {percent}%
+                                </span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
               </>
             )}

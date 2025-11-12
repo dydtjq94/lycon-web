@@ -577,102 +577,183 @@
   }
 }
 
-/* 분포 모달 스타일 */
+/* 분포 모달 스타일 (YearDetailPanel 스타일과 동일) */
 .distributionModalContent {
   display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
 }
 
-.distributionSection {
-  flex: 1;
-  min-width: 280px;
+/* 파이 차트 래퍼 */
+.pieChartWrapper {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  align-items: center;
+  gap: 0;
+
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
-.distributionSection h4 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.distributionChart {
-  width: 100%;
-  min-height: 280px;
+/* 파이 차트 컨테이너 (왼쪽 차트 + 오른쪽 범례) */
+.pieChartContainer {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0;
 }
 
-.distributionList {
-  flex: 1;
-  min-width: 240px;
-  max-height: 360px;
-  overflow-y: auto;
+/* 파이 차트 왼쪽 */
+.pieChartLeft {
+  flex-shrink: 0;
+}
+
+/* 파이 차트 범례 (오른쪽) */
+.pieChartLegend {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding-right: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  padding-right: 1rem;
 }
 
-.distributionRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.distributionLabel {
+/* 범례 항목 */
+.legendItem {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #111827;
+  font-size: 0.75rem;
 }
 
-.distributionDot {
+/* 범례 색상 점 */
+.legendDot {
   width: 10px;
   height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* 범례 카테고리명 */
+.legendName {
+  font-weight: 600;
+  color: #374151;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 범례 비율 */
+.legendPercent {
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* 컴팩트 섹션 (수입/지출 리스트) */
+.compactSection {
+  width: 100%;
+  padding: 0.5rem 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.compactTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 0.375rem 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.compactTitle {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #374151;
+  margin: 0;
+}
+
+.compactTotalPositive {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.compactTotalNegative {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.compactList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.compactRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0.375rem;
+  font-size: 0.7rem;
+  background: transparent;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.compactRow:hover {
+  background: #f9fafb;
+}
+
+.compactLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.compactValue {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  font-size: 0.7rem;
+}
+
+.compactPercent {
+  font-size: 0.6rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* 색상 점 */
+.distributionDot {
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   flex-shrink: 0;
 }
 
-.distributionValue {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.distributionPercent {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-left: 6px;
-}
-
-.totalValue {
-  text-align: center;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 12px 0 8px 0;
-  padding: 8px 12px;
-  background-color: #f8fafc;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-}
-
+/* 데이터 없음 */
 .noDistributionData {
   width: 100%;
-  height: 100%;
+  padding: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: #9ca3af;
   font-size: 0.95rem;
+  text-align: center;
 }

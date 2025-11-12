@@ -26,24 +26,33 @@ function ChartZoomModal({ isOpen, onClose, children, title }) {
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+    <>
+      {/* 배경 오버레이 */}
+      <div
+        className={`${styles.modalOverlay} ${isOpen ? styles.open : ""}`}
+        onClick={onClose}
+      />
+
+      {/* 슬라이드 패널 */}
+      <div className={`${styles.modalContent} ${isOpen ? styles.open : ""}`}>
+        {/* 헤더 */}
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>{title}</h2>
           <button
             className={styles.closeButton}
             onClick={onClose}
+            type="button"
             title="닫기 (ESC)"
           >
-            ×
+            →
           </button>
         </div>
+
+        {/* 컨텐츠 */}
         <div className={styles.chartContainer}>{children}</div>
       </div>
-    </div>
+    </>
   );
 }
 
