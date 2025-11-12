@@ -233,9 +233,8 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
     // 소득세 구간 확인
     const taxBracket = getTaxBracket(annualPreTax);
 
-    // DC 적립금 (세전 월급의 1/12, 즉 세전 월급과 동일)
-    const monthlyDC = preTaxMonthly;
-    const annualDC = monthlyDC * 12;
+    // DC 적립금 (연봉의 1/12, 즉 세전 월급과 동일)
+    const annualDC = preTaxMonthly;
 
     return {
       preTaxMonthly: Math.round(preTaxMonthly),
@@ -245,7 +244,6 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
         max: taxBracket.max === Infinity ? "초과" : taxBracket.max,
         rate: (taxBracket.rate * 100).toFixed(0),
       },
-      monthlyDC: Math.round(monthlyDC),
       annualDC: Math.round(annualDC),
     };
   };
@@ -582,14 +580,6 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                     </div>
                     <div className={styles.resultItem}>
                       <span className={styles.resultLabel}>
-                        월 DC 적립금
-                      </span>
-                      <span className={styles.resultValue}>
-                        {dcResult.monthlyDC.toLocaleString()}만원
-                      </span>
-                    </div>
-                    <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>
                         연간 DC 적립금
                       </span>
                       <span className={styles.resultValue}>
@@ -615,8 +605,8 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                         <strong>지방소득세:</strong> 소득세의 10%
                       </li>
                       <li>
-                        <strong>DC 적립금:</strong> 연봉의 1/12 = 세전 월급과
-                        동일
+                        <strong>DC 적립금:</strong> 연봉의 1/12 = 세전 월급
+                        (연간 적립금)
                       </li>
                     </ul>
                   </div>
