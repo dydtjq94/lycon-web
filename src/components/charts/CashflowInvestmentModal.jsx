@@ -12,6 +12,7 @@ function CashflowInvestmentModal({
   year,
   amount,
   savings = [],
+  pensions = [], // 연금 목록 추가
   currentRule = null, // { allocations: [{targetType, targetId, ratio}] }
   positiveYears = [], // 양수 현금흐름이 있는 년도 목록
   onSave,
@@ -66,6 +67,8 @@ function CashflowInvestmentModal({
           newRatios.cash = allocation.ratio;
         } else if (allocation.targetType === "saving") {
           newRatios[allocation.targetId] = allocation.ratio;
+        } else if (allocation.targetType === "pension") {
+          newRatios[allocation.targetId] = allocation.ratio;
         }
       });
       setRatios(newRatios);
@@ -95,6 +98,19 @@ function CashflowInvestmentModal({
   const activeSavings = savings.filter(
     (saving) => year >= saving.startYear && year < saving.endYear
   );
+
+  // 활성 연금 필터링 (퇴직연금과 개인연금만)
+  const activePensions = pensions.filter((pension) => {
+    // 퇴직연금(retirement)과 개인연금(personal)만 선택 가능
+    if (pension.type !== "retirement" && pension.type !== "personal") {
+      return false;
+    }
+    // 해당 연도가 적립 기간 내에 있어야 함 (저축/투자와 동일하게)
+    // contributionStartYear ~ contributionEndYear까지
+    return (
+      year >= pension.contributionStartYear && year < pension.contributionEndYear
+    );
+  });
 
   // 총 비율 계산
   const totalRatio = Object.values(ratios).reduce(
@@ -150,6 +166,18 @@ function CashflowInvestmentModal({
         allocations.push({
           targetType: "saving",
           targetId: saving.id,
+          ratio: ratio,
+        });
+      }
+    });
+
+    // 연금 상품들
+    activePensions.forEach((pension) => {
+      const ratio = ratios[pension.id] || 0;
+      if (ratio > 0) {
+        allocations.push({
+          targetType: "pension",
+          targetId: pension.id,
           ratio: ratio,
         });
       }
@@ -329,32 +357,75 @@ function CashflowInvestmentModal({
             </div>
 
             {/* 저축 상품들 */}
-            {activeSavings.map((saving) => (
-              <div key={saving.id} className={styles.allocationItem}>
-                <div className={styles.allocationRow}>
-                  <span className={styles.targetName}>{saving.title}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={
-                      ratios[saving.id] === 0 ? "" : ratios[saving.id] || ""
-                    }
-                    placeholder="0"
-                    onChange={(e) =>
-                      handleRatioChange(saving.id, e.target.value)
-                    }
-                    onWheel={(e) => e.target.blur()}
-                    className={styles.ratioInput}
-                  />
-                  <span className={styles.percent}>%</span>
-                </div>
+            {activeSavings.length > 0 && (
+              <div className={styles.categorySection}>
+                <div className={styles.categoryLabel}>저축/투자</div>
+                {activeSavings.map((saving) => (
+                  <div key={saving.id} className={styles.allocationItem}>
+                    <div className={styles.allocationRow}>
+                      <span className={styles.targetName}>{saving.title}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={
+                          ratios[saving.id] === 0 ? "" : ratios[saving.id] || ""
+                        }
+                        placeholder="0"
+                        onChange={(e) =>
+                          handleRatioChange(saving.id, e.target.value)
+                        }
+                        onWheel={(e) => e.target.blur()}
+                        className={styles.ratioInput}
+                      />
+                      <span className={styles.percent}>%</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
 
-            {activeSavings.length === 0 && (
+            {/* 연금 상품들 */}
+            {activePensions.length > 0 && (
+              <div className={styles.categorySection}>
+                <div className={styles.categoryLabel}>연금</div>
+                {activePensions.map((pension) => (
+                  <div key={pension.id} className={styles.allocationItem}>
+                    <div className={styles.allocationRow}>
+                      <span className={styles.targetName}>
+                        {pension.title}
+                        <span className={styles.pensionType}>
+                          {pension.type === "retirement"
+                            ? " (퇴직연금)"
+                            : " (개인연금)"}
+                        </span>
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={
+                          ratios[pension.id] === 0
+                            ? ""
+                            : ratios[pension.id] || ""
+                        }
+                        placeholder="0"
+                        onChange={(e) =>
+                          handleRatioChange(pension.id, e.target.value)
+                        }
+                        onWheel={(e) => e.target.blur()}
+                        className={styles.ratioInput}
+                      />
+                      <span className={styles.percent}>%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeSavings.length === 0 && activePensions.length === 0 && (
               <div className={styles.noSavings}>
-                해당 년도에 활성화된 저축/투자 상품이 없습니다.
+                해당 년도에 활성화된 저축/투자/연금 상품이 없습니다.
               </div>
             )}
           </div>

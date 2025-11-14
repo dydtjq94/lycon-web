@@ -1443,27 +1443,44 @@ export function calculateCashflowSimulation(
           const investAmount =
             Math.round(netCashflow * (allocation.ratio / 100) * 100) / 100;
 
-          if (
-            investAmount > 0 &&
-            allocation.targetType === "saving" &&
-            allocation.targetId
-          ) {
-            // 저축 상품에 대한 년도별 투자 금액 기록만 함 (현금 흐름에는 반영 안 함)
-            if (!savingInvestments[allocation.targetId]) {
-              savingInvestments[allocation.targetId] = {};
-            }
-            if (!savingInvestments[allocation.targetId][year]) {
-              savingInvestments[allocation.targetId][year] = 0;
-            }
-            savingInvestments[allocation.targetId][year] =
-              Math.round(
-                (savingInvestments[allocation.targetId][year] + investAmount) *
-                  100
-              ) / 100;
+          if (investAmount > 0 && allocation.targetId) {
+            if (allocation.targetType === "saving") {
+              // 저축 상품에 대한 년도별 투자 금액 기록만 함 (현금 흐름에는 반영 안 함)
+              if (!savingInvestments[allocation.targetId]) {
+                savingInvestments[allocation.targetId] = {};
+              }
+              if (!savingInvestments[allocation.targetId][year]) {
+                savingInvestments[allocation.targetId][year] = 0;
+              }
+              savingInvestments[allocation.targetId][year] =
+                Math.round(
+                  (savingInvestments[allocation.targetId][year] + investAmount) *
+                    100
+                ) / 100;
 
-            console.log(
-              `${year}년: ${investAmount}만원을 저축 ID ${allocation.targetId}에 투자 기록 (현금 흐름 지출에는 미반영)`
-            );
+              console.log(
+                `${year}년: ${investAmount}만원을 저축 ID ${allocation.targetId}에 투자 기록 (현금 흐름 지출에는 미반영)`
+              );
+            } else if (allocation.targetType === "pension") {
+              // 연금 상품에 대한 년도별 투자 금액 기록 (현금 흐름에는 반영 안 함)
+              // 연금은 savingInvestments 대신 별도 추적이 필요하지만,
+              // 현재는 저축과 동일하게 처리 (추후 개선 가능)
+              if (!savingInvestments[allocation.targetId]) {
+                savingInvestments[allocation.targetId] = {};
+              }
+              if (!savingInvestments[allocation.targetId][year]) {
+                savingInvestments[allocation.targetId][year] = 0;
+              }
+              savingInvestments[allocation.targetId][year] =
+                Math.round(
+                  (savingInvestments[allocation.targetId][year] + investAmount) *
+                    100
+                ) / 100;
+
+              console.log(
+                `${year}년: ${investAmount}만원을 연금 ID ${allocation.targetId}에 투자 기록 (현금 흐름 지출에는 미반영)`
+              );
+            }
           }
         });
       }
@@ -1927,6 +1944,37 @@ export function calculateAssetSimulation(
 
                 console.log(
                   `${year}년: ${investAmount}만원을 ${targetSaving.title}에 투자 (자산 시뮬레이션)`
+                );
+              }
+            } else if (allocation.targetType === "pension" && allocation.targetId) {
+              // 연금 상품에 투자 (퇴직연금, 개인연금)
+              const targetPension = pensionsByTitle[Object.keys(pensionsByTitle).find(
+                (title) => pensionsByTitle[title].id === allocation.targetId
+              )];
+
+              if (targetPension && targetPension.isActive) {
+                // 연금 자산에 투자 금액 추가 (추가 납입)
+                targetPension.amount =
+                  Math.round((targetPension.amount + investAmount) * 100) / 100;
+
+                // 이번 해 투자 금액 누적
+                if (!targetPension.totalInvested) {
+                  targetPension.totalInvested = 0;
+                }
+                targetPension.totalInvested =
+                  Math.round(
+                    (targetPension.totalInvested + investAmount) * 100
+                  ) / 100;
+
+                // 현금에서 투자 금액 차감
+                currentCash =
+                  Math.round((currentCash - investAmount) * 100) / 100;
+
+                // 투자 정보 저장 (자산 차트에서 표시용 - 이번 해 투자 금액만)
+                investmentInfo[targetPension.title] = investAmount;
+
+                console.log(
+                  `${year}년: ${investAmount}만원을 ${targetPension.title}에 투자 (연금 추가 납입)`
                 );
               }
             } else if (allocation.targetType === "cash") {

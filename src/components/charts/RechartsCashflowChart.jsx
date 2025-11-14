@@ -1478,6 +1478,7 @@ function RechartsCashflowChart({
           year={investmentModalData.year}
           amount={investmentModalData.amount}
           savings={savings}
+          pensions={pensions}
           currentRule={investmentModalData.currentRule}
           positiveYears={investmentModalData.positiveYears || []}
           onSave={handleSaveInvestmentRule}
