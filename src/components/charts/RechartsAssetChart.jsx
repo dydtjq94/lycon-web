@@ -1668,6 +1668,10 @@ function RechartsAssetChart({
         debts={debts}
         incomes={incomes}
         expenses={expenses}
+        onYearChange={(newYearData) => {
+          // 방향키로 연도 변경 시 호출됨
+          setDistributionEntry(newYearData);
+        }}
       />
     </>
   );

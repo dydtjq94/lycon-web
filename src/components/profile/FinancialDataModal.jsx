@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./FinancialDataModal.module.css";
 import IncomeList from "../income/IncomeList";
 import ExpenseList from "../expense/ExpenseList";
@@ -70,8 +70,10 @@ function FinancialDataModal({
   onAdd, // 새로 추가: 카테고리별 추가 핸들러
   isReadOnly = false, // 읽기 전용 모드
 }) {
-  if (!isOpen) return null;
+  // 현재 자산 현황 토글 상태 (기본값: false = 닫혀있음)
+  const [isAssetsExpanded, setIsAssetsExpanded] = useState(false);
 
+  // useEffect는 조건부 return 전에 항상 호출되어야 함 (React Hooks 규칙)
   useEffect(() => {
     if (!isOpen) return;
     // Mixpanel 트래킹: 모달 오픈
@@ -94,6 +96,9 @@ function FinancialDataModal({
       document.body.style.overflow = "";
     };
   }, [isOpen, onClose]);
+
+  // 모든 hooks 호출 후 조건부 return
+  if (!isOpen) return null;
 
   return (
     <div
@@ -126,8 +131,37 @@ function FinancialDataModal({
         {/* 현재 자산 현황 섹션 */}
         {profileData && financialData && (
           <div className={styles.currentAssetsSection}>
-            <h4 className={styles.currentAssetsTitle}>현재 자산 현황</h4>
-            <div className={styles.currentAssetsList}>
+            <div
+              className={styles.currentAssetsTitleWrapper}
+              onClick={() => setIsAssetsExpanded(!isAssetsExpanded)}
+            >
+              <h4 className={styles.currentAssetsTitle}>현재 자산 현황</h4>
+              <button
+                className={styles.toggleButton}
+                type="button"
+                aria-label="자산 현황 토글"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={
+                    isAssetsExpanded
+                      ? styles.chevronUp
+                      : styles.chevronDown
+                  }
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+            </div>
+            {isAssetsExpanded && (
+              <div className={styles.currentAssetsList}>
               {/* 현재 현금 */}
               <div className={styles.currentAssetItem}>
                 <span className={styles.currentAssetLabel}>현재 현금</span>
@@ -328,7 +362,8 @@ function FinancialDataModal({
                   </div>
                 );
               })()}
-            </div>
+              </div>
+            )}
           </div>
         )}
 

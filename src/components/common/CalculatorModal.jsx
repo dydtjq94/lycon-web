@@ -10,6 +10,35 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
   // 계산기 타입 선택 상태
   const [selectedCalculator, setSelectedCalculator] = useState("goal");
 
+  // 부동산 계산기 URL 목록
+  const realEstateCalculators = [
+    {
+      id: "retention",
+      name: "보유세",
+      url: "https://부동산계산기.com/보유세?embed=y",
+    },
+    {
+      id: "transfer",
+      name: "양도세",
+      url: "https://부동산계산기.com/양도세?embed=y",
+    },
+    {
+      id: "income",
+      name: "종합소득세",
+      url: "https://부동산계산기.com/종합소득세?embed=y",
+    },
+    {
+      id: "gift",
+      name: "증여세",
+      url: "https://부동산계산기.com/증여세?embed=y",
+    },
+    {
+      id: "acquisition",
+      name: "취득세",
+      url: "https://부동산계산기.com/취득세?embed=y",
+    },
+  ];
+
   // 목표 금액 계산기 상태
   const [goalFormData, setGoalFormData] = useState({
     targetAmount: "",
@@ -450,6 +479,46 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
           >
             DC형 퇴직연금 계산기
           </button>
+          <button
+            className={`${styles.tabButton} ${
+              selectedCalculator === "retention" ? styles.active : ""
+            }`}
+            onClick={() => handleCalculatorChange("retention")}
+          >
+            보유세 계산기
+          </button>
+          <button
+            className={`${styles.tabButton} ${
+              selectedCalculator === "transfer" ? styles.active : ""
+            }`}
+            onClick={() => handleCalculatorChange("transfer")}
+          >
+            양도세 계산기
+          </button>
+          <button
+            className={`${styles.tabButton} ${
+              selectedCalculator === "income" ? styles.active : ""
+            }`}
+            onClick={() => handleCalculatorChange("income")}
+          >
+            종합소득세 계산기
+          </button>
+          <button
+            className={`${styles.tabButton} ${
+              selectedCalculator === "gift" ? styles.active : ""
+            }`}
+            onClick={() => handleCalculatorChange("gift")}
+          >
+            증여세 계산기
+          </button>
+          <button
+            className={`${styles.tabButton} ${
+              selectedCalculator === "acquisition" ? styles.active : ""
+            }`}
+            onClick={() => handleCalculatorChange("acquisition")}
+          >
+            취득세 계산기
+          </button>
         </div>
 
         <div className={styles.modalBody}>
@@ -772,6 +841,30 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* 부동산 계산기 */}
+          {["retention", "transfer", "income", "gift", "acquisition"].includes(
+            selectedCalculator
+          ) && (
+            <div className={styles.calculatorContent}>
+              <div className={styles.iframeContainer}>
+                <iframe
+                  src={
+                    realEstateCalculators.find(
+                      (calc) => calc.id === selectedCalculator
+                    )?.url
+                  }
+                  className={styles.calculatorIframe}
+                  title={
+                    realEstateCalculators.find(
+                      (calc) => calc.id === selectedCalculator
+                    )?.name + " 계산기"
+                  }
+                  allow="clipboard-read; clipboard-write"
+                />
+              </div>
             </div>
           )}
         </div>

@@ -1482,6 +1482,28 @@ function RechartsCashflowChart({
           currentRule={investmentModalData.currentRule}
           positiveYears={investmentModalData.positiveYears || []}
           onSave={handleSaveInvestmentRule}
+          onYearChange={(newYear, newAmount) => {
+            // 방향키로 연도 변경 시 호출됨
+            // 양수 현금흐름에서 해당 연도 찾기
+            const positiveYears = investmentModalData.positiveYears || [];
+            const newYearData = positiveYears.find(
+              (item) => item.year === newYear
+            );
+
+            if (newYearData) {
+              // 해당 연도의 투자 규칙 가져오기
+              const investmentRules =
+                currentSimulation?.cashflowInvestmentRules || {};
+              const rule = investmentRules[newYear] || null;
+
+              setInvestmentModalData({
+                year: newYear,
+                amount: newAmount,
+                currentRule: rule,
+                positiveYears: positiveYears,
+              });
+            }
+          }}
         />
       )}
     </>

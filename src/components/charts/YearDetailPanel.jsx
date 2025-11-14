@@ -80,6 +80,7 @@ function YearDetailPanel({
   debts = [],
   incomes = [],
   expenses = [],
+  onYearChange, // 연도 변경 콜백 (년도 이동 시 호출)
 }) {
   // 자산 색상 매핑 (RechartsAssetChart와 동일)
   const getAssetColor = (category) => {
@@ -493,19 +494,44 @@ function YearDetailPanel({
     };
   }, [isOpen]);
 
-  // ESC 키로 패널 닫기
+  // ESC 키로 패널 닫기 및 방향키로 연도 이동
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleEscKey = (e) => {
+    const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         onClose();
+      } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        // 방향키로 연도 이동
+        if (!yearData || !detailedData || detailedData.length === 0) return;
+
+        const currentIndex = detailedData.findIndex(
+          (item) => item.year === yearData.year
+        );
+        if (currentIndex === -1) return;
+
+        let newIndex = currentIndex;
+        if (e.key === "ArrowRight") {
+          // 다음 연도로 이동
+          newIndex = currentIndex + 1;
+        } else if (e.key === "ArrowLeft") {
+          // 이전 연도로 이동
+          newIndex = currentIndex - 1;
+        }
+
+        // 범위 체크
+        if (newIndex >= 0 && newIndex < detailedData.length) {
+          const newYearData = detailedData[newIndex];
+          if (onYearChange) {
+            onYearChange(newYearData);
+          }
+        }
       }
     };
 
-    window.addEventListener("keydown", handleEscKey);
-    return () => window.removeEventListener("keydown", handleEscKey);
-  }, [isOpen, onClose]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose, yearData, detailedData, onYearChange]);
 
   // 총 자산/부채 계산
   const totalAssetValue = yearDetail.totalAssets || 0;

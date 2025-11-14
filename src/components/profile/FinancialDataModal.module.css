@@ -108,11 +108,57 @@
   background: #fafbfc;
 }
 
+/* 타이틀 래퍼 (토글 가능) */
+.currentAssetsTitleWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.currentAssetsTitleWrapper:hover {
+  background-color: rgba(99, 102, 241, 0.04);
+}
+
 .currentAssetsTitle {
   font-size: 0.8rem;
   font-weight: 600;
   color: #64748b;
-  margin: 0 0 0.5rem 0;
+  margin: 0;
+}
+
+/* 토글 버튼 */
+.toggleButton {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  background: rgba(99, 102, 241, 0.08);
+  color: #6366f1;
+}
+
+/* 화살표 아이콘 */
+.chevronDown {
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+}
+
+.chevronUp {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
 }
 
 .currentAssetsList {
@@ -294,8 +340,17 @@
     padding: 0.65rem 1.1rem;
   }
 
+  .currentAssetsTitleWrapper {
+    padding: 0.2rem 0;
+    margin-bottom: 0.4rem;
+  }
+
   .currentAssetsTitle {
     font-size: 0.75rem;
+  }
+
+  .toggleButton {
+    padding: 0.1rem;
   }
 
   .currentAssetsList {

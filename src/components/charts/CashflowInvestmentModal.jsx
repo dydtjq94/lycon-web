@@ -16,6 +16,7 @@ function CashflowInvestmentModal({
   currentRule = null, // { allocations: [{targetType, targetId, ratio}] }
   positiveYears = [], // 양수 현금흐름이 있는 년도 목록
   onSave,
+  onYearChange, // 연도 변경 콜백 (년도 이동 시 호출)
 }) {
   // 선택된 년도들 (기본: 현재 년도만)
   const [selectedYears, setSelectedYears] = useState([year]);
@@ -78,19 +79,44 @@ function CashflowInvestmentModal({
     }
   }, [currentRule, isOpen, year, positiveYears]);
 
-  // ESC 키로 모달 닫기
+  // ESC 키로 모달 닫기 및 방향키로 연도 이동
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleEscKey = (e) => {
+    const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         onClose();
+      } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        // 방향키로 연도 이동 (양수 현금흐름이 있는 년도만)
+        if (!positiveYears || positiveYears.length === 0) return;
+
+        const currentIndex = positiveYears.findIndex(
+          (item) => item.year === year
+        );
+        if (currentIndex === -1) return;
+
+        let newIndex = currentIndex;
+        if (e.key === "ArrowRight") {
+          // 다음 연도로 이동
+          newIndex = currentIndex + 1;
+        } else if (e.key === "ArrowLeft") {
+          // 이전 연도로 이동
+          newIndex = currentIndex - 1;
+        }
+
+        // 범위 체크
+        if (newIndex >= 0 && newIndex < positiveYears.length) {
+          const newYearData = positiveYears[newIndex];
+          if (onYearChange) {
+            onYearChange(newYearData.year, newYearData.amount);
+          }
+        }
       }
     };
 
-    window.addEventListener("keydown", handleEscKey);
-    return () => window.removeEventListener("keydown", handleEscKey);
-  }, [isOpen, onClose]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose, year, positiveYears, onYearChange]);
 
   if (!isOpen) return null;
 
