@@ -35,20 +35,6 @@ function ProfilePasswordModal({ isOpen, onClose, onSubmit, profileName, profileI
     }
   }, [isOpen, profileId, profileName]);
 
-  // ESC 키로 모달 닫기
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape" && isOpen) {
-        handleClose();
-      }
-    };
-
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
-    }
-  }, [isOpen]);
-
   /**
    * 모달 닫기
    */
