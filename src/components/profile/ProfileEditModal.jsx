@@ -22,7 +22,6 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
     targetAssets: "",
     currentCash: "",
     status: "sample", // 프로필 상태 (샘플/제작중/상담 전/상담 후)
-    password: "", // 프로필 접근 패스워드
     hasSpouse: false,
     spouseName: "",
     spouseBirthYear: "",
@@ -82,7 +81,6 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         targetAssets: profileData.targetAssets || "",
         currentCash: profileData.currentCash || "",
         status: profileData.status || "sample", // 기본값: 샘플
-        password: profileData.password || "", // 프로필 패스워드
         hasSpouse: profileData.hasSpouse || false,
         spouseName: profileData.spouseName || "",
         spouseBirthYear: profileData.spouseBirthYear || "",
@@ -426,7 +424,6 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         currentCash: parseInt(formData.currentCash) || 0,
         targetAssets: parseInt(formData.targetAssets) || 0,
         status: formData.status || "sample", // 프로필 상태 저장
-        password: formData.password.trim() || "", // 프로필 패스워드 저장
         currentKoreanAge: calculateKoreanAge(formData.birthYear),
         hasSpouse: formData.hasSpouse,
         spouseName: formData.hasSpouse ? formData.spouseName : "",
@@ -758,37 +755,6 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
                   {errors.currentCash && (
                     <span className={styles.errorText}>
                       {errors.currentCash}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* 프로필 접근 패스워드 */}
-              <div className={styles.fieldGrid}>
-                <div className={styles.field}>
-                  <label htmlFor="password" className={styles.label}>
-                    🔒 프로필 접근 패스워드
-                  </label>
-                  <input
-                    type="text"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className={`${styles.input} ${
-                      errors.password ? styles.inputError : ""
-                    }`}
-                    placeholder="대시보드 접근용 패스워드 (선택)"
-                    disabled={isSubmitting}
-                  />
-                  <div className={styles.passwordHelper}>
-                    이 패스워드를 설정하면 다른 사람이 대시보드를 조회하려면 패스워드를 입력해야 합니다. 비워두면 누구나 접근 가능합니다.
-                  </div>
-                  {errors.password && (
-                    <span className={styles.errorText}>
-                      {errors.password}
                     </span>
                   )}
                 </div>
