@@ -121,74 +121,36 @@ function ProfilePasswordModal({ isOpen, onClose, onSubmit, profileName, profileI
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay} onClick={handleClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>🔒 프로필 접근 권한 확인</h2>
-          <button
-            type="button"
-            className={styles.closeButton}
-            onClick={handleClose}
-            disabled={loading}
-            aria-label="닫기"
-          >
-            ✕
-          </button>
-        </div>
+    <div className={styles.modalOverlay}>
+      <div className={styles.modalContent}>
+        <h2 className={styles.modalTitle}>프로필 접근 확인</h2>
 
-        <div className={styles.modalBody}>
-          <p className={styles.infoText}>
-            <strong>{profileName}</strong> 프로필에 접근하려면
-            <br />
-            패스워드를 입력해주세요.
-          </p>
-
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="profile-password" className={styles.label}>
-                패스워드
-              </label>
-              <input
-                id="profile-password"
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError(""); // 입력 시 에러 메시지 초기화
-                }}
-                className={styles.input}
-                placeholder="프로필 패스워드를 입력하세요"
-                disabled={loading}
-                autoFocus
-              />
-            </div>
-
-            {error && <div className={styles.errorMessage}>{error}</div>}
-
-            <div className={styles.buttonGroup}>
-              <button
-                type="button"
-                className={styles.cancelButton}
-                onClick={handleClose}
-                disabled={loading}
-              >
-                취소
-              </button>
-              <button
-                type="submit"
-                className={styles.submitButton}
-                disabled={loading || !password.trim()}
-              >
-                {loading ? "확인 중..." : "확인"}
-              </button>
-            </div>
-          </form>
-
-          <div className={styles.helpText}>
-            <p>💡 패스워드를 입력하면 대시보드를 조회할 수 있습니다.</p>
-            <p>수정하려면 회원가입이 필요합니다.</p>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <input
+              id="profile-password"
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(""); // 입력 시 에러 메시지 초기화
+              }}
+              className={styles.input}
+              placeholder="패스워드를 입력하세요"
+              disabled={loading}
+              autoFocus
+            />
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={loading || !password.trim()}
+            >
+              {loading ? "확인 중..." : "확인"}
+            </button>
           </div>
-        </div>
+
+          {error && <div className={styles.errorMessage}>{error}</div>}
+        </form>
       </div>
     </div>
   );
