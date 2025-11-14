@@ -88,10 +88,19 @@ function PreConsultPage() {
   // Mixpanel: 페이지 진입 트래킹
   useEffect(() => {
     if (!loading && profileData) {
+      const currentYear = new Date().getFullYear();
+      const currentAge = currentYear - profileData.birthYear;
+
       trackPageView("사전 상담 페이지", {
         profileId,
         profileName: profileData.name,
+        birthYear: profileData.birthYear,
+        currentAge: currentAge,
+        retirementAge: profileData.retirementAge,
+        profileStatus: profileData.status || "unknown",
         currentStep,
+        totalSteps: 5,
+        stepProgress: `${currentStep}/5`,
       });
     }
   }, [loading, profileData, profileId, currentStep]);

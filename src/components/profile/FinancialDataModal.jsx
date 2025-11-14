@@ -79,7 +79,7 @@ function FinancialDataModal({
     // Mixpanel 트래킹: 모달 오픈
     try {
       if (typeof window !== "undefined" && window.mixpanel) {
-        window.mixpanel.track("FinancialDataModal Opened");
+        window.mixpanel.track("재무 데이터 모달 열림");
       }
     } catch (_) {}
     const handleKeyDown = (event) => {

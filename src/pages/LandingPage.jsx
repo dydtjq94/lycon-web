@@ -14,7 +14,7 @@ function LandingPage() {
   const handleStartService = () => {
     // Mixpanel 트래킹: 서비스 시작 버튼 클릭
     if (window.mixpanel) {
-      window.mixpanel.track("Landing - Start Service Clicked");
+      window.mixpanel.track("랜딩 - 서비스 시작 클릭");
     }
 
     navigate("/consult");
@@ -24,7 +24,7 @@ function LandingPage() {
   const handleLogin = () => {
     // Mixpanel 트래킹: 로그인 버튼 클릭
     if (window.mixpanel) {
-      window.mixpanel.track("Landing - Login Clicked");
+      window.mixpanel.track("랜딩 - 로그인 클릭");
     }
 
     navigate("/login");

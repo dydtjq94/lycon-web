@@ -72,7 +72,7 @@ export const setUserProperties = (properties) => {
  * @param {Object} additionalProperties - 추가 속성 (선택사항)
  */
 export const trackPageView = (pageName, additionalProperties = {}) => {
-  trackEvent("Page View", {
+  trackEvent("페이지 뷰", {
     page: pageName,
     ...additionalProperties,
   });

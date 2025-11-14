@@ -30,12 +30,25 @@ function ProfileListPage() {
   useEffect(() => {
     // 로딩이 완료되고 프로필 목록이 로드된 후 이벤트 트래킹
     if (!loading) {
-      trackPageView("Consult 화면", {
+      const sampleCount = profiles.filter((p) => p.status === "sample").length;
+      const consultingCount = profiles.filter(
+        (p) => p.status === "consulting"
+      ).length;
+      const completedCount = profiles.filter(
+        (p) => p.status === "completed"
+      ).length;
+
+      trackPageView("프로필 목록 페이지 (Consult)", {
         profileCount: profiles.length,
         hasProfiles: profiles.length > 0,
+        sampleCount: sampleCount,
+        consultingCount: consultingCount,
+        completedCount: completedCount,
+        isAdmin: isAdmin,
+        adminEmail: admin?.email || null,
       });
     }
-  }, [loading, profiles.length]);
+  }, [loading, profiles.length, isAdmin, admin]);
 
   const loadProfiles = async () => {
     try {

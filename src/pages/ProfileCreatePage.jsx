@@ -14,6 +14,7 @@ import {
 import { simulationService } from "../services/simulationService";
 import { formatAmountForChart } from "../utils/format";
 import { buildChecklistTemplateItems } from "../constants/profileChecklist";
+import { identifyUser, setUserProperties, trackEvent } from "../libs/mixpanel";
 import styles from "./ProfileCreatePage.module.css";
 
 /**
@@ -810,6 +811,42 @@ function ProfileCreatePage() {
       } catch (error) {
         console.error("기본 부동산 데이터 생성 오류:", error);
         // 기본 부동산 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
+      }
+
+      // Mixpanel에 사용자 등록 (프로필 ID로 식별)
+      try {
+        identifyUser(createdProfile.id);
+        setUserProperties({
+          $name: formData.name.trim(),
+          profileName: formData.name.trim(),
+          birthYear: birthYear,
+          age: currentKoreanAge,
+          retirementAge: parseInt(formData.retirementAge),
+          retirementYear: retirementYear,
+          hasSpouse: formData.spouse !== null,
+          childrenCount: formData.children.filter(
+            (child) => child.name.trim() && child.birthYear
+          ).length,
+          parentsCount: formData.parents.filter(
+            (parent) => parent.name.trim() && parent.birthYear
+          ).length,
+          createdAt: new Date().toISOString(),
+          profileStatus: "sample",
+        });
+        trackEvent("프로필 생성 완료", {
+          profileId: createdProfile.id,
+          profileName: formData.name.trim(),
+          age: currentKoreanAge,
+          retirementAge: parseInt(formData.retirementAge),
+          hasSpouse: formData.spouse !== null,
+          childrenCount: formData.children.filter(
+            (child) => child.name.trim() && child.birthYear
+          ).length,
+        });
+        console.log("Mixpanel 사용자 등록 완료:", createdProfile.id);
+      } catch (error) {
+        console.error("Mixpanel 사용자 등록 오류:", error);
+        // Mixpanel 등록 실패해도 프로필은 생성되었으므로 계속 진행
       }
 
       // 대시보드로 이동

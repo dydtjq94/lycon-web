@@ -384,9 +384,19 @@ function DashboardPage() {
                 setHasProfileAccess(true);
 
                 // Mixpanel: localStorage 패스워드로 접근 성공
+                const currentYear = new Date().getFullYear();
+                const currentAge = calculateKoreanAge(
+                  profile.birthYear,
+                  currentYear
+                );
                 trackEvent("프로필 자동 접근 (localStorage)", {
                   profileId,
                   profileName: profile.name,
+                  birthYear: profile.birthYear,
+                  currentAge: currentAge,
+                  retirementAge: profile.retirementAge,
+                  profileStatus: profile.status || "unknown",
+                  hasSpouse: profile.hasSpouse || false,
                 });
               } else {
                 // 패스워드가 없거나 일치하지 않으면 모달 표시
@@ -631,13 +641,36 @@ function DashboardPage() {
   // Mixpanel: Dashboard 페이지 진입 이벤트
   useEffect(() => {
     if (profileData && !loading) {
-      trackPageView("Dashboard 페이지", {
+      const currentYear = new Date().getFullYear();
+      const currentAge = calculateKoreanAge(profileData.birthYear, currentYear);
+      const childrenCount = profileData.familyMembers
+        ? profileData.familyMembers.filter((m) => m.relationship === "자녀")
+            .length
+        : 0;
+      const parentsCount = profileData.familyMembers
+        ? profileData.familyMembers.filter(
+            (m) => m.relationship === "부" || m.relationship === "모"
+          ).length
+        : 0;
+
+      trackPageView("대시보드 페이지", {
         profileId: profileId,
         profileName: profileData.name,
+        birthYear: profileData.birthYear,
+        currentAge: currentAge,
         retirementAge: profileData.retirementAge,
+        retirementYear: profileData.retirementYear,
+        profileStatus: profileData.status || "unknown",
+        hasSpouse: profileData.hasSpouse || false,
+        spouseName: profileData.spouseName || "",
+        childrenCount: childrenCount,
+        parentsCount: parentsCount,
         simulationCount: simulations.length,
+        activeSimulation: simulations.find((s) => s.id === activeSimulationId)
+          ?.title,
         hasEditPermission: hasEditPermission,
         isAdmin: isAdmin,
+        viewerType: isAdmin ? "관리자" : userId ? "로그인 사용자" : "비로그인",
       });
     }
   }, [
@@ -645,8 +678,10 @@ function DashboardPage() {
     loading,
     profileId,
     simulations.length,
+    activeSimulationId,
     hasEditPermission,
     isAdmin,
+    userId,
   ]);
 
   // useMemo를 사용해 시뮬레이션 데이터를 메모이제이션하여 불필요한 재계산 방지
@@ -781,6 +816,20 @@ function DashboardPage() {
       // 접근 권한 부여
       setHasProfileAccess(true);
       setIsPasswordModalOpen(false);
+
+      // Mixpanel: 패스워드 입력 후 프로필 접근 성공
+      const currentYear = new Date().getFullYear();
+      const currentAge = calculateKoreanAge(profileData.birthYear, currentYear);
+      trackEvent("프로필 패스워드 접근 성공", {
+        profileId,
+        profileName: profileData.name,
+        birthYear: profileData.birthYear,
+        currentAge: currentAge,
+        retirementAge: profileData.retirementAge,
+        profileStatus: profileData.status || "unknown",
+        hasSpouse: profileData.hasSpouse || false,
+        accessMethod: "패스워드 입력",
+      });
 
       return true;
     }
@@ -2024,7 +2073,21 @@ function DashboardPage() {
   );
 
   const handleSimulationTabChange = (simulationId) => {
+    const selectedSimulation = simulations.find((s) => s.id === simulationId);
     setActiveSimulationId(simulationId);
+
+    // Mixpanel: 시뮬레이션 전환 이벤트
+    if (selectedSimulation) {
+      trackEvent("시뮬레이션 전환", {
+        profileId,
+        profileName: profileData?.name,
+        fromSimulation:
+          simulations.find((s) => s.id === activeSimulationId)?.title || "없음",
+        toSimulation: selectedSimulation.title,
+        toSimulationId: simulationId,
+        isDefault: selectedSimulation.isDefault || false,
+      });
+    }
   };
 
   const openProfilePanel = (tab) => {
