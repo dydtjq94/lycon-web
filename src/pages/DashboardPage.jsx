@@ -48,6 +48,7 @@ import DebtList from "../components/debt/DebtList";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
 import ProfileSummary from "../components/profile/ProfileSummary";
 import FinancialDataModal from "../components/profile/FinancialDataModal";
+import ProfilePasswordModal from "../components/profile/ProfilePasswordModal";
 import CalculatorModal from "../components/common/CalculatorModal";
 import SimulationCompareModal from "../components/simulation/SimulationCompareModal";
 import ProfileChecklistPanel from "../components/checklist/ProfileChecklistPanel";
@@ -116,6 +117,10 @@ function DashboardPage() {
   const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // 프로필 패스워드 관련 state
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false); // 패스워드 입력 모달
+  const [hasProfileAccess, setHasProfileAccess] = useState(false); // 프로필 접근 권한 (패스워드 입력 완료)
   const [activeChart, setActiveChart] = useState("assets"); // 기본값: 순 자산 규모
   const [simulationData, setSimulationData] = useState({
     cashflow: [],
@@ -361,6 +366,41 @@ function DashboardPage() {
           if (profile) {
             setProfileData(profile);
             setProfileMemo(profile.memo || "");
+
+            // 프로필 패스워드 체크
+            // 1. 관리자나 사용자로 로그인한 경우는 패스워드 체크 스킵
+            if (adminId || userId) {
+              setHasProfileAccess(true);
+            }
+            // 2. 프로필에 패스워드가 설정되어 있는 경우
+            else if (profile.password && profile.password.trim()) {
+              // localStorage에 해당 프로필의 접근 권한이 있는지 확인
+              const savedPassword = localStorage.getItem(
+                `profileAccess_${profileId}`
+              );
+
+              if (savedPassword === profile.password) {
+                // 패스워드가 일치하면 접근 허용
+                setHasProfileAccess(true);
+
+                // Mixpanel: localStorage 패스워드로 접근 성공
+                trackEvent("프로필 자동 접근 (localStorage)", {
+                  profileId,
+                  profileName: profile.name,
+                });
+              } else {
+                // 패스워드가 없거나 일치하지 않으면 모달 표시
+                setHasProfileAccess(false);
+                setIsPasswordModalOpen(true);
+              }
+            }
+            // 3. 패스워드가 설정되어 있지 않은 경우 -> 패스워드 입력 필수
+            else {
+              // 패스워드가 설정되지 않았어도 입력 모달 표시
+              setHasProfileAccess(false);
+              setIsPasswordModalOpen(true);
+            }
+
             // generateSimulationData는 별도 useEffect에서 처리
           } else {
             navigate("/consult");
@@ -384,7 +424,7 @@ function DashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [profileId, navigate]);
+  }, [profileId, navigate, adminId, userId]);
 
   // 사이드바가 열릴 때 배경 스크롤 막기
   useEffect(() => {
@@ -719,6 +759,41 @@ function DashboardPage() {
   // 프로필 수정 모달 닫기
   const handleCloseProfileEditModal = () => {
     setIsProfileEditModalOpen(false);
+  };
+
+  /**
+   * 프로필 패스워드 제출 핸들러
+   * @param {string} password - 사용자가 입력한 패스워드
+   * @returns {Promise<boolean>} 패스워드가 맞으면 true, 틀리면 false
+   */
+  const handleSubmitPassword = async (password) => {
+    // 패스워드가 설정되지 않은 프로필인 경우
+    if (!profileData || !profileData.password || !profileData.password.trim()) {
+      // 패스워드가 없으면 접근 불가 (관리자가 설정해야 함)
+      return false;
+    }
+
+    // 패스워드가 맞는지 확인
+    if (password === profileData.password) {
+      // localStorage에 저장 (같은 브라우저에서는 재입력 불필요)
+      localStorage.setItem(`profileAccess_${profileId}`, password);
+
+      // 접근 권한 부여
+      setHasProfileAccess(true);
+      setIsPasswordModalOpen(false);
+
+      return true;
+    }
+
+    return false;
+  };
+
+  /**
+   * 프로필 패스워드 모달 닫기 (취소)
+   */
+  const handleClosePasswordModal = () => {
+    // 패스워드 입력 없이 모달을 닫으면 /consult로 이동
+    navigate("/consult");
   };
 
   // 프로필 수정 저장
@@ -2890,6 +2965,22 @@ ${JSON.stringify(analysisData, null, 2)}`;
     );
   }
 
+  // 패스워드 입력 전에는 대시보드 내용을 숨기고 패스워드 모달만 표시
+  if (!hasProfileAccess) {
+    return (
+      <div className={styles.container}>
+        {/* 프로필 패스워드 입력 모달 */}
+        <ProfilePasswordModal
+          isOpen={isPasswordModalOpen}
+          onClose={handleClosePasswordModal}
+          onSubmit={handleSubmitPassword}
+          profileName={profileData?.name || ""}
+          profileId={profileId}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       {/* 상단 프로필 정보 */}
@@ -3025,7 +3116,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
             className={styles.iconButton}
             onClick={() => setIsCalculatorModalOpen(true)}
           >
-            <span className={styles.buttonText}>목표 계산기</span>
+            <span className={styles.buttonText}>계산기</span>
           </button>
           <button
             className={styles.iconButton}

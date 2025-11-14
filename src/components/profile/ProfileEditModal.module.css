@@ -245,6 +245,18 @@
   margin-left: 12px;
 }
 
+/* 패스워드 헬퍼 텍스트 */
+.passwordHelper {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border-left: 3px solid #3b82f6;
+}
+
 /* 체크박스 */
 .checkboxLabel {
   display: flex;
