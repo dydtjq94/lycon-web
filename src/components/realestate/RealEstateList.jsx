@@ -49,7 +49,7 @@ const RealEstateList = ({
               연평균 가치 상승률: {realEstate.growthRate.toFixed(2)}%
             </div>
             <div className={styles.realEstatePeriod}>
-              {new Date().getFullYear()}년 - {realEstate.endYear}년
+              {realEstate.startYear}년 - {realEstate.endYear}년
             </div>
 
             {realEstate.hasRentalIncome && (
