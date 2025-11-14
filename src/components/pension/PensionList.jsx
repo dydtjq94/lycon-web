@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import ContextMenu from "../common/ContextMenu";
 import styles from "./PensionList.module.css";
 
 /**
@@ -8,8 +9,21 @@ function PensionList({
   pensions,
   onEdit = () => {},
   onDelete = () => {},
+  onCopy = () => {},
   isReadOnly = false,
 }) {
+  const [contextMenu, setContextMenu] = useState(null);
+
+  // 우클릭 핸들러
+  const handleContextMenu = (e, pension) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      pension,
+    });
+  };
   const getTypeLabel = (type) => {
     switch (type) {
       case "national":
@@ -66,6 +80,7 @@ function PensionList({
           onClick={() => {
             onEdit(pension);
           }}
+          onContextMenu={(e) => handleContextMenu(e, pension)}
         >
           <div className={styles.pensionHeader}>
             <div className={styles.pensionTitle}>
@@ -78,15 +93,18 @@ function PensionList({
                 </span>
               )}
             </div>
-            <button
-              className={styles.deleteButton}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(pension.id);
-              }}
-            >
-              ×
-            </button>
+            <div className={styles.pensionActions}>
+              <button
+                className={styles.deleteButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(pension.id);
+                }}
+                title="삭제"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
           <div className={styles.pensionContent}>
@@ -158,6 +176,33 @@ function PensionList({
           </div>
         </div>
       ))}
+
+      {/* 컨텍스트 메뉴 */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              icon: "✏️",
+              label: "수정",
+              onClick: () => onEdit(contextMenu.pension),
+            },
+            {
+              icon: "📋",
+              label: "복사해서 추가",
+              onClick: () => onCopy(contextMenu.pension),
+            },
+            {
+              icon: "🗑️",
+              label: "삭제",
+              className: "danger",
+              onClick: () => onDelete(contextMenu.pension.id),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

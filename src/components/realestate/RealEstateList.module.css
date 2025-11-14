@@ -48,6 +48,11 @@
   word-break: break-word;
 }
 
+.realEstateActions {
+  display: flex;
+  gap: 0.25rem;
+}
+
 .deleteButton {
   background: none;
   border: none;

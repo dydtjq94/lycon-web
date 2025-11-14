@@ -86,6 +86,11 @@
   margin-top: 0.5rem;
 }
 
+.savingActions {
+  display: flex;
+  gap: 0.25rem;
+}
+
 .deleteButton {
   background: none;
   border: none;

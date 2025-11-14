@@ -1,13 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import { formatAmount } from "../../utils/format";
+import ContextMenu from "../common/ContextMenu";
 import styles from "./RealEstateList.module.css";
 
 const RealEstateList = ({
   realEstates,
   onEdit = () => {},
   onDelete = () => {},
+  onCopy = () => {},
   isReadOnly = false,
 }) => {
+  const [contextMenu, setContextMenu] = useState(null);
+
+  // 우클릭 핸들러
+  const handleContextMenu = (e, realEstate) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      realEstate,
+    });
+  };
+
   if (!realEstates || realEstates.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -25,20 +40,24 @@ const RealEstateList = ({
           onClick={() => {
             onEdit(realEstate);
           }}
+          onContextMenu={(e) => handleContextMenu(e, realEstate)}
         >
           <div className={styles.realEstateHeader}>
             <div className={styles.realEstateTitle}>
               <span className={styles.title}>{realEstate.title}</span>
             </div>
-            <button
-              className={styles.deleteButton}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(realEstate.id);
-              }}
-            >
-              ×
-            </button>
+            <div className={styles.realEstateActions}>
+              <button
+                className={styles.deleteButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(realEstate.id);
+                }}
+                title="삭제"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
           <div className={styles.realEstateContent}>
@@ -85,6 +104,33 @@ const RealEstateList = ({
           </div>
         </div>
       ))}
+
+      {/* 컨텍스트 메뉴 */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              icon: "✏️",
+              label: "수정",
+              onClick: () => onEdit(contextMenu.realEstate),
+            },
+            {
+              icon: "📋",
+              label: "복사해서 추가",
+              onClick: () => onCopy(contextMenu.realEstate),
+            },
+            {
+              icon: "🗑️",
+              label: "삭제",
+              className: "danger",
+              onClick: () => onDelete(contextMenu.realEstate.id),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 };

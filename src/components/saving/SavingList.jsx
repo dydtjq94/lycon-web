@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { formatAmount } from "../../utils/format";
+import ContextMenu from "../common/ContextMenu";
 import styles from "./SavingList.module.css";
 
 /**
@@ -9,8 +10,22 @@ function SavingList({
   savings,
   onEdit = () => {},
   onDelete = () => {},
+  onCopy = () => {},
   isReadOnly = false,
 }) {
+  const [contextMenu, setContextMenu] = useState(null);
+
+  // 우클릭 핸들러
+  const handleContextMenu = (e, saving) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      saving,
+    });
+  };
+
   if (!savings || savings.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -28,20 +43,23 @@ function SavingList({
           onClick={() => {
             onEdit(saving);
           }}
+          onContextMenu={(e) => handleContextMenu(e, saving)}
         >
           <div className={styles.savingInfo}>
             <div className={styles.savingHeader}>
               <h4 className={styles.savingTitle}>{saving.title}</h4>
-              <button
-                className={styles.deleteButton}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(saving.id);
-                }}
-                title="삭제"
-              >
-                ×
-              </button>
+              <div className={styles.savingActions}>
+                <button
+                  className={styles.deleteButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(saving.id);
+                  }}
+                  title="삭제"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className={styles.savingContent}>
@@ -82,6 +100,33 @@ function SavingList({
           </div>
         </div>
       ))}
+
+      {/* 컨텍스트 메뉴 */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              icon: "✏️",
+              label: "수정",
+              onClick: () => onEdit(contextMenu.saving),
+            },
+            {
+              icon: "📋",
+              label: "복사해서 추가",
+              onClick: () => onCopy(contextMenu.saving),
+            },
+            {
+              icon: "🗑️",
+              label: "삭제",
+              className: "danger",
+              onClick: () => onDelete(contextMenu.saving.id),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

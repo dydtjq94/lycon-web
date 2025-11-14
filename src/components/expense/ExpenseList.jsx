@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { formatAmount } from "../../utils/format";
+import ContextMenu from "../common/ContextMenu";
 import styles from "./ExpenseList.module.css";
 
 /**
@@ -9,8 +10,22 @@ function ExpenseList({
   expenses,
   onEdit = () => {},
   onDelete = () => {},
+  onCopy = () => {},
   isReadOnly = false,
 }) {
+  const [contextMenu, setContextMenu] = useState(null);
+
+  // 우클릭 핸들러
+  const handleContextMenu = (e, expense) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      expense,
+    });
+  };
+
   if (!expenses || expenses.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -28,6 +43,7 @@ function ExpenseList({
           onClick={() => {
             onEdit(expense);
           }}
+          onContextMenu={(e) => handleContextMenu(e, expense)}
         >
           <div className={styles.expenseInfo}>
             <div className={styles.expenseHeader}>
@@ -63,6 +79,33 @@ function ExpenseList({
           </div>
         </div>
       ))}
+
+      {/* 컨텍스트 메뉴 */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              icon: "✏️",
+              label: "수정",
+              onClick: () => onEdit(contextMenu.expense),
+            },
+            {
+              icon: "📋",
+              label: "복사해서 추가",
+              onClick: () => onCopy(contextMenu.expense),
+            },
+            {
+              icon: "🗑️",
+              label: "삭제",
+              className: "danger",
+              onClick: () => onDelete(contextMenu.expense.id),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

@@ -861,6 +861,15 @@ function DashboardPage() {
     setIsIncomeModalOpen(true);
   };
 
+  const handleCopyIncome = (income) => {
+    if (!checkEditPermission("소득 복사")) return;
+    trackEvent("소득 복사", { profileId });
+    const { id, ...copiedData } = income; // id 제거
+    setEditingIncome(null);
+    setInitialIncomeData(copiedData); // 복사된 데이터를 initialData로 설정
+    setIsIncomeModalOpen(true);
+  };
+
   const handleSaveIncome = async (incomeData) => {
     try {
       if (editingIncome) {
@@ -986,6 +995,15 @@ function DashboardPage() {
     if (!checkEditPermission("지출 수정")) return;
     setEditingExpense(expense);
     setInitialExpenseData(null); // initialData 초기화
+    setIsExpenseModalOpen(true);
+  };
+
+  const handleCopyExpense = (expense) => {
+    if (!checkEditPermission("지출 복사")) return;
+    trackEvent("지출 복사", { profileId });
+    const { id, ...copiedData } = expense; // id 제거
+    setEditingExpense(null);
+    setInitialExpenseData(copiedData); // 복사된 데이터를 initialData로 설정
     setIsExpenseModalOpen(true);
   };
 
@@ -1184,6 +1202,15 @@ function DashboardPage() {
     setIsSavingModalOpen(true);
   };
 
+  const handleCopySaving = (saving) => {
+    if (!checkEditPermission("저축 복사")) return;
+    trackEvent("저축 복사", { profileId });
+    const { id, ...copiedData } = saving; // id 제거
+    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
+    setEditingSaving({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
+    setIsSavingModalOpen(true);
+  };
+
   // 저축/투자 삭제 핸들러
   const handleDeleteSaving = async (savingId) => {
     if (!checkEditPermission("저축 삭제")) return;
@@ -1211,6 +1238,15 @@ function DashboardPage() {
   const handleEditPension = (pension) => {
     if (!checkEditPermission("연금 수정")) return;
     setEditingPension(pension);
+    setIsPensionModalOpen(true);
+  };
+
+  const handleCopyPension = (pension) => {
+    if (!checkEditPermission("연금 복사")) return;
+    trackEvent("연금 복사", { profileId });
+    const { id, ...copiedData } = pension; // id 제거
+    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
+    setEditingPension({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
     setIsPensionModalOpen(true);
   };
 
@@ -1327,6 +1363,15 @@ function DashboardPage() {
   const handleEditRealEstate = (realEstate) => {
     if (!checkEditPermission("부동산 수정")) return;
     setEditingRealEstate(realEstate);
+    setIsRealEstateModalOpen(true);
+  };
+
+  const handleCopyRealEstate = (realEstate) => {
+    if (!checkEditPermission("부동산 복사")) return;
+    trackEvent("부동산 복사", { profileId });
+    const { id, ...copiedData } = realEstate; // id 제거
+    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
+    setEditingRealEstate({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
     setIsRealEstateModalOpen(true);
   };
 
@@ -1455,6 +1500,15 @@ function DashboardPage() {
     setIsAssetModalOpen(true);
   };
 
+  const handleCopyAsset = (asset) => {
+    if (!checkEditPermission("자산 복사")) return;
+    trackEvent("자산 복사", { profileId });
+    const { id, ...copiedData } = asset; // id 제거
+    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
+    setEditingAsset({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
+    setIsAssetModalOpen(true);
+  };
+
   const handleSaveAsset = async (assetData) => {
     try {
       if (editingAsset) {
@@ -1557,6 +1611,15 @@ function DashboardPage() {
   const handleEditDebt = (debt) => {
     if (!checkEditPermission("부채 수정")) return;
     setEditingDebt(debt);
+    setIsDebtModalOpen(true);
+  };
+
+  const handleCopyDebt = (debt) => {
+    if (!checkEditPermission("부채 복사")) return;
+    trackEvent("부채 복사", { profileId });
+    const { id, ...copiedData } = debt; // id 제거
+    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
+    setEditingDebt({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
     setIsDebtModalOpen(true);
   };
 
@@ -3174,6 +3237,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   <IncomeList
                     incomes={incomes}
                     onEdit={handleEditIncome}
+                    onCopy={handleCopyIncome}
                     onDelete={handleDeleteIncome}
                     isReadOnly={false}
                   />
@@ -3181,6 +3245,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   <ExpenseList
                     expenses={expenses}
                     onEdit={handleEditExpense}
+                    onCopy={handleCopyExpense}
                     onDelete={handleDeleteExpense}
                     isReadOnly={false}
                   />
@@ -3188,6 +3253,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   <SavingList
                     savings={savings}
                     onEdit={handleEditSaving}
+                    onCopy={handleCopySaving}
                     onDelete={handleDeleteSaving}
                     isReadOnly={false}
                   />
@@ -3195,6 +3261,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   <PensionList
                     pensions={pensions}
                     onEdit={handleEditPension}
+                    onCopy={handleCopyPension}
                     onDelete={handleDeletePension}
                     isReadOnly={false}
                   />
@@ -3202,6 +3269,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   <RealEstateList
                     realEstates={realEstates}
                     onEdit={handleEditRealEstate}
+                    onCopy={handleCopyRealEstate}
                     onDelete={handleDeleteRealEstate}
                     isReadOnly={false}
                   />
@@ -3209,6 +3277,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   <AssetList
                     assets={assets}
                     onEdit={handleEditAsset}
+                    onCopy={handleCopyAsset}
                     onDelete={handleDeleteAsset}
                     isReadOnly={false}
                   />
@@ -3216,6 +3285,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
                   <DebtList
                     debts={debts}
                     onEdit={handleEditDebt}
+                    onCopy={handleCopyDebt}
                     onDelete={handleDeleteDebt}
                     isReadOnly={false}
                   />

@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { formatAmount } from "../../utils/format";
+import ContextMenu from "../common/ContextMenu";
 import styles from "./DebtList.module.css";
 
 /**
@@ -9,8 +10,22 @@ function DebtList({
   debts,
   onEdit = () => {},
   onDelete = () => {},
+  onCopy = () => {},
   isReadOnly = false,
 }) {
+  const [contextMenu, setContextMenu] = useState(null);
+
+  // 우클릭 핸들러
+  const handleContextMenu = (e, debt) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      debt,
+    });
+  };
+
   if (!debts || debts.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -28,6 +43,7 @@ function DebtList({
           onClick={() => {
             onEdit(debt);
           }}
+          onContextMenu={(e) => handleContextMenu(e, debt)}
         >
           <div className={styles.debtInfo}>
             <div className={styles.debtHeader}>
@@ -78,6 +94,33 @@ function DebtList({
           </div>
         </div>
       ))}
+
+      {/* 컨텍스트 메뉴 */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              icon: "✏️",
+              label: "수정",
+              onClick: () => onEdit(contextMenu.debt),
+            },
+            {
+              icon: "📋",
+              label: "복사해서 추가",
+              onClick: () => onCopy(contextMenu.debt),
+            },
+            {
+              icon: "🗑️",
+              label: "삭제",
+              className: "danger",
+              onClick: () => onDelete(contextMenu.debt.id),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { formatAmount } from "../../utils/format";
+import ContextMenu from "../common/ContextMenu";
 import styles from "./AssetList.module.css";
 
 /**
@@ -10,8 +11,22 @@ function AssetList({
   assets,
   onEdit = () => {},
   onDelete = () => {},
+  onCopy = () => {},
   isReadOnly = false,
 }) {
+  const [contextMenu, setContextMenu] = useState(null);
+
+  // 우클릭 핸들러
+  const handleContextMenu = (e, asset) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      asset,
+    });
+  };
+
   if (!assets || assets.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -29,6 +44,7 @@ function AssetList({
           onClick={() => {
             onEdit(asset);
           }}
+          onContextMenu={(e) => handleContextMenu(e, asset)}
         >
           <div className={styles.assetInfo}>
             <div className={styles.assetHeader}>
@@ -69,6 +85,33 @@ function AssetList({
           </div>
         </div>
       ))}
+
+      {/* 컨텍스트 메뉴 */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              icon: "✏️",
+              label: "수정",
+              onClick: () => onEdit(contextMenu.asset),
+            },
+            {
+              icon: "📋",
+              label: "복사해서 추가",
+              onClick: () => onCopy(contextMenu.asset),
+            },
+            {
+              icon: "🗑️",
+              label: "삭제",
+              className: "danger",
+              onClick: () => onDelete(contextMenu.asset.id, contextMenu.asset.title),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }
