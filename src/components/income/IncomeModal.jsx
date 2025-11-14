@@ -288,7 +288,7 @@ function IncomeModal({
   };
 
   // 폼 제출
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -311,8 +311,16 @@ function IncomeModal({
           : [],
     };
 
-    onSave(incomeData);
-    onClose();
+    // 수정 모드일 때는 id를 포함시켜야 함
+    if (editData && editData.id) {
+      incomeData.id = editData.id;
+    }
+
+    await onSave(incomeData);
+    // 모달 닫기는 외부에서 처리 (SimulationCompareModal에서 onClose를 호출)
+    if (!editData) {
+      handleClose(); // 추가 모드일 때만 닫기
+    }
   };
 
   // 모달이 닫힐 때 폼 초기화
@@ -334,7 +342,7 @@ function IncomeModal({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay} onClick={handleClose}>
+    <div className={styles.modalOverlay}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>

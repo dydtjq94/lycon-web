@@ -307,7 +307,7 @@ function SavingModal({
   };
 
   // 폼 제출 핸들러
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -344,8 +344,16 @@ function SavingModal({
           : [],
     };
 
-    onSave(savingData);
-    onClose();
+    // 수정 모드일 때는 id를 포함시켜야 함
+    if (editData && editData.id) {
+      savingData.id = editData.id;
+    }
+
+    await onSave(savingData);
+    // 모달 닫기는 외부에서 처리 (SimulationCompareModal에서 onClose를 호출)
+    if (!editData) {
+      handleClose(); // 추가 모드일 때만 닫기
+    }
   };
 
   // 모달 닫기 핸들러
@@ -373,7 +381,7 @@ function SavingModal({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay} onClick={handleClose}>
+    <div className={styles.modalOverlay}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>

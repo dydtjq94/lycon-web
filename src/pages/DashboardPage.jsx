@@ -2252,6 +2252,56 @@ function DashboardPage() {
     }
   };
 
+  // 시뮬레이션 비교 데이터 새로고침 함수
+  const handleRefreshComparisonData = async () => {
+    if (!defaultSimulationEntry) return;
+    
+    setIsCompareLoading(true);
+    try {
+      const isCurrentSimulation =
+        defaultSimulationEntry.id === activeSimulationId;
+
+      if (isCurrentSimulation) {
+        // 현재 시뮬레이션만 보이도록 기본 시뮬레이션 데이터만 로드
+        const defaultData = await fetchSimulationFinancialData(
+          defaultSimulationEntry.id
+        );
+        setComparisonData({
+          defaultData,
+          targetData: null,
+          defaultTitle: defaultSimulationEntry.title || "현재",
+          targetTitle: null,
+          defaultSimulationId: defaultSimulationEntry.id,
+          targetSimulationId: null,
+        });
+      } else {
+        // 두 시뮬레이션 비교
+        const [defaultData, targetData] = await Promise.all([
+          fetchSimulationFinancialData(defaultSimulationEntry.id),
+          fetchSimulationFinancialData(activeSimulationId),
+        ]);
+
+        const targetSimulation =
+          simulations.find((sim) => sim.id === activeSimulationId) || {};
+
+        setComparisonData({
+          defaultData,
+          targetData,
+          defaultTitle: defaultSimulationEntry.title || "현재",
+          targetTitle: targetSimulation.title || "선택된 시뮬레이션",
+          defaultSimulationId: defaultSimulationEntry.id,
+          targetSimulationId: activeSimulationId,
+        });
+      }
+      
+      console.log("✅ 시뮬레이션 비교 데이터 새로고침 완료");
+    } catch (error) {
+      console.error("시뮬레이션 비교 데이터 새로고침 오류:", error);
+    } finally {
+      setIsCompareLoading(false);
+    }
+  };
+
   const handleAddSimulation = async () => {
     if (!checkEditPermission("시뮬레이션 추가")) return;
     try {
@@ -2885,6 +2935,16 @@ ${JSON.stringify(analysisData, null, 2)}`;
           </span>
         </div>
         <div className={styles.profileActions}>
+          {/* 사전 상담 버튼 - 임시 숨김 */}
+          {/* {isAdmin && (
+            <button
+              className={styles.iconButton}
+              onClick={() => navigate(`/consult/preconsult/${profileId}`)}
+              title="사전 상담 페이지로 이동"
+            >
+              <span className={styles.buttonText}>사전 상담</span>
+            </button>
+          )} */}
           <button className={styles.iconButton} onClick={openDataStorePanel}>
             <span className={styles.buttonText}>재무 라이브러리</span>
           </button>
@@ -3504,6 +3564,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         profileData={profileData}
         currentSimulationId={activeSimulationId}
         simulations={simulations}
+        onDataRefresh={handleRefreshComparisonData}
       />
 
       {/* AI 옵션 선택 모달 */}

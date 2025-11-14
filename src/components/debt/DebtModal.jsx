@@ -167,7 +167,7 @@ function DebtModal({
           startYear:
             parseInt(editData.startYear, 10) || new Date().getFullYear(),
           endYear: parseInt(editData.endYear, 10) || getRetirementYear(),
-          interestRate: editData.interestRate
+          interestRate: editData.interestRate !== undefined && editData.interestRate !== null
             ? (editData.interestRate * 100).toFixed(2)
             : "3.5",
           gracePeriod: parsedGracePeriod,
@@ -253,7 +253,7 @@ function DebtModal({
   };
 
   // 폼 제출 핸들러
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -276,8 +276,16 @@ function DebtModal({
           : [],
     };
 
-    onSave(debtData);
-    onClose();
+    // 수정 모드일 때는 id를 포함시켜야 함
+    if (editData && editData.id) {
+      debtData.id = editData.id;
+    }
+
+    await onSave(debtData);
+    // 모달 닫기는 외부에서 처리 (SimulationCompareModal에서 onClose를 호출)
+    if (!editData) {
+      handleClose(); // 추가 모드일 때만 닫기
+    }
   };
 
   // 모달 닫기 핸들러
@@ -300,7 +308,7 @@ function DebtModal({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay} onClick={handleClose}>
+    <div className={styles.modalOverlay}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>

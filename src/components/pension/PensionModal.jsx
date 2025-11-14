@@ -270,7 +270,7 @@ function PensionModal({
               : "",
           startYear: editData.startYear || new Date().getFullYear(),
           endYear: editData.endYear || new Date().getFullYear() + 20,
-          inflationRate: editData.inflationRate
+          inflationRate: editData.inflationRate !== undefined && editData.inflationRate !== null
             ? editData.inflationRate.toFixed(2)
             : 1.89,
           currentAmount:
@@ -552,7 +552,7 @@ function PensionModal({
   };
 
   // 폼 제출 핸들러
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -600,8 +600,16 @@ function PensionModal({
           : [],
     };
 
-    onSave(pensionData);
-    onClose();
+    // 수정 모드일 때는 id를 포함시켜야 함
+    if (editData && editData.id) {
+      pensionData.id = editData.id;
+    }
+
+    await onSave(pensionData);
+    // 모달 닫기는 외부에서 처리 (SimulationCompareModal에서 onClose를 호출)
+    if (!editData) {
+      handleClose(); // 추가 모드일 때만 닫기
+    }
   };
 
   // 모달 닫기 핸들러
@@ -635,7 +643,7 @@ function PensionModal({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay} onClick={handleClose}>
+    <div className={styles.modalOverlay}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>

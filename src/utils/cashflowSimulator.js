@@ -155,7 +155,7 @@ export function calculateCashflowSimulation(
   const retirementYear = profileData.retirementYear || currentYear;
 
   const cashflowData = [];
-  
+
   // 저축별 연도별 투자 금액 추적 (저축 ID별, 년도별)
   const savingInvestments = {}; // { savingId: { year: amount } }
 
@@ -680,7 +680,7 @@ export function calculateCashflowSimulation(
 
         let finalAmount = 0;
         const currentAmount = Number(saving.currentAmount) || 0; // 현재 보유 금액 포함
-        
+
         // 잉여 현금 투자 금액 계산 (년도별로 수익률 적용)
         let totalInvestedValue = 0;
         let totalInvestedAmount = 0;
@@ -689,11 +689,16 @@ export function calculateCashflowSimulation(
             const investAmount = savingInvestments[saving.id][investYear];
             const yearsFromInvestment = sEndYear - parseInt(investYear);
             // 투자한 해의 다음 해부터 수익률 적용 (연말 투자이므로 투자한 해는 수익률 X)
-            const investmentValue = investAmount * Math.pow(1 + interestRate, yearsFromInvestment);
+            const investmentValue =
+              investAmount * Math.pow(1 + interestRate, yearsFromInvestment);
             totalInvestedValue += investmentValue;
             totalInvestedAmount += investAmount;
-            
-            console.log(`  - ${investYear}년 투자: ${investAmount}만원 → ${yearsFromInvestment}년 수익률 적용 → ${Math.round(investmentValue * 100) / 100}만원`);
+
+            console.log(
+              `  - ${investYear}년 투자: ${investAmount}만원 → ${yearsFromInvestment}년 수익률 적용 → ${
+                Math.round(investmentValue * 100) / 100
+              }만원`
+            );
           });
         }
 
@@ -702,7 +707,8 @@ export function calculateCashflowSimulation(
           // 예: 2025-2030이라면 5년치 이자 (2026~2030)
           finalAmount =
             (currentAmount + (Number(saving.amount) || 0)) *
-            Math.pow(1 + interestRate, yearsElapsed) + totalInvestedValue;
+              Math.pow(1 + interestRate, yearsElapsed) +
+            totalInvestedValue;
         } else {
           // 월간/연간 저축: 각 년도에 적립, 다음 해부터 수익률 적용
           const monthlyAmount =
@@ -725,9 +731,15 @@ export function calculateCashflowSimulation(
           // 투자 금액은 년도별로 수익률 계산하여 합산
           finalAmount = accumulated + totalInvestedValue;
         }
-        
+
         if (totalInvestedAmount > 0) {
-          console.log(`${year}년: ${saving.title} 만기 - 원금+이자: ${Math.round((finalAmount - totalInvestedValue) * 100) / 100}만원, 투자 원금: ${totalInvestedAmount}만원, 투자 수익: ${Math.round((totalInvestedValue - totalInvestedAmount) * 100) / 100}만원, 총: ${Math.round(finalAmount * 100) / 100}만원`);
+          console.log(
+            `${year}년: ${saving.title} 만기 - 원금+이자: ${
+              Math.round((finalAmount - totalInvestedValue) * 100) / 100
+            }만원, 투자 원금: ${totalInvestedAmount}만원, 투자 수익: ${
+              Math.round((totalInvestedValue - totalInvestedAmount) * 100) / 100
+            }만원, 총: ${Math.round(finalAmount * 100) / 100}만원`
+          );
         }
 
         // 저축 만료 수입에 추가 (전액 수령 - 양도세 차감 전)
@@ -775,8 +787,14 @@ export function calculateCashflowSimulation(
               "양도세",
               `saving-tax-${saving.id || saving.title}`
             );
-            
-            console.log(`${year}년: ${saving.title} 양도세 - 수령액: ${Math.round(finalAmount * 100) / 100}만원, 세율: ${taxRateFormatted}%, 양도세: ${Math.round(capitalGainsTax * 100) / 100}만원`);
+
+            console.log(
+              `${year}년: ${saving.title} 양도세 - 수령액: ${
+                Math.round(finalAmount * 100) / 100
+              }만원, 세율: ${taxRateFormatted}%, 양도세: ${
+                Math.round(capitalGainsTax * 100) / 100
+              }만원`
+            );
           }
         }
       }
@@ -844,7 +862,8 @@ export function calculateCashflowSimulation(
               const investAmount = savingInvestments[saving.id][investYear];
               const yearsFromInvestment = year - investYearNum - 1; // 전년도 말 기준
               // 투자한 해의 다음 해부터 수익률 적용
-              const investmentValue = investAmount * Math.pow(1 + interestRate, yearsFromInvestment);
+              const investmentValue =
+                investAmount * Math.pow(1 + interestRate, yearsFromInvestment);
               investedValue += investmentValue;
             }
           });
@@ -870,8 +889,6 @@ export function calculateCashflowSimulation(
             "저축 수익",
             `saving-income-${saving.id || saving.title}`
           );
-          
-          console.log(`${year}년: ${saving.title} 배당/이자 ${Math.round(yearlyIncome * 100) / 100}만원 (정기 적립: ${Math.round(previousYearEndValue * 100) / 100}만원 + 잉여 투자: ${Math.round(investedValue * 100) / 100}만원) × 수익률 ${(saving.incomeRate * 100).toFixed(1)}%`);
         }
       }
     });
@@ -1414,18 +1431,23 @@ export function calculateCashflowSimulation(
     // 잉여 현금 투자 규칙 처리 (현금흐름이 양수인 경우)
     // ⚠️ 중요: 잉여 현금 투자는 지출이 아니라 자산 이동이므로 현금 흐름에 영향 없음
     // 자산 시뮬레이션에서만 처리 (1869-1908번 줄)
-    
+
     if (netCashflow > 0 && profileData.cashflowInvestmentRules) {
       const investmentRule = profileData.cashflowInvestmentRules[year];
-      
+
       if (investmentRule && investmentRule.allocations) {
         // 각 배분 항목에 대해 투자 금액 계산 및 누적
         investmentRule.allocations.forEach((allocation) => {
           if (allocation.ratio <= 0) return;
-          
-          const investAmount = Math.round((netCashflow * (allocation.ratio / 100)) * 100) / 100;
-          
-          if (investAmount > 0 && allocation.targetType === "saving" && allocation.targetId) {
+
+          const investAmount =
+            Math.round(netCashflow * (allocation.ratio / 100) * 100) / 100;
+
+          if (
+            investAmount > 0 &&
+            allocation.targetType === "saving" &&
+            allocation.targetId
+          ) {
             // 저축 상품에 대한 년도별 투자 금액 기록만 함 (현금 흐름에는 반영 안 함)
             if (!savingInvestments[allocation.targetId]) {
               savingInvestments[allocation.targetId] = {};
@@ -1433,14 +1455,20 @@ export function calculateCashflowSimulation(
             if (!savingInvestments[allocation.targetId][year]) {
               savingInvestments[allocation.targetId][year] = 0;
             }
-            savingInvestments[allocation.targetId][year] = Math.round((savingInvestments[allocation.targetId][year] + investAmount) * 100) / 100;
-            
-            console.log(`${year}년: ${investAmount}만원을 저축 ID ${allocation.targetId}에 투자 기록 (현금 흐름 지출에는 미반영)`);
+            savingInvestments[allocation.targetId][year] =
+              Math.round(
+                (savingInvestments[allocation.targetId][year] + investAmount) *
+                  100
+              ) / 100;
+
+            console.log(
+              `${year}년: ${investAmount}만원을 저축 ID ${allocation.targetId}에 투자 기록 (현금 흐름 지출에는 미반영)`
+            );
           }
         });
       }
     }
-    
+
     // ⚠️ 투자 금액은 savingContributions에 포함하지 않음 (지출이 아니므로)
     const allSavingContributions = [...savingContributions];
 
@@ -1538,13 +1566,23 @@ export function calculateAssetSimulation(
         currentAmount: saving.currentAmount || 0, // 현재 보유 금액 저장
         startYear: startYear,
         endYear: endYear,
-        interestRate: saving.interestRate !== undefined && saving.interestRate !== null ? saving.interestRate : 0.03, // 이자율 (0 허용)
-        yearlyGrowthRate: saving.yearlyGrowthRate !== undefined && saving.yearlyGrowthRate !== null ? saving.yearlyGrowthRate : 0, // 년간 저축 상승률 (0 허용)
+        interestRate:
+          saving.interestRate !== undefined && saving.interestRate !== null
+            ? saving.interestRate
+            : 0.03, // 이자율 (0 허용)
+        yearlyGrowthRate:
+          saving.yearlyGrowthRate !== undefined &&
+          saving.yearlyGrowthRate !== null
+            ? saving.yearlyGrowthRate
+            : 0, // 년간 저축 상승률 (0 허용)
         frequency: saving.frequency,
         originalAmount: saving.amount,
         title: saving.title, // 제목도 저장
         savingType: saving.savingType || "standard", // "standard" 또는 "income"
-        incomeRate: saving.incomeRate !== undefined && saving.incomeRate !== null ? saving.incomeRate : 0, // 수익형 저축의 수익률 (0 허용)
+        incomeRate:
+          saving.incomeRate !== undefined && saving.incomeRate !== null
+            ? saving.incomeRate
+            : 0, // 수익형 저축의 수익률 (0 허용)
         isActive: false, // 시작년도 전에는 비활성
         totalInvested: 0, // 잉여 현금 투자 누적액 (자산 시뮬레이션에서 추가됨)
       };
@@ -1855,33 +1893,41 @@ export function calculateAssetSimulation(
     const investmentInfo = {}; // 투자 정보 저장 (자산별)
     if (netCashflow > 0 && profileData.cashflowInvestmentRules) {
       const investmentRule = profileData.cashflowInvestmentRules[year];
-      
+
       if (investmentRule && investmentRule.allocations) {
         // 각 배분 항목에 대해 투자 실행
         investmentRule.allocations.forEach((allocation) => {
           if (allocation.ratio <= 0) return;
-          
-          const investAmount = Math.round((netCashflow * (allocation.ratio / 100)) * 100) / 100;
-          
+
+          const investAmount =
+            Math.round(netCashflow * (allocation.ratio / 100) * 100) / 100;
+
           if (investAmount > 0) {
             if (allocation.targetType === "saving" && allocation.targetId) {
               // 저축 상품에 투자
               const targetSaving = savingsById[allocation.targetId];
-              
+
               if (targetSaving && targetSaving.isActive) {
                 // 저축 자산에 투자 금액 추가 (연말 투자이므로 이번 해 수익률 적용 안 됨)
-                targetSaving.amount = Math.round((targetSaving.amount + investAmount) * 100) / 100;
-                
+                targetSaving.amount =
+                  Math.round((targetSaving.amount + investAmount) * 100) / 100;
+
                 // 이번 해 투자 금액 누적 (현금흐름 시뮬레이션에서 이미 계산하므로 여기서는 표시용만)
-                targetSaving.totalInvested = Math.round((targetSaving.totalInvested + investAmount) * 100) / 100;
-                
+                targetSaving.totalInvested =
+                  Math.round(
+                    (targetSaving.totalInvested + investAmount) * 100
+                  ) / 100;
+
                 // 현금에서 투자 금액 차감
-                currentCash = Math.round((currentCash - investAmount) * 100) / 100;
-                
+                currentCash =
+                  Math.round((currentCash - investAmount) * 100) / 100;
+
                 // 투자 정보 저장 (자산 차트에서 표시용 - 이번 해 투자 금액만)
                 investmentInfo[targetSaving.title] = investAmount;
-                
-                console.log(`${year}년: ${investAmount}만원을 ${targetSaving.title}에 투자 (자산 시뮬레이션)`);
+
+                console.log(
+                  `${year}년: ${investAmount}만원을 ${targetSaving.title}에 투자 (자산 시뮬레이션)`
+                );
               }
             } else if (allocation.targetType === "cash") {
               // 현금 유지: 아무것도 안 함 (이미 currentCash에 포함됨)

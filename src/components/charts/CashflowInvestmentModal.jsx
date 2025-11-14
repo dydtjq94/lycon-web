@@ -168,7 +168,7 @@ function CashflowInvestmentModal({
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.modalOverlay}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         {/* 헤더 */}
         <div className={styles.modalHeader}>

@@ -302,7 +302,17 @@ function AssetModal({
           : [],
     };
 
-    onSave(assetData);
+    // 수정 모드일 때는 id를 포함시켜야 함
+    if (editData && editData.id) {
+      assetData.id = editData.id;
+    }
+
+    await onSave(assetData);
+    // 모달 닫기는 외부에서 처리 (SimulationCompareModal에서 onClose를 호출)
+    // DashboardPage에서 직접 호출할 때는 onSave 완료 후 자동으로 모달이 닫힘
+    if (!editData) {
+      handleClose(); // 추가 모드일 때만 닫기
+    }
   };
 
   // 모달 닫기
@@ -327,7 +337,7 @@ function AssetModal({
 
   return (
     <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
+      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>
             {editData ? "자산 수정" : "자산 추가"}

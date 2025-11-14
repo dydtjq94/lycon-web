@@ -7,6 +7,7 @@ import SignupPage from "./pages/SignupPage";
 import ProfileListPage from "./pages/ProfileListPage";
 import ProfileCreatePage from "./pages/ProfileCreatePage";
 import DashboardPage from "./pages/DashboardPage";
+import PreConsultPage from "./pages/PreConsultPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import VersionDisplay from "./components/common/VersionDisplay";
 import "./App.css";
@@ -21,6 +22,7 @@ import "./App.css";
  * /signup - 회원가입/일반 사용자 로그인 페이지 (?profileId=xxx)
  * /consult - 프로필 목록 (상담 목록) - 관리자 로그인 필요
  * /consult/create - 새 프로필 생성 - 관리자 로그인 필요
+ * /consult/preconsult/:id - 사전 상담 페이지 - 관리자 로그인 필요
  * /consult/dashboard/:id - 프로필별 대시보드 - 로그인 불필요 (view-only 모드 가능)
  */
 function App() {
@@ -54,6 +56,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProfileCreatePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 사전 상담 페이지 - 관리자 로그인 필요 */}
+            <Route
+              path="/consult/preconsult/:profileId"
+              element={
+                <ProtectedRoute>
+                  <PreConsultPage />
                 </ProtectedRoute>
               }
             />

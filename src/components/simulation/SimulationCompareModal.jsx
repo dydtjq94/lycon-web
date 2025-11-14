@@ -18,6 +18,15 @@ import { calculateLifetimeCashFlowTotals } from "../../utils/presentValueCalcula
 import { formatAmountForChart } from "../../utils/format";
 import { calculateAssetSimulation } from "../../utils/cashflowSimulator";
 import { trackEvent } from "../../libs/mixpanel";
+import {
+  incomeService,
+  expenseService,
+  savingsService,
+  pensionService,
+  realEstateService,
+  assetService,
+  debtService,
+} from "../../services/firestoreService";
 
 const categoryConfigs = [
   { 
@@ -71,6 +80,21 @@ const categoryConfigs = [
   },
 ];
 
+// 컴포넌트 외부로 이동: cashflow 데이터 필터링 함수 (React Hook 의존성 문제 해결)
+const filterCashflowByPeriod = (cashflow, period, retirementYear) => {
+  if (!cashflow || !retirementYear) return cashflow;
+
+  switch (period) {
+    case "beforeRetirement": // 은퇴전(포함)
+      return cashflow.filter((cf) => cf.year <= retirementYear);
+    case "afterRetirement": // 은퇴 이후
+      return cashflow.filter((cf) => cf.year > retirementYear);
+    case "all": // 전체
+    default:
+      return cashflow;
+  }
+};
+
 function SimulationCompareModal({
   isOpen,
   onClose,
@@ -79,33 +103,12 @@ function SimulationCompareModal({
   targetTitle,
   defaultData,
   targetData,
-  defaultSimulationId, // 기본 시뮬레이션 ID
-  targetSimulationId, // 비교 대상 시뮬레이션 ID
   profileData,
   currentSimulationId,
   simulations,
+  onDataRefresh, // 데이터 새로고침 콜백 추가
 }) {
   if (!isOpen) return null;
-
-  // 각 시뮬레이션의 투자 규칙을 포함한 profileData 생성
-  const defaultSimulation = simulations.find((sim) => sim.id === defaultSimulationId);
-  const targetSimulation = simulations.find((sim) => sim.id === targetSimulationId);
-
-  const defaultProfileData = useMemo(() => {
-    if (!profileData) return null;
-    return {
-      ...profileData,
-      cashflowInvestmentRules: defaultSimulation?.cashflowInvestmentRules || {},
-    };
-  }, [profileData, defaultSimulation]);
-
-  const targetProfileData = useMemo(() => {
-    if (!profileData) return null;
-    return {
-      ...profileData,
-      cashflowInvestmentRules: targetSimulation?.cashflowInvestmentRules || {},
-    };
-  }, [profileData, targetSimulation]);
 
   // 세부 항목 토글 상태 (기본값: 접혀있음)
   const [expandedRows, setExpandedRows] = useState({});
@@ -144,6 +147,180 @@ function SimulationCompareModal({
       type: null,
       data: null,
     });
+  };
+
+  // 재무 데이터 저장 핸들러
+  const handleSaveFinancialData = async (type, data) => {
+    try {
+      console.log(`[시뮬레이션 비교] ${type} 데이터 저장 시작:`, data);
+
+      // profileId가 없으면 오류
+      if (!profileData?.id) {
+        throw new Error("프로필 ID가 없습니다.");
+      }
+
+      // 저장할 시뮬레이션 ID 목록
+      const simulationIdsToSave = data.selectedSimulationIds || 
+        (currentSimulationId ? [currentSimulationId] : []);
+
+      if (simulationIdsToSave.length === 0) {
+        throw new Error("적용할 시뮬레이션을 선택해주세요.");
+      }
+
+      // 각 타입별 서비스 선택
+      const serviceMap = {
+        income: incomeService,
+        expense: expenseService,
+        saving: savingsService,
+        pension: pensionService,
+        realEstate: realEstateService,
+        asset: assetService,
+        debt: debtService,
+      };
+
+      const service = serviceMap[type];
+      if (!service) {
+        throw new Error(`알 수 없는 데이터 타입: ${type}`);
+      }
+
+      // 수정 모드인지 확인 (editData에 id가 있으면 수정)
+      const isEditMode = data.id ? true : false;
+
+      // 각 시뮬레이션에 저장
+      for (const simId of simulationIdsToSave) {
+        if (isEditMode) {
+          // 수정 모드: 해당 시뮬레이션에 같은 ID가 있는지 확인
+          const updateMethodName = `update${type.charAt(0).toUpperCase() + type.slice(1)}`;
+          const createWithIdMethodName = `create${type.charAt(0).toUpperCase() + type.slice(1)}WithId`;
+          
+          // 해당 시뮬레이션의 데이터 가져오기
+          const getMethodName = `get${type.charAt(0).toUpperCase() + type.slice(1)}s`;
+          const existingItems = await service[getMethodName](profileData.id, simId);
+          const existingItem = existingItems.find(item => item.id === data.id);
+
+          if (existingItem) {
+            // 같은 ID가 있으면 업데이트
+            await service[updateMethodName](profileData.id, simId, data.id, data);
+            console.log(`✅ [시뮬레이션 비교] ${simId}에서 ${type} 업데이트 완료`);
+          } else {
+            // 같은 ID가 없으면 새로 생성 (ID 유지)
+            if (service[createWithIdMethodName]) {
+              await service[createWithIdMethodName](profileData.id, simId, data.id, data);
+              console.log(`✅ [시뮬레이션 비교] ${simId}에 ${type} 추가 완료 (ID 유지)`);
+            } else {
+              console.warn(`⚠️ createWithId 메서드가 없음: ${createWithIdMethodName}`);
+            }
+          }
+        } else {
+          // 추가 모드: 새로 생성
+          const createMethodName = `create${type.charAt(0).toUpperCase() + type.slice(1)}`;
+          await service[createMethodName](profileData.id, simId, data);
+          console.log(`✅ [시뮬레이션 비교] ${simId}에 ${type} 추가 완료`);
+        }
+      }
+
+      // 저장 성공
+      trackEvent("시뮬레이션 비교 모달에서 재무 데이터 저장 완료", {
+        type: type,
+        isEditMode: isEditMode,
+        simulationCount: simulationIdsToSave.length,
+      });
+
+      // 모달 닫기
+      handleCloseEditModal();
+
+      // 로컬 state 즉시 업데이트 (서버 요청 없이 빠른 반영)
+      console.log("⚡ 로컬 state 즉시 업데이트...");
+      if (onDataRefresh) {
+        await onDataRefresh();
+      }
+      console.log("✅ 변경사항 반영 완료!");
+
+    } catch (error) {
+      console.error(`❌ [시뮬레이션 비교] ${type} 데이터 저장 오류:`, error);
+      alert(`저장 중 오류가 발생했습니다: ${error.message}`);
+      
+      trackEvent("시뮬레이션 비교 모달에서 재무 데이터 저장 오류", {
+        type: type,
+        error: error.message,
+      });
+    }
+  };
+
+  // 재무 데이터 수정 모달 렌더링 함수 (React 내부 오류 방지)
+  const renderEditModal = () => {
+    if (!editModal.isOpen) return null;
+
+    const commonProps = {
+      isOpen: editModal.isOpen,
+      onClose: handleCloseEditModal,
+      profileId: profileData?.id,
+      profileData: profileData,
+      editData: editModal.data,
+      activeSimulationId: currentSimulationId,
+      simulations: simulations,
+    };
+
+    switch (editModal.type) {
+      case "income":
+        return (
+          <IncomeModal
+            key="income-modal"
+            {...commonProps}
+            onSave={(data) => handleSaveFinancialData("income", data)}
+          />
+        );
+      case "expense":
+        return (
+          <ExpenseModal
+            key="expense-modal"
+            {...commonProps}
+            onSave={(data) => handleSaveFinancialData("expense", data)}
+          />
+        );
+      case "saving":
+        return (
+          <SavingModal
+            key="saving-modal"
+            {...commonProps}
+            onSave={(data) => handleSaveFinancialData("saving", data)}
+          />
+        );
+      case "pension":
+        return (
+          <PensionModal
+            key="pension-modal"
+            {...commonProps}
+            onSave={(data) => handleSaveFinancialData("pension", data)}
+          />
+        );
+      case "realEstate":
+        return (
+          <RealEstateModal
+            key="realEstate-modal"
+            {...commonProps}
+            onSave={(data) => handleSaveFinancialData("realEstate", data)}
+          />
+        );
+      case "asset":
+        return (
+          <AssetModal
+            key="asset-modal"
+            {...commonProps}
+            onSave={(data) => handleSaveFinancialData("asset", data)}
+          />
+        );
+      case "debt":
+        return (
+          <DebtModal
+            key="debt-modal"
+            {...commonProps}
+            onSave={(data) => handleSaveFinancialData("debt", data)}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   // 재무 데이터를 현재 시뮬레이션 기준으로 정렬하는 함수
@@ -218,27 +395,13 @@ function SimulationCompareModal({
     return currentYear + (parseInt(profileData.retirementAge, 10) - currentAge);
   }, [profileData]);
 
-  // cashflow 데이터 필터링 함수
-  const filterCashflowByPeriod = (cashflow, period) => {
-    if (!cashflow || !retirementYear) return cashflow;
-
-    switch (period) {
-      case "beforeRetirement": // 은퇴전(포함)
-        return cashflow.filter((cf) => cf.year <= retirementYear);
-      case "afterRetirement": // 은퇴 이후
-        return cashflow.filter((cf) => cf.year > retirementYear);
-      case "all": // 전체
-      default:
-        return cashflow;
-    }
-  };
-
   // 생애 자금 수급/수요 총합 계산 (할인율 미적용)
   const defaultPV = useMemo(() => {
     if (!defaultData || !isOpen) return null;
     const filteredCashflow = filterCashflowByPeriod(
       defaultData.cashflow || [],
-      cashflowPeriod
+      cashflowPeriod,
+      retirementYear
     );
     return calculateLifetimeCashFlowTotals(filteredCashflow);
   }, [defaultData, isOpen, cashflowPeriod, retirementYear]);
@@ -247,15 +410,16 @@ function SimulationCompareModal({
     if (!targetData || !isOpen) return null;
     const filteredCashflow = filterCashflowByPeriod(
       targetData.cashflow || [],
-      cashflowPeriod
+      cashflowPeriod,
+      retirementYear
     );
     return calculateLifetimeCashFlowTotals(filteredCashflow);
   }, [targetData, isOpen, cashflowPeriod, retirementYear]);
 
   const defaultAssetsTimeline = useMemo(() => {
-    if (!defaultProfileData || !defaultData || !isOpen) return null;
+    if (!profileData || !defaultData || !isOpen) return null;
     const result = calculateAssetSimulation(
-      defaultProfileData, // 투자 규칙이 포함된 profileData 사용
+      profileData,
       defaultData.incomes || [],
       defaultData.expenses || [],
       defaultData.savings || [],
@@ -267,12 +431,12 @@ function SimulationCompareModal({
     );
     // detailedData를 반환 (breakdown 정보 포함)
     return result?.detailedData || result?.timeline || result;
-  }, [defaultData, defaultProfileData, isOpen]);
+  }, [defaultData, profileData, isOpen]);
 
   const targetAssetsTimeline = useMemo(() => {
-    if (!targetProfileData || !targetData || !isOpen) return null;
+    if (!profileData || !targetData || !isOpen) return null;
     const result = calculateAssetSimulation(
-      targetProfileData, // 투자 규칙이 포함된 profileData 사용
+      profileData,
       targetData.incomes || [],
       targetData.expenses || [],
       targetData.savings || [],
@@ -284,7 +448,7 @@ function SimulationCompareModal({
     );
     // detailedData를 반환 (breakdown 정보 포함)
     return result?.detailedData || result?.timeline || result;
-  }, [targetData, targetProfileData, isOpen]);
+  }, [targetData, profileData, isOpen]);
 
   const showDefaultColumn =
     Boolean(defaultTitle) || Boolean(defaultPV) || Boolean(defaultData);
@@ -1321,77 +1485,8 @@ function SimulationCompareModal({
         </div>
       </div>
 
-      {/* 재무 데이터 수정 모달들 */}
-      {editModal.isOpen && editModal.type === "income" && (
-        <IncomeModal
-          isOpen={editModal.isOpen}
-          onClose={handleCloseEditModal}
-          profileId={profileData?.id}
-          editData={editModal.data}
-          activeSimulationId={currentSimulationId}
-          simulations={simulations}
-        />
-      )}
-      {editModal.isOpen && editModal.type === "expense" && (
-        <ExpenseModal
-          isOpen={editModal.isOpen}
-          onClose={handleCloseEditModal}
-          profileId={profileData?.id}
-          editData={editModal.data}
-          activeSimulationId={currentSimulationId}
-          simulations={simulations}
-        />
-      )}
-      {editModal.isOpen && editModal.type === "saving" && (
-        <SavingModal
-          isOpen={editModal.isOpen}
-          onClose={handleCloseEditModal}
-          profileId={profileData?.id}
-          editData={editModal.data}
-          activeSimulationId={currentSimulationId}
-          simulations={simulations}
-        />
-      )}
-      {editModal.isOpen && editModal.type === "pension" && (
-        <PensionModal
-          isOpen={editModal.isOpen}
-          onClose={handleCloseEditModal}
-          profileId={profileData?.id}
-          editData={editModal.data}
-          activeSimulationId={currentSimulationId}
-          simulations={simulations}
-        />
-      )}
-      {editModal.isOpen && editModal.type === "realEstate" && (
-        <RealEstateModal
-          isOpen={editModal.isOpen}
-          onClose={handleCloseEditModal}
-          profileId={profileData?.id}
-          editData={editModal.data}
-          activeSimulationId={currentSimulationId}
-          simulations={simulations}
-        />
-      )}
-      {editModal.isOpen && editModal.type === "asset" && (
-        <AssetModal
-          isOpen={editModal.isOpen}
-          onClose={handleCloseEditModal}
-          profileId={profileData?.id}
-          editData={editModal.data}
-          activeSimulationId={currentSimulationId}
-          simulations={simulations}
-        />
-      )}
-      {editModal.isOpen && editModal.type === "debt" && (
-        <DebtModal
-          isOpen={editModal.isOpen}
-          onClose={handleCloseEditModal}
-          profileId={profileData?.id}
-          editData={editModal.data}
-          activeSimulationId={currentSimulationId}
-          simulations={simulations}
-        />
-      )}
+      {/* 재무 데이터 수정 모달 (통합 렌더링으로 React 내부 오류 방지) */}
+      {renderEditModal()}
     </div>
   );
 }
