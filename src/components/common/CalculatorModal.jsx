@@ -648,21 +648,17 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
               {dcResult && (
                 <div className={styles.result}>
                   <h4 className={styles.resultTitle}>계산 결과</h4>
-                  
+
                   {/* 기본 정보 */}
                   <div className={styles.resultGrid}>
                     <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>
-                        추정 세전 월급
-                      </span>
+                      <span className={styles.resultLabel}>추정 세전 월급</span>
                       <span className={styles.resultValue}>
                         {dcResult.preTaxMonthly.toLocaleString()}만원
                       </span>
                     </div>
                     <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>
-                        추정 세전 연봉
-                      </span>
+                      <span className={styles.resultLabel}>추정 세전 연봉</span>
                       <span className={styles.resultValue}>
                         {dcResult.preTaxAnnual.toLocaleString()}만원
                       </span>
@@ -678,9 +674,7 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                       </span>
                     </div>
                     <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>
-                        연간 DC 적립금
-                      </span>
+                      <span className={styles.resultLabel}>연간 DC 적립금</span>
                       <span className={styles.resultValue}>
                         {dcResult.annualDC.toLocaleString()}만원
                       </span>
@@ -694,25 +688,31 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                       <div className={styles.deductionItem}>
                         <span className={styles.deductionLabel}>국민연금</span>
                         <span className={styles.deductionValue}>
-                          {dcResult.deductions.nationalPension.toLocaleString()}만원
+                          {dcResult.deductions.nationalPension.toLocaleString()}
+                          만원
                         </span>
                       </div>
                       <div className={styles.deductionItem}>
                         <span className={styles.deductionLabel}>건강보험</span>
                         <span className={styles.deductionValue}>
-                          {dcResult.deductions.healthInsurance.toLocaleString()}만원
+                          {dcResult.deductions.healthInsurance.toLocaleString()}
+                          만원
                         </span>
                       </div>
                       <div className={styles.deductionItem}>
-                        <span className={styles.deductionLabel}>장기요양보험</span>
+                        <span className={styles.deductionLabel}>
+                          장기요양보험
+                        </span>
                         <span className={styles.deductionValue}>
-                          {dcResult.deductions.longTermCare.toLocaleString()}만원
+                          {dcResult.deductions.longTermCare.toLocaleString()}
+                          만원
                         </span>
                       </div>
                       <div className={styles.deductionItem}>
                         <span className={styles.deductionLabel}>고용보험</span>
                         <span className={styles.deductionValue}>
-                          {dcResult.deductions.employmentInsurance.toLocaleString()}만원
+                          {dcResult.deductions.employmentInsurance.toLocaleString()}
+                          만원
                         </span>
                       </div>
                       <div className={styles.deductionItem}>
@@ -722,12 +722,16 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                         </span>
                       </div>
                       <div className={styles.deductionItem}>
-                        <span className={styles.deductionLabel}>지방소득세</span>
+                        <span className={styles.deductionLabel}>
+                          지방소득세
+                        </span>
                         <span className={styles.deductionValue}>
                           {dcResult.deductions.localTax.toLocaleString()}만원
                         </span>
                       </div>
-                      <div className={`${styles.deductionItem} ${styles.totalDeduction}`}>
+                      <div
+                        className={`${styles.deductionItem} ${styles.totalDeduction}`}
+                      >
                         <span className={styles.deductionLabel}>총 공제액</span>
                         <span className={styles.deductionValue}>
                           {dcResult.deductions.total.toLocaleString()}만원
@@ -754,8 +758,8 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
                         <strong>고용보험:</strong> 세전 월급의 0.9%
                       </li>
                       <li>
-                        <strong>소득세:</strong> 과세표준(세전 연봉 - 2,500만원)에
-                        2024년 국세청 소득세율표 적용
+                        <strong>소득세:</strong> 과세표준(세전 연봉 -
+                        2,500만원)에 2024년 국세청 소득세율표 적용
                       </li>
                       <li>
                         <strong>지방소득세:</strong> 소득세의 10%

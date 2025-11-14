@@ -236,6 +236,10 @@
   background: #dc2626;
 }
 
+.categoryTitleSaving::before {
+  background: #2563eb;
+}
+
 .itemsList {
   display: flex;
   flex-direction: column;
@@ -284,6 +288,19 @@
 }
 
 .itemRowExpense.selected {
+  background: #f3f4f6;
+  border-color: #111827;
+}
+
+.itemRowSaving {
+  /* 저축/투자: 기본 스타일 유지 */
+}
+
+.itemRowSaving:hover {
+  background: #f8fafc;
+}
+
+.itemRowSaving.selected {
   background: #f3f4f6;
   border-color: #111827;
 }

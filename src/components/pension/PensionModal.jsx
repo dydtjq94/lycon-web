@@ -13,6 +13,7 @@ function PensionModal({
   onClose,
   onSave,
   editData = null,
+  initialData = null, // 복사된 데이터 (복사해서 추가용)
   profileData = null,
   simulations = [],
   activeSimulationId = null,
@@ -260,6 +261,7 @@ function PensionModal({
   useEffect(() => {
     if (isOpen) {
       if (editData) {
+        // 수정 모드: 기존 데이터 로드
         setFormData({
           type: editData.type || "national",
           title: editData.title || "",
@@ -314,6 +316,62 @@ function PensionModal({
               : "",
           noAdditionalContribution: editData.noAdditionalContribution || false,
         });
+      } else if (initialData) {
+        // 복사 모드: 복사된 데이터로 초기화 (id 제외)
+        setFormData({
+          type: initialData.type || "national",
+          title: initialData.title || "",
+          monthlyAmount:
+            initialData.monthlyAmount !== undefined &&
+            initialData.monthlyAmount !== null
+              ? initialData.monthlyAmount.toString()
+              : "",
+          startYear: initialData.startYear || new Date().getFullYear(),
+          endYear: initialData.endYear || new Date().getFullYear() + 20,
+          inflationRate: initialData.inflationRate !== undefined && initialData.inflationRate !== null
+            ? initialData.inflationRate.toFixed(2)
+            : 1.89,
+          currentAmount:
+            initialData.currentAmount !== undefined &&
+            initialData.currentAmount !== null
+              ? initialData.currentAmount.toString()
+              : "",
+          contributionAmount:
+            initialData.contributionAmount !== undefined &&
+            initialData.contributionAmount !== null
+              ? initialData.contributionAmount.toString()
+              : "",
+          contributionFrequency: initialData.contributionFrequency || "monthly",
+          contributionStartYear:
+            initialData.contributionStartYear || new Date().getFullYear(),
+          contributionEndYear:
+            initialData.contributionEndYear || new Date().getFullYear() + 10,
+          returnRate:
+            initialData.returnRate !== undefined
+              ? initialData.returnRate.toFixed(2)
+              : 2.86,
+          paymentStartYear:
+            initialData.paymentStartYear || new Date().getFullYear() + 11,
+          paymentYears: initialData.paymentYears
+            ? initialData.paymentYears
+            : initialData.paymentEndYear
+            ? initialData.paymentEndYear - initialData.paymentStartYear
+            : 10,
+          memo: initialData.memo || "",
+          isFixedContributionEndYearToRetirement:
+            initialData.isFixedContributionEndYearToRetirement || false,
+          averageSalary:
+            initialData.averageSalary !== undefined &&
+            initialData.averageSalary !== null
+              ? initialData.averageSalary.toString()
+              : "",
+          yearsOfService:
+            initialData.yearsOfService !== undefined &&
+            initialData.yearsOfService !== null
+              ? initialData.yearsOfService.toString()
+              : "",
+          noAdditionalContribution: initialData.noAdditionalContribution || false,
+        });
       } else {
         // 새 데이터일 때 초기화
         const { age65Year, age90Year } = getDefaultYears();
@@ -340,7 +398,7 @@ function PensionModal({
         });
       }
     }
-  }, [isOpen, editData]);
+  }, [isOpen, editData, initialData]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {

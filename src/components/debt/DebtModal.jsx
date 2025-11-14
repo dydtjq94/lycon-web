@@ -12,6 +12,7 @@ function DebtModal({
   onClose,
   onSave,
   editData = null,
+  initialData = null, // 복사된 데이터 (복사해서 추가용)
   profileData = null,
   simulations = [],
   activeSimulationId = null,
@@ -154,6 +155,7 @@ function DebtModal({
   useEffect(() => {
     if (isOpen) {
       if (editData) {
+        // 수정 모드: 기존 데이터 로드
         // gracePeriod는 명확하게 number로 변환 (0도 유효한 값이므로 || 0 대신 삼항연산자 사용)
         const parsedGracePeriod =
           editData.gracePeriod !== undefined && editData.gracePeriod !== null
@@ -174,6 +176,27 @@ function DebtModal({
           memo: editData.memo || "",
           addCashToFlow: !!editData.addCashToFlow,
         });
+      } else if (initialData) {
+        // 복사 모드: 복사된 데이터로 초기화 (id 제외)
+        const parsedGracePeriod =
+          initialData.gracePeriod !== undefined && initialData.gracePeriod !== null
+            ? parseInt(initialData.gracePeriod, 10)
+            : 5;
+
+        setFormData({
+          title: initialData.title || "",
+          debtType: initialData.debtType || "bullet",
+          debtAmount: initialData.debtAmount || "",
+          startYear:
+            parseInt(initialData.startYear, 10) || new Date().getFullYear(),
+          endYear: parseInt(initialData.endYear, 10) || getRetirementYear(),
+          interestRate: initialData.interestRate !== undefined && initialData.interestRate !== null
+            ? (initialData.interestRate * 100).toFixed(2)
+            : "3.5",
+          gracePeriod: parsedGracePeriod,
+          memo: initialData.memo || "",
+          addCashToFlow: !!initialData.addCashToFlow,
+        });
       } else {
         // 새 데이터일 때 초기화
         setFormData({
@@ -189,7 +212,7 @@ function DebtModal({
         });
       }
     }
-  }, [isOpen, editData]);
+  }, [isOpen, editData, initialData]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {

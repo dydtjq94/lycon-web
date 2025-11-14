@@ -273,6 +273,11 @@ function DashboardPage() {
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [initialIncomeData, setInitialIncomeData] = useState(null); // 재무 라이브러리에서 선택한 소득 템플릿 데이터
   const [initialExpenseData, setInitialExpenseData] = useState(null); // 재무 라이브러리에서 선택한 지출 템플릿 데이터
+  const [initialSavingData, setInitialSavingData] = useState(null); // 복사된 저축 데이터
+  const [initialPensionData, setInitialPensionData] = useState(null); // 복사된 연금 데이터
+  const [initialAssetData, setInitialAssetData] = useState(null); // 복사된 자산 데이터
+  const [initialRealEstateData, setInitialRealEstateData] = useState(null); // 복사된 부동산 데이터
+  const [initialDebtData, setInitialDebtData] = useState(null); // 복사된 부채 데이터
   const [isCompareLoading, setIsCompareLoading] = useState(false);
   const [comparisonData, setComparisonData] = useState({
     defaultData: null,
@@ -959,6 +964,8 @@ function DashboardPage() {
           setIncomes([...incomes, newIncome]);
         }
       }
+
+      setIsIncomeModalOpen(false);
     } catch (error) {
       console.error("소득 데이터 저장 오류:", error);
     }
@@ -1087,6 +1094,8 @@ function DashboardPage() {
           setExpenses([...expenses, newExpense]);
         }
       }
+
+      setIsExpenseModalOpen(false);
     } catch (error) {
       console.error("지출 데이터 저장 오류:", error);
     }
@@ -1159,7 +1168,6 @@ function DashboardPage() {
             )
           );
         }
-        setEditingSaving(null);
       } else {
         // 추가
         const targetSimIds = savingData.selectedSimulationIds?.length
@@ -1190,6 +1198,8 @@ function DashboardPage() {
           setSavings([...savings, newSaving]);
         }
       }
+
+      setIsSavingModalOpen(false);
     } catch (error) {
       console.error("저축/투자 데이터 저장 오류:", error);
     }
@@ -1206,8 +1216,8 @@ function DashboardPage() {
     if (!checkEditPermission("저축 복사")) return;
     trackEvent("저축 복사", { profileId });
     const { id, ...copiedData } = saving; // id 제거
-    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
-    setEditingSaving({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
+    setEditingSaving(null); // editing을 null로 설정 (추가 모드)
+    setInitialSavingData(copiedData); // 복사된 데이터를 initialData로 설정
     setIsSavingModalOpen(true);
   };
 
@@ -1245,8 +1255,8 @@ function DashboardPage() {
     if (!checkEditPermission("연금 복사")) return;
     trackEvent("연금 복사", { profileId });
     const { id, ...copiedData } = pension; // id 제거
-    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
-    setEditingPension({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
+    setEditingPension(null); // editing을 null로 설정 (추가 모드)
+    setInitialPensionData(copiedData); // 복사된 데이터를 initialData로 설정
     setIsPensionModalOpen(true);
   };
 
@@ -1370,8 +1380,8 @@ function DashboardPage() {
     if (!checkEditPermission("부동산 복사")) return;
     trackEvent("부동산 복사", { profileId });
     const { id, ...copiedData } = realEstate; // id 제거
-    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
-    setEditingRealEstate({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
+    setEditingRealEstate(null); // editing을 null로 설정 (추가 모드)
+    setInitialRealEstateData(copiedData); // 복사된 데이터를 initialData로 설정
     setIsRealEstateModalOpen(true);
   };
 
@@ -1504,8 +1514,8 @@ function DashboardPage() {
     if (!checkEditPermission("자산 복사")) return;
     trackEvent("자산 복사", { profileId });
     const { id, ...copiedData } = asset; // id 제거
-    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
-    setEditingAsset({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
+    setEditingAsset(null); // editing을 null로 설정 (추가 모드)
+    setInitialAssetData(copiedData); // 복사된 데이터를 initialData로 설정
     setIsAssetModalOpen(true);
   };
 
@@ -1618,8 +1628,8 @@ function DashboardPage() {
     if (!checkEditPermission("부채 복사")) return;
     trackEvent("부채 복사", { profileId });
     const { id, ...copiedData } = debt; // id 제거
-    copiedData.title = `${copiedData.title} (복사본)`; // 제목에 복사본 표시
-    setEditingDebt({ ...copiedData, id: null }); // id를 null로 설정하여 새 항목으로 저장되도록
+    setEditingDebt(null); // editing을 null로 설정 (추가 모드)
+    setInitialDebtData(copiedData); // 복사된 데이터를 initialData로 설정
     setIsDebtModalOpen(true);
   };
 
@@ -2318,7 +2328,7 @@ function DashboardPage() {
   // 시뮬레이션 비교 데이터 새로고침 함수
   const handleRefreshComparisonData = async () => {
     if (!defaultSimulationEntry) return;
-    
+
     setIsCompareLoading(true);
     try {
       const isCurrentSimulation =
@@ -2356,7 +2366,7 @@ function DashboardPage() {
           targetSimulationId: activeSimulationId,
         });
       }
-      
+
       console.log("✅ 시뮬레이션 비교 데이터 새로고침 완료");
     } catch (error) {
       console.error("시뮬레이션 비교 데이터 새로고침 오류:", error);
@@ -3519,9 +3529,11 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={() => {
           setIsSavingModalOpen(false);
           setEditingSaving(null); // 수정 데이터 초기화
+          setInitialSavingData(null); // 복사 데이터 초기화
         }}
         onSave={handleSaveSaving}
         editData={editingSaving}
+        initialData={initialSavingData}
         profileData={profileData}
         simulations={simulations}
         activeSimulationId={activeSimulationId}
@@ -3533,9 +3545,11 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={() => {
           setIsPensionModalOpen(false);
           setEditingPension(null); // 수정 데이터 초기화
+          setInitialPensionData(null); // 복사 데이터 초기화
         }}
         onSave={handleSavePension}
         editData={editingPension}
+        initialData={initialPensionData}
         profileData={profileData}
         simulations={simulations}
         activeSimulationId={activeSimulationId}
@@ -3547,9 +3561,11 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={() => {
           setIsRealEstateModalOpen(false);
           setEditingRealEstate(null); // 수정 데이터 초기화
+          setInitialRealEstateData(null); // 복사 데이터 초기화
         }}
         onSave={handleSaveRealEstate}
         editData={editingRealEstate}
+        initialData={initialRealEstateData}
         profileData={profileData}
         simulations={simulations}
         activeSimulationId={activeSimulationId}
@@ -3569,9 +3585,11 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={() => {
           setIsAssetModalOpen(false);
           setEditingAsset(null); // 수정 데이터 초기화
+          setInitialAssetData(null); // 복사 데이터 초기화
         }}
         onSave={handleSaveAsset}
         editData={editingAsset}
+        initialData={initialAssetData}
         profileData={profileData}
         simulations={simulations}
         activeSimulationId={activeSimulationId}
@@ -3584,9 +3602,11 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={() => {
           setIsDebtModalOpen(false);
           setEditingDebt(null); // 수정 데이터 초기화
+          setInitialDebtData(null); // 복사 데이터 초기화
         }}
         onSave={handleSaveDebt}
         editData={editingDebt}
+        initialData={initialDebtData}
         profileData={profileData}
         simulations={simulations}
         activeSimulationId={activeSimulationId}

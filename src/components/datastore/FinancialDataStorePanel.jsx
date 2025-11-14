@@ -35,11 +35,12 @@ function FinancialDataStorePanel({
     { value: "mother", label: "모" },
   ];
 
-  // 카테고리 목록 (전체/소득/지출만)
+  // 카테고리 목록 (전체/소득/지출/저축투자)
   const categories = [
     { value: "all", label: "전체" },
     { value: "income", label: "소득" },
     { value: "expense", label: "지출" },
+    { value: "saving", label: "저축/투자" },
   ];
 
   // 템플릿 불러오기
@@ -460,6 +461,8 @@ function FinancialDataStorePanel({
                     ? styles.categoryTitleIncome
                     : category === "expense"
                     ? styles.categoryTitleExpense
+                    : category === "saving"
+                    ? styles.categoryTitleSaving
                     : ""
                 }`}
               >
@@ -475,6 +478,8 @@ function FinancialDataStorePanel({
                           ? styles.itemRowIncome
                           : template.category === "expense"
                           ? styles.itemRowExpense
+                          : template.category === "saving"
+                          ? styles.itemRowSaving
                           : ""
                       }`}
                       onClick={() => handleSelectTemplate(template)}

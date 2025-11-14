@@ -12,6 +12,7 @@ function SavingModal({
   onClose,
   onSave,
   editData = null,
+  initialData = null, // 재무 라이브러리에서 전달된 템플릿 데이터
   profileData = null,
   simulations = [],
   activeSimulationId = null,
@@ -214,6 +215,40 @@ function SavingModal({
               : "",
           isFixedToRetirementYear: editData.isFixedToRetirementYear || false,
         });
+      } else if (initialData) {
+        // 재무 라이브러리 템플릿 데이터로 초기화
+        setFormData({
+          title: initialData.title || "",
+          savingType: initialData.savingType || "standard",
+          frequency: initialData.frequency || "monthly",
+          amount: initialData.amount || "",
+          currentAmount: initialData.currentAmount || "",
+          treatAsInitialPurchase: initialData.treatAsInitialPurchase || false,
+          startYear: initialData.startYear || new Date().getFullYear(),
+          endYear: initialData.endYear || getRetirementYear(),
+          memo: initialData.memo || "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
+          interestRate:
+            initialData.interestRate !== undefined &&
+            initialData.interestRate !== null
+              ? initialData.interestRate.toString()
+              : "2.86",
+          yearlyGrowthRate:
+            initialData.yearlyGrowthRate !== undefined &&
+            initialData.yearlyGrowthRate !== null
+              ? initialData.yearlyGrowthRate.toString()
+              : "1.89",
+          incomeRate:
+            initialData.incomeRate !== undefined &&
+            initialData.incomeRate !== null
+              ? initialData.incomeRate.toString()
+              : "3",
+          capitalGainsTaxRate:
+            initialData.capitalGainsTaxRate !== undefined &&
+            initialData.capitalGainsTaxRate !== null
+              ? initialData.capitalGainsTaxRate.toString()
+              : "",
+          isFixedToRetirementYear: initialData.isFixedToRetirementYear || false,
+        });
       } else {
         // 새 데이터일 때 초기화
         setFormData({
@@ -234,7 +269,7 @@ function SavingModal({
         });
       }
     }
-  }, [isOpen, editData]);
+  }, [isOpen, editData, initialData]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {

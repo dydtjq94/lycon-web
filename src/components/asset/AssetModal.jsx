@@ -12,7 +12,8 @@ function AssetModal({
   isOpen,
   onClose,
   onSave,
-  editData,
+  editData = null,
+  initialData = null, // 복사된 데이터 (복사해서 추가용)
   profileData,
   simulations = [],
   activeSimulationId = null,
@@ -155,6 +156,7 @@ function AssetModal({
   useEffect(() => {
     if (isOpen) {
       if (editData) {
+        // 수정 모드: 기존 데이터 로드
         setFormData({
           title: editData.title || "",
           currentValue: editData.currentValue || "",
@@ -177,6 +179,30 @@ function AssetModal({
           memo: editData.memo || "",
           isPurchase: editData.isPurchase || false,
         });
+      } else if (initialData) {
+        // 복사 모드: 복사된 데이터로 초기화 (id 제외)
+        setFormData({
+          title: initialData.title || "",
+          currentValue: initialData.currentValue || "",
+          growthRate:
+            initialData.growthRate !== undefined
+              ? (initialData.growthRate * 100).toFixed(2)
+              : "2.86",
+          startYear: initialData.startYear || new Date().getFullYear(),
+          endYear: initialData.endYear || "",
+          assetType: initialData.assetType || "general",
+          incomeRate:
+            initialData.incomeRate !== undefined
+              ? (initialData.incomeRate * 100).toFixed(2)
+              : "3",
+          capitalGainsTaxRate:
+            initialData.capitalGainsTaxRate !== undefined &&
+            initialData.capitalGainsTaxRate !== null
+              ? (initialData.capitalGainsTaxRate * 100).toFixed(2)
+              : "",
+          memo: initialData.memo || "",
+          isPurchase: initialData.isPurchase || false,
+        });
       } else {
         // 새 데이터인 경우 기본값 설정
         const currentYear = new Date().getFullYear();
@@ -198,7 +224,7 @@ function AssetModal({
         });
       }
     }
-  }, [isOpen, editData, profileData]);
+  }, [isOpen, editData, initialData, profileData]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {

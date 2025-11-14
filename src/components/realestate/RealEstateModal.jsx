@@ -8,7 +8,8 @@ const RealEstateModal = ({
   isOpen,
   onClose,
   onSave,
-  editData,
+  editData = null,
+  initialData = null, // 복사된 데이터 (복사해서 추가용)
   profileData,
   simulations = [],
   activeSimulationId = null,
@@ -153,6 +154,7 @@ const RealEstateModal = ({
   useEffect(() => {
     if (isOpen) {
       if (editData) {
+        // 수정 모드: 기존 데이터 로드
         setFormData({
           title: editData.title || "",
           isResidential:
@@ -180,7 +182,37 @@ const RealEstateModal = ({
           memo: editData.memo || "",
           isPurchase: editData.isPurchase || false,
         });
+      } else if (initialData) {
+        // 복사 모드: 복사된 데이터로 초기화 (id 제외)
+        setFormData({
+          title: initialData.title || "",
+          isResidential:
+            initialData.isResidential !== undefined
+              ? initialData.isResidential
+              : true,
+          hasAcquisitionInfo: initialData.hasAcquisitionInfo || false,
+          currentValue: initialData.currentValue || "",
+          acquisitionPrice: initialData.acquisitionPrice || "",
+          acquisitionYear: initialData.acquisitionYear || "",
+          growthRate: initialData.growthRate !== undefined && initialData.growthRate !== null
+            ? initialData.growthRate.toFixed(2)
+            : "2.4",
+          startYear: initialData.startYear || new Date().getFullYear(),
+          endYear: initialData.endYear || new Date().getFullYear() + 30,
+          holdingPeriod: initialData.holdingPeriod || "",
+          hasRentalIncome: initialData.hasRentalIncome || false,
+          monthlyRentalIncome: initialData.monthlyRentalIncome || "",
+          rentalIncomeStartYear: initialData.rentalIncomeStartYear || "",
+          rentalIncomeEndYear: initialData.rentalIncomeEndYear || "",
+          convertToPension: initialData.convertToPension || false,
+          pensionStartYear: initialData.pensionStartYear || "",
+          pensionEndYear: initialData.pensionEndYear || "",
+          monthlyPensionAmount: initialData.monthlyPensionAmount || "",
+          memo: initialData.memo || "",
+          isPurchase: initialData.isPurchase || false,
+        });
       } else {
+        // 새 데이터인 경우 기본값 설정
         setFormData({
           title: "",
           isResidential: false,
@@ -206,7 +238,7 @@ const RealEstateModal = ({
       }
       setErrors({});
     }
-  }, [isOpen, editData]);
+  }, [isOpen, editData, initialData]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
