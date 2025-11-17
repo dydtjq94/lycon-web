@@ -308,11 +308,27 @@ function FinancialDataStorePanel({
       ? `${template.title} - ${targetMemberName}`
       : template.title;
 
+    // 물가상승률/소득상승률 자동 반영
+    // 템플릿의 금액은 "현재 가치" 기준이므로, 시작년도까지의 상승률을 복리로 적용
+    let adjustedAmount = data.amount;
+    const yearsUntilStart = startYear - currentYear;
+    
+    if (yearsUntilStart > 0) {
+      // 카테고리별 상승률 설정
+      const inflationRate = category === "income" ? 0.033 : 0.0189; // 소득 3.3%, 지출 1.89%
+      
+      // 복리 계산: 금액 × (1 + 상승률)^년수, 반올림하여 정수로
+      adjustedAmount = Math.round(data.amount * Math.pow(1 + inflationRate, yearsUntilStart));
+      
+      console.log(`물가상승률 반영: ${data.amount}만원 → ${adjustedAmount}만원 (${yearsUntilStart}년, ${category === "income" ? "소득 3.3%" : "지출 1.89%"})`);
+    }
+
     // 모달에 전달할 데이터 준비
     // 중요: 계산된 startYear, endYear가 data의 값을 덮어쓰도록 순서 조정
     const templateData = {
       category,
-      ...data, // 먼저 data의 모든 속성을 펼침 (amount, frequency, growthRate 등)
+      ...data, // 먼저 data의 모든 속성을 펼침 (frequency, growthRate 등)
+      amount: adjustedAmount, // 물가상승률이 반영된 금액
       title: generatedTitle, // 생성된 항목 명 사용
       startYear, // 계산된 startYear로 덮어쓰기 (중요!)
       endYear, // 계산된 endYear로 덮어쓰기 (중요!)

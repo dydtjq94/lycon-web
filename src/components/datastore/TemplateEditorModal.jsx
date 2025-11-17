@@ -748,6 +748,13 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
             {/* 재무 데이터 */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>재무 데이터</h3>
+              <p className={styles.sectionDescription}>
+                💡 <strong>현재 기준 가치로 입력하세요.</strong>
+                <br />
+                템플릿 적용 시 시작년도까지의 물가상승률/소득상승률이 자동 반영됩니다.
+                <br />
+                (소득: 연 3.3%, 지출: 연 1.89% 복리 적용)
+              </p>
 
               {/* 빈도 */}
               <div className={styles.field}>
