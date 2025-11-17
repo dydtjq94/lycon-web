@@ -632,23 +632,34 @@ function RechartsCashflowChart({
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
 
-  // Y축 도메인 계산 (0을 중심으로 대칭)
-  const amounts = data.map((d) => d.amount);
-  const maxAbsAmount = Math.max(...amounts.map(Math.abs));
-
-  // 깔끔한 Y축을 위해 1000만원 단위로 반올림
-  const roundedMax = Math.ceil(maxAbsAmount / 1000) * 1000;
-  const yDomain = [-roundedMax, roundedMax];
-
-  // Y축 틱 생성 (깔끔한 간격으로)
-  const tickStep = roundedMax / 4; // 4개 구간으로 나누기
-  const ticks = [];
-  for (let i = -4; i <= 4; i++) {
-    const tickValue = i * tickStep;
-    if (!ticks.includes(tickValue)) {
-      ticks.push(tickValue);
+  // Y축 도메인 계산 (0을 중심으로 대칭) - chartData 변경 시 재계산
+  const { yDomain, ticks } = useMemo(() => {
+    if (!chartData || chartData.length === 0) {
+      return {
+        yDomain: [-10000, 10000],
+        ticks: [-10000, -5000, 0, 5000, 10000],
+      };
     }
-  }
+
+    const amounts = chartData.map((d) => d.amount);
+    const maxAbsAmount = Math.max(...amounts.map(Math.abs), 1000);
+
+    // 깔끔한 Y축을 위해 1000만원 단위로 반올림
+    const roundedMax = Math.ceil(maxAbsAmount / 1000) * 1000;
+    const domain = [-roundedMax, roundedMax];
+
+    // Y축 틱 생성 (깔끔한 간격으로)
+    const tickStep = roundedMax / 4; // 4개 구간으로 나누기
+    const tickArray = [];
+    for (let i = -4; i <= 4; i++) {
+      const tickValue = i * tickStep;
+      if (!tickArray.includes(tickValue)) {
+        tickArray.push(tickValue);
+      }
+    }
+
+    return { yDomain: domain, ticks: tickArray };
+  }, [chartData]);
 
   // 차트 렌더링 함수
   const renderChart = (height = 600) => (
@@ -1138,6 +1149,11 @@ function RechartsCashflowChart({
           label={(props) => {
             const { x, y, width, value, index } = props;
             const entry = chartData[index];
+
+            // entry가 없으면 아무것도 렌더링하지 않음
+            if (!entry) {
+              return null;
+            }
 
             // 양수인 경우에만 설정 아이콘 표시
             if (value > 0) {

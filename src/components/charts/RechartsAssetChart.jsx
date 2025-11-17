@@ -679,22 +679,28 @@ function RechartsAssetChart({
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
 
-  // Y축 도메인 계산 (음수 포함)
-  const allValues = [];
-  chartData.forEach((item) => {
-    assetKeys.forEach((key) => {
-      if (item[key] !== undefined) {
-        allValues.push(item[key]);
-      }
+  // Y축 도메인 계산 (음수 포함) - chartData 변경 시 재계산
+  const yDomain = useMemo(() => {
+    const allValues = [];
+    chartData.forEach((item) => {
+      assetKeys.forEach((key) => {
+        if (item[key] !== undefined) {
+          allValues.push(item[key]);
+        }
+      });
     });
-  });
 
-  const maxValue = Math.max(...allValues, 0);
-  const minValue = Math.min(...allValues, 0);
-  const maxAbsValue = Math.max(Math.abs(maxValue), Math.abs(minValue));
-  const padding = maxAbsValue * 0.1;
+    if (allValues.length === 0) {
+      return [-1000, 1000]; // 기본값
+    }
 
-  const yDomain = [-maxAbsValue - padding, maxAbsValue + padding];
+    const maxValue = Math.max(...allValues, 0);
+    const minValue = Math.min(...allValues, 0);
+    const maxAbsValue = Math.max(Math.abs(maxValue), Math.abs(minValue));
+    const padding = maxAbsValue * 0.1;
+
+    return [-maxAbsValue - padding, maxAbsValue + padding];
+  }, [chartData]);
 
   // 모든 연도별 분포 데이터를 미리 계산 (현금 흐름 차트와 동일한 방식)
   const allDistributionData = useMemo(() => {
