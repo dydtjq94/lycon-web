@@ -17,6 +17,7 @@ function TemplateManageModal({ isOpen, onClose }) {
   const categories = [
     { value: "income", label: "소득" },
     { value: "expense", label: "지출" },
+    { value: "saving", label: "저축/투자" },
   ];
 
   // 가족 구성원 타입 목록
@@ -214,6 +215,8 @@ function TemplateManageModal({ isOpen, onClose }) {
                                 ? styles.categoryBadgeIncome
                                 : template.category === "expense"
                                 ? styles.categoryBadgeExpense
+                                : template.category === "saving"
+                                ? styles.categoryBadgeSaving
                                 : ""
                             }`}
                           >
@@ -223,6 +226,8 @@ function TemplateManageModal({ isOpen, onClose }) {
                                   ? styles.badgeDotIncome
                                   : template.category === "expense"
                                   ? styles.badgeDotExpense
+                                  : template.category === "saving"
+                                  ? styles.badgeDotSaving
                                   : ""
                               }`}
                             />

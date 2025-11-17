@@ -3480,6 +3480,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
               {activeChart === "assets" && (
                 <div className={styles.chartContainer}>
                   <RechartsAssetChart
+                    key={`assets-${activeSimulationId}`}
                     data={simulationData.assets}
                     retirementAge={profileData.retirementAge}
                     spouseRetirementAge={profileData.spouseRetirementAge}
@@ -3500,6 +3501,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
               {activeChart === "cashflow" && (
                 <div className={styles.chartContainer}>
                   <RechartsCashflowChart
+                    key={`cashflow-${activeSimulationId}`}
                     data={simulationData.cashflow}
                     retirementAge={profileData.retirementAge}
                     detailedData={simulationData.cashflowDetailed}

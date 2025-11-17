@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from "react";
+import React, { useState, useMemo, memo, useRef, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -97,6 +97,7 @@ function RechartsCashflowChart({
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
   const [investmentModalData, setInvestmentModalData] = useState(null);
+  const chartContainerRef = useRef(null); // 차트 컨테이너 참조
 
   const hasData = data && data.length > 0;
 
@@ -507,6 +508,67 @@ function RechartsCashflowChart({
     };
   });
 
+  // 차트 렌더링 후 모든 SVG 요소에 focusable="false" 추가 및 키보드 이벤트 차단
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container || !hasData) return;
+
+    // 차트 컨테이너가 포커스를 받으면 즉시 해제
+    const handleFocus = (e) => {
+      if (e.target === container || container.contains(e.target)) {
+        e.target.blur();
+      }
+    };
+
+    // 짧은 딜레이 후 실행 (차트가 완전히 렌더링된 후)
+    const timer = setTimeout(() => {
+      // 모든 SVG 요소에 focusable="false" 추가
+      const svgElements = container.querySelectorAll("svg, svg *");
+      svgElements.forEach((element) => {
+        element.setAttribute("focusable", "false");
+        element.setAttribute("tabindex", "-1");
+      });
+
+      // 혹시 포커스가 있다면 제거
+      if (
+        document.activeElement &&
+        container.contains(document.activeElement)
+      ) {
+        document.activeElement.blur();
+      }
+    }, 100);
+
+    // 차트 컨테이너에서 키보드 이벤트 차단 (모달이 열려있지 않을 때만)
+    const handleKeyDown = (e) => {
+      // 모달이나 투자 설정 모달이 열려있으면 방향키를 차단하지 않음
+      if (isDistributionOpen || investmentModalData) {
+        return;
+      }
+
+      if (
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowRight" ||
+        e.key === "ArrowUp" ||
+        e.key === "ArrowDown"
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    container.addEventListener("keydown", handleKeyDown, { capture: true });
+    container.addEventListener("focus", handleFocus, { capture: true });
+
+    return () => {
+      clearTimeout(timer);
+      container.removeEventListener("keydown", handleKeyDown, {
+        capture: true,
+      });
+      container.removeEventListener("focus", handleFocus, { capture: true });
+    };
+  }, [hasData, data, isDistributionOpen, investmentModalData]); // 모달 상태도 의존성에 추가
+
   // 은퇴 시점 찾기
   const retirementData = chartData.find((item) => item.age === retirementAge);
 
@@ -552,6 +614,19 @@ function RechartsCashflowChart({
           }
         }}
         style={{ cursor: "pointer" }}
+        tabIndex={-1}
+        onKeyDown={(e) => {
+          // 차트 내부의 방향키 이벤트 차단 (툴팁 이동 방지)
+          if (
+            e.key === "ArrowLeft" ||
+            e.key === "ArrowRight" ||
+            e.key === "ArrowUp" ||
+            e.key === "ArrowDown"
+          ) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
       >
         {/* 그라데이션 정의 */}
         <defs>
@@ -1280,6 +1355,14 @@ function RechartsCashflowChart({
     setIsDistributionOpen(true);
   };
 
+  // 방향키로 연도 변경 핸들러
+  const handleYearChange = (newYear) => {
+    const newEntry = chartData.find((item) => item.year === newYear);
+    if (newEntry) {
+      setDistributionEntry(newEntry);
+    }
+  };
+
   // 투자 설정 아이콘 클릭 핸들러
   const handleInvestmentSettingClick = (entry) => {
     if (!entry || entry.amount <= 0) return;
@@ -1314,7 +1397,7 @@ function RechartsCashflowChart({
 
   return (
     <>
-      <div className={styles.chartContainer}>
+      <div className={styles.chartContainer} ref={chartContainerRef}>
         {!hasData ? (
           <div className={styles.noData}>데이터가 없습니다.</div>
         ) : (
@@ -1338,6 +1421,9 @@ function RechartsCashflowChart({
               ? `${distributionEntry.year}년 현금 흐름 구성`
               : "현금 흐름 구성"
           }
+          onYearChange={handleYearChange}
+          currentYear={distributionEntry?.year}
+          allYears={chartData.map((item) => item.year)}
         >
           <div className={styles.distributionModalContent}>
             {distributionSlices.positiveCategories.length === 0 &&

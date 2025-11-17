@@ -81,6 +81,7 @@ function RechartsAssetChart({
   const [isPanelOpen, setIsPanelOpen] = useState(false); // 년도 상세 패널
   const [hoveredData, setHoveredData] = useState(null); // 클릭으로 선택된 연도 데이터
   const hasData = Array.isArray(data) && data.length > 0;
+  const chartContainerRef = useRef(null); // 차트 컨테이너 참조
 
   // 배우자 은퇴 나이 (props 또는 profileData에서 가져오기)
   const spouseRetirementAge = spouseRetirementAgeProp
@@ -113,6 +114,57 @@ function RechartsAssetChart({
       setDistributionEntry(null);
     }
   }, [hasData]);
+
+  // 차트 렌더링 후 모든 SVG 요소에 focusable="false" 추가 및 키보드 이벤트 차단
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container || !hasData) return;
+
+    // 차트 컨테이너가 포커스를 받으면 즉시 해제
+    const handleFocus = (e) => {
+      if (e.target === container || container.contains(e.target)) {
+        e.target.blur();
+      }
+    };
+
+    // 짧은 딜레이 후 실행 (차트가 완전히 렌더링된 후)
+    const timer = setTimeout(() => {
+      // 모든 SVG 요소에 focusable="false" 추가
+      const svgElements = container.querySelectorAll('svg, svg *');
+      svgElements.forEach((element) => {
+        element.setAttribute('focusable', 'false');
+        element.setAttribute('tabindex', '-1');
+      });
+
+      // 혹시 포커스가 있다면 제거
+      if (document.activeElement && container.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
+    }, 100);
+
+    // 차트 컨테이너에서 키보드 이벤트 차단 (모달이 열려있지 않을 때만)
+    const handleKeyDown = (e) => {
+      // 모달이나 패널이 열려있으면 방향키를 차단하지 않음
+      if (isDistributionOpen || isPanelOpen) {
+        return;
+      }
+      
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    container.addEventListener('keydown', handleKeyDown, { capture: true });
+    container.addEventListener('focus', handleFocus, { capture: true });
+
+    return () => {
+      clearTimeout(timer);
+      container.removeEventListener('keydown', handleKeyDown, { capture: true });
+      container.removeEventListener('focus', handleFocus, { capture: true });
+    };
+  }, [hasData, data, isDistributionOpen, isPanelOpen]); // 모달 상태도 의존성에 추가
 
   // 현금이 마이너스로 변하는 시점 감지
   const findCashNegativeTransition = () => {
@@ -720,6 +772,14 @@ function RechartsAssetChart({
         }}
         onClick={handleChartClick}
         style={{ cursor: "pointer" }}
+        tabIndex={-1}
+        onKeyDown={(e) => {
+          // 차트 내부의 방향키 이벤트 차단 (툴팁 이동 방지)
+          if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
       >
         {/* 그라데이션 정의 */}
         <defs>
@@ -1505,7 +1565,7 @@ function RechartsAssetChart({
 
   return (
     <>
-      <div className={styles.chartContainer}>
+      <div className={styles.chartContainer} ref={chartContainerRef}>
         {hasData ? (
           <>
             {/* 컨텐츠 영역: 그래프 */}

@@ -205,6 +205,12 @@
   border: 1px solid #fecaca;
 }
 
+.categoryBadgeSaving {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
 .badgeDot {
   width: 6px;
   height: 6px;
@@ -218,6 +224,10 @@
 
 .badgeDotExpense {
   background: #dc2626;
+}
+
+.badgeDotSaving {
+  background: #2563eb;
 }
 
 .familyBadge {

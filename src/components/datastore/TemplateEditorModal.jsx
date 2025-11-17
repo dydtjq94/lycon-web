@@ -24,10 +24,11 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 카테고리 목록 (소득/지출만)
+  // 카테고리 목록 (소득/지출/저축투자)
   const categories = [
     { value: "income", label: "소득" },
     { value: "expense", label: "지출" },
+    { value: "saving", label: "저축/투자" },
   ];
 
   // 가족 구성원 타입 목록
