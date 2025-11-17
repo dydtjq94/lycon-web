@@ -21,9 +21,23 @@ function FinancialDataStorePanel({
 }) {
   const [templates, setTemplates] = useState([]); // 모든 템플릿
   const [loading, setLoading] = useState(true);
+  const [selectedMainCategory, setSelectedMainCategory] = useState("income_expense"); // 메인 카테고리: income_expense, saving
   const [selectedFamilyType, setSelectedFamilyType] = useState("self"); // 선택된 가족 구성원 타입
-  const [selectedCategory, setSelectedCategory] = useState("all"); // 선택된 카테고리
+  const [selectedSubCategory, setSelectedSubCategory] = useState("all"); // 소득/지출 내 세부 카테고리
   const [selectedFamilyMember, setSelectedFamilyMember] = useState(null); // 선택된 가족 구성원 (자녀/부모)
+
+  // 메인 카테고리 목록
+  const mainCategories = [
+    { value: "income_expense", label: "소득/지출" },
+    { value: "saving", label: "저축/투자" },
+  ];
+
+  // 소득/지출 세부 카테고리
+  const subCategories = [
+    { value: "all", label: "전체" },
+    { value: "income", label: "소득" },
+    { value: "expense", label: "지출" },
+  ];
 
   // 가족 구성원 타입 목록
   const familyTypes = [
@@ -33,14 +47,6 @@ function FinancialDataStorePanel({
     { value: "daughter", label: "딸" },
     { value: "father", label: "부" },
     { value: "mother", label: "모" },
-  ];
-
-  // 카테고리 목록 (전체/소득/지출/저축투자)
-  const categories = [
-    { value: "all", label: "전체" },
-    { value: "income", label: "소득" },
-    { value: "expense", label: "지출" },
-    { value: "saving", label: "저축/투자" },
   ];
 
   // 템플릿 불러오기
@@ -73,26 +79,39 @@ function FinancialDataStorePanel({
   // 필터링된 템플릿 가져오기
   const getFilteredTemplates = () => {
     return templates.filter((template) => {
-      // 가족 구성원 타입 필터 (배열 또는 단일 값 처리)
-      const memberType = template.familyMemberType;
-      if (Array.isArray(memberType)) {
-        // 배열인 경우: 선택된 타입이 배열에 포함되어 있는지 확인
-        if (!memberType.includes(selectedFamilyType)) {
+      // 메인 카테고리 필터
+      if (selectedMainCategory === "income_expense") {
+        // 소득/지출 선택 시: saving 카테고리 제외
+        if (template.category === "saving") {
           return false;
         }
-      } else {
-        // 단일 값인 경우 (하위 호환성)
-        if (memberType !== selectedFamilyType) {
-          return false;
-        }
-      }
 
-      // 카테고리 필터
-      if (
-        selectedCategory !== "all" &&
-        template.category !== selectedCategory
-      ) {
-        return false;
+        // 가족 구성원 타입 필터 (배열 또는 단일 값 처리)
+        const memberType = template.familyMemberType;
+        if (Array.isArray(memberType)) {
+          // 배열인 경우: 선택된 타입이 배열에 포함되어 있는지 확인
+          if (!memberType.includes(selectedFamilyType)) {
+            return false;
+          }
+        } else {
+          // 단일 값인 경우 (하위 호환성)
+          if (memberType !== selectedFamilyType) {
+            return false;
+          }
+        }
+
+        // 세부 카테고리 필터 (소득/지출 내에서)
+        if (
+          selectedSubCategory !== "all" &&
+          template.category !== selectedSubCategory
+        ) {
+          return false;
+        }
+      } else if (selectedMainCategory === "saving") {
+        // 저축/투자 선택 시: saving 카테고리만 표시
+        if (template.category !== "saving") {
+          return false;
+        }
       }
 
       return true;
@@ -117,8 +136,10 @@ function FinancialDataStorePanel({
 
   // 카테고리 이름 변환
   const getCategoryLabel = (category) => {
-    const cat = categories.find((c) => c.value === category);
-    return cat ? cat.label : category;
+    if (category === "income") return "소득";
+    if (category === "expense") return "지출";
+    if (category === "saving") return "저축/투자";
+    return category;
   };
 
   // 가족 구성원 타입이 변경되면 첫 번째 구성원 자동 선택
@@ -177,6 +198,20 @@ function FinancialDataStorePanel({
     const currentYear = new Date().getFullYear();
     const { category, data, ageStart, ageEnd, familyMemberType } = template;
 
+    // 저축/투자 카테고리일 때는 나이 기반 계산 없이 그대로 전달
+    if (category === "saving") {
+      const templateData = {
+        category,
+        ...data, // 저축/투자 모달의 모든 필드를 그대로 전달
+        title: template.title, // 템플릿 제목 그대로 사용
+      };
+
+      console.log("저축/투자 템플릿 데이터 전달:", templateData); // 디버깅용
+      onSelectTemplate(templateData);
+      return;
+    }
+
+    // 소득/지출일 때는 기존 로직: 나이 기반 계산
     // 중요: 사용자가 선택한 탭(selectedFamilyType)을 사용하여 정확한 가족 구성원의 나이로 계산
     const memberType = selectedFamilyType;
 
@@ -284,7 +319,7 @@ function FinancialDataStorePanel({
       memo: data.memo || "", // memo 유지
     };
 
-    console.log("템플릿 데이터 전달:", templateData); // 디버깅용
+    console.log("소득/지출 템플릿 데이터 전달:", templateData); // 디버깅용
 
     onSelectTemplate(templateData);
     // 사이드바는 유지 (onClose 호출 제거)
@@ -350,80 +385,110 @@ function FinancialDataStorePanel({
 
   return (
     <div className={styles.container}>
-      {/* 가족 구성원 타입 탭 (현재 프로필에 있는 구성원만) */}
-      <div className={styles.familyTypeTabs}>
-        {availableFamilyTypes.map((type) => (
-          <button
-            key={type.value}
-            className={`${styles.tab} ${
-              selectedFamilyType === type.value ? styles.activeTab : ""
-            }`}
-            onClick={() => setSelectedFamilyType(type.value)}
-          >
-            {type.label}
-          </button>
-        ))}
-      </div>
-
-      {/* 가족 구성원 선택 (아들/딸/부/모만) */}
-      {["son", "daughter", "father", "mother"].includes(selectedFamilyType) &&
-        availableFamilyMembers.length > 0 && (
-          <div className={styles.familyMemberSelector}>
-            <div className={styles.memberButtons}>
-              {availableFamilyMembers.map((member, index) => {
-                // id가 없으면 name + birthYear로 고유 키 생성
-                const memberKey =
-                  member.id || `${member.name}-${member.birthYear}`;
-                const selectedKey =
-                  selectedFamilyMember?.id ||
-                  (selectedFamilyMember
-                    ? `${selectedFamilyMember.name}-${selectedFamilyMember.birthYear}`
-                    : null);
-                const isSelected = memberKey === selectedKey;
-
-                return (
-                  <button
-                    key={memberKey}
-                    type="button"
-                    className={
-                      isSelected
-                        ? styles.memberButtonActive
-                        : styles.memberButton
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setSelectedFamilyMember(member);
-                    }}
-                  >
-                    {member.name}, {calculateKoreanAge(member.birthYear)}세
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-      {/* 카테고리 필터 */}
-      <div className={styles.categoryFilters}>
-        {categories.map((cat) => (
+      {/* 메인 카테고리 탭 (소득/지출, 저축/투자) */}
+      <div className={styles.mainCategoryTabs}>
+        {mainCategories.map((cat) => (
           <button
             key={cat.value}
-            className={`${styles.categoryButton} ${
-              selectedCategory === cat.value ? styles.activeCategoryButton : ""
+            className={`${styles.mainTab} ${
+              selectedMainCategory === cat.value ? styles.activeMainTab : ""
             }`}
-            onClick={() => setSelectedCategory(cat.value)}
+            onClick={() => setSelectedMainCategory(cat.value)}
           >
             {cat.label}
           </button>
         ))}
       </div>
 
+      {/* 소득/지출일 때만 가족 구성원 타입 탭 표시 */}
+      {selectedMainCategory === "income_expense" && (
+        <>
+          {/* 가족 구성원 타입 탭 (현재 프로필에 있는 구성원만) */}
+          <div className={styles.familyTypeTabs}>
+            {availableFamilyTypes.map((type) => (
+              <button
+                key={type.value}
+                className={`${styles.tab} ${
+                  selectedFamilyType === type.value ? styles.activeTab : ""
+                }`}
+                onClick={() => setSelectedFamilyType(type.value)}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 가족 구성원 선택 (아들/딸/부/모만) */}
+          {["son", "daughter", "father", "mother"].includes(selectedFamilyType) &&
+            availableFamilyMembers.length > 0 && (
+              <div className={styles.familyMemberSelector}>
+                <div className={styles.memberButtons}>
+                  {availableFamilyMembers.map((member, index) => {
+                    // id가 없으면 name + birthYear로 고유 키 생성
+                    const memberKey =
+                      member.id || `${member.name}-${member.birthYear}`;
+                    const selectedKey =
+                      selectedFamilyMember?.id ||
+                      (selectedFamilyMember
+                        ? `${selectedFamilyMember.name}-${selectedFamilyMember.birthYear}`
+                        : null);
+                    const isSelected = memberKey === selectedKey;
+
+                    return (
+                      <button
+                        key={memberKey}
+                        type="button"
+                        className={
+                          isSelected
+                            ? styles.memberButtonActive
+                            : styles.memberButton
+                        }
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedFamilyMember(member);
+                        }}
+                      >
+                        {member.name}, {calculateKoreanAge(member.birthYear)}세
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+          {/* 소득/지출 세부 카테고리 필터 */}
+          <div className={styles.categoryFilters}>
+            {subCategories.map((cat) => (
+              <button
+                key={cat.value}
+                className={`${styles.categoryButton} ${
+                  selectedSubCategory === cat.value ? styles.activeCategoryButton : ""
+                }`}
+                onClick={() => setSelectedSubCategory(cat.value)}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* 템플릿 리스트 */}
       <div className={styles.content}>
         {Object.keys(groupedTemplates).length === 0 ? (
           <div className={styles.emptyState}>
-            {selectedCategory === "income" ? (
+            {selectedMainCategory === "saving" ? (
+              <>
+                <span className={styles.emptyIcon}>💰</span>
+                <span className={styles.emptyText}>
+                  저축/투자 라이브러리가 비었습니다
+                </span>
+                <span className={styles.emptySubText}>
+                  관리 모드에서 저축/투자 템플릿을 추가해보세요
+                </span>
+              </>
+            ) : selectedSubCategory === "income" ? (
               <>
                 <span className={styles.emptyIcon}>💰</span>
                 <span className={styles.emptyText}>
@@ -433,7 +498,7 @@ function FinancialDataStorePanel({
                   관리 모드에서 소득 템플릿을 추가해보세요
                 </span>
               </>
-            ) : selectedCategory === "expense" ? (
+            ) : selectedSubCategory === "expense" ? (
               <>
                 <span className={styles.emptyIcon}>💸</span>
                 <span className={styles.emptyText}>

@@ -450,12 +450,49 @@ function DashboardPage() {
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
 
+      // 터치 이벤트로 스크롤 방지 (모바일)
+      const preventScroll = (e) => {
+        // 패널 내부 및 모달 내부 스크롤은 허용
+        let target = e.target;
+        while (target && target !== document.body) {
+          if (target.classList) {
+            // 프로필 패널 내부 스크롤 허용
+            if (
+              target.classList.contains("profileSidePanelContent") ||
+              target.classList.contains("profilePanelContent")
+            ) {
+              return;
+            }
+            // 모달 오버레이는 스크롤 허용 (그 안의 모든 요소)
+            if (target.classList.contains("modalOverlay")) {
+              return;
+            }
+          }
+          // overflow가 설정된 스크롤 가능한 요소인지 확인
+          const style = window.getComputedStyle(target);
+          if (style.overflowY === "auto" || style.overflowY === "scroll") {
+            return;
+          }
+          target = target.parentElement;
+        }
+        e.preventDefault();
+      };
+
+      // touchmove 이벤트 차단 (모바일)
+      document.addEventListener("touchmove", preventScroll, { passive: false });
+      // wheel 이벤트 차단 (데스크톱)
+      document.addEventListener("wheel", preventScroll, { passive: false });
+
       return () => {
         // 원래 상태로 복구
         document.body.style.overflow = "";
         document.body.style.position = "";
         document.body.style.top = "";
         document.body.style.width = "";
+
+        // 이벤트 리스너 제거
+        document.removeEventListener("touchmove", preventScroll);
+        document.removeEventListener("wheel", preventScroll);
 
         // 스크롤 위치 복원
         window.scrollTo(0, scrollY);
@@ -2182,6 +2219,9 @@ function DashboardPage() {
     } else if (category === "expense") {
       setInitialExpenseData(templateData);
       setIsExpenseModalOpen(true);
+    } else if (category === "saving") {
+      setInitialSavingData(templateData);
+      setIsSavingModalOpen(true);
     }
   };
 
