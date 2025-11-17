@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, memo, useRef } from "react";
+import React, { useEffect, useMemo, useState, memo, useRef, useCallback } from "react";
 import {
   BarChart,
   Bar,
@@ -75,6 +75,8 @@ function RechartsAssetChart({
   debts = [],
   incomes = [],
   expenses = [],
+  xAxisRange: externalXAxisRange, // 외부에서 전달받는 X축 범위
+  onXAxisRangeChange, // X축 범위 변경 콜백
 }) {
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
@@ -82,6 +84,34 @@ function RechartsAssetChart({
   const [hoveredData, setHoveredData] = useState(null); // 클릭으로 선택된 연도 데이터
   const hasData = Array.isArray(data) && data.length > 0;
   const chartContainerRef = useRef(null); // 차트 컨테이너 참조
+  
+  // 전체 데이터 범위 계산
+  const availableYears = useMemo(() => {
+    if (!hasData) return [];
+    return data.map(d => d.year).sort((a, b) => a - b);
+  }, [hasData, data]);
+  
+  const minYear = availableYears[0];
+  const maxYear = availableYears[availableYears.length - 1];
+  
+  // 외부에서 전달받은 범위 사용, 없으면 전체 범위 사용
+  const xAxisRange = externalXAxisRange && externalXAxisRange.start !== null && externalXAxisRange.end !== null
+    ? externalXAxisRange
+    : { start: minYear, end: maxYear };
+  
+  // X축 범위 변경 핸들러
+  const handleXAxisRangeChange = useCallback((newRange) => {
+    if (onXAxisRangeChange) {
+      onXAxisRangeChange(newRange);
+    }
+  }, [onXAxisRangeChange]);
+  
+  // 초기값 설정
+  useEffect(() => {
+    if (minYear && maxYear && externalXAxisRange && externalXAxisRange.start === null && externalXAxisRange.end === null && onXAxisRangeChange) {
+      onXAxisRangeChange({ start: minYear, end: maxYear });
+    }
+  }, [minYear, maxYear, externalXAxisRange, onXAxisRangeChange]);
 
   // 배우자 은퇴 나이 (props 또는 profileData에서 가져오기)
   const spouseRetirementAge = spouseRetirementAgeProp
@@ -495,7 +525,14 @@ function RechartsAssetChart({
   // 차트 데이터 포맷팅 - 4개 카테고리로 단순화 (성능 최적화)
   const chartData = useMemo(() => {
     if (!hasData) return [];
-    return data.map((item) => {
+    
+    // X축 범위에 따른 데이터 필터링
+    const filteredData = data.filter((item) => {
+      if (xAxisRange.start === null || xAxisRange.end === null) return true;
+      return item.year >= xAxisRange.start && item.year <= xAxisRange.end;
+    });
+    
+    return filteredData.map((item) => {
       // 배우자 나이 계산
       const spouseAge =
         profileData?.hasSpouse && profileData?.spouseBirthYear
@@ -602,7 +639,7 @@ function RechartsAssetChart({
         부채: debtAmount,
       };
     });
-  }, [hasData, data, profileData, eventsByYear]);
+  }, [hasData, data, profileData, eventsByYear, xAxisRange]);
 
   // 7개 카테고리 (렌더링 순서: 양수 역순, 음수 순서대로)
   const assetKeys = [
@@ -791,12 +828,15 @@ function RechartsAssetChart({
 
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
 
-        {/* X축 - 나이 */}
+        {/* X축 - 년도 */}
         <XAxis
           dataKey="year"
           type="number"
           scale="linear"
-          domain={["dataMin - 1", "dataMax + 1"]}
+          domain={[
+            xAxisRange.start ? xAxisRange.start - 1 : "dataMin - 1",
+            xAxisRange.end ? xAxisRange.end + 1 : "dataMax + 1"
+          ]}
           tickFormatter={(value) => `${value}`}
           stroke="#6b7280"
           fontSize={12}
@@ -1568,6 +1608,63 @@ function RechartsAssetChart({
       <div className={styles.chartContainer} ref={chartContainerRef}>
         {hasData ? (
           <>
+            {/* X축 범위 조정 UI - Range Slider (상단, 작고 심플하게) */}
+            <div className={styles.rangeControlsContainer}>
+              <div className={styles.rangeSliderWrapper}>
+                <div className={styles.rangeInputWrapper}>
+                  <input
+                    type="range"
+                    min={minYear}
+                    max={maxYear}
+                    value={xAxisRange.start || minYear}
+                    onChange={(e) => {
+                      const newStart = parseInt(e.target.value);
+                      if (newStart < xAxisRange.end) {
+                        handleXAxisRangeChange({ ...xAxisRange, start: newStart });
+                      }
+                    }}
+                    className={`${styles.rangeInput} ${styles.rangeInputStart}`}
+                  />
+                  <input
+                    type="range"
+                    min={minYear}
+                    max={maxYear}
+                    value={xAxisRange.end || maxYear}
+                    onChange={(e) => {
+                      const newEnd = parseInt(e.target.value);
+                      if (newEnd > xAxisRange.start) {
+                        handleXAxisRangeChange({ ...xAxisRange, end: newEnd });
+                      }
+                    }}
+                    className={`${styles.rangeInput} ${styles.rangeInputEnd}`}
+                  />
+                  <div className={styles.rangeTrack}>
+                    <div 
+                      className={styles.rangeTrackActive}
+                      style={{
+                        left: `${((xAxisRange.start - minYear) / (maxYear - minYear)) * 100}%`,
+                        right: `${100 - ((xAxisRange.end - minYear) / (maxYear - minYear)) * 100}%`
+                      }}
+                    />
+                    {/* 은퇴 시점 마커 */}
+                    {retirementYear && retirementYear >= minYear && retirementYear <= maxYear && (
+                      <div 
+                        className={styles.retirementMarker}
+                        style={{
+                          left: `${((retirementYear - minYear) / (maxYear - minYear)) * 100}%`
+                        }}
+                        title={`은퇴: ${retirementYear}년`}
+                      />
+                    )}
+                  </div>
+                  <div className={styles.rangeLabels}>
+                    <span className={styles.rangeLabel}>{xAxisRange.start || minYear}</span>
+                    <span className={styles.rangeLabel}>{xAxisRange.end || maxYear}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             {/* 컨텐츠 영역: 그래프 */}
             <div className={styles.chartContent}>
               <div className={styles.chartWrapper}>{renderChart()}</div>

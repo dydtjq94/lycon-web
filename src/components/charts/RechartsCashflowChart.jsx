@@ -1,4 +1,11 @@
-import React, { useState, useMemo, memo, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  memo,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   BarChart,
   Bar,
@@ -93,6 +100,8 @@ function RechartsCashflowChart({
   assets = [],
   debts = [],
   onUpdateInvestmentRule, // 투자 규칙 업데이트 콜백
+  xAxisRange: externalXAxisRange, // 외부에서 전달받는 X축 범위
+  onXAxisRangeChange, // X축 범위 변경 콜백
 }) {
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
@@ -100,6 +109,47 @@ function RechartsCashflowChart({
   const chartContainerRef = useRef(null); // 차트 컨테이너 참조
 
   const hasData = data && data.length > 0;
+
+  // 전체 데이터 범위 계산
+  const availableYears = useMemo(() => {
+    if (!hasData) return [];
+    return data.map((d) => d.year).sort((a, b) => a - b);
+  }, [hasData, data]);
+
+  const minYear = availableYears[0];
+  const maxYear = availableYears[availableYears.length - 1];
+
+  // 외부에서 전달받은 범위 사용, 없으면 전체 범위 사용
+  const xAxisRange =
+    externalXAxisRange &&
+    externalXAxisRange.start !== null &&
+    externalXAxisRange.end !== null
+      ? externalXAxisRange
+      : { start: minYear, end: maxYear };
+
+  // X축 범위 변경 핸들러
+  const handleXAxisRangeChange = useCallback(
+    (newRange) => {
+      if (onXAxisRangeChange) {
+        onXAxisRangeChange(newRange);
+      }
+    },
+    [onXAxisRangeChange]
+  );
+
+  // 초기값 설정
+  useEffect(() => {
+    if (
+      minYear &&
+      maxYear &&
+      externalXAxisRange &&
+      externalXAxisRange.start === null &&
+      externalXAxisRange.end === null &&
+      onXAxisRangeChange
+    ) {
+      onXAxisRangeChange({ start: minYear, end: maxYear });
+    }
+  }, [minYear, maxYear, externalXAxisRange, onXAxisRangeChange]);
 
   // 은퇴년도 계산
   const retirementYear =
@@ -458,55 +508,65 @@ function RechartsCashflowChart({
   }, {});
 
   // 차트 데이터 포맷팅
-  const chartData = data.map((item) => {
-    // 배우자 나이 계산
-    const spouseAge =
-      profileData?.hasSpouse && profileData?.spouseBirthYear
-        ? item.year - parseInt(profileData.spouseBirthYear)
-        : null;
+  const chartData = useMemo(() => {
+    if (!hasData) return [];
 
-    // 자녀들 나이 계산
-    const childrenAges = profileData?.familyMembers
-      ? profileData.familyMembers
-          .filter((member) => member.relationship === "자녀")
-          .map((child) => ({
-            gender: child.gender || "아들",
-            age: item.year - parseInt(child.birthYear),
-          }))
-          .filter((child) => child.age >= 0)
-      : [];
+    // X축 범위에 따른 데이터 필터링
+    const filteredData = data.filter((item) => {
+      if (xAxisRange.start === null || xAxisRange.end === null) return true;
+      return item.year >= xAxisRange.start && item.year <= xAxisRange.end;
+    });
 
-    // 가족 라벨 생성
-    let familyLabel = `본인 ${item.age}`;
-    if (spouseAge) familyLabel += ` • 배우자 ${spouseAge}`;
-    if (childrenAges.length > 0) {
-      const childrenText = childrenAges
-        .map((child) => `${child.gender} ${child.age}`)
-        .join(", ");
-      familyLabel += ` • ${childrenText}`;
-    }
+    return filteredData.map((item) => {
+      // 배우자 나이 계산
+      const spouseAge =
+        profileData?.hasSpouse && profileData?.spouseBirthYear
+          ? item.year - parseInt(profileData.spouseBirthYear)
+          : null;
 
-    return {
-      age: item.age,
-      year: item.year,
-      amount: item.amount,
-      formattedAmount: formatAmountForChart(item.amount),
-      familyLabel: familyLabel,
-      assetPurchases: item.assetPurchases || [],
-      savingPurchases: item.savingPurchases || [],
-      savingIncomes: item.savingIncomes || [],
-      savingContributions: item.savingContributions || [],
-      realEstatePurchases: item.realEstatePurchases || [],
-      realEstateTaxes: item.realEstateTaxes || [],
-      capitalGainsTaxes: item.capitalGainsTaxes || [],
-      assetSales: item.assetSales || [],
-      realEstateSales: item.realEstateSales || [],
-      debtInjections: item.debtInjections || [],
-      debtInterests: item.debtInterests || [],
-      debtPrincipals: item.debtPrincipals || [],
-      events: eventsByYear[item.year] || [],
-    };
-  });
+      // 자녀들 나이 계산
+      const childrenAges = profileData?.familyMembers
+        ? profileData.familyMembers
+            .filter((member) => member.relationship === "자녀")
+            .map((child) => ({
+              gender: child.gender || "아들",
+              age: item.year - parseInt(child.birthYear),
+            }))
+            .filter((child) => child.age >= 0)
+        : [];
+
+      // 가족 라벨 생성
+      let familyLabel = `본인 ${item.age}`;
+      if (spouseAge) familyLabel += ` • 배우자 ${spouseAge}`;
+      if (childrenAges.length > 0) {
+        const childrenText = childrenAges
+          .map((child) => `${child.gender} ${child.age}`)
+          .join(", ");
+        familyLabel += ` • ${childrenText}`;
+      }
+
+      return {
+        age: item.age,
+        year: item.year,
+        amount: item.amount,
+        formattedAmount: formatAmountForChart(item.amount),
+        familyLabel: familyLabel,
+        assetPurchases: item.assetPurchases || [],
+        savingPurchases: item.savingPurchases || [],
+        savingIncomes: item.savingIncomes || [],
+        savingContributions: item.savingContributions || [],
+        realEstatePurchases: item.realEstatePurchases || [],
+        realEstateTaxes: item.realEstateTaxes || [],
+        capitalGainsTaxes: item.capitalGainsTaxes || [],
+        assetSales: item.assetSales || [],
+        realEstateSales: item.realEstateSales || [],
+        debtInjections: item.debtInjections || [],
+        debtInterests: item.debtInterests || [],
+        debtPrincipals: item.debtPrincipals || [],
+        events: eventsByYear[item.year] || [],
+      };
+    });
+  }, [hasData, data, profileData, eventsByYear, xAxisRange]);
 
   // 차트 렌더링 후 모든 SVG 요소에 focusable="false" 추가 및 키보드 이벤트 차단
   useEffect(() => {
@@ -638,12 +698,15 @@ function RechartsCashflowChart({
 
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
 
-        {/* X축 - 나이 */}
+        {/* X축 - 년도 */}
         <XAxis
           dataKey="year"
           type="number"
           scale="linear"
-          domain={["dataMin - 1", "dataMax + 1"]}
+          domain={[
+            xAxisRange.start ? xAxisRange.start - 1 : "dataMin - 1",
+            xAxisRange.end ? xAxisRange.end + 1 : "dataMax + 1",
+          ]}
           tickFormatter={(value) => `${value}`}
           stroke="#6b7280"
           fontSize={12}
@@ -1402,6 +1465,83 @@ function RechartsCashflowChart({
           <div className={styles.noData}>데이터가 없습니다.</div>
         ) : (
           <>
+            {/* X축 범위 조정 UI - Range Slider (상단, 작고 심플하게) */}
+            <div className={styles.rangeControlsContainer}>
+              <div className={styles.rangeSliderWrapper}>
+                <div className={styles.rangeInputWrapper}>
+                  <input
+                    type="range"
+                    min={minYear}
+                    max={maxYear}
+                    value={xAxisRange.start || minYear}
+                    onChange={(e) => {
+                      const newStart = parseInt(e.target.value);
+                      if (newStart < xAxisRange.end) {
+                        handleXAxisRangeChange({
+                          ...xAxisRange,
+                          start: newStart,
+                        });
+                      }
+                    }}
+                    className={`${styles.rangeInput} ${styles.rangeInputStart}`}
+                  />
+                  <input
+                    type="range"
+                    min={minYear}
+                    max={maxYear}
+                    value={xAxisRange.end || maxYear}
+                    onChange={(e) => {
+                      const newEnd = parseInt(e.target.value);
+                      if (newEnd > xAxisRange.start) {
+                        handleXAxisRangeChange({ ...xAxisRange, end: newEnd });
+                      }
+                    }}
+                    className={`${styles.rangeInput} ${styles.rangeInputEnd}`}
+                  />
+                  <div className={styles.rangeTrack}>
+                    <div
+                      className={styles.rangeTrackActive}
+                      style={{
+                        left: `${
+                          ((xAxisRange.start - minYear) / (maxYear - minYear)) *
+                          100
+                        }%`,
+                        right: `${
+                          100 -
+                          ((xAxisRange.end - minYear) / (maxYear - minYear)) *
+                            100
+                        }%`,
+                      }}
+                    />
+                    {/* 은퇴 시점 마커 */}
+                    {retirementYear &&
+                      retirementYear >= minYear &&
+                      retirementYear <= maxYear && (
+                        <div
+                          className={styles.retirementMarker}
+                          style={{
+                            left: `${
+                              ((retirementYear - minYear) /
+                                (maxYear - minYear)) *
+                              100
+                            }%`,
+                          }}
+                          title={`은퇴: ${retirementYear}년`}
+                        />
+                      )}
+                  </div>
+                  <div className={styles.rangeLabels}>
+                    <span className={styles.rangeLabel}>
+                      {xAxisRange.start || minYear}
+                    </span>
+                    <span className={styles.rangeLabel}>
+                      {xAxisRange.end || maxYear}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* 컨텐츠 영역: 그래프 */}
             <div className={styles.chartWrapper}>{renderChart()}</div>
           </>

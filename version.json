@@ -1,7 +1,15 @@
 {
-  "version": "0.33.20",
+  "version": "0.33.46",
   "today": "2025-11-17",
   "history": [
+    {
+      "version": "0.33.46",
+      "date": "2025-11-17",
+      "changes": [
+        "🐛 차트 컴포넌트 useCallback import 누락 수정",
+        "RechartsAssetChart와 RechartsCashflowChart에 useCallback 추가"
+      ]
+    },
     {
       "version": "0.33.20",
       "date": "2025-11-17",

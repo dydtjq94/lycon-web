@@ -145,6 +145,13 @@ function DashboardPage() {
   const [isChecklistSaving, setIsChecklistSaving] = useState(false);
   const checklistIdRef = useRef(null);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false); // 템플릿 수정 모달
+
+  // X축 범위 조정 상태 (두 차트 공유)
+  const [chartXAxisRange, setChartXAxisRange] = useState({
+    start: null,
+    end: null,
+  });
+
   const fetchSimulationFinancialData = useCallback(
     async (simulationId) => {
       if (!profileId || !simulationId || !profileData) return null;
@@ -3534,6 +3541,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
                     debts={debts}
                     incomes={incomes}
                     expenses={expenses}
+                    xAxisRange={chartXAxisRange}
+                    onXAxisRangeChange={setChartXAxisRange}
                   />
                 </div>
               )}
@@ -3555,6 +3564,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
                     assets={assets}
                     debts={debts}
                     onUpdateInvestmentRule={handleUpdateInvestmentRule} // 투자 규칙 업데이트 콜백
+                    xAxisRange={chartXAxisRange}
+                    onXAxisRangeChange={setChartXAxisRange}
                   />
                 </div>
               )}
