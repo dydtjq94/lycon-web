@@ -36,7 +36,7 @@ function RechartsIncomeExpenseChart({
     부동산: "#8b5cf6",
     자산: "#06b6d4",
     부채: "#374151",
-    세금: "#ef4444",
+    세금: "#8b4513",
   };
 
   // 카테고리 매핑 (RechartsCashflowChart와 동일)
@@ -61,11 +61,11 @@ function RechartsIncomeExpenseChart({
     "임대 소득": { color: "#8b5cf6", name: "부동산" },
     "부동산 구매": { color: "#8b5cf6", name: "부동산" },
     "부동산 수령": { color: "#8b5cf6", name: "부동산" },
-    "부동산 취득세": { color: "#8b5cf6", name: "부동산" },
+    "부동산 취득세": { color: "#8b4513", name: "세금" },
     주택연금: { color: "#8b5cf6", name: "부동산" },
-    취득세: { color: "#8b5cf6", name: "부동산" },
-    양도소득세: { color: "#8b5cf6", name: "부동산" },
-    양도세: { color: "#ef4444", name: "세금" },
+    취득세: { color: "#8b4513", name: "세금" },
+    양도소득세: { color: "#8b4513", name: "세금" },
+    양도세: { color: "#8b4513", name: "세금" },
     자산: { color: "#06b6d4", name: "자산" },
     "자산 구매": { color: "#06b6d4", name: "자산" },
     "자산 수령": { color: "#06b6d4", name: "자산" },
@@ -428,14 +428,14 @@ function RechartsIncomeExpenseChart({
       <div className={styles.chartGrid}>
         {/* 수입 차트 */}
         <div className={styles.chartWrapper}>
-          <ResponsiveContainer width="100%" height={500}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={incomeData}
               margin={{
-                top: 20,
+                top: 40,
                 right: 30,
                 left: 40,
-                bottom: 80,
+                bottom: 120,
               }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -450,12 +450,6 @@ function RechartsIncomeExpenseChart({
                 tickFormatter={(value) => `${value}`}
                 stroke="#6b7280"
                 fontSize={12}
-                label={{
-                  value: "수입",
-                  position: "insideBottom",
-                  offset: -10,
-                  style: { fontSize: "16px", fontWeight: 600, fill: "#111827" },
-                }}
               />
               <YAxis
                 domain={incomeYDomain}
@@ -500,14 +494,14 @@ function RechartsIncomeExpenseChart({
 
         {/* 지출 차트 */}
         <div className={styles.chartWrapper}>
-          <ResponsiveContainer width="100%" height={500}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={expenseData}
               margin={{
-                top: 20,
+                top: 40,
                 right: 30,
                 left: 40,
-                bottom: 80,
+                bottom: 120,
               }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -522,12 +516,6 @@ function RechartsIncomeExpenseChart({
                 tickFormatter={(value) => `${value}`}
                 stroke="#6b7280"
                 fontSize={12}
-                label={{
-                  value: "지출",
-                  position: "insideBottom",
-                  offset: -10,
-                  style: { fontSize: "16px", fontWeight: 600, fill: "#111827" },
-                }}
               />
               <YAxis
                 domain={expenseYDomain}

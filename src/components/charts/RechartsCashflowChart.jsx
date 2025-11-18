@@ -815,11 +815,11 @@ function RechartsCashflowChart({
                 "임대 소득": { color: "#8b5cf6", name: "부동산" },
                 "부동산 구매": { color: "#8b5cf6", name: "부동산" },
                 "부동산 수령": { color: "#8b5cf6", name: "부동산" },
-                "부동산 취득세": { color: "#8b5cf6", name: "부동산" },
+                "부동산 취득세": { color: "#8b4513", name: "세금" },
                 주택연금: { color: "#8b5cf6", name: "부동산" },
-                취득세: { color: "#8b5cf6", name: "부동산" },
-                양도소득세: { color: "#8b5cf6", name: "부동산" },
-                양도세: { color: "#ef4444", name: "세금" },
+                취득세: { color: "#8b4513", name: "세금" },
+                양도소득세: { color: "#8b4513", name: "세금" },
+                양도세: { color: "#8b4513", name: "세금" },
                 자산: { color: "#06b6d4", name: "자산" },
                 "자산 구매": { color: "#06b6d4", name: "자산" },
                 "자산 수령": { color: "#06b6d4", name: "자산" },
@@ -1032,6 +1032,7 @@ function RechartsCashflowChart({
                           "부동산",
                           "자산",
                           "부채",
+                          "세금",
                         ]
                           .filter(
                             (categoryName) => positivesByCategory[categoryName]
@@ -1117,6 +1118,7 @@ function RechartsCashflowChart({
                           "부동산",
                           "자산",
                           "부채",
+                          "세금",
                         ]
                           .filter(
                             (categoryName) => negativesByCategory[categoryName]
@@ -1246,11 +1248,11 @@ function RechartsCashflowChart({
     "임대 소득": { color: "#8b5cf6", order: 5, name: "부동산" },
     "부동산 구매": { color: "#8b5cf6", order: 5, name: "부동산" },
     "부동산 수령": { color: "#8b5cf6", order: 5, name: "부동산" },
-    "부동산 취득세": { color: "#8b5cf6", order: 5, name: "부동산" },
+    "부동산 취득세": { color: "#8b4513", order: 8, name: "세금" },
     주택연금: { color: "#8b5cf6", order: 5, name: "부동산" },
-    취득세: { color: "#8b5cf6", order: 5, name: "부동산" },
-    양도소득세: { color: "#8b5cf6", order: 5, name: "부동산" },
-    양도세: { color: "#ef4444", order: 8, name: "세금" },
+    취득세: { color: "#8b4513", order: 8, name: "세금" },
+    양도소득세: { color: "#8b4513", order: 8, name: "세금" },
+    양도세: { color: "#8b4513", order: 8, name: "세금" },
     자산: { color: "#06b6d4", order: 6, name: "자산" },
     "자산 구매": { color: "#06b6d4", order: 6, name: "자산" },
     "자산 수령": { color: "#06b6d4", order: 6, name: "자산" },

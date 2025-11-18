@@ -772,6 +772,16 @@ function SimulationCompareModal({
   const getCategoryType = (itemName) => {
     const name = itemName.toLowerCase();
 
+    // 세금 관련 (먼저 확인)
+    if (
+      name.includes("세금") ||
+      name.includes("취득세") ||
+      name.includes("양도세") ||
+      name.includes("양도소득세")
+    ) {
+      return "tax";
+    }
+
     // 소득 관련
     if (
       name.includes("소득") ||
@@ -786,8 +796,7 @@ function SimulationCompareModal({
     if (
       name.includes("지출") ||
       name.includes("생활비") ||
-      name.includes("비용") ||
-      name.includes("세금")
+      name.includes("비용")
     ) {
       return "expense";
     }
@@ -849,6 +858,7 @@ function SimulationCompareModal({
       realEstate: "#8b5cf6", // 부동산 - 보라색
       debt: "#6b7280", // 부채 - 회색
       assets: "#06b6d4", // 자산 - 청록색
+      tax: "#8b4513", // 세금 - 갈색
     };
 
     return colorMap[categoryType] || "#06b6d4";
