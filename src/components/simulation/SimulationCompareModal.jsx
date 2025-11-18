@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import styles from "./SimulationCompareModal.module.css";
 import IncomeList from "../income/IncomeList";
 import ExpenseList from "../expense/ExpenseList";
@@ -16,7 +16,10 @@ import AssetModal from "../asset/AssetModal";
 import DebtModal from "../debt/DebtModal";
 import { calculateLifetimeCashFlowTotals } from "../../utils/presentValueCalculator";
 import { formatAmountForChart } from "../../utils/format";
-import { calculateAssetSimulation } from "../../utils/cashflowSimulator";
+import {
+  calculateAssetSimulation,
+  calculateCashflowSimulation,
+} from "../../utils/cashflowSimulator";
 import { trackEvent } from "../../libs/mixpanel";
 import {
   incomeService,
@@ -29,54 +32,54 @@ import {
 } from "../../services/firestoreService";
 
 const categoryConfigs = [
-  { 
-    key: "incomes", 
-    label: "소득", 
-    component: IncomeList, 
+  {
+    key: "incomes",
+    label: "소득",
+    component: IncomeList,
     propName: "incomes",
-    modalComponent: IncomeModal 
+    modalComponent: IncomeModal,
   },
   {
     key: "expenses",
     label: "지출",
     component: ExpenseList,
     propName: "expenses",
-    modalComponent: ExpenseModal
+    modalComponent: ExpenseModal,
   },
   {
     key: "savings",
     label: "저축/투자",
     component: SavingList,
     propName: "savings",
-    modalComponent: SavingModal
+    modalComponent: SavingModal,
   },
   {
     key: "pensions",
     label: "연금",
     component: PensionList,
     propName: "pensions",
-    modalComponent: PensionModal
+    modalComponent: PensionModal,
   },
   {
     key: "realEstates",
     label: "부동산",
     component: RealEstateList,
     propName: "realEstates",
-    modalComponent: RealEstateModal
+    modalComponent: RealEstateModal,
   },
-  { 
-    key: "assets", 
-    label: "자산", 
-    component: AssetList, 
+  {
+    key: "assets",
+    label: "자산",
+    component: AssetList,
     propName: "assets",
-    modalComponent: AssetModal
+    modalComponent: AssetModal,
   },
-  { 
-    key: "debts", 
-    label: "부채", 
-    component: DebtList, 
+  {
+    key: "debts",
+    label: "부채",
+    component: DebtList,
     propName: "debts",
-    modalComponent: DebtModal
+    modalComponent: DebtModal,
   },
 ];
 
@@ -108,7 +111,23 @@ function SimulationCompareModal({
   simulations,
   onDataRefresh, // 데이터 새로고침 콜백 추가
 }) {
-  if (!isOpen) return null;
+  // 선택된 시뮬레이션 ID 목록 (현재 시뮬레이션은 항상 포함)
+  const defaultSimulationEntry = useMemo(
+    () => simulations?.find((sim) => sim.isDefault) || simulations?.[0],
+    [simulations]
+  );
+
+  const [selectedSimulationIds, setSelectedSimulationIds] = useState(() => {
+    const defaultSimId =
+      simulations?.find((sim) => sim.isDefault)?.id || simulations?.[0]?.id;
+    return defaultSimId ? [defaultSimId] : [];
+  });
+
+  // 선택된 시뮬레이션들의 데이터
+  const [simulationsData, setSimulationsData] = useState({});
+
+  // 데이터 로딩 상태
+  const [isDataLoading, setIsDataLoading] = useState(false);
 
   // 세부 항목 토글 상태 (기본값: 접혀있음)
   const [expandedRows, setExpandedRows] = useState({});
@@ -126,6 +145,150 @@ function SimulationCompareModal({
     data: null,
   });
 
+  // 시뮬레이션 데이터 로드 함수
+  const fetchSimulationData = useCallback(
+    async (simulationId) => {
+      if (!profileData?.id || !simulationId) return null;
+
+      try {
+        const [
+          incomeData,
+          expenseData,
+          savingData,
+          pensionData,
+          realEstateData,
+          assetsData,
+          debtData,
+        ] = await Promise.all([
+          incomeService.getIncomes(profileData.id, simulationId),
+          expenseService.getExpenses(profileData.id, simulationId),
+          savingsService.getSavings(profileData.id, simulationId),
+          pensionService.getPensions(profileData.id, simulationId),
+          realEstateService.getRealEstates(profileData.id, simulationId),
+          assetService.getAssets(profileData.id, simulationId),
+          debtService.getDebts(profileData.id, simulationId),
+        ]);
+
+        const sortByCreatedAt = (list) =>
+          list
+            ? [...list].sort(
+                (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+              )
+            : [];
+
+        const incomes = sortByCreatedAt(incomeData);
+        const expenses = sortByCreatedAt(expenseData);
+        const savings = sortByCreatedAt(savingData);
+        const pensions = sortByCreatedAt(pensionData);
+        const realEstates = sortByCreatedAt(realEstateData);
+        const assets = sortByCreatedAt(assetsData);
+        const debts = sortByCreatedAt(debtData);
+
+        // cashflow 계산
+        const cashflow = calculateCashflowSimulation(
+          profileData,
+          incomes,
+          expenses,
+          savings,
+          pensions,
+          realEstates,
+          assets,
+          debts
+        );
+
+        return {
+          incomes,
+          expenses,
+          savings,
+          pensions,
+          realEstates,
+          assets,
+          debts,
+          cashflow,
+        };
+      } catch (error) {
+        console.error(`시뮬레이션 ${simulationId} 데이터 로드 오류:`, error);
+        return null;
+      }
+    },
+    [profileData]
+  );
+
+  // 선택된 시뮬레이션들의 데이터 로드
+  useEffect(() => {
+    if (!isOpen || selectedSimulationIds.length === 0) return;
+
+    const loadData = async () => {
+      setIsDataLoading(true);
+      const newData = {};
+
+      for (const simId of selectedSimulationIds) {
+        if (!simulationsData[simId]) {
+          const data = await fetchSimulationData(simId);
+          if (data) {
+            newData[simId] = data;
+          }
+        }
+      }
+
+      if (Object.keys(newData).length > 0) {
+        setSimulationsData((prev) => ({ ...prev, ...newData }));
+      }
+      setIsDataLoading(false);
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, selectedSimulationIds, fetchSimulationData]);
+
+  // 모달이 열릴 때 초기 선택 설정
+  useEffect(() => {
+    if (isOpen) {
+      // 모달이 열리면 기본 시뮬레이션과 현재 활성 시뮬레이션을 선택
+      const defaultSimId =
+        simulations?.find((sim) => sim.isDefault)?.id || simulations?.[0]?.id;
+      const activeSimId = currentSimulationId;
+
+      const initialSelection = new Set();
+      if (defaultSimId) initialSelection.add(defaultSimId);
+      if (activeSimId && activeSimId !== defaultSimId)
+        initialSelection.add(activeSimId);
+
+      if (initialSelection.size > 0) {
+        setSelectedSimulationIds(Array.from(initialSelection));
+      }
+    } else {
+      // 모달이 닫히면 선택을 기본으로 리셋
+      const defaultSimId =
+        simulations?.find((sim) => sim.isDefault)?.id || simulations?.[0]?.id;
+      if (defaultSimId) {
+        setSelectedSimulationIds([defaultSimId]);
+      }
+    }
+  }, [isOpen, simulations, currentSimulationId]);
+
+  // 시뮬레이션 선택 토글
+  const handleToggleSimulation = (simulationId) => {
+    const defaultSimId = defaultSimulationEntry?.id;
+
+    // "현재" 시뮬레이션은 항상 선택되어 있어야 함
+    if (simulationId === defaultSimId) {
+      return;
+    }
+
+    setSelectedSimulationIds((prev) => {
+      if (prev.includes(simulationId)) {
+        // 이미 선택되어 있으면 제거 (최소 1개는 유지)
+        return prev.length > 1
+          ? prev.filter((id) => id !== simulationId)
+          : prev;
+      } else {
+        // 선택 추가
+        return [...prev, simulationId];
+      }
+    });
+  };
+
   // 재무 데이터 수정 핸들러
   const handleEditData = (type, data) => {
     setEditModal({
@@ -133,7 +296,7 @@ function SimulationCompareModal({
       type: type,
       data: data,
     });
-    
+
     trackEvent("시뮬레이션 비교 모달에서 재무 데이터 수정 시작", {
       type: type,
       dataTitle: data?.title || "",
@@ -160,7 +323,8 @@ function SimulationCompareModal({
       }
 
       // 저장할 시뮬레이션 ID 목록
-      const simulationIdsToSave = data.selectedSimulationIds || 
+      const simulationIdsToSave =
+        data.selectedSimulationIds ||
         (currentSimulationId ? [currentSimulationId] : []);
 
       if (simulationIdsToSave.length === 0) {
@@ -190,30 +354,59 @@ function SimulationCompareModal({
       for (const simId of simulationIdsToSave) {
         if (isEditMode) {
           // 수정 모드: 해당 시뮬레이션에 같은 ID가 있는지 확인
-          const updateMethodName = `update${type.charAt(0).toUpperCase() + type.slice(1)}`;
-          const createWithIdMethodName = `create${type.charAt(0).toUpperCase() + type.slice(1)}WithId`;
-          
+          const updateMethodName = `update${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          }`;
+          const createWithIdMethodName = `create${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          }WithId`;
+
           // 해당 시뮬레이션의 데이터 가져오기
-          const getMethodName = `get${type.charAt(0).toUpperCase() + type.slice(1)}s`;
-          const existingItems = await service[getMethodName](profileData.id, simId);
-          const existingItem = existingItems.find(item => item.id === data.id);
+          const getMethodName = `get${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          }s`;
+          const existingItems = await service[getMethodName](
+            profileData.id,
+            simId
+          );
+          const existingItem = existingItems.find(
+            (item) => item.id === data.id
+          );
 
           if (existingItem) {
             // 같은 ID가 있으면 업데이트
-            await service[updateMethodName](profileData.id, simId, data.id, data);
-            console.log(`✅ [시뮬레이션 비교] ${simId}에서 ${type} 업데이트 완료`);
+            await service[updateMethodName](
+              profileData.id,
+              simId,
+              data.id,
+              data
+            );
+            console.log(
+              `✅ [시뮬레이션 비교] ${simId}에서 ${type} 업데이트 완료`
+            );
           } else {
             // 같은 ID가 없으면 새로 생성 (ID 유지)
             if (service[createWithIdMethodName]) {
-              await service[createWithIdMethodName](profileData.id, simId, data.id, data);
-              console.log(`✅ [시뮬레이션 비교] ${simId}에 ${type} 추가 완료 (ID 유지)`);
+              await service[createWithIdMethodName](
+                profileData.id,
+                simId,
+                data.id,
+                data
+              );
+              console.log(
+                `✅ [시뮬레이션 비교] ${simId}에 ${type} 추가 완료 (ID 유지)`
+              );
             } else {
-              console.warn(`⚠️ createWithId 메서드가 없음: ${createWithIdMethodName}`);
+              console.warn(
+                `⚠️ createWithId 메서드가 없음: ${createWithIdMethodName}`
+              );
             }
           }
         } else {
           // 추가 모드: 새로 생성
-          const createMethodName = `create${type.charAt(0).toUpperCase() + type.slice(1)}`;
+          const createMethodName = `create${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          }`;
           await service[createMethodName](profileData.id, simId, data);
           console.log(`✅ [시뮬레이션 비교] ${simId}에 ${type} 추가 완료`);
         }
@@ -231,15 +424,32 @@ function SimulationCompareModal({
 
       // 로컬 state 즉시 업데이트 (서버 요청 없이 빠른 반영)
       console.log("⚡ 로컬 state 즉시 업데이트...");
+
+      // 영향을 받은 시뮬레이션들의 데이터 다시 로드
+      const affectedSimIds = simulationIdsToSave.filter((id) =>
+        selectedSimulationIds.includes(id)
+      );
+      if (affectedSimIds.length > 0) {
+        const updatedData = {};
+        for (const simId of affectedSimIds) {
+          const data = await fetchSimulationData(simId);
+          if (data) {
+            updatedData[simId] = data;
+          }
+        }
+        if (Object.keys(updatedData).length > 0) {
+          setSimulationsData((prev) => ({ ...prev, ...updatedData }));
+        }
+      }
+
       if (onDataRefresh) {
         await onDataRefresh();
       }
       console.log("✅ 변경사항 반영 완료!");
-
     } catch (error) {
       console.error(`❌ [시뮬레이션 비교] ${type} 데이터 저장 오류:`, error);
       alert(`저장 중 오류가 발생했습니다: ${error.message}`);
-      
+
       trackEvent("시뮬레이션 비교 모달에서 재무 데이터 저장 오류", {
         type: type,
         error: error.message,
@@ -329,7 +539,9 @@ function SimulationCompareModal({
     if (!Array.isArray(currentData) || currentData.length === 0) return data;
 
     // 현재 시뮬레이션의 ID 목록 추출
-    const currentIds = new Set(currentData.map((item) => item.id).filter(Boolean));
+    const currentIds = new Set(
+      currentData.map((item) => item.id).filter(Boolean)
+    );
 
     // 데이터를 두 그룹으로 나눔
     const itemsWithCurrentId = []; // 현재 시뮬레이션에 있는 ID
@@ -395,99 +607,130 @@ function SimulationCompareModal({
     return currentYear + (parseInt(profileData.retirementAge, 10) - currentAge);
   }, [profileData]);
 
-  // 생애 자금 수급/수요 총합 계산 (할인율 미적용)
-  const defaultPV = useMemo(() => {
-    if (!defaultData || !isOpen) return null;
-    const filteredCashflow = filterCashflowByPeriod(
-      defaultData.cashflow || [],
-      cashflowPeriod,
-      retirementYear
-    );
-    return calculateLifetimeCashFlowTotals(filteredCashflow);
-  }, [defaultData, isOpen, cashflowPeriod, retirementYear]);
+  // 선택된 시뮬레이션들의 생애 자금 수급/수요 계산
+  const simulationsPV = useMemo(() => {
+    if (!isOpen) return {};
 
-  const targetPV = useMemo(() => {
-    if (!targetData || !isOpen) return null;
-    const filteredCashflow = filterCashflowByPeriod(
-      targetData.cashflow || [],
-      cashflowPeriod,
-      retirementYear
-    );
-    return calculateLifetimeCashFlowTotals(filteredCashflow);
-  }, [targetData, isOpen, cashflowPeriod, retirementYear]);
+    const result = {};
+    selectedSimulationIds.forEach((simId) => {
+      const simData = simulationsData[simId];
+      if (!simData) return;
 
-  const defaultAssetsTimeline = useMemo(() => {
-    if (!profileData || !defaultData || !isOpen) return null;
-    const result = calculateAssetSimulation(
-      profileData,
-      defaultData.incomes || [],
-      defaultData.expenses || [],
-      defaultData.savings || [],
-      defaultData.pensions || [],
-      defaultData.realEstates || [],
-      defaultData.assets || [],
-      defaultData.cashflow || [],
-      defaultData.debts || []
-    );
-    // detailedData를 반환 (breakdown 정보 포함)
-    return result?.detailedData || result?.timeline || result;
-  }, [defaultData, profileData, isOpen]);
+      const filteredCashflow = filterCashflowByPeriod(
+        simData.cashflow || [],
+        cashflowPeriod,
+        retirementYear
+      );
+      result[simId] = calculateLifetimeCashFlowTotals(filteredCashflow);
+    });
 
-  const targetAssetsTimeline = useMemo(() => {
-    if (!profileData || !targetData || !isOpen) return null;
-    const result = calculateAssetSimulation(
-      profileData,
-      targetData.incomes || [],
-      targetData.expenses || [],
-      targetData.savings || [],
-      targetData.pensions || [],
-      targetData.realEstates || [],
-      targetData.assets || [],
-      targetData.cashflow || [],
-      targetData.debts || []
-    );
-    // detailedData를 반환 (breakdown 정보 포함)
-    return result?.detailedData || result?.timeline || result;
-  }, [targetData, profileData, isOpen]);
+    return result;
+  }, [
+    selectedSimulationIds,
+    simulationsData,
+    isOpen,
+    cashflowPeriod,
+    retirementYear,
+  ]);
 
-  const showDefaultColumn =
-    Boolean(defaultTitle) || Boolean(defaultPV) || Boolean(defaultData);
-  const showTargetColumn =
-    Boolean(targetTitle) || Boolean(targetPV) || Boolean(targetData);
+  // 선택된 시뮬레이션들의 자산 타임라인 계산
+  const simulationsAssetsTimeline = useMemo(() => {
+    if (!profileData || !isOpen) return {};
 
-  const summaryRows = useMemo(
-    () => [
-      {
-        key: "supply",
-        label: "자금 공급 (총)",
-        defaultValue: defaultPV?.totalSupply ?? null,
-        targetValue: targetPV?.totalSupply ?? null,
-        defaultBreakdown: defaultPV?.supply || [],
-        targetBreakdown: targetPV?.supply || [],
-      },
-      {
-        key: "demand",
-        label: "자금 수요 (총)",
-        defaultValue: defaultPV?.totalDemand ?? null,
-        targetValue: targetPV?.totalDemand ?? null,
-        defaultBreakdown: defaultPV?.demand || [],
-        targetBreakdown: targetPV?.demand || [],
-      },
-      {
-        key: "net",
-        label: "순현금흐름",
-        defaultValue: defaultPV?.netCashFlow ?? null,
-        targetValue: targetPV?.netCashFlow ?? null,
-        defaultBreakdown: [],
-        targetBreakdown: [],
-      },
-    ],
-    [defaultPV, targetPV]
-  );
+    const result = {};
+    selectedSimulationIds.forEach((simId) => {
+      const simData = simulationsData[simId];
+      if (!simData) return;
 
-  const valueColumnCount =
-    Number(showDefaultColumn) + Number(showTargetColumn) || 1;
+      const assetResult = calculateAssetSimulation(
+        profileData,
+        simData.incomes || [],
+        simData.expenses || [],
+        simData.savings || [],
+        simData.pensions || [],
+        simData.realEstates || [],
+        simData.assets || [],
+        simData.cashflow || [],
+        simData.debts || []
+      );
+      result[simId] =
+        assetResult?.detailedData || assetResult?.timeline || assetResult;
+    });
+
+    return result;
+  }, [selectedSimulationIds, simulationsData, profileData, isOpen]);
+
+  // 선택된 시뮬레이션 개수로 컬럼 수 결정
+  const valueColumnCount = selectedSimulationIds.length;
   const gridTemplateColumns = `minmax(160px, 1.2fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
+
+  // 각 시뮬레이션의 타이틀 가져오기
+  const getSimulationTitle = (simId) => {
+    const sim = simulations?.find((s) => s.id === simId);
+    return sim?.title || (sim?.isDefault ? "현재" : "시뮬레이션");
+  };
+
+  // 선택된 시뮬레이션들을 원래 순서대로 정렬
+  const sortedSelectedSimulationIds = useMemo(() => {
+    if (!simulations || selectedSimulationIds.length === 0)
+      return selectedSimulationIds;
+
+    // simulations 배열의 순서대로 필터링
+    return simulations
+      .filter((sim) => selectedSimulationIds.includes(sim.id))
+      .map((sim) => sim.id);
+  }, [simulations, selectedSimulationIds]);
+
+  const summaryRows = useMemo(() => {
+    const rows = [];
+
+    // 자금 공급
+    const supplyRow = {
+      key: "supply",
+      label: "자금 공급 (총)",
+      values: {},
+      breakdowns: {},
+    };
+
+    sortedSelectedSimulationIds.forEach((simId) => {
+      const pv = simulationsPV[simId];
+      supplyRow.values[simId] = pv?.totalSupply ?? null;
+      supplyRow.breakdowns[simId] = pv?.supply || [];
+    });
+    rows.push(supplyRow);
+
+    // 자금 수요
+    const demandRow = {
+      key: "demand",
+      label: "자금 수요 (총)",
+      values: {},
+      breakdowns: {},
+    };
+
+    sortedSelectedSimulationIds.forEach((simId) => {
+      const pv = simulationsPV[simId];
+      demandRow.values[simId] = pv?.totalDemand ?? null;
+      demandRow.breakdowns[simId] = pv?.demand || [];
+    });
+    rows.push(demandRow);
+
+    // 순현금흐름
+    const netRow = {
+      key: "net",
+      label: "순현금흐름",
+      values: {},
+      breakdowns: {},
+    };
+
+    sortedSelectedSimulationIds.forEach((simId) => {
+      const pv = simulationsPV[simId];
+      netRow.values[simId] = pv?.netCashFlow ?? null;
+      netRow.breakdowns[simId] = [];
+    });
+    rows.push(netRow);
+
+    return rows;
+  }, [sortedSelectedSimulationIds, simulationsPV]);
 
   const renderBreakdownList = (items, prefix) => {
     if (!Array.isArray(items) || items.length === 0) {
@@ -611,14 +854,17 @@ function SimulationCompareModal({
     return colorMap[categoryType] || "#06b6d4";
   };
 
-  // 두 breakdown을 비교하여 같은 이름끼리 행을 맞춰서 표시
+  // 여러 breakdown을 비교하여 같은 이름끼리 행을 맞춰서 표시
   const renderBreakdownComparison = (
-    defaultItems,
-    targetItems,
+    breakdownsMap,
     prefix,
     gridTemplateColumns,
     context = "supply"
   ) => {
+    // breakdownsMap: { simId: [items...], ... }
+    const allSimIds = sortedSelectedSimulationIds;
+    if (allSimIds.length === 0) return null;
+
     // 시스템 필드들을 제외하고 필터링
     const systemFields = ["totalAmount", "year", "age"];
     const filterItems = (items) => {
@@ -632,34 +878,40 @@ function SimulationCompareModal({
       );
     };
 
-    const filteredDefault = filterItems(defaultItems);
-    const filteredTarget = filterItems(targetItems);
+    // 모든 시뮬레이션의 breakdown 필터링
+    const filteredBreakdowns = {};
+    allSimIds.forEach((simId) => {
+      filteredBreakdowns[simId] = filterItems(breakdownsMap[simId] || []);
+    });
 
-    // 현재(default)에 있는 항목들과 새로 추가된 항목들을 분리
-    const defaultNames = new Set(filteredDefault.map((item) => item.name));
-    const targetNames = new Set(filteredTarget.map((item) => item.name));
+    // 모든 항목 이름 수집
+    const allNames = new Set();
+    Object.values(filteredBreakdowns).forEach((items) => {
+      items.forEach((item) => allNames.add(item.name));
+    });
 
-    // 현재에 있는 항목들 (공통 + 삭제될 항목)
-    const existingNames = Array.from(defaultNames);
+    if (allNames.size === 0) return null;
 
-    // 새로 추가된 항목들 (시뮬레이션에만 있음)
-    const newNames = Array.from(targetNames).filter(
-      (name) => !defaultNames.has(name)
+    // 첫 번째 시뮬레이션(현재)에 있는 항목과 새로 추가된 항목 분리
+    const firstSimId = allSimIds[0];
+    const firstSimNames = new Set(
+      filteredBreakdowns[firstSimId]?.map((item) => item.name) || []
     );
 
-    if (existingNames.length === 0 && newNames.length === 0) {
-      return null;
-    }
+    const existingNames = Array.from(firstSimNames);
+    const newNames = Array.from(allNames).filter(
+      (name) => !firstSimNames.has(name)
+    );
 
     // 카테고리별 정렬 순서
     const categoryOrder = [
-      "income", // 소득
-      "expense", // 지출
-      "savings", // 저축/투자
-      "pension", // 연금
-      "realEstate", // 부동산
-      "assets", // 자산
-      "debt", // 부채
+      "income",
+      "expense",
+      "savings",
+      "pension",
+      "realEstate",
+      "assets",
+      "debt",
     ];
 
     // 카테고리별 정렬 함수
@@ -667,42 +919,27 @@ function SimulationCompareModal({
       return names.sort((a, b) => {
         const categoryA = getCategoryType(a);
         const categoryB = getCategoryType(b);
-
         const orderA = categoryOrder.indexOf(categoryA);
         const orderB = categoryOrder.indexOf(categoryB);
 
-        // 카테고리 순서가 다르면 카테고리 순서로 정렬
         if (orderA !== orderB) {
           return orderA - orderB;
         }
-
-        // 같은 카테고리 내에서는 이름순으로 정렬
         return a.localeCompare(b, "ko");
       });
     };
 
-    // 1. 현재에 있는 항목들을 카테고리별로 정렬
+    // 정렬
     const sortedExistingNames = sortByCategory(existingNames);
-
-    // 2. 새로 추가된 항목들을 카테고리별로 정렬
     const sortedNewNames = sortByCategory(newNames);
-
-    // 3. 현재 항목 + 신규 항목 순서로 병합
     const sortedNames = [...sortedExistingNames, ...sortedNewNames];
 
     // 이름으로 아이템 찾기
-    const findItem = (items, name) => items.find((item) => item.name === name);
+    const findItem = (items, name) => items?.find((item) => item.name === name);
 
     return (
       <>
         {sortedNames.map((name, index) => {
-          const defaultItem = findItem(filteredDefault, name);
-          const targetItem = findItem(filteredTarget, name);
-
-          // 추가/삭제 여부 확인
-          const isNew = !defaultItem && targetItem; // 새로 추가됨
-          const isRemoved = defaultItem && !targetItem; // 삭제됨
-
           // 카테고리 색상 가져오기
           const borderColor = getCategoryColor(name);
 
@@ -713,43 +950,49 @@ function SimulationCompareModal({
               style={{ gridTemplateColumns, borderLeftColor: borderColor }}
             >
               <div className={styles.breakdownComparisonName}>{name}</div>
-              <div className={styles.breakdownComparisonValue}>
-                {defaultItem ? (
-                  <>
-                    <span>{formatAmountForChart(defaultItem.amount)}</span>
-                    {isRemoved && (
-                      <span className={styles.breakdownComparisonRemoved}>
-                        삭제됨
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <span className={styles.summaryEmpty}>-</span>
-                )}
-              </div>
-              <div className={styles.breakdownComparisonValue}>
-                {targetItem ? (
-                  <>
-                    <span>{formatAmountForChart(targetItem.amount)}</span>
-                    {isNew && (
-                      <span className={styles.breakdownComparisonNew}>
-                        신규
-                      </span>
-                    )}
-                    {defaultItem && targetItem && (
-                      <span className={styles.breakdownComparisonDiff}>
-                        {renderDifference(
-                          defaultItem.amount,
-                          targetItem.amount,
-                          context
+              {allSimIds.map((simId, simIndex) => {
+                const item = findItem(filteredBreakdowns[simId], name);
+                const firstSimItem = findItem(
+                  filteredBreakdowns[firstSimId],
+                  name
+                );
+                const isFirstCol = simIndex === 0;
+                const isNew = !firstSimItem && item;
+                const isRemoved = firstSimItem && !item && simIndex === 0;
+
+                return (
+                  <div key={simId} className={styles.breakdownComparisonValue}>
+                    {item ? (
+                      <>
+                        <span>{formatAmountForChart(item.amount)}</span>
+                        {isNew && (
+                          <span className={styles.breakdownComparisonNew}>
+                            신규
+                          </span>
                         )}
-                      </span>
+                        {!isFirstCol && firstSimItem && (
+                          <span className={styles.breakdownComparisonDiff}>
+                            {renderDifference(
+                              firstSimItem.amount,
+                              item.amount,
+                              context
+                            )}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span className={styles.summaryEmpty}>-</span>
+                        {isRemoved && (
+                          <span className={styles.breakdownComparisonRemoved}>
+                            삭제됨
+                          </span>
+                        )}
+                      </>
                     )}
-                  </>
-                ) : (
-                  <span className={styles.summaryEmpty}>-</span>
-                )}
-              </div>
+                  </div>
+                );
+              })}
             </div>
           );
         })}
@@ -820,10 +1063,13 @@ function SimulationCompareModal({
     // breakdown 정보가 있으면 이를 사용 (새로운 데이터 구조)
     if (entry.breakdown) {
       const items = [];
-      
+
       // assetItems에서 자산 항목 추출
-      if (entry.breakdown.assetItems && Array.isArray(entry.breakdown.assetItems)) {
-        entry.breakdown.assetItems.forEach(item => {
+      if (
+        entry.breakdown.assetItems &&
+        Array.isArray(entry.breakdown.assetItems)
+      ) {
+        entry.breakdown.assetItems.forEach((item) => {
           items.push({
             name: item.label || item.name,
             amount: item.amount,
@@ -833,8 +1079,11 @@ function SimulationCompareModal({
       }
 
       // debtItems에서 부채 항목 추출
-      if (entry.breakdown.debtItems && Array.isArray(entry.breakdown.debtItems)) {
-        entry.breakdown.debtItems.forEach(item => {
+      if (
+        entry.breakdown.debtItems &&
+        Array.isArray(entry.breakdown.debtItems)
+      ) {
+        entry.breakdown.debtItems.forEach((item) => {
           items.push({
             name: item.label || item.name,
             amount: -Math.abs(item.amount), // 부채는 음수로
@@ -892,15 +1141,20 @@ function SimulationCompareModal({
 
     // 목표 자산 추가
     if (targetAssetGoal !== null && !Number.isNaN(targetAssetGoal)) {
-      rows.push({
+      const goalRow = {
         key: "goal",
         label: "목표 자산",
-        defaultValue: targetAssetGoal,
-        targetValue: targetAssetGoal,
-        defaultBreakdown: [],
-        targetBreakdown: [],
+        values: {},
+        breakdowns: {},
         isGoal: true,
+      };
+
+      sortedSelectedSimulationIds.forEach((simId) => {
+        goalRow.values[simId] = targetAssetGoal;
+        goalRow.breakdowns[simId] = [];
       });
+
+      rows.push(goalRow);
     }
 
     // 시점별 순자산 계산
@@ -922,64 +1176,72 @@ function SimulationCompareModal({
       },
     ];
 
+    // year와 age를 제외한 실제 순자산 계산
+    const calculateNetWorth = (entry) => {
+      if (!entry) return null;
+
+      // breakdown 정보가 있으면 이를 우선 사용 (새로운 데이터 구조)
+      if (entry.breakdown && typeof entry.breakdown.netAssets === "number") {
+        return entry.breakdown.netAssets;
+      }
+
+      // 구 데이터 구조 지원 (fallback)
+      const systemFields = ["totalAmount", "year", "age", "breakdown"];
+      let netWorth = 0;
+
+      Object.entries(entry).forEach(([key, value]) => {
+        if (
+          !systemFields.includes(key) &&
+          typeof value === "number" &&
+          Number.isFinite(value)
+        ) {
+          netWorth += value;
+        }
+      });
+
+      return netWorth;
+    };
+
     checkpoints.forEach((checkpoint) => {
       if (checkpoint.age === null || Number.isNaN(checkpoint.age)) {
         return;
       }
 
-      const defaultEntry = findEntryByAge(
-        defaultAssetsTimeline,
-        checkpoint.age
-      );
-      const targetEntry = findEntryByAge(targetAssetsTimeline, checkpoint.age);
-
-      // 해당 시점에 데이터가 없으면 건너뛰기
-      if (!defaultEntry && !targetEntry) {
-        return;
-      }
-
-      // year와 age를 제외한 실제 순자산 계산
-      const calculateNetWorth = (entry) => {
-        if (!entry) return null;
-
-        // breakdown 정보가 있으면 이를 우선 사용 (새로운 데이터 구조)
-        if (entry.breakdown && typeof entry.breakdown.netAssets === "number") {
-          return entry.breakdown.netAssets;
-        }
-
-        // 구 데이터 구조 지원 (fallback)
-        const systemFields = ["totalAmount", "year", "age", "breakdown"];
-        let netWorth = 0;
-
-        Object.entries(entry).forEach(([key, value]) => {
-          if (
-            !systemFields.includes(key) &&
-            typeof value === "number" &&
-            Number.isFinite(value)
-          ) {
-            netWorth += value;
-          }
-        });
-
-        return netWorth;
-      };
-
-      rows.push({
+      const checkpointRow = {
         key: checkpoint.key,
         label: checkpoint.label,
-        defaultValue: calculateNetWorth(defaultEntry), // year와 age 제외한 순자산
-        targetValue: calculateNetWorth(targetEntry), // year와 age 제외한 순자산
-        defaultBreakdown: buildAssetBreakdown(defaultEntry),
-        targetBreakdown: buildAssetBreakdown(targetEntry),
+        values: {},
+        breakdowns: {},
+      };
+
+      let hasAnyData = false;
+
+      sortedSelectedSimulationIds.forEach((simId) => {
+        const timeline = simulationsAssetsTimeline[simId];
+        const entry = findEntryByAge(timeline, checkpoint.age);
+
+        if (entry) {
+          hasAnyData = true;
+          checkpointRow.values[simId] = calculateNetWorth(entry);
+          checkpointRow.breakdowns[simId] = buildAssetBreakdown(entry);
+        } else {
+          checkpointRow.values[simId] = null;
+          checkpointRow.breakdowns[simId] = [];
+        }
       });
+
+      // 해당 시점에 데이터가 하나라도 있으면 추가
+      if (hasAnyData) {
+        rows.push(checkpointRow);
+      }
     });
 
     return rows;
   }, [
     startAge,
     retirementAge,
-    defaultAssetsTimeline,
-    targetAssetsTimeline,
+    sortedSelectedSimulationIds,
+    simulationsAssetsTimeline,
     targetAssetGoal,
   ]);
 
@@ -988,10 +1250,8 @@ function SimulationCompareModal({
 
     // Mixpanel: 시뮬레이션 비교 모달 열림
     trackEvent("시뮬레이션 비교 모달 열림", {
-      defaultTitle: defaultTitle || "현재 시뮬레이션",
-      targetTitle: targetTitle || "비교 시뮬레이션",
-      hasDefaultData: !!defaultData,
-      hasTargetData: !!targetData,
+      simulationCount: selectedSimulationIds.length,
+      simulationIds: selectedSimulationIds,
     });
 
     const handleKeyDown = (event) => {
@@ -1014,7 +1274,19 @@ function SimulationCompareModal({
       // 모달이 닫힐 때 body 스크롤 복원
       document.body.style.overflow = "";
     };
-  }, [isOpen, onClose, defaultTitle, targetTitle, defaultData, targetData, editModal.isOpen]);
+  }, [isOpen, onClose, selectedSimulationIds, editModal.isOpen]);
+
+  // 모달이 닫혀있으면 렌더링하지 않음
+  if (!isOpen) return null;
+
+  // 선택된 시뮬레이션 개수에 따라 모달 너비 결정
+  const getModalWidth = () => {
+    const count = selectedSimulationIds.length;
+    if (count <= 2) return "960px";
+    if (count === 3) return "1200px";
+    if (count === 4) return "1400px";
+    return "1600px"; // 5개 이상
+  };
 
   return (
     <div
@@ -1028,16 +1300,34 @@ function SimulationCompareModal({
     >
       <div
         className={styles.modal}
+        style={{ width: `min(${getModalWidth()}, 95vw)` }}
         onClick={(event) => {
           event.stopPropagation();
         }}
       >
         <div className={styles.header}>
-          <div>
+          <div style={{ flex: 1 }}>
             <h3>시뮬레이션 비교</h3>
-            <p>
-              {defaultTitle} vs {targetTitle || "현재 시뮬레이션"}
-            </p>
+            <div className={styles.simulationSelector}>
+              {simulations?.map((sim) => (
+                <label
+                  key={sim.id}
+                  className={`${styles.simulationCheckbox} ${
+                    sim.isDefault ? styles.simulationCheckboxDefault : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSimulationIds.includes(sim.id)}
+                    onChange={() => handleToggleSimulation(sim.id)}
+                    disabled={sim.isDefault}
+                  />
+                  <span className={styles.simulationLabel}>
+                    {sim.title || (sim.isDefault ? "현재" : "시뮬레이션")}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
           <button
             className={styles.closeButton}
@@ -1054,7 +1344,7 @@ function SimulationCompareModal({
         </div>
 
         <div className={styles.content}>
-          {isLoading ? (
+          {isLoading || isDataLoading ? (
             <div className={styles.loading}>데이터를 불러오는 중...</div>
           ) : (
             <>
@@ -1087,191 +1377,144 @@ function SimulationCompareModal({
               </div>
 
               {/* 생애 자금 수급/수요 현재가 요약 */}
-              {activeTab === "cashflow" && (defaultPV || targetPV) && (
-                <div className={styles.summarySection}>
-                  <div className={styles.sectionHeader}>
-                    <h4 className={styles.summaryTitle}>생애 자금 수급/수요</h4>
-                    <div className={styles.periodTabs}>
-                      <button
-                        className={`${styles.periodTab} ${
-                          cashflowPeriod === "all" ? styles.periodTabActive : ""
-                        }`}
-                        onClick={() => setCashflowPeriod("all")}
-                      >
-                        전체
-                      </button>
-                      <button
-                        className={`${styles.periodTab} ${
-                          cashflowPeriod === "beforeRetirement"
-                            ? styles.periodTabActive
-                            : ""
-                        }`}
-                        onClick={() => setCashflowPeriod("beforeRetirement")}
-                      >
-                        은퇴전(포함)
-                      </button>
-                      <button
-                        className={`${styles.periodTab} ${
-                          cashflowPeriod === "afterRetirement"
-                            ? styles.periodTabActive
-                            : ""
-                        }`}
-                        onClick={() => setCashflowPeriod("afterRetirement")}
-                      >
-                        은퇴 이후
-                      </button>
-                    </div>
-                  </div>
-                  <div className={styles.summaryTable}>
-                    <div
-                      className={`${styles.summaryRow} ${styles.summaryHeader}`}
-                      style={{ gridTemplateColumns }}
-                    >
-                      <div className={styles.summaryCell}>항목</div>
-                      {showDefaultColumn && (
-                        <div className={styles.summaryCell}>
-                          {defaultTitle || "현재 시뮬레이션"}
-                        </div>
-                      )}
-                      {showTargetColumn && (
-                        <div className={styles.summaryCell}>
-                          {targetTitle || "비교 시뮬레이션"}
-                        </div>
-                      )}
-                    </div>
-                    {summaryRows.map((row) => (
-                      <React.Fragment key={row.key}>
-                        <div
-                          className={styles.summaryRow}
-                          style={{ gridTemplateColumns }}
+              {activeTab === "cashflow" &&
+                Object.keys(simulationsPV).length > 0 && (
+                  <div className={styles.summarySection}>
+                    <div className={styles.sectionHeader}>
+                      <h4 className={styles.summaryTitle}>
+                        생애 자금 수급/수요
+                      </h4>
+                      <div className={styles.periodTabs}>
+                        <button
+                          className={`${styles.periodTab} ${
+                            cashflowPeriod === "all"
+                              ? styles.periodTabActive
+                              : ""
+                          }`}
+                          onClick={() => setCashflowPeriod("all")}
                         >
-                          <div
-                            className={`${styles.summaryCell} ${styles.summaryLabel}`}
-                          >
-                            {row.key !== "net" && (
-                              <button
-                                className={styles.toggleButton}
-                                onClick={() => toggleRow(row.key)}
-                                aria-label={
-                                  expandedRows[row.key]
-                                    ? "세부 항목 접기"
-                                    : "세부 항목 펼치기"
-                                }
-                              >
-                                {expandedRows[row.key] ? "▼" : "▶"}
-                              </button>
-                            )}
-                            {row.label}
+                          전체
+                        </button>
+                        <button
+                          className={`${styles.periodTab} ${
+                            cashflowPeriod === "beforeRetirement"
+                              ? styles.periodTabActive
+                              : ""
+                          }`}
+                          onClick={() => setCashflowPeriod("beforeRetirement")}
+                        >
+                          은퇴전(포함)
+                        </button>
+                        <button
+                          className={`${styles.periodTab} ${
+                            cashflowPeriod === "afterRetirement"
+                              ? styles.periodTabActive
+                              : ""
+                          }`}
+                          onClick={() => setCashflowPeriod("afterRetirement")}
+                        >
+                          은퇴 이후
+                        </button>
+                      </div>
+                    </div>
+                    <div className={styles.summaryTable}>
+                      <div
+                        className={`${styles.summaryRow} ${styles.summaryHeader}`}
+                        style={{ gridTemplateColumns }}
+                      >
+                        <div className={styles.summaryCell}>항목</div>
+                        {sortedSelectedSimulationIds.map((simId) => (
+                          <div key={simId} className={styles.summaryCell}>
+                            {getSimulationTitle(simId)}
                           </div>
-                          {showDefaultColumn && !showTargetColumn && (
-                            <div className={styles.summaryCell}>
-                              {row.defaultValue !== null ? (
-                                <span
-                                  className={`${styles.summaryValue} ${
-                                    row.key === "net"
-                                      ? row.defaultValue >= 0
-                                        ? styles.positive
-                                        : styles.negative
-                                      : ""
-                                  }`}
+                        ))}
+                      </div>
+                      {summaryRows.map((row) => (
+                        <React.Fragment key={row.key}>
+                          <div
+                            className={styles.summaryRow}
+                            style={{ gridTemplateColumns }}
+                          >
+                            <div
+                              className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                            >
+                              {row.key !== "net" && (
+                                <button
+                                  className={styles.toggleButton}
+                                  onClick={() => toggleRow(row.key)}
+                                  aria-label={
+                                    expandedRows[row.key]
+                                      ? "세부 항목 접기"
+                                      : "세부 항목 펼치기"
+                                  }
                                 >
-                                  {formatAmountForChart(row.defaultValue)}
-                                </span>
-                              ) : (
-                                <span className={styles.summaryEmpty}>-</span>
+                                  {expandedRows[row.key] ? "▼" : "▶"}
+                                </button>
                               )}
-                              {row.key !== "net" &&
-                                renderBreakdownList(
-                                  row.defaultBreakdown,
-                                  `default-${row.key}`
-                                )}
+                              {row.label}
+                            </div>
+                            {sortedSelectedSimulationIds.map((simId, index) => {
+                              const value = row.values[simId];
+                              const isFirstCol = index === 0;
+
+                              return (
+                                <div key={simId} className={styles.summaryCell}>
+                                  {value !== null && value !== undefined ? (
+                                    <>
+                                      <span
+                                        className={`${styles.summaryValue} ${
+                                          row.key === "net"
+                                            ? value >= 0
+                                              ? styles.positive
+                                              : styles.negative
+                                            : ""
+                                        }`}
+                                      >
+                                        {formatAmountForChart(value)}
+                                      </span>
+                                      {!isFirstCol &&
+                                        sortedSelectedSimulationIds.length >
+                                          1 &&
+                                        renderDifference(
+                                          row.values[
+                                            sortedSelectedSimulationIds[0]
+                                          ],
+                                          value,
+                                          row.key === "demand"
+                                            ? "demand"
+                                            : "supply"
+                                        )}
+                                    </>
+                                  ) : (
+                                    <span className={styles.summaryEmpty}>
+                                      -
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {/* 세부 내용 표시 - 펼쳐졌을 때만 */}
+                          {row.key !== "net" && expandedRows[row.key] && (
+                            <div
+                              style={{
+                                gridColumn: "1 / -1",
+                                paddingTop: "0.5rem",
+                              }}
+                            >
+                              {renderBreakdownComparison(
+                                row.breakdowns,
+                                `comparison-${row.key}`,
+                                gridTemplateColumns,
+                                row.key === "demand" ? "demand" : "supply"
+                              )}
                             </div>
                           )}
-                          {!showDefaultColumn && showTargetColumn && (
-                            <div className={styles.summaryCell}>
-                              {row.targetValue !== null ? (
-                                <span
-                                  className={`${styles.summaryValue} ${
-                                    row.key === "net"
-                                      ? row.targetValue >= 0
-                                        ? styles.positive
-                                        : styles.negative
-                                      : ""
-                                  }`}
-                                >
-                                  {formatAmountForChart(row.targetValue)}
-                                </span>
-                              ) : (
-                                <span className={styles.summaryEmpty}>-</span>
-                              )}
-                              {row.key !== "net" &&
-                                renderBreakdownList(
-                                  row.targetBreakdown,
-                                  `target-${row.key}`
-                                )}
-                            </div>
-                          )}
-                          {showDefaultColumn && showTargetColumn && (
-                            <>
-                              <div className={styles.summaryCell}>
-                                {row.defaultValue !== null ? (
-                                  <span
-                                    className={`${styles.summaryValue} ${
-                                      row.key === "net"
-                                        ? row.defaultValue >= 0
-                                          ? styles.positive
-                                          : styles.negative
-                                        : ""
-                                    }`}
-                                  >
-                                    {formatAmountForChart(row.defaultValue)}
-                                  </span>
-                                ) : (
-                                  <span className={styles.summaryEmpty}>-</span>
-                                )}
-                              </div>
-                              <div className={styles.summaryCell}>
-                                {row.targetValue !== null ? (
-                                  <span
-                                    className={`${styles.summaryValue} ${
-                                      row.key === "net"
-                                        ? row.targetValue >= 0
-                                          ? styles.positive
-                                          : styles.negative
-                                        : ""
-                                    }`}
-                                  >
-                                    {formatAmountForChart(row.targetValue)}
-                                  </span>
-                                ) : (
-                                  <span className={styles.summaryEmpty}>-</span>
-                                )}
-                                {renderDifference(
-                                  row.defaultValue,
-                                  row.targetValue,
-                                  row.key === "demand" ? "demand" : "supply"
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        {/* 세부 내용을 별도 행으로 표시 (양쪽 비교) - 펼쳐졌을 때만 */}
-                        {showDefaultColumn &&
-                          showTargetColumn &&
-                          row.key !== "net" &&
-                          expandedRows[row.key] &&
-                          renderBreakdownComparison(
-                            row.defaultBreakdown,
-                            row.targetBreakdown,
-                            `comparison-${row.key}`,
-                            gridTemplateColumns,
-                            row.key === "demand" ? "demand" : "supply"
-                          )}
-                      </React.Fragment>
-                    ))}
+                        </React.Fragment>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               {activeTab === "networth" && netWorthRows.length > 0 && (
                 <div className={styles.netWorthSection}>
                   <h4 className={styles.netWorthTitle}>시점별 순자산</h4>
@@ -1281,16 +1524,11 @@ function SimulationCompareModal({
                       style={{ gridTemplateColumns }}
                     >
                       <div className={styles.summaryCell}>시점</div>
-                      {showDefaultColumn && (
-                        <div className={styles.summaryCell}>
-                          {defaultTitle || "현재 시뮬레이션"}
+                      {sortedSelectedSimulationIds.map((simId) => (
+                        <div key={simId} className={styles.summaryCell}>
+                          {getSimulationTitle(simId)}
                         </div>
-                      )}
-                      {showTargetColumn && (
-                        <div className={styles.summaryCell}>
-                          {targetTitle || "비교 시뮬레이션"}
-                        </div>
-                      )}
+                      ))}
                     </div>
                     {netWorthRows.map((row) => (
                       <React.Fragment key={row.key}>
@@ -1311,122 +1549,67 @@ function SimulationCompareModal({
                                     : "세부 항목 펼치기"
                                 }
                               >
-                                {expandedRows[`networth-${row.key}`] ? "▼" : "▶"}
+                                {expandedRows[`networth-${row.key}`]
+                                  ? "▼"
+                                  : "▶"}
                               </button>
                             )}
                             {row.label}
                           </div>
-                          {showDefaultColumn && !showTargetColumn && (
-                            <div className={styles.summaryCell}>
-                              {row.defaultValue !== null &&
-                              !Number.isNaN(row.defaultValue) ? (
-                                <span
-                                  className={`${styles.summaryValue} ${
-                                    row.isGoal
-                                      ? ""
-                                      : row.defaultValue >= 0
-                                      ? styles.positive
-                                      : styles.negative
-                                  }`}
-                                >
-                                  {formatAmountForChart(row.defaultValue)}
-                                </span>
-                              ) : (
-                                <span className={styles.summaryEmpty}>-</span>
-                              )}
-                              {!row.isGoal &&
-                                row.defaultBreakdown.length > 0 &&
-                                renderBreakdownList(
-                                  row.defaultBreakdown,
-                                  `default-networth-${row.key}`
-                                )}
-                            </div>
-                          )}
-                          {!showDefaultColumn && showTargetColumn && (
-                            <div className={styles.summaryCell}>
-                              {row.targetValue !== null &&
-                              !Number.isNaN(row.targetValue) ? (
-                                <span
-                                  className={`${styles.summaryValue} ${
-                                    row.isGoal
-                                      ? ""
-                                      : row.targetValue >= 0
-                                      ? styles.positive
-                                      : styles.negative
-                                  }`}
-                                >
-                                  {formatAmountForChart(row.targetValue)}
-                                </span>
-                              ) : (
-                                <span className={styles.summaryEmpty}>-</span>
-                              )}
-                              {!row.isGoal &&
-                                row.targetBreakdown.length > 0 &&
-                                renderBreakdownList(
-                                  row.targetBreakdown,
-                                  `target-networth-${row.key}`
-                                )}
-                            </div>
-                          )}
-                          {showDefaultColumn && showTargetColumn && (
-                            <>
-                              <div className={styles.summaryCell}>
-                                {row.defaultValue !== null &&
-                                !Number.isNaN(row.defaultValue) ? (
-                                  <span
-                                    className={`${styles.summaryValue} ${
-                                      row.isGoal
-                                        ? ""
-                                        : row.defaultValue >= 0
-                                        ? styles.positive
-                                        : styles.negative
-                                    }`}
-                                  >
-                                    {formatAmountForChart(row.defaultValue)}
-                                  </span>
+                          {sortedSelectedSimulationIds.map((simId, index) => {
+                            const value = row.values[simId];
+                            const isFirstCol = index === 0;
+
+                            return (
+                              <div key={simId} className={styles.summaryCell}>
+                                {value !== null &&
+                                value !== undefined &&
+                                !Number.isNaN(value) ? (
+                                  <>
+                                    <span
+                                      className={`${styles.summaryValue} ${
+                                        row.isGoal
+                                          ? ""
+                                          : value >= 0
+                                          ? styles.positive
+                                          : styles.negative
+                                      }`}
+                                    >
+                                      {formatAmountForChart(value)}
+                                    </span>
+                                    {!isFirstCol &&
+                                      sortedSelectedSimulationIds.length > 1 &&
+                                      renderDifference(
+                                        row.values[
+                                          sortedSelectedSimulationIds[0]
+                                        ],
+                                        value,
+                                        "supply"
+                                      )}
+                                  </>
                                 ) : (
                                   <span className={styles.summaryEmpty}>-</span>
                                 )}
                               </div>
-                              <div className={styles.summaryCell}>
-                                {row.targetValue !== null &&
-                                !Number.isNaN(row.targetValue) ? (
-                                  <span
-                                    className={`${styles.summaryValue} ${
-                                      row.isGoal
-                                        ? ""
-                                        : row.targetValue >= 0
-                                        ? styles.positive
-                                        : styles.negative
-                                    }`}
-                                  >
-                                    {formatAmountForChart(row.targetValue)}
-                                  </span>
-                                ) : (
-                                  <span className={styles.summaryEmpty}>-</span>
-                                )}
-                                {renderDifference(
-                                  row.defaultValue,
-                                  row.targetValue,
-                                  "supply"
-                                )}
-                              </div>
-                            </>
-                          )}
+                            );
+                          })}
                         </div>
-                        {/* 세부 내용을 별도 행으로 표시 (양쪽 비교) - 펼쳐졌을 때만 */}
-                        {showDefaultColumn &&
-                          showTargetColumn &&
-                          !row.isGoal &&
-                          expandedRows[`networth-${row.key}`] &&
-                          (row.defaultBreakdown.length > 0 ||
-                            row.targetBreakdown.length > 0) &&
-                          renderBreakdownComparison(
-                            row.defaultBreakdown,
-                            row.targetBreakdown,
-                            `networth-comparison-${row.key}`,
-                            gridTemplateColumns
-                          )}
+                        {/* 세부 내용 표시 - 펼쳐졌을 때만 */}
+                        {!row.isGoal && expandedRows[`networth-${row.key}`] && (
+                          <div
+                            style={{
+                              gridColumn: "1 / -1",
+                              paddingTop: "0.5rem",
+                            }}
+                          >
+                            {renderBreakdownComparison(
+                              row.breakdowns,
+                              `networth-comparison-${row.key}`,
+                              gridTemplateColumns,
+                              "supply"
+                            )}
+                          </div>
+                        )}
                       </React.Fragment>
                     ))}
                   </div>
@@ -1435,50 +1618,52 @@ function SimulationCompareModal({
 
               {/* 상세 재무 데이터 비교 */}
               {activeTab === "detail" && (
-              <div className={styles.financialDataSection}>
-                <h4 className={styles.financialDataTitle}>상세 재무 데이터</h4>
-                <div className={styles.summaryTable}>
-                  <div
-                    className={`${styles.summaryRow} ${styles.summaryHeader}`}
-                    style={{ gridTemplateColumns }}
-                  >
-                    <div className={styles.summaryCell}>재무 항목</div>
-                    {showDefaultColumn && (
-                      <div className={styles.summaryCell}>
-                        {defaultTitle || "현재 시뮬레이션"}
-                      </div>
-                    )}
-                    {showTargetColumn && (
-                      <div className={styles.summaryCell}>
-                        {targetTitle || "비교 시뮬레이션"}
-                      </div>
-                    )}
-                  </div>
-                  {categoryConfigs.map((config) => (
+                <div className={styles.financialDataSection}>
+                  <h4 className={styles.financialDataTitle}>
+                    상세 재무 데이터
+                  </h4>
+                  <div className={styles.summaryTable}>
                     <div
-                      key={config.key}
-                      className={styles.summaryRow}
+                      className={`${styles.summaryRow} ${styles.summaryHeader}`}
                       style={{ gridTemplateColumns }}
                     >
-                      <div
-                        className={`${styles.summaryCell} ${styles.summaryLabel}`}
-                      >
-                        {config.label}
-                      </div>
-                      {showDefaultColumn && (
-                        <div className={styles.summaryCell}>
-                          {renderList(config, defaultData?.[config.key], defaultData?.[config.key])}
+                      <div className={styles.summaryCell}>재무 항목</div>
+                      {sortedSelectedSimulationIds.map((simId) => (
+                        <div key={simId} className={styles.summaryCell}>
+                          {getSimulationTitle(simId)}
                         </div>
-                      )}
-                      {showTargetColumn && (
-                        <div className={styles.summaryCell}>
-                          {renderList(config, targetData?.[config.key], defaultData?.[config.key])}
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                    {categoryConfigs.map((config) => (
+                      <div
+                        key={config.key}
+                        className={styles.summaryRow}
+                        style={{ gridTemplateColumns }}
+                      >
+                        <div
+                          className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                        >
+                          {config.label}
+                        </div>
+                        {sortedSelectedSimulationIds.map((simId) => {
+                          const simData = simulationsData[simId];
+                          const defaultSimId = defaultSimulationEntry?.id;
+                          const defaultSimData = simulationsData[defaultSimId];
+
+                          return (
+                            <div key={simId} className={styles.summaryCell}>
+                              {renderList(
+                                config,
+                                simData?.[config.key],
+                                defaultSimData?.[config.key]
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
               )}
             </>
           )}

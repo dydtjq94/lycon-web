@@ -12,13 +12,14 @@
 .modal {
   background: #ffffff;
   border-radius: 12px;
-  width: min(960px, 100%);
+  /* width는 inline style로 동적 설정 */
   height: 90vh;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  transition: width 0.2s ease-out;
 }
 
 .header {
@@ -87,6 +88,74 @@
   margin: 0.25rem 0 0;
   color: #6b7280;
   font-size: 0.9rem;
+}
+
+.simulationSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  align-items: center;
+}
+
+.simulationCheckbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.8rem;
+}
+
+.simulationCheckbox:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.simulationCheckbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.simulationCheckbox input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+}
+
+.simulationCheckboxDefault {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  font-weight: 500;
+}
+
+.simulationCheckboxDefault:hover {
+  background: #dbeafe;
+}
+
+.simulationLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 400;
+  color: #374151;
+  line-height: 1;
+}
+
+.defaultBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 3px;
+  background: #3b82f6;
+  color: #ffffff;
+  line-height: 1;
 }
 
 .closeButton {
@@ -221,6 +290,31 @@
   .periodTab {
     flex: 1;
     text-align: center;
+  }
+
+  .simulationSelector {
+    gap: 0.4rem;
+  }
+
+  .simulationCheckbox {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    gap: 0.25rem;
+  }
+
+  .simulationCheckbox input[type="checkbox"] {
+    width: 12px;
+    height: 12px;
+  }
+
+  .simulationLabel {
+    font-size: 0.75rem;
+    gap: 0.25rem;
+  }
+
+  .defaultBadge {
+    font-size: 0.6rem;
+    padding: 0.08rem 0.25rem;
   }
 }
 
