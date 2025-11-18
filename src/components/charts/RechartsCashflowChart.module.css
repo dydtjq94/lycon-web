@@ -1014,3 +1014,18 @@
   font-size: 0.95rem;
   text-align: center;
 }
+
+/* 이벤트 개수 표시 */
+.compactEventCount {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+/* 이벤트 네모 아이콘 */
+.eventDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}

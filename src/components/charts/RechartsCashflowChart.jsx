@@ -1022,11 +1022,30 @@ function RechartsCashflowChart({
                           gap: "4px",
                         }}
                       >
-                        {Object.entries(positivesByCategory).map(
-                          ([categoryName, categoryData]) =>
-                            categoryData.items.map((item, index) => (
+                        {/* 카테고리 순서 정의 */}
+                        {[
+                          "소득",
+                          "지출",
+                          "저축/투자",
+                          "연금",
+                          "부동산",
+                          "자산",
+                          "부채",
+                        ]
+                          .filter(
+                            (categoryName) => positivesByCategory[categoryName]
+                          )
+                          .map((categoryName) => {
+                            const categoryData =
+                              positivesByCategory[categoryName];
+                            // 카테고리별 합계 계산
+                            const categoryTotal = categoryData.items.reduce(
+                              (sum, item) => sum + item.amount,
+                              0
+                            );
+                            return (
                               <div
-                                key={`positive-${categoryName}-${index}`}
+                                key={`positive-category-${categoryName}`}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -1039,12 +1058,12 @@ function RechartsCashflowChart({
                                     width: "8px",
                                     height: "8px",
                                     borderRadius: "50%",
-                                    backgroundColor: item.color,
+                                    backgroundColor: categoryData.color,
                                     flexShrink: 0,
                                   }}
                                 />
                                 <span style={{ color: "#1f2937" }}>
-                                  {item.label}
+                                  {categoryName}
                                 </span>
                                 <span
                                   style={{
@@ -1053,11 +1072,11 @@ function RechartsCashflowChart({
                                     fontWeight: "500",
                                   }}
                                 >
-                                  +{formatAmountForChart(item.amount)}
+                                  +{formatAmountForChart(categoryTotal)}
                                 </span>
                               </div>
-                            ))
-                        )}
+                            );
+                          })}
                       </div>
                     </div>
                   )}
@@ -1088,11 +1107,30 @@ function RechartsCashflowChart({
                           gap: "4px",
                         }}
                       >
-                        {Object.entries(negativesByCategory).map(
-                          ([categoryName, categoryData]) =>
-                            categoryData.items.map((item, index) => (
+                        {/* 카테고리 순서 정의 */}
+                        {[
+                          "소득",
+                          "지출",
+                          "저축/투자",
+                          "연금",
+                          "부동산",
+                          "자산",
+                          "부채",
+                        ]
+                          .filter(
+                            (categoryName) => negativesByCategory[categoryName]
+                          )
+                          .map((categoryName) => {
+                            const categoryData =
+                              negativesByCategory[categoryName];
+                            // 카테고리별 합계 계산
+                            const categoryTotal = categoryData.items.reduce(
+                              (sum, item) => sum + item.amount,
+                              0
+                            );
+                            return (
                               <div
-                                key={`negative-${categoryName}-${index}`}
+                                key={`negative-category-${categoryName}`}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -1105,12 +1143,12 @@ function RechartsCashflowChart({
                                     width: "8px",
                                     height: "8px",
                                     borderRadius: "50%",
-                                    backgroundColor: item.color,
+                                    backgroundColor: categoryData.color,
                                     flexShrink: 0,
                                   }}
                                 />
                                 <span style={{ color: "#1f2937" }}>
-                                  {item.label}
+                                  {categoryName}
                                 </span>
                                 <span
                                   style={{
@@ -1119,11 +1157,11 @@ function RechartsCashflowChart({
                                     fontWeight: "500",
                                   }}
                                 >
-                                  -{formatAmountForChart(item.amount)}
+                                  -{formatAmountForChart(categoryTotal)}
                                 </span>
                               </div>
-                            ))
-                        )}
+                            );
+                          })}
                       </div>
                     </div>
                   )}
@@ -1146,76 +1184,7 @@ function RechartsCashflowChart({
           animationDuration={400}
           animationBegin={0}
           isAnimationActive={true}
-          label={(props) => {
-            const { x, y, width, value, index } = props;
-            const entry = chartData[index];
-
-            // entry가 없으면 아무것도 렌더링하지 않음
-            if (!entry) {
-              return null;
-            }
-
-            // 양수인 경우에만 설정 아이콘 표시
-            if (value > 0) {
-              // 투자 규칙 확인 (현금 100%가 아닌 경우 파란색)
-              const investmentRule =
-                currentSimulation?.cashflowInvestmentRules?.[entry.year];
-              const hasInvestment = investmentRule?.allocations?.some(
-                (allocation) =>
-                  (allocation.targetType === "saving" ||
-                    allocation.targetType === "pension") &&
-                  allocation.ratio > 0
-              );
-
-              const baseColor = hasInvestment ? "#3b82f6" : "#9ca3af"; // 파란색 or 회색
-              const hoverColor = hasInvestment ? "#2563eb" : "#374151"; // 진한 파란색 or 진한 회색
-
-              return (
-                <g>
-                  <foreignObject
-                    x={x + width / 2 - 8}
-                    y={y - 20}
-                    width={16}
-                    height={16}
-                    style={{ pointerEvents: "auto" }}
-                  >
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        color: baseColor,
-                        fontSize: "14px",
-                        opacity: hasInvestment ? 0.8 : 0.6,
-                        transition: "opacity 0.2s, color 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.opacity = "1";
-                        e.currentTarget.style.color = hoverColor;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = hasInvestment
-                          ? "0.8"
-                          : "0.6";
-                        e.currentTarget.style.color = baseColor;
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleInvestmentSettingClick(entry);
-                      }}
-                      title="투자 설정"
-                    >
-                      ◎
-                    </div>
-                  </foreignObject>
-                </g>
-              );
-            }
-            return null;
-          }}
+          label={renderInvestmentIcon}
         >
           {chartData.map((entry, index) => (
             <Cell
@@ -1445,28 +1414,31 @@ function RechartsCashflowChart({
   };
 
   // 투자 설정 아이콘 클릭 핸들러
-  const handleInvestmentSettingClick = (entry) => {
-    if (!entry || entry.amount <= 0) return;
+  const handleInvestmentSettingClick = useCallback(
+    (entry) => {
+      if (!entry || entry.amount <= 0) return;
 
-    // 양수 현금흐름이 있는 모든 년도 목록 계산
-    const positiveYears = chartData
-      .filter((item) => item.amount > 0)
-      .map((item) => ({
-        year: item.year,
-        amount: item.amount,
-      }));
+      // 양수 현금흐름이 있는 모든 년도 목록 계산
+      const positiveYears = chartData
+        .filter((item) => item.amount > 0)
+        .map((item) => ({
+          year: item.year,
+          amount: item.amount,
+        }));
 
-    // 현재 설정된 투자 규칙 가져오기
-    const currentRule =
-      currentSimulation?.cashflowInvestmentRules?.[entry.year] || null;
+      // 현재 설정된 투자 규칙 가져오기
+      const currentRule =
+        currentSimulation?.cashflowInvestmentRules?.[entry.year] || null;
 
-    setInvestmentModalData({
-      year: entry.year,
-      amount: entry.amount,
-      currentRule,
-      positiveYears,
-    });
-  };
+      setInvestmentModalData({
+        year: entry.year,
+        amount: entry.amount,
+        currentRule,
+        positiveYears,
+      });
+    },
+    [chartData, currentSimulation]
+  );
 
   // 투자 규칙 저장 핸들러
   const handleSaveInvestmentRule = (years, rule) => {
@@ -1475,6 +1447,79 @@ function RechartsCashflowChart({
     }
     setInvestmentModalData(null);
   };
+
+  // 투자 아이콘 렌더링 함수 (메모이제이션)
+  const renderInvestmentIcon = useCallback(
+    (props) => {
+      const { x, y, width, value, index } = props;
+      const entry = chartData[index];
+
+      // entry가 없으면 아무것도 렌더링하지 않음
+      if (!entry) {
+        return null;
+      }
+
+      // 양수인 경우에만 설정 아이콘 표시
+      if (value > 0) {
+        // 투자 규칙 확인 (현금 100%가 아닌 경우 파란색)
+        const investmentRule =
+          currentSimulation?.cashflowInvestmentRules?.[entry.year];
+        const hasInvestment = investmentRule?.allocations?.some(
+          (allocation) =>
+            (allocation.targetType === "saving" ||
+              allocation.targetType === "pension") &&
+            allocation.ratio > 0
+        );
+
+        const baseColor = hasInvestment ? "#3b82f6" : "#9ca3af"; // 파란색 or 회색
+        const hoverColor = hasInvestment ? "#2563eb" : "#374151"; // 진한 파란색 or 진한 회색
+
+        return (
+          <g>
+            <foreignObject
+              x={x + width / 2 - 8}
+              y={y - 20}
+              width={16}
+              height={16}
+              style={{ pointerEvents: "auto" }}
+            >
+              <div
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: baseColor,
+                  fontSize: "14px",
+                  opacity: hasInvestment ? 0.8 : 0.6,
+                  transition: "opacity 0.2s, color 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = "1";
+                  e.currentTarget.style.color = hoverColor;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = hasInvestment ? "0.8" : "0.6";
+                  e.currentTarget.style.color = baseColor;
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleInvestmentSettingClick(entry);
+                }}
+                title="투자 설정"
+              >
+                ◎
+              </div>
+            </foreignObject>
+          </g>
+        );
+      }
+      return null;
+    },
+    [chartData, currentSimulation, handleInvestmentSettingClick]
+  );
 
   return (
     <>
@@ -1708,6 +1753,32 @@ function RechartsCashflowChart({
                     </div>
                   </>
                 )}
+
+                {/* 이벤트 섹션 */}
+                {distributionEntry?.events &&
+                  distributionEntry.events.length > 0 && (
+                    <div className={styles.compactSection}>
+                      <div className={styles.compactTitleRow}>
+                        <h5 className={styles.compactTitle}>이벤트</h5>
+                        <span className={styles.compactEventCount}>
+                          {distributionEntry.events.length}
+                        </span>
+                      </div>
+                      <div className={styles.compactList}>
+                        {distributionEntry.events.map((event, index) => (
+                          <div key={index} className={styles.compactRow}>
+                            <span className={styles.compactLabel}>
+                              <span
+                                className={styles.eventDot}
+                                style={{ backgroundColor: "#3b82f6" }}
+                              />
+                              {event.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
               </>
             )}
           </div>
