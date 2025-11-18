@@ -261,6 +261,19 @@ export const simulationService = {
         memo: sourceSimulation?.memo || "",
       });
 
+      // 1-1. 은퇴년도와 투자 규칙 복사 (원본 시뮬레이션에서)
+      const updateData = {};
+      if (sourceSimulation.retirementYear !== undefined) {
+        updateData.retirementYear = sourceSimulation.retirementYear;
+      }
+      if (sourceSimulation.cashflowInvestmentRules) {
+        updateData.cashflowInvestmentRules =
+          sourceSimulation.cashflowInvestmentRules;
+      }
+      if (Object.keys(updateData).length > 0) {
+        await this.updateSimulation(profileId, newSimulationId, updateData);
+      }
+
       // 2. 원본 시뮬레이션의 모든 하위 컬렉션 데이터 복사
       const subcollections = [
         "incomes",
@@ -427,6 +440,32 @@ export const simulationService = {
     } catch (error) {
       console.error("투자 규칙 조회 오류:", error);
       return {};
+    }
+  },
+
+  /**
+   * 시뮬레이션의 은퇴년도 업데이트
+   * @param {string} profileId - 프로필 ID
+   * @param {string} simulationId - 시뮬레이션 ID
+   * @param {number} retirementYear - 은퇴년도
+   */
+  async updateRetirementYear(profileId, simulationId, retirementYear) {
+    try {
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId
+      );
+      await updateDoc(docRef, {
+        retirementYear: retirementYear,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("은퇴년도 업데이트 완료:", simulationId, retirementYear);
+    } catch (error) {
+      console.error("은퇴년도 업데이트 오류:", error);
+      throw error;
     }
   },
 };

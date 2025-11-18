@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { profileService } from "../services/firestoreService";
+import { simulationService } from "../services/simulationService";
 import { calculateKoreanAge } from "../utils/koreanAge";
 import { formatAmount } from "../utils/format";
 import { trackPageView, trackEvent } from "../libs/mixpanel";
@@ -55,8 +56,45 @@ function ProfileListPage() {
       setLoading(true);
       const allProfiles = await profileService.getAllProfiles();
 
+      // 각 프로필의 기본 시뮬레이션 retirementYear 로드
+      const profilesWithRetirementYear = await Promise.all(
+        allProfiles.map(async (profile) => {
+          try {
+            const simulations = await simulationService.getSimulations(
+              profile.id || profile.docId
+            );
+            const defaultSim = simulations.find((sim) => sim.isDefault === true);
+            
+            // 기본 시뮬레이션의 retirementYear가 있으면 사용, 없으면 프로필 기준으로 계산
+            let retirementYear;
+            if (defaultSim?.retirementYear) {
+              retirementYear = defaultSim.retirementYear;
+            } else {
+              // 프로필의 retirementAge로부터 계산
+              const birthYear = parseInt(profile.birthYear);
+              const retirementAge = parseInt(profile.retirementAge);
+              retirementYear = birthYear + retirementAge;
+            }
+            
+            return {
+              ...profile,
+              retirementYear: retirementYear,
+            };
+          } catch (error) {
+            console.error(`프로필 ${profile.id} 시뮬레이션 로드 오류:`, error);
+            // 오류 발생 시 프로필 기준으로 계산
+            const birthYear = parseInt(profile.birthYear);
+            const retirementAge = parseInt(profile.retirementAge);
+            return {
+              ...profile,
+              retirementYear: birthYear + retirementAge,
+            };
+          }
+        })
+      );
+
       // 생성일 기준으로 오래된 것부터 정렬 (오름차순)
-      const sortedProfiles = allProfiles.sort(
+      const sortedProfiles = profilesWithRetirementYear.sort(
         (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
       );
 
@@ -236,7 +274,7 @@ function ProfileListPage() {
               <span className={styles.infoDivider}>|</span>
               <span className={styles.infoText}>
                 은퇴 {profile.retirementAge}세 (
-                {profile.birthYear + profile.retirementAge}년)
+                {profile.retirementYear}년)
               </span>
               <span className={styles.infoDivider}>|</span>
               <span className={styles.infoText}>

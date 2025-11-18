@@ -586,6 +586,33 @@ function DashboardPage() {
     loadSimulations();
   }, [profileId]);
 
+  // 시뮬레이션 전환 시 프로필 데이터의 은퇴년도 업데이트
+  useEffect(() => {
+    if (!activeSimulationId || !simulations.length || !profileData) return;
+
+    const currentSimulation = simulations.find(
+      (sim) => sim.id === activeSimulationId
+    );
+
+    if (currentSimulation && currentSimulation.retirementYear) {
+      const birthYear = parseInt(profileData.birthYear);
+      const retirementYear = parseInt(currentSimulation.retirementYear);
+      const retirementAge = retirementYear - birthYear;
+
+      // 현재 프로필의 retirementAge와 다른 경우만 업데이트
+      if (profileData.retirementAge !== retirementAge) {
+        setProfileData({
+          ...profileData,
+          retirementAge: retirementAge,
+        });
+
+        console.log(
+          `시뮬레이션 로드: 은퇴년도 ${retirementYear}년 → 은퇴나이 ${retirementAge}세로 프로필 업데이트`
+        );
+      }
+    }
+  }, [activeSimulationId, simulations, profileData?.birthYear]);
+
   // 모든 재무 데이터를 한 번에 병렬로 로드
   useEffect(() => {
     const loadAllFinancialData = async () => {
@@ -697,21 +724,34 @@ function DashboardPage() {
           ).length
         : 0;
 
+      // 현재 시뮬레이션의 은퇴년도 계산 (시뮬레이션에 설정되어 있으면 사용, 아니면 프로필 기준으로 계산)
+      const currentSimulation = simulations.find(
+        (s) => s.id === activeSimulationId
+      );
+      let retirementYear;
+      if (currentSimulation?.retirementYear) {
+        retirementYear = currentSimulation.retirementYear;
+      } else {
+        // 프로필의 retirementAge로부터 계산
+        const birthYear = parseInt(profileData.birthYear);
+        const retirementAge = parseInt(profileData.retirementAge);
+        retirementYear = birthYear + retirementAge;
+      }
+
       trackPageView("대시보드 페이지", {
         profileId: profileId,
         profileName: profileData.name,
         birthYear: profileData.birthYear,
         currentAge: currentAge,
         retirementAge: profileData.retirementAge,
-        retirementYear: profileData.retirementYear,
+        retirementYear: retirementYear,
         profileStatus: profileData.status || "unknown",
         hasSpouse: profileData.hasSpouse || false,
         spouseName: profileData.spouseName || "",
         childrenCount: childrenCount,
         parentsCount: parentsCount,
         simulationCount: simulations.length,
-        activeSimulation: simulations.find((s) => s.id === activeSimulationId)
-          ?.title,
+        activeSimulation: currentSimulation?.title,
         hasEditPermission: hasEditPermission,
         isAdmin: isAdmin,
         viewerType: isAdmin ? "관리자" : userId ? "로그인 사용자" : "비로그인",
@@ -756,10 +796,12 @@ function DashboardPage() {
       years.push({ year, age });
     }
 
-    // 프로필 데이터에 시뮬레이션 투자 규칙 병합
+    // 프로필 데이터에 시뮬레이션 투자 규칙 및 은퇴년도 병합
     const profileDataWithSimulation = {
       ...profileData,
       cashflowInvestmentRules: currentSimulation?.cashflowInvestmentRules || {},
+      // 시뮬레이션별 은퇴년도가 설정되어 있으면 프로필 기본값 대신 사용
+      retirementYear: currentSimulation?.retirementYear || retirementYear,
     };
 
     // 실제 소득 데이터를 기반으로 현금흐름 시뮬레이션 계산
@@ -893,6 +935,16 @@ function DashboardPage() {
   const handleSaveProfileEdit = async (updatedProfile) => {
     setProfileData(updatedProfile);
     // 시뮬레이션 재계산은 useEffect에서 자동 처리
+
+    // 시뮬레이션 목록 다시 로드 (은퇴년도 업데이트 반영)
+    try {
+      const updatedSimulations = await simulationService.getSimulations(
+        profileId
+      );
+      setSimulations(updatedSimulations);
+    } catch (error) {
+      console.error("시뮬레이션 목록 재로드 오류:", error);
+    }
 
     // 프로필 업데이트 후 소득/저축/지출/연금 데이터 다시 로드 (은퇴년도 변경 시 고정된 항목 업데이트 반영)
     if (activeSimulationId) {
@@ -2128,6 +2180,29 @@ function DashboardPage() {
   const handleSimulationTabChange = (simulationId) => {
     const selectedSimulation = simulations.find((s) => s.id === simulationId);
     setActiveSimulationId(simulationId);
+
+    // 시뮬레이션의 retirementYear를 프로필의 retirementAge로 변환하여 업데이트
+    if (
+      selectedSimulation &&
+      selectedSimulation.retirementYear &&
+      profileData
+    ) {
+      const currentYear = new Date().getFullYear();
+      const birthYear = parseInt(profileData.birthYear);
+      const currentAge = currentYear - birthYear;
+      const retirementYear = parseInt(selectedSimulation.retirementYear);
+      const retirementAge = retirementYear - birthYear;
+
+      // 로컬 state만 업데이트 (DB에는 저장하지 않음)
+      setProfileData({
+        ...profileData,
+        retirementAge: retirementAge,
+      });
+
+      console.log(
+        `시뮬레이션 전환: 은퇴년도 ${retirementYear}년 → 은퇴나이 ${retirementAge}세로 프로필 업데이트`
+      );
+    }
 
     // Mixpanel: 시뮬레이션 전환 이벤트
     if (selectedSimulation) {
@@ -3793,6 +3868,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
         onClose={handleCloseProfileEditModal}
         onSave={handleSaveProfileEdit}
         profileData={profileData}
+        activeSimulationId={activeSimulationId}
+        simulations={simulations}
       />
 
       {/* 자산 모달 */}

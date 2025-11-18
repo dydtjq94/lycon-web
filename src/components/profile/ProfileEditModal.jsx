@@ -7,6 +7,7 @@ import {
   expenseService,
   pensionService,
 } from "../../services/firestoreService";
+import { simulationService } from "../../services/simulationService";
 import { formatAmountForChart } from "../../utils/format";
 import styles from "./ProfileEditModal.module.css";
 
@@ -14,7 +15,14 @@ import styles from "./ProfileEditModal.module.css";
  * 프로필 수정 모달
  * 사용자의 기본 정보를 수정할 수 있습니다.
  */
-function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
+function ProfileEditModal({
+  isOpen,
+  onClose,
+  profileData,
+  onSave,
+  activeSimulationId,
+  simulations = [],
+}) {
   const [formData, setFormData] = useState({
     name: "",
     birthYear: "",
@@ -412,15 +420,18 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
         }
       });
 
+      // retirementAge 계산 (로컬 state 업데이트용, DB에는 저장 안함)
+      const retirementAgeNum =
+        typeof formData.retirementAge === "string" &&
+        formData.retirementAge === ""
+          ? 55
+          : parseInt(formData.retirementAge, 10) || 55;
+
       const updatedProfile = {
         ...profileData,
         name: formData.name.trim(),
         birthYear: parseInt(formData.birthYear),
-        retirementAge:
-          typeof formData.retirementAge === "string" &&
-          formData.retirementAge === ""
-            ? 55
-            : parseInt(formData.retirementAge, 10) || 55,
+        retirementAge: retirementAgeNum, // 로컬 state만 업데이트 (DB 저장 안함)
         currentCash: parseInt(formData.currentCash) || 0,
         targetAssets: parseInt(formData.targetAssets) || 0,
         status: formData.status || "sample", // 프로필 상태 저장
@@ -440,22 +451,31 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
       };
 
       // 은퇴년도 또는 출생년도가 변경되었는지 확인
-      const retirementAgeNum =
-        typeof formData.retirementAge === "string" &&
-        formData.retirementAge === ""
-          ? 55
-          : parseInt(formData.retirementAge, 10) || 55;
       const retirementAgeChanged =
         profileData.retirementAge !== retirementAgeNum;
-      const birthYearChanged = profileData.birthYear !== formData.birthYear;
+      const birthYearChanged = profileData.birthYear !== parseInt(formData.birthYear);
 
-      // 프로필 업데이트
+      // 현재 시뮬레이션이 기본 시뮬레이션(현재)인지 확인
+      const currentSimulation = simulations.find(
+        (sim) => sim.id === activeSimulationId
+      );
+      const isDefaultSimulation = currentSimulation?.isDefault === true;
+
+      // 프로필 DB 업데이트
+      // 기본 시뮬레이션인 경우만 retirementAge 포함, 아니면 제외
+      const profileForDB = isDefaultSimulation
+        ? updatedProfile
+        : (() => {
+            const { retirementAge: _, ...rest } = updatedProfile;
+            return rest;
+          })();
+
       await profileService.updateProfile(
         profileData.id || profileData.docId,
-        updatedProfile
+        profileForDB
       );
 
-      // 은퇴년도가 변경된 경우, 고정된 소득/저축/지출/연금 항목들의 endYear 업데이트
+      // 은퇴년도가 변경된 경우, 고정된 소득/저축/지출/연금 항목들의 endYear 및 시뮬레이션 retirementYear 업데이트
       if (retirementAgeChanged || birthYearChanged) {
         try {
           const retirementAgeForCalc =
@@ -496,6 +516,18 @@ function ProfileEditModal({ isOpen, onClose, profileData, onSave }) {
           if (totalUpdated > 0) {
             console.log(
               `${totalUpdated}개의 고정된 항목이 자동으로 업데이트되었습니다. (소득: ${incomeCount}, 저축: ${savingCount}, 지출: ${expenseCount}, 연금: ${pensionCount})`
+            );
+          }
+
+          // 현재 활성화된 시뮬레이션의 retirementYear만 업데이트
+          if (activeSimulationId) {
+            await simulationService.updateRetirementYear(
+              profileData.id || profileData.docId,
+              activeSimulationId,
+              newRetirementYear
+            );
+            console.log(
+              `현재 시뮬레이션(${activeSimulationId})의 은퇴년도가 ${newRetirementYear}년으로 업데이트되었습니다.`
             );
           }
         } catch (error) {
