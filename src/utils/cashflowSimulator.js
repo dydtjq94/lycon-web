@@ -1008,6 +1008,20 @@ export function calculateCashflowSimulation(
             totalAccumulated = totalAccumulated * (1 + returnRate);
           }
 
+          // 잉여 현금 투자 금액 추가 (년도별로 수익률 적용)
+          let totalInvestedValue = 0;
+          if (savingInvestments[pension.id]) {
+            Object.keys(savingInvestments[pension.id]).forEach((investYear) => {
+              const investAmount = savingInvestments[pension.id][investYear];
+              const yearsFromInvestment = paymentStartYear - parseInt(investYear);
+              // 투자한 해의 다음 해부터 수익률 적용 (연말 투자이므로 투자한 해는 수익률 X)
+              const investmentValue =
+                investAmount * Math.pow(1 + returnRate, yearsFromInvestment);
+              totalInvestedValue += investmentValue;
+            });
+          }
+          totalAccumulated += totalInvestedValue;
+
           // 즉시 수령 판단 (수익률 적용 안 함):
           // 적립 종료년도 = 수령 시작년도이고, 추가 적립이 있는 경우만 (연말 기준, 같은 해에 적립하고 바로 수령)
           // 단, 퇴직금은 이미 보유한 금액이므로 항상 수익률 적용
@@ -1616,13 +1630,16 @@ export function calculateAssetSimulation(
 
   // 연금별 누적 자산 (제목별로 분리)
   const pensionsByTitle = {};
+  // 연금별 누적 자산 (ID별로 분리 - 투자 배분용)
+  const pensionsById = {};
+  
   pensions.forEach((pension) => {
     if (pension.type !== "national") {
       // 퇴직연금/개인연금만 자산으로 관리
 
       const isActive = pension.type !== "severance";
 
-      pensionsByTitle[pension.title] = {
+      const pensionData = {
         // 퇴직금/DB는 초기 amount를 0으로 설정 (은퇴년도에 currentAmount 설정)
         // 퇴직연금/개인연금은 처음부터 currentAmount 설정
         amount: pension.type === "severance" ? 0 : pension.currentAmount || 0,
@@ -1643,7 +1660,15 @@ export function calculateAssetSimulation(
         // 퇴직금/DB는 은퇴년도 전까지 자산 차트에 표시 안함
         // 퇴직연금/개인연금은 처음부터 자산 차트에 표시
         isActive: isActive,
+        title: pension.title, // 제목 저장
       };
+      
+      pensionsByTitle[pension.title] = pensionData;
+      
+      // ID로도 접근 가능하도록 (투자 배분 시 사용)
+      if (pension.id) {
+        pensionsById[pension.id] = pensionData;
+      }
     }
   });
 
@@ -1953,9 +1978,7 @@ export function calculateAssetSimulation(
               }
             } else if (allocation.targetType === "pension" && allocation.targetId) {
               // 연금 상품에 투자 (퇴직연금, 개인연금)
-              const targetPension = pensionsByTitle[Object.keys(pensionsByTitle).find(
-                (title) => pensionsByTitle[title].id === allocation.targetId
-              )];
+              const targetPension = pensionsById[allocation.targetId];
 
               if (targetPension && targetPension.isActive) {
                 // 연금 자산에 투자 금액 추가 (추가 납입)

@@ -140,10 +140,13 @@ function CashflowInvestmentModal({
     if (pension.type !== "retirement" && pension.type !== "personal") {
       return false;
     }
-    // 해당 연도가 적립 기간 내에 있어야 함 (저축/투자와 동일하게)
-    // contributionStartYear ~ contributionEndYear까지
+    // 해당 연도가 적립 시작 ~ 수령 시작 전까지 투자 가능
+    // - 적립 기간: contributionStartYear ~ contributionEndYear
+    // - 공백 기간: contributionEndYear < year < paymentStartYear
+    // - 수령 기간: paymentStartYear ~ (투자 불가)
     return (
-      year >= pension.contributionStartYear && year < pension.contributionEndYear
+      year >= pension.contributionStartYear && 
+      year < pension.paymentStartYear
     );
   });
 

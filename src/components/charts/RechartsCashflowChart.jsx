@@ -1160,13 +1160,15 @@ function RechartsCashflowChart({
               // 투자 규칙 확인 (현금 100%가 아닌 경우 파란색)
               const investmentRule =
                 currentSimulation?.cashflowInvestmentRules?.[entry.year];
-              const hasSavingInvestment = investmentRule?.allocations?.some(
+              const hasInvestment = investmentRule?.allocations?.some(
                 (allocation) =>
-                  allocation.targetType === "saving" && allocation.ratio > 0
+                  (allocation.targetType === "saving" ||
+                    allocation.targetType === "pension") &&
+                  allocation.ratio > 0
               );
 
-              const baseColor = hasSavingInvestment ? "#3b82f6" : "#9ca3af"; // 파란색 or 회색
-              const hoverColor = hasSavingInvestment ? "#2563eb" : "#374151"; // 진한 파란색 or 진한 회색
+              const baseColor = hasInvestment ? "#3b82f6" : "#9ca3af"; // 파란색 or 회색
+              const hoverColor = hasInvestment ? "#2563eb" : "#374151"; // 진한 파란색 or 진한 회색
 
               return (
                 <g>
@@ -1187,7 +1189,7 @@ function RechartsCashflowChart({
                         cursor: "pointer",
                         color: baseColor,
                         fontSize: "14px",
-                        opacity: hasSavingInvestment ? 0.8 : 0.6,
+                        opacity: hasInvestment ? 0.8 : 0.6,
                         transition: "opacity 0.2s, color 0.2s",
                       }}
                       onMouseEnter={(e) => {
@@ -1195,7 +1197,7 @@ function RechartsCashflowChart({
                         e.currentTarget.style.color = hoverColor;
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = hasSavingInvestment
+                        e.currentTarget.style.opacity = hasInvestment
                           ? "0.8"
                           : "0.6";
                         e.currentTarget.style.color = baseColor;
