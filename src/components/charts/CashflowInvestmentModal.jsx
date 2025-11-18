@@ -61,7 +61,7 @@ function CashflowInvestmentModal({
     }
 
     // 기존 규칙이 있으면 로드
-    if (currentRule && currentRule.allocations) {
+    if (currentRule && currentRule.allocations && currentRule.allocations.length > 0) {
       const newRatios = { cash: 0 };
       currentRule.allocations.forEach((allocation) => {
         if (allocation.targetType === "cash") {
@@ -72,7 +72,16 @@ function CashflowInvestmentModal({
           newRatios[allocation.targetId] = allocation.ratio;
         }
       });
-      setRatios(newRatios);
+      
+      // 총합 계산
+      const totalRatio = Object.values(newRatios).reduce((sum, ratio) => sum + (ratio || 0), 0);
+      
+      // 총합이 100%가 아니거나 현금이 0%이면 기본값으로 리셋
+      if (totalRatio !== 100 || newRatios.cash === 0) {
+        setRatios({ cash: 100 });
+      } else {
+        setRatios(newRatios);
+      }
     } else {
       // 기본값: 현금 100%
       setRatios({ cash: 100 });
@@ -209,7 +218,11 @@ function CashflowInvestmentModal({
       }
     });
 
-    const rule = { allocations };
+    // 현금만 100%인 경우 규칙 삭제 (null 전달)
+    // 이렇게 하면 파란색 표시도 사라지고 기본 상태로 돌아감
+    const rule = ratios.cash === 100 && allocations.length === 1 
+      ? null 
+      : { allocations };
 
     // 선택된 년도들에 적용
     onSave(selectedYears, rule);

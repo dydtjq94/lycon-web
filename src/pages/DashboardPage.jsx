@@ -948,12 +948,21 @@ function DashboardPage() {
       const updatedRules = { ...currentRules };
 
       // 배열인 경우 모든 년도에 적용, 아니면 단일 년도에만 적용
+      // null이면 해당 년도의 규칙 삭제 (현금 100% = 기본값)
       if (Array.isArray(years)) {
         years.forEach((year) => {
-          updatedRules[year] = rule;
+          if (rule === null) {
+            delete updatedRules[year];
+          } else {
+            updatedRules[year] = rule;
+          }
         });
       } else {
-        updatedRules[years] = rule;
+        if (rule === null) {
+          delete updatedRules[years];
+        } else {
+          updatedRules[years] = rule;
+        }
       }
 
       // 시뮬레이션 업데이트 (한 번만 호출)
