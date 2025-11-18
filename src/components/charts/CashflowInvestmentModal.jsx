@@ -76,8 +76,8 @@ function CashflowInvestmentModal({
       // 총합 계산
       const totalRatio = Object.values(newRatios).reduce((sum, ratio) => sum + (ratio || 0), 0);
       
-      // 총합이 100%가 아니거나 현금이 0%이면 기본값으로 리셋
-      if (totalRatio !== 100 || newRatios.cash === 0) {
+      // 총합이 100%가 아니면 기본값으로 리셋 (현금 0%는 유효한 설정임)
+      if (totalRatio !== 100) {
         setRatios({ cash: 100 });
       } else {
         setRatios(newRatios);
