@@ -26,6 +26,14 @@ function ProfileSummary({ activeChart, onChartChange }) {
         >
           가계 현금 흐름
         </button>
+        <button
+          className={`${styles.chartTab} ${
+            activeChart === "income-expense" ? styles.chartTabActive : ""
+          }`}
+          onClick={() => onChartChange("income-expense")}
+        >
+          수입/지출
+        </button>
       </div>
     </div>
   );

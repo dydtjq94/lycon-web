@@ -16,6 +16,7 @@ import {
 import { formatAmountForChart } from "../../utils/format";
 import ChartZoomModal from "./ChartZoomModal";
 import YearDetailPanel from "./YearDetailPanel";
+import ChartRangeControl from "./ChartRangeControl";
 import styles from "./RechartsAssetChart.module.css";
 
 // 파이차트 컴포넌트 최적화
@@ -1614,62 +1615,14 @@ function RechartsAssetChart({
       <div className={styles.chartContainer} ref={chartContainerRef}>
         {hasData ? (
           <>
-            {/* X축 범위 조정 UI - Range Slider (상단, 작고 심플하게) */}
-            <div className={styles.rangeControlsContainer}>
-              <div className={styles.rangeSliderWrapper}>
-                <div className={styles.rangeInputWrapper}>
-                  <input
-                    type="range"
-                    min={minYear}
-                    max={maxYear}
-                    value={xAxisRange.start || minYear}
-                    onChange={(e) => {
-                      const newStart = parseInt(e.target.value);
-                      if (newStart < xAxisRange.end) {
-                        handleXAxisRangeChange({ ...xAxisRange, start: newStart });
-                      }
-                    }}
-                    className={`${styles.rangeInput} ${styles.rangeInputStart}`}
-                  />
-                  <input
-                    type="range"
-                    min={minYear}
-                    max={maxYear}
-                    value={xAxisRange.end || maxYear}
-                    onChange={(e) => {
-                      const newEnd = parseInt(e.target.value);
-                      if (newEnd > xAxisRange.start) {
-                        handleXAxisRangeChange({ ...xAxisRange, end: newEnd });
-                      }
-                    }}
-                    className={`${styles.rangeInput} ${styles.rangeInputEnd}`}
-                  />
-                  <div className={styles.rangeTrack}>
-                    <div 
-                      className={styles.rangeTrackActive}
-                      style={{
-                        left: `${((xAxisRange.start - minYear) / (maxYear - minYear)) * 100}%`,
-                        right: `${100 - ((xAxisRange.end - minYear) / (maxYear - minYear)) * 100}%`
-                      }}
-                    />
-                    {/* 은퇴 시점 마커 */}
-                    {retirementYear && retirementYear >= minYear && retirementYear <= maxYear && (
-                      <div 
-                        className={styles.retirementMarker}
-                        style={{
-                          left: `${((retirementYear - minYear) / (maxYear - minYear)) * 100}%`
-                        }}
-                        title={`은퇴: ${retirementYear}년`}
-                      />
-                    )}
-                  </div>
-                  <div className={styles.rangeLabels}>
-                    <span className={styles.rangeLabel}>{xAxisRange.start || minYear}</span>
-                    <span className={styles.rangeLabel}>{xAxisRange.end || maxYear}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* X축 범위 조정 UI */}
+            <ChartRangeControl
+              minYear={minYear}
+              maxYear={maxYear}
+              xAxisRange={xAxisRange}
+              onXAxisRangeChange={handleXAxisRangeChange}
+              retirementYear={retirementYear}
+            />
             
             {/* 컨텐츠 영역: 그래프 */}
             <div className={styles.chartContent}>

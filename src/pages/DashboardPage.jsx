@@ -31,6 +31,7 @@ import { migrateProfileData } from "../utils/dataMigration";
 import SimulationTabs from "../components/simulation/SimulationTabs";
 import RechartsCashflowChart from "../components/charts/RechartsCashflowChart";
 import RechartsAssetChart from "../components/charts/RechartsAssetChart";
+import RechartsIncomeExpenseChart from "../components/charts/RechartsIncomeExpenseChart";
 import IncomeModal from "../components/income/IncomeModal";
 import IncomeList from "../components/income/IncomeList";
 import ExpenseModal from "../components/expense/ExpenseModal";
@@ -3648,6 +3649,19 @@ ${JSON.stringify(analysisData, null, 2)}`;
                     assets={assets}
                     debts={debts}
                     onUpdateInvestmentRule={handleUpdateInvestmentRule} // 투자 규칙 업데이트 콜백
+                    xAxisRange={chartXAxisRange}
+                    onXAxisRangeChange={setChartXAxisRange}
+                  />
+                </div>
+              )}
+
+              {activeChart === "income-expense" && (
+                <div className={styles.chartContainer}>
+                  <RechartsIncomeExpenseChart
+                    key={`income-expense-${activeSimulationId}`}
+                    detailedData={simulationData.cashflowDetailed}
+                    retirementAge={profileData.retirementAge}
+                    profileData={profileData}
                     xAxisRange={chartXAxisRange}
                     onXAxisRangeChange={setChartXAxisRange}
                   />

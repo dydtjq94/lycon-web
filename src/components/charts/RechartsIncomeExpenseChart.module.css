@@ -1,0 +1,53 @@
+/* 기존 차트들과 동일한 구조 */
+.chartContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+/* 데이터 없음 */
+.noData {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: #9ca3af;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* 차트 그리드 */
+.chartGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+  flex: 1;
+}
+
+.chartWrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1200px) {
+  .chartGrid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  .chartWrapper {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .chartWrapper {
+    min-height: 300px;
+  }
+}
+
