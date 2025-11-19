@@ -1255,6 +1255,22 @@ function SimulationCompareModal({
     targetAssetGoal,
   ]);
 
+  // 모달이 열릴 때 토글을 모두 열린 상태로 초기화
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // 생애 자금 수급/수요 탭의 토글들 (supply, demand)
+    // 시점별 순자산 탭의 토글들 (start, retirement, age90)
+    const initialExpandedRows = {
+      supply: true,
+      demand: true,
+      "networth-start": true,
+      "networth-retirement": true,
+      "networth-age90": true,
+    };
+    setExpandedRows(initialExpandedRows);
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
 
