@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import LandingPage from "./pages/LandingPage";
+import ConsultFormPage from "./pages/ConsultFormPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ProfileListPage from "./pages/ProfileListPage";
@@ -33,6 +34,9 @@ function App() {
           <Routes>
             {/* 랜딩 페이지 - 서비스 소개 */}
             <Route path="/" element={<LandingPage />} />
+
+            {/* 무료 사전상담 신청 페이지 */}
+            <Route path="/form" element={<ConsultFormPage />} />
 
             {/* 로그인 페이지 (관리자용) */}
             <Route path="/login" element={<LoginPage />} />
