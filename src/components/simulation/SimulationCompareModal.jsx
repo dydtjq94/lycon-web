@@ -184,9 +184,16 @@ function SimulationCompareModal({
         const assets = sortByCreatedAt(assetsData);
         const debts = sortByCreatedAt(debtData);
 
-        // cashflow 계산
+        // 해당 시뮬레이션의 투자 규칙 가져오기
+        const simulation = simulations.find((sim) => sim.id === simulationId);
+        const profileDataWithSimulation = {
+          ...profileData,
+          cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
+        };
+
+        // cashflow 계산 (투자 규칙이 포함된 profileData 사용)
         const cashflow = calculateCashflowSimulation(
-          profileData,
+          profileDataWithSimulation,
           incomes,
           expenses,
           savings,
@@ -211,7 +218,7 @@ function SimulationCompareModal({
         return null;
       }
     },
-    [profileData]
+    [profileData, simulations]
   );
 
   // 선택된 시뮬레이션들의 데이터 로드
@@ -609,15 +616,34 @@ function SimulationCompareModal({
 
   // 선택된 시뮬레이션들의 생애 자금 수급/수요 계산
   const simulationsPV = useMemo(() => {
-    if (!isOpen) return {};
+    if (!isOpen || !profileData) return {};
 
     const result = {};
     selectedSimulationIds.forEach((simId) => {
       const simData = simulationsData[simId];
       if (!simData) return;
 
+      // 해당 시뮬레이션의 투자 규칙을 반영하여 cashflow 재계산
+      const simulation = simulations?.find((sim) => sim.id === simId);
+      const profileDataWithSimulation = {
+        ...profileData,
+        cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
+      };
+
+      // 투자 규칙이 반영된 최신 cashflow 계산
+      const cashflow = calculateCashflowSimulation(
+        profileDataWithSimulation,
+        simData.incomes || [],
+        simData.expenses || [],
+        simData.savings || [],
+        simData.pensions || [],
+        simData.realEstates || [],
+        simData.assets || [],
+        simData.debts || []
+      );
+
       const filteredCashflow = filterCashflowByPeriod(
-        simData.cashflow || [],
+        cashflow,
         cashflowPeriod,
         retirementYear
       );
@@ -628,6 +654,8 @@ function SimulationCompareModal({
   }, [
     selectedSimulationIds,
     simulationsData,
+    profileData,
+    simulations,
     isOpen,
     cashflowPeriod,
     retirementYear,
@@ -642,15 +670,34 @@ function SimulationCompareModal({
       const simData = simulationsData[simId];
       if (!simData) return;
 
-      const assetResult = calculateAssetSimulation(
-        profileData,
+      // 해당 시뮬레이션의 투자 규칙을 반영하여 cashflow 재계산
+      const simulation = simulations?.find((sim) => sim.id === simId);
+      const profileDataWithSimulation = {
+        ...profileData,
+        cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
+      };
+
+      // 투자 규칙이 반영된 최신 cashflow 계산
+      const cashflow = calculateCashflowSimulation(
+        profileDataWithSimulation,
         simData.incomes || [],
         simData.expenses || [],
         simData.savings || [],
         simData.pensions || [],
         simData.realEstates || [],
         simData.assets || [],
-        simData.cashflow || [],
+        simData.debts || []
+      );
+
+      const assetResult = calculateAssetSimulation(
+        profileDataWithSimulation,
+        simData.incomes || [],
+        simData.expenses || [],
+        simData.savings || [],
+        simData.pensions || [],
+        simData.realEstates || [],
+        simData.assets || [],
+        cashflow, // 재계산된 cashflow 사용
         simData.debts || []
       );
       result[simId] =
@@ -658,7 +705,13 @@ function SimulationCompareModal({
     });
 
     return result;
-  }, [selectedSimulationIds, simulationsData, profileData, isOpen]);
+  }, [
+    selectedSimulationIds,
+    simulationsData,
+    profileData,
+    isOpen,
+    simulations,
+  ]);
 
   // 선택된 시뮬레이션 개수로 컬럼 수 결정
   const valueColumnCount = selectedSimulationIds.length;
