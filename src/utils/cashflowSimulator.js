@@ -614,7 +614,7 @@ export function calculateCashflowSimulation(
           });
 
           addNegative(
-            `${saving.title} | 구매`,
+            `${saving.title} | 추가`,
             currentAmount,
             "저축 구매",
             `saving-purchase-${saving.id || saving.title}`
@@ -1013,7 +1013,8 @@ export function calculateCashflowSimulation(
           if (savingInvestments[pension.id]) {
             Object.keys(savingInvestments[pension.id]).forEach((investYear) => {
               const investAmount = savingInvestments[pension.id][investYear];
-              const yearsFromInvestment = paymentStartYear - parseInt(investYear);
+              const yearsFromInvestment =
+                paymentStartYear - parseInt(investYear);
               // 투자한 해의 다음 해부터 수익률 적용 (연말 투자이므로 투자한 해는 수익률 X)
               const investmentValue =
                 investAmount * Math.pow(1 + returnRate, yearsFromInvestment);
@@ -1027,8 +1028,7 @@ export function calculateCashflowSimulation(
           // 단, 퇴직금은 이미 보유한 금액이므로 항상 수익률 적용
           // 기 보유 금액만 있는 경우(추가 적립 없음)는 일반 수령으로 처리 (수익률 적용)
           const hasAdditionalContribution =
-            !pension.noAdditionalContribution &&
-            yearlyContribution > 0;
+            !pension.noAdditionalContribution && yearlyContribution > 0;
           const isImmediateWithdrawal =
             pension.type !== "severance" &&
             pension.contributionEndYear === paymentStartYear &&
@@ -1342,7 +1342,7 @@ export function calculateCashflowSimulation(
           amount: asset.currentValue,
         });
         addNegative(
-          `${asset.title} | 구매`,
+          `${asset.title} | 추가`,
           asset.currentValue,
           "자산 구매",
           `asset-purchase-${asset.id || asset.title}`
@@ -1473,7 +1473,8 @@ export function calculateCashflowSimulation(
               }
               savingInvestments[allocation.targetId][year] =
                 Math.round(
-                  (savingInvestments[allocation.targetId][year] + investAmount) *
+                  (savingInvestments[allocation.targetId][year] +
+                    investAmount) *
                     100
                 ) / 100;
 
@@ -1492,7 +1493,8 @@ export function calculateCashflowSimulation(
               }
               savingInvestments[allocation.targetId][year] =
                 Math.round(
-                  (savingInvestments[allocation.targetId][year] + investAmount) *
+                  (savingInvestments[allocation.targetId][year] +
+                    investAmount) *
                     100
                 ) / 100;
 
@@ -1632,7 +1634,7 @@ export function calculateAssetSimulation(
   const pensionsByTitle = {};
   // 연금별 누적 자산 (ID별로 분리 - 투자 배분용)
   const pensionsById = {};
-  
+
   pensions.forEach((pension) => {
     if (pension.type !== "national") {
       // 퇴직연금/개인연금만 자산으로 관리
@@ -1662,9 +1664,9 @@ export function calculateAssetSimulation(
         isActive: isActive,
         title: pension.title, // 제목 저장
       };
-      
+
       pensionsByTitle[pension.title] = pensionData;
-      
+
       // ID로도 접근 가능하도록 (투자 배분 시 사용)
       if (pension.id) {
         pensionsById[pension.id] = pensionData;
@@ -1976,7 +1978,10 @@ export function calculateAssetSimulation(
                   `${year}년: ${investAmount}만원을 ${targetSaving.title}에 투자 (자산 시뮬레이션)`
                 );
               }
-            } else if (allocation.targetType === "pension" && allocation.targetId) {
+            } else if (
+              allocation.targetType === "pension" &&
+              allocation.targetId
+            ) {
               // 연금 상품에 투자 (퇴직연금, 개인연금)
               const targetPension = pensionsById[allocation.targetId];
 
@@ -2139,8 +2144,7 @@ export function calculateAssetSimulation(
         // 단, 퇴직금은 이미 보유한 금액이므로 항상 수익률 적용
         // 기 보유 금액만 있는 경우(추가 적립 없음)는 일반 수령으로 처리 (수익률 적용)
         const hasAdditionalContribution =
-          !pension.noAdditionalContribution &&
-          pension.contributionAmount > 0;
+          !pension.noAdditionalContribution && pension.contributionAmount > 0;
         const isImmediateWithdrawal =
           pension.type !== "severance" &&
           pension.contributionEndYear === pension.paymentStartYear &&

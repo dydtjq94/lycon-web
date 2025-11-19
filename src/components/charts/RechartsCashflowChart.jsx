@@ -331,7 +331,7 @@ function RechartsCashflowChart({
             age: realEstate.startYear - (data[0]?.year - data[0]?.age),
             type: "purchase",
             category: "realEstate",
-            title: `${realEstate.title} | 구매`,
+            title: `${realEstate.title} | 추가`,
           });
         }
 
@@ -466,7 +466,7 @@ function RechartsCashflowChart({
             age: asset.startYear - (data[0]?.year - data[0]?.age),
             type: "purchase",
             category: "asset",
-            title: `${asset.title} | 구매`,
+            title: `${asset.title} | 추가`,
           };
           events.push(purchaseEvent);
         }

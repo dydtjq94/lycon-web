@@ -933,18 +933,40 @@ function DashboardPage() {
 
   // 프로필 수정 저장
   const handleSaveProfileEdit = async (updatedProfile) => {
-    setProfileData(updatedProfile);
-    // 시뮬레이션 재계산은 useEffect에서 자동 처리
-
     // 시뮬레이션 목록 다시 로드 (은퇴년도 업데이트 반영)
     try {
       const updatedSimulations = await simulationService.getSimulations(
         profileId
       );
       setSimulations(updatedSimulations);
+
+      // 현재 활성화된 시뮬레이션의 은퇴년도로 retirementAge 설정
+      // 탭 전환 시마다 자동으로 업데이트되지만, 프로필 수정 후 현재 탭에 있는 경우를 위해 여기서도 설정
+      if (activeSimulationId) {
+        const currentSimulation = updatedSimulations.find(
+          (s) => s.id === activeSimulationId
+        );
+        if (
+          currentSimulation &&
+          currentSimulation.retirementYear &&
+          updatedProfile.birthYear
+        ) {
+          const birthYear = parseInt(updatedProfile.birthYear);
+          const retirementYear = parseInt(currentSimulation.retirementYear);
+          const retirementAge = retirementYear - birthYear;
+
+          updatedProfile = {
+            ...updatedProfile,
+            retirementAge: retirementAge,
+          };
+        }
+      }
     } catch (error) {
       console.error("시뮬레이션 목록 재로드 오류:", error);
     }
+
+    setProfileData(updatedProfile);
+    // 시뮬레이션 재계산은 useEffect에서 자동 처리
 
     // 프로필 업데이트 후 소득/저축/지출/연금 데이터 다시 로드 (은퇴년도 변경 시 고정된 항목 업데이트 반영)
     if (activeSimulationId) {
@@ -2182,26 +2204,25 @@ function DashboardPage() {
     setActiveSimulationId(simulationId);
 
     // 시뮬레이션의 retirementYear를 프로필의 retirementAge로 변환하여 업데이트
-    if (
-      selectedSimulation &&
-      selectedSimulation.retirementYear &&
-      profileData
-    ) {
-      const currentYear = new Date().getFullYear();
-      const birthYear = parseInt(profileData.birthYear);
-      const currentAge = currentYear - birthYear;
+    if (selectedSimulation && selectedSimulation.retirementYear) {
       const retirementYear = parseInt(selectedSimulation.retirementYear);
-      const retirementAge = retirementYear - birthYear;
 
-      // 로컬 state만 업데이트 (DB에는 저장하지 않음)
-      setProfileData({
-        ...profileData,
-        retirementAge: retirementAge,
+      // 함수형 업데이트를 사용하여 최신 profileData 사용
+      setProfileData((prevProfileData) => {
+        if (!prevProfileData) return prevProfileData;
+
+        const birthYear = parseInt(prevProfileData.birthYear);
+        const retirementAge = retirementYear - birthYear;
+
+        console.log(
+          `시뮬레이션 전환: 은퇴년도 ${retirementYear}년 → 은퇴나이 ${retirementAge}세로 프로필 업데이트`
+        );
+
+        return {
+          ...prevProfileData,
+          retirementAge: retirementAge,
+        };
       });
-
-      console.log(
-        `시뮬레이션 전환: 은퇴년도 ${retirementYear}년 → 은퇴나이 ${retirementAge}세로 프로필 업데이트`
-      );
     }
 
     // Mixpanel: 시뮬레이션 전환 이벤트
@@ -4097,7 +4118,6 @@ const ProfileMemoPanel = React.memo(function ProfileMemoPanel({
 });
 
 export default DashboardPage;
-
 const SimulationMemoPanel = React.memo(function SimulationMemoPanel({
   memo,
   onSave,
