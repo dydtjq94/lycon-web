@@ -1043,14 +1043,10 @@ function RechartsCashflowChart({
                           .map((categoryName) => {
                             const categoryData =
                               positivesByCategory[categoryName];
-                            // 카테고리별 합계 계산
-                            const categoryTotal = categoryData.items.reduce(
-                              (sum, item) => sum + item.amount,
-                              0
-                            );
-                            return (
+                            // 개별 항목 표시
+                            return categoryData.items.map((item, itemIndex) => (
                               <div
-                                key={`positive-category-${categoryName}`}
+                                key={`positive-item-${categoryName}-${itemIndex}`}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -1068,7 +1064,7 @@ function RechartsCashflowChart({
                                   }}
                                 />
                                 <span style={{ color: "#1f2937" }}>
-                                  {categoryName}
+                                  {item.label}
                                 </span>
                                 <span
                                   style={{
@@ -1077,10 +1073,10 @@ function RechartsCashflowChart({
                                     fontWeight: "500",
                                   }}
                                 >
-                                  +{formatAmountForChart(categoryTotal)}
+                                  +{formatAmountForChart(item.amount)}
                                 </span>
                               </div>
-                            );
+                            ));
                           })}
                       </div>
                     </div>
@@ -1129,14 +1125,10 @@ function RechartsCashflowChart({
                           .map((categoryName) => {
                             const categoryData =
                               negativesByCategory[categoryName];
-                            // 카테고리별 합계 계산
-                            const categoryTotal = categoryData.items.reduce(
-                              (sum, item) => sum + item.amount,
-                              0
-                            );
-                            return (
+                            // 개별 항목 표시
+                            return categoryData.items.map((item, itemIndex) => (
                               <div
-                                key={`negative-category-${categoryName}`}
+                                key={`negative-item-${categoryName}-${itemIndex}`}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -1154,7 +1146,7 @@ function RechartsCashflowChart({
                                   }}
                                 />
                                 <span style={{ color: "#1f2937" }}>
-                                  {categoryName}
+                                  {item.label}
                                 </span>
                                 <span
                                   style={{
@@ -1163,10 +1155,10 @@ function RechartsCashflowChart({
                                     fontWeight: "500",
                                   }}
                                 >
-                                  -{formatAmountForChart(categoryTotal)}
+                                  -{formatAmountForChart(item.amount)}
                                 </span>
                               </div>
-                            );
+                            ));
                           })}
                       </div>
                     </div>

@@ -60,6 +60,37 @@ const updatedVersionData = {
 };
 delete updatedVersionData.lastUpdated;
 
+// history 배열에 새 버전 항목 추가 (touch가 아닐 때만)
+if (updateType !== "touch") {
+  // history 배열이 없으면 생성
+  if (!updatedVersionData.history) {
+    updatedVersionData.history = [];
+  }
+  
+  // 같은 버전이 이미 있는지 확인
+  const existingIndex = updatedVersionData.history.findIndex(
+    (entry) => entry.version === newVersionString
+  );
+  
+  if (existingIndex === -1) {
+    // 같은 버전이 없으면 새로 추가
+    const newHistoryEntry = {
+      version: newVersionString,
+      date: todayStr,
+      changes: [
+        // 변경 내용은 기본 메시지로 추가 (필요시 수동 수정)
+        "버전 업데이트",
+      ],
+    };
+    
+    // history 배열의 맨 앞에 추가
+    updatedVersionData.history.unshift(newHistoryEntry);
+  } else {
+    // 같은 버전이 이미 있으면 날짜만 업데이트 (변경 내용은 유지)
+    updatedVersionData.history[existingIndex].date = todayStr;
+  }
+}
+
 fs.writeFileSync(versionFile, JSON.stringify(updatedVersionData, null, 2));
 
 // .cursor/rules/my-rule.mdc 업데이트
