@@ -1138,7 +1138,7 @@ export function calculateCashflowSimulation(
           amount: purchaseAmount,
         });
         addNegative(
-          `${realEstate.title} | 구매`,
+          `${realEstate.title} | 추가`,
           purchaseAmount,
           "부동산 구매",
           `realestate-purchase-${realEstate.id || realEstate.title}`
