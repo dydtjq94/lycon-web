@@ -37,6 +37,11 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
       name: "취득세",
       url: "https://부동산계산기.com/취득세?embed=y",
     },
+    {
+      id: "remodeling",
+      name: "리모델링",
+      url: "https://부동산계산기.com/리모델링?embed=y",
+    },
   ];
 
   // 목표 금액 계산기 상태
@@ -519,6 +524,14 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
           >
             취득세 계산기
           </button>
+          <button
+            className={`${styles.tabButton} ${
+              selectedCalculator === "remodeling" ? styles.active : ""
+            }`}
+            onClick={() => handleCalculatorChange("remodeling")}
+          >
+            리모델링 수익 계산기
+          </button>
         </div>
 
         <div className={styles.modalBody}>
@@ -845,7 +858,7 @@ function CalculatorModal({ isOpen, onClose, profileData = null }) {
           )}
 
           {/* 부동산 계산기 */}
-          {["retention", "transfer", "income", "gift", "acquisition"].includes(
+          {["retention", "transfer", "income", "gift", "acquisition", "remodeling"].includes(
             selectedCalculator
           ) && (
             <div className={styles.calculatorContent}>

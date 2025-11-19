@@ -281,9 +281,7 @@ function LandingPage() {
       {/* CTA 섹션 */}
       <section className={styles.ctaSection}>
         <h2 className={styles.ctaTitle}>체계적인 은퇴 준비, 지금 시작하세요</h2>
-        <p className={styles.ctaDescription}>
-          무료 사전상담으로 나만의 은퇴 시나리오를 확인해보세요
-        </p>
+
         <button className={styles.ctaButton} onClick={handleStartService}>
           무료 사전상담 신청하기
         </button>
