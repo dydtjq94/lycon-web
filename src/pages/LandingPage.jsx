@@ -36,7 +36,7 @@ function LandingPage() {
             <ul className={styles.flowList}>
               <li>현재 상황 파악</li>
               <li>목표 확인</li>
-              <li>간단 시뮬레이션</li>
+              <li>상세 재무 파악</li>
               <li>최적 패키지 제안</li>
             </ul>
           </div>
