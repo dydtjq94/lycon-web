@@ -2462,61 +2462,48 @@ function SimulationCompareModal({
                       return null;
                     }
 
+                    const itemsArray = Array.from(allItemsById.values());
+
                     return (
-                      <div key={config.key} className={styles.categorySection}>
-                        <h5 className={styles.categoryTitle}>{config.label}</h5>
-                        <div className={styles.summaryTable}>
+                      <React.Fragment key={config.key}>
+                        {itemsArray.map((itemGroup, itemIndex) => (
                           <div
-                            className={`${styles.summaryRow} ${styles.summaryHeader}`}
+                            key={itemGroup.id}
+                            className={styles.summaryRow}
                             style={{ gridTemplateColumns }}
                           >
-                            <div className={styles.summaryCell}>항목</div>
-                            {sortedSelectedSimulationIds.map((simId) => (
-                              <div key={simId} className={styles.summaryCell}>
-                                {getSimulationTitle(simId)}
-                              </div>
-                            ))}
-                          </div>
-                          {Array.from(allItemsById.values()).map(
-                            (itemGroup) => (
-                              <div
-                                key={itemGroup.id}
-                                className={styles.summaryRow}
-                                style={{ gridTemplateColumns }}
-                              >
-                                <div
-                                  className={`${styles.summaryCell} ${styles.summaryLabel}`}
-                                >
-                                  {itemGroup.baseItem?.title ||
-                                    Object.values(itemGroup.items)[0]?.title ||
-                                    "항목"}
-                                </div>
-                                {sortedSelectedSimulationIds.map(
-                                  (simId, index) => {
-                                    const item = itemGroup.items[simId];
-                                    const isFirstColumn = index === 0;
+                            {/* 첫 번째 열: 카테고리명 (첫 항목에만 표시) */}
+                            <div
+                              className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                            >
+                              {itemIndex === 0 ? config.label : ""}
+                            </div>
+                            {/* 나머지 열: 각 시뮬레이션의 해당 항목 */}
+                            {sortedSelectedSimulationIds.map(
+                              (simId, simIndex) => {
+                                const item = itemGroup.items[simId];
+                                const baseItem = itemGroup.baseItem;
+                                const isFirstColumn = simIndex === 0;
 
-                                    return (
-                                      <div
-                                        key={simId}
-                                        className={styles.summaryCell}
-                                      >
-                                        {renderDetailedFinancialItem(
-                                          item,
-                                          config,
-                                          itemGroup.baseItem,
-                                          isFirstColumn,
-                                          simId
-                                        )}
-                                      </div>
-                                    );
-                                  }
-                                )}
-                              </div>
-                            )
-                          )}
-                        </div>
-                      </div>
+                                return (
+                                  <div
+                                    key={simId}
+                                    className={styles.summaryCell}
+                                  >
+                                    {renderDetailedFinancialItem(
+                                      item,
+                                      config,
+                                      baseItem,
+                                      isFirstColumn,
+                                      simId
+                                    )}
+                                  </div>
+                                );
+                              }
+                            )}
+                          </div>
+                        ))}
+                      </React.Fragment>
                     );
                   })}
                 </div>
