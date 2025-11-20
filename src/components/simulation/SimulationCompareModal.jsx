@@ -1231,7 +1231,9 @@ function SimulationCompareModal({
     if (!item && !isRemoved) {
       return (
         <div className={styles.detailedFinancialItem}>
-          <span className={styles.empty}>-</span>
+          <div className={styles.detailedItemInfo}>
+            <span className={styles.empty}>-</span>
+          </div>
         </div>
       );
     }
