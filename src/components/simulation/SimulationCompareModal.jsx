@@ -15,7 +15,7 @@ import RealEstateModal from "../realestate/RealEstateModal";
 import AssetModal from "../asset/AssetModal";
 import DebtModal from "../debt/DebtModal";
 import { calculateLifetimeCashFlowTotals } from "../../utils/presentValueCalculator";
-import { formatAmountForChart } from "../../utils/format";
+import { formatAmountForChart, formatAmount } from "../../utils/format";
 import {
   calculateAssetSimulation,
   calculateCashflowSimulation,
@@ -143,6 +143,7 @@ function SimulationCompareModal({
     isOpen: false,
     type: null, // 'income', 'expense', 'saving', etc.
     data: null,
+    simulationId: null, // 수정할 시뮬레이션 ID
   });
 
   // 시뮬레이션 데이터 로드 함수
@@ -229,17 +230,16 @@ function SimulationCompareModal({
       setIsDataLoading(true);
       const newData = {};
 
+      // 모달이 열릴 때마다 최신 데이터를 가져오기 위해 조건 제거
       for (const simId of selectedSimulationIds) {
-        if (!simulationsData[simId]) {
-          const data = await fetchSimulationData(simId);
-          if (data) {
-            newData[simId] = data;
-          }
+        const data = await fetchSimulationData(simId);
+        if (data) {
+          newData[simId] = data;
         }
       }
 
       if (Object.keys(newData).length > 0) {
-        setSimulationsData((prev) => ({ ...prev, ...newData }));
+        setSimulationsData(newData); // 기존 데이터를 덮어쓰지 않고 완전히 교체
       }
       setIsDataLoading(false);
     };
@@ -265,12 +265,14 @@ function SimulationCompareModal({
         setSelectedSimulationIds(Array.from(initialSelection));
       }
     } else {
-      // 모달이 닫히면 선택을 기본으로 리셋
+      // 모달이 닫히면 선택을 기본으로 리셋하고 캐시 초기화
       const defaultSimId =
         simulations?.find((sim) => sim.isDefault)?.id || simulations?.[0]?.id;
       if (defaultSimId) {
         setSelectedSimulationIds([defaultSimId]);
       }
+      // 캐시된 데이터 초기화하여 다음에 열 때 최신 데이터 로드
+      setSimulationsData({});
     }
   }, [isOpen, simulations, currentSimulationId]);
 
@@ -297,17 +299,84 @@ function SimulationCompareModal({
   };
 
   // 재무 데이터 수정 핸들러
-  const handleEditData = (type, data) => {
+  const handleEditData = (type, data, simulationId) => {
     setEditModal({
       isOpen: true,
       type: type,
       data: data,
+      simulationId: simulationId,
     });
 
     trackEvent("시뮬레이션 비교 모달에서 재무 데이터 수정 시작", {
       type: type,
       dataTitle: data?.title || "",
+      simulationId: simulationId,
     });
+  };
+
+  // 재무 데이터 삭제 핸들러
+  const handleDeleteData = async (type, itemId, simulationId) => {
+    if (!window.confirm("정말 삭제하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      console.log(`[시뮬레이션 비교] ${type} 데이터 삭제 시작:`, itemId);
+
+      if (!profileData?.id) {
+        throw new Error("프로필 ID가 없습니다.");
+      }
+
+      // 각 타입별 서비스 선택
+      const serviceMap = {
+        income: incomeService,
+        expense: expenseService,
+        saving: savingsService,
+        pension: pensionService,
+        realEstate: realEstateService,
+        asset: assetService,
+        debt: debtService,
+      };
+
+      const service = serviceMap[type];
+      if (!service) {
+        throw new Error(`알 수 없는 데이터 타입: ${type}`);
+      }
+
+      const deleteMethodName = `delete${
+        type.charAt(0).toUpperCase() + type.slice(1)
+      }`;
+      await service[deleteMethodName](profileData.id, simulationId, itemId);
+
+      console.log(`✅ [시뮬레이션 비교] ${simulationId}에서 ${type} 삭제 완료`);
+
+      trackEvent("시뮬레이션 비교 모달에서 재무 데이터 삭제 완료", {
+        type: type,
+        simulationId: simulationId,
+      });
+
+      // 로컬 state 즉시 업데이트
+      const updatedData = await fetchSimulationData(simulationId);
+      if (updatedData) {
+        setSimulationsData((prev) => ({
+          ...prev,
+          [simulationId]: updatedData,
+        }));
+      }
+
+      if (onDataRefresh) {
+        await onDataRefresh();
+      }
+      console.log("✅ 변경사항 반영 완료!");
+    } catch (error) {
+      console.error(`❌ [시뮬레이션 비교] ${type} 데이터 삭제 오류:`, error);
+      alert(`삭제 중 오류가 발생했습니다: ${error.message}`);
+
+      trackEvent("시뮬레이션 비교 모달에서 재무 데이터 삭제 오류", {
+        type: type,
+        error: error.message,
+      });
+    }
   };
 
   // 재무 데이터 수정 모달 닫기
@@ -316,6 +385,7 @@ function SimulationCompareModal({
       isOpen: false,
       type: null,
       data: null,
+      simulationId: null,
     });
   };
 
@@ -474,7 +544,7 @@ function SimulationCompareModal({
       profileId: profileData?.id,
       profileData: profileData,
       editData: editModal.data,
-      activeSimulationId: currentSimulationId,
+      activeSimulationId: editModal.simulationId || currentSimulationId,
       simulations: simulations,
     };
 
@@ -572,6 +642,443 @@ function SimulationCompareModal({
 
     // 현재 시뮬레이션에 있는 항목들을 먼저, 새로 추가된 항목들은 뒤에
     return [...itemsWithCurrentId, ...itemsWithoutCurrentId];
+  };
+
+  // 카테고리별 필드 정의 (비교용)
+  const categoryFieldDefinitions = {
+    incomes: [
+      { key: "title", label: "제목", format: (v) => v },
+      {
+        key: "originalAmount",
+        label: "금액",
+        format: (v, item) =>
+          `${formatAmount(v)}/${
+            item.originalFrequency === "monthly" ? "월" : "년"
+          }`,
+      },
+      { key: "startYear", label: "시작년도", format: (v) => `${v}년` },
+      { key: "endYear", label: "종료년도", format: (v) => `${v}년` },
+      { key: "growthRate", label: "상승률", format: (v) => `${v}%` },
+      { key: "memo", label: "메모", format: (v) => v || "-" },
+    ],
+    expenses: [
+      { key: "title", label: "제목", format: (v) => v },
+      {
+        key: "amount",
+        label: "금액",
+        format: (v, item) =>
+          `${formatAmount(v)}/${item.frequency === "monthly" ? "월" : "년"}`,
+      },
+      { key: "startYear", label: "시작년도", format: (v) => `${v}년` },
+      { key: "endYear", label: "종료년도", format: (v) => `${v}년` },
+      { key: "growthRate", label: "상승률", format: (v) => `${v}%` },
+      { key: "memo", label: "메모", format: (v) => v || "-" },
+    ],
+    savings: [
+      { key: "title", label: "제목", format: (v) => v },
+      {
+        key: "monthlyAmount",
+        label: "월 납입액",
+        format: (v) => formatAmount(v),
+      },
+      { key: "startYear", label: "시작년도", format: (v) => `${v}년` },
+      { key: "endYear", label: "종료년도", format: (v) => `${v}년` },
+      {
+        key: "returnRate",
+        label: "수익률",
+        format: (v) => `${(v * 100).toFixed(2)}%`,
+      },
+      { key: "memo", label: "메모", format: (v) => v || "-" },
+    ],
+    pensions: [
+      { key: "title", label: "제목", format: (v) => v },
+      { key: "startAge", label: "수령 시작 나이", format: (v) => `${v}세` },
+      { key: "endAge", label: "수령 종료 나이", format: (v) => `${v}세` },
+      {
+        key: "monthlyAmount",
+        label: "월 수령액",
+        format: (v) => formatAmount(v),
+      },
+      { key: "growthRate", label: "상승률", format: (v) => `${v}%` },
+      { key: "memo", label: "메모", format: (v) => v || "-" },
+    ],
+    realEstates: [
+      { key: "title", label: "제목", format: (v) => v },
+      { key: "purchasePrice", label: "매입가", format: (v) => formatAmount(v) },
+      { key: "purchaseYear", label: "매입년도", format: (v) => `${v}년` },
+      { key: "saleYear", label: "매도년도", format: (v) => `${v}년` },
+      {
+        key: "appreciationRate",
+        label: "상승률",
+        format: (v) => `${(v * 100).toFixed(2)}%`,
+      },
+      { key: "memo", label: "메모", format: (v) => v || "-" },
+    ],
+    assets: [
+      { key: "title", label: "제목", format: (v) => v },
+      {
+        key: "currentValue",
+        label: "현재 가치",
+        format: (v) => formatAmount(v),
+      },
+      { key: "startYear", label: "시작년도", format: (v) => `${v}년` },
+      { key: "endYear", label: "종료년도", format: (v) => `${v}년` },
+      {
+        key: "growthRate",
+        label: "가치 상승률",
+        format: (v) => `${(v * 100).toFixed(2)}%`,
+      },
+      { key: "memo", label: "메모", format: (v) => v || "-" },
+    ],
+    debts: [
+      { key: "title", label: "제목", format: (v) => v },
+      {
+        key: "principalAmount",
+        label: "원금",
+        format: (v) => formatAmount(v),
+      },
+      { key: "startYear", label: "시작년도", format: (v) => `${v}년` },
+      { key: "endYear", label: "종료년도", format: (v) => `${v}년` },
+      {
+        key: "interestRate",
+        label: "이자율",
+        format: (v) => `${(v * 100).toFixed(2)}%`,
+      },
+      { key: "memo", label: "메모", format: (v) => v || "-" },
+    ],
+  };
+
+  // 두 항목의 필드를 비교하여 변경사항 반환
+  const compareItems = (item1, item2, fields) => {
+    const changes = [];
+    fields.forEach((field) => {
+      const val1 = item1?.[field.key];
+      const val2 = item2?.[field.key];
+
+      // 값이 다른 경우만 변경으로 간주
+      if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+        changes.push({
+          fieldKey: field.key,
+          fieldLabel: field.label,
+          oldValue: val1,
+          newValue: val2,
+          format: field.format,
+        });
+      }
+    });
+    return changes;
+  };
+
+  // 재무 항목의 주요 정보를 렌더링하는 함수 (카테고리별)
+  const renderItemMainInfo = (item, config, changedFields = []) => {
+    const type = config.key;
+
+    // 카테고리별 색상 클래스명 매핑
+    const categoryColorClass = {
+      incomes: "income",
+      expenses: "expense",
+      savings: "saving",
+      pensions: "pension",
+      realEstates: "realEstate",
+      assets: "asset",
+      debts: "debt",
+    }[type];
+
+    // 필드가 변경되었는지 확인하는 헬퍼 함수
+    const isFieldChanged = (fieldKey) =>
+      changedFields.some((c) => c.fieldKey === fieldKey);
+
+    // 변경 표시 아이콘
+    const changeIndicator = <span className={styles.changeIndicator}>*</span>;
+
+    switch (type) {
+      case "incomes":
+        return (
+          <>
+            <div
+              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
+            >
+              {isFieldChanged("originalAmount") && changeIndicator}
+              {formatAmount(item.originalAmount)}/
+              {item.originalFrequency === "monthly" ? "월" : "년"}
+            </div>
+            <div className={styles.detailedItemPeriod}>
+              {isFieldChanged("startYear") && changeIndicator}
+              {item.startYear}년 -{" "}
+              {isFieldChanged("endYear") && changeIndicator}
+              {item.endYear}년
+              <br />
+              (상승률 {isFieldChanged("growthRate") && changeIndicator}
+              {item.growthRate}% 적용)
+            </div>
+            {item.memo && (
+              <div className={styles.detailedItemMemo}>
+                {isFieldChanged("memo") && changeIndicator}
+                {item.memo}
+              </div>
+            )}
+          </>
+        );
+
+      case "expenses":
+        return (
+          <>
+            <div
+              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
+            >
+              {isFieldChanged("amount") && changeIndicator}
+              {formatAmount(item.amount)}/
+              {item.frequency === "monthly" ? "월" : "년"}
+            </div>
+            <div className={styles.detailedItemPeriod}>
+              {isFieldChanged("startYear") && changeIndicator}
+              {item.startYear}년 -{" "}
+              {isFieldChanged("endYear") && changeIndicator}
+              {item.endYear}년
+              <br />
+              (물가 상승률 {isFieldChanged("growthRate") && changeIndicator}
+              {item.growthRate}% 적용)
+            </div>
+            {item.memo && (
+              <div className={styles.detailedItemMemo}>
+                {isFieldChanged("memo") && changeIndicator}
+                {item.memo}
+              </div>
+            )}
+          </>
+        );
+
+      case "savings":
+        return (
+          <>
+            <div
+              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
+            >
+              {isFieldChanged("monthlyAmount") && changeIndicator}
+              {formatAmount(item.monthlyAmount)}/월
+            </div>
+            <div className={styles.detailedItemPeriod}>
+              {isFieldChanged("startYear") && changeIndicator}
+              {item.startYear}년 -{" "}
+              {isFieldChanged("endYear") && changeIndicator}
+              {item.endYear}년
+              <br />
+              (연 수익률 {isFieldChanged("returnRate") && changeIndicator}
+              {(item.returnRate * 100).toFixed(2)}% 적용)
+            </div>
+            {item.memo && (
+              <div className={styles.detailedItemMemo}>
+                {isFieldChanged("memo") && changeIndicator}
+                {item.memo}
+              </div>
+            )}
+          </>
+        );
+
+      case "pensions":
+        return (
+          <>
+            <div
+              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
+            >
+              {isFieldChanged("monthlyAmount") && changeIndicator}
+              {formatAmount(item.monthlyAmount)}/월
+            </div>
+            <div className={styles.detailedItemPeriod}>
+              {isFieldChanged("startAge") && changeIndicator}
+              {item.startAge}세 - {isFieldChanged("endAge") && changeIndicator}
+              {item.endAge}세
+              <br />
+              (상승률 {isFieldChanged("growthRate") && changeIndicator}
+              {item.growthRate}% 적용)
+            </div>
+            {item.memo && (
+              <div className={styles.detailedItemMemo}>
+                {isFieldChanged("memo") && changeIndicator}
+                {item.memo}
+              </div>
+            )}
+          </>
+        );
+
+      case "realEstates":
+        return (
+          <>
+            <div
+              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
+            >
+              {isFieldChanged("purchasePrice") && changeIndicator}
+              {formatAmount(item.purchasePrice)}
+            </div>
+            <div className={styles.detailedItemPeriod}>
+              {isFieldChanged("purchaseYear") && changeIndicator}
+              {item.purchaseYear}년 매입 -{" "}
+              {isFieldChanged("saleYear") && changeIndicator}
+              {item.saleYear}년 매도
+              <br />
+              (연평균 가치 상승률{" "}
+              {isFieldChanged("appreciationRate") && changeIndicator}
+              {(item.appreciationRate * 100).toFixed(2)}% 적용)
+            </div>
+            {item.memo && (
+              <div className={styles.detailedItemMemo}>
+                {isFieldChanged("memo") && changeIndicator}
+                {item.memo}
+              </div>
+            )}
+          </>
+        );
+
+      case "assets":
+        return (
+          <>
+            <div
+              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
+            >
+              {isFieldChanged("currentValue") && changeIndicator}
+              {formatAmount(item.currentValue)}
+            </div>
+            <div className={styles.detailedItemPeriod}>
+              {isFieldChanged("startYear") && changeIndicator}
+              {item.startYear}년 -{" "}
+              {isFieldChanged("endYear") && changeIndicator}
+              {item.endYear}년
+              <br />
+              (연평균 가치 상승률{" "}
+              {isFieldChanged("growthRate") && changeIndicator}
+              {(item.growthRate * 100).toFixed(2)}% 적용
+              {item.assetType === "income" &&
+                item.incomeRate > 0 &&
+                `, 연간 수익률 (배당, 이자 등) ${
+                  isFieldChanged("incomeRate") ? "*" : ""
+                }${(item.incomeRate * 100).toFixed(2)}%`}
+              )
+            </div>
+            {item.memo && (
+              <div className={styles.detailedItemMemo}>
+                {isFieldChanged("memo") && changeIndicator}
+                {item.memo}
+              </div>
+            )}
+          </>
+        );
+
+      case "debts":
+        return (
+          <>
+            <div
+              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
+            >
+              {isFieldChanged("principalAmount") && changeIndicator}
+              {formatAmount(item.principalAmount)}
+            </div>
+            <div className={styles.detailedItemPeriod}>
+              {isFieldChanged("startYear") && changeIndicator}
+              {item.startYear}년 -{" "}
+              {isFieldChanged("endYear") && changeIndicator}
+              {item.endYear}년
+              <br />
+              (이자율 {isFieldChanged("interestRate") && changeIndicator}
+              {(item.interestRate * 100).toFixed(2)}% 적용)
+            </div>
+            {item.memo && (
+              <div className={styles.detailedItemMemo}>
+                {isFieldChanged("memo") && changeIndicator}
+                {item.memo}
+              </div>
+            )}
+          </>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // 상세 재무 항목 렌더링 (변경사항 표시)
+  const renderDetailedFinancialItem = (
+    item,
+    config,
+    baseItem,
+    isFirstColumn,
+    simulationId
+  ) => {
+    const type = config.key;
+    const fields = categoryFieldDefinitions[type] || [];
+
+    // 상태 판별
+    const isNew = !baseItem && item;
+    const isRemoved = baseItem && !item && isFirstColumn;
+    const isModified = baseItem && item;
+
+    // 변경된 필드 찾기
+    let changedFields = [];
+    if (isModified) {
+      changedFields = compareItems(baseItem, item, fields);
+    }
+
+    if (!item && !isRemoved) {
+      return (
+        <div className={styles.detailedFinancialItem}>
+          <span className={styles.empty}>-</span>
+        </div>
+      );
+    }
+
+    const displayItem = item || baseItem;
+
+    return (
+      <div
+        className={`${styles.detailedFinancialItem} ${
+          isNew ? styles.detailedItemNew : ""
+        } ${isRemoved ? styles.detailedItemRemoved : ""} ${
+          changedFields.length > 0 ? styles.detailedItemModified : ""
+        }`}
+      >
+        <div
+          className={styles.detailedItemInfo}
+          onClick={() => {
+            if (item) {
+              handleEditData(config.key.slice(0, -1), item, simulationId);
+            }
+          }}
+        >
+          <div className={styles.detailedItemHeader}>
+            <h4 className={styles.detailedItemTitle}>{displayItem.title}</h4>
+            <div className={styles.detailedItemActions}>
+              <div className={styles.detailedItemBadges}>
+                {isNew && <span className={styles.badgeNew}>신규</span>}
+                {isRemoved && (
+                  <span className={styles.badgeRemoved}>삭제됨</span>
+                )}
+                {changedFields.length > 0 && !isNew && (
+                  <span className={styles.badgeModified}>수정됨</span>
+                )}
+              </div>
+              {item && !isRemoved && (
+                <button
+                  className={styles.detailedItemDeleteButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteData(
+                      config.key.slice(0, -1),
+                      item.id,
+                      simulationId
+                    );
+                  }}
+                  title="삭제"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 기존 IncomeList와 동일한 형식으로 주요 정보 표시 (변경된 필드에 * 표시) */}
+          {renderItemMainInfo(displayItem, config, changedFields)}
+        </div>
+      </div>
+    );
   };
 
   // renderList 함수 - onEdit 핸들러 추가 + 정렬 적용
@@ -1701,47 +2208,104 @@ function SimulationCompareModal({
                   <h4 className={styles.financialDataTitle}>
                     상세 재무 데이터
                   </h4>
-                  <div className={styles.summaryTable}>
-                    <div
-                      className={`${styles.summaryRow} ${styles.summaryHeader}`}
-                      style={{ gridTemplateColumns }}
-                    >
-                      <div className={styles.summaryCell}>재무 항목</div>
-                      {sortedSelectedSimulationIds.map((simId) => (
-                        <div key={simId} className={styles.summaryCell}>
-                          {getSimulationTitle(simId)}
-                        </div>
-                      ))}
-                    </div>
-                    {categoryConfigs.map((config) => (
-                      <div
-                        key={config.key}
-                        className={styles.summaryRow}
-                        style={{ gridTemplateColumns }}
-                      >
-                        <div
-                          className={`${styles.summaryCell} ${styles.summaryLabel}`}
-                        >
-                          {config.label}
-                        </div>
-                        {sortedSelectedSimulationIds.map((simId) => {
-                          const simData = simulationsData[simId];
-                          const defaultSimId = defaultSimulationEntry?.id;
-                          const defaultSimData = simulationsData[defaultSimId];
+                  {categoryConfigs.map((config) => {
+                    // 모든 시뮬레이션의 데이터를 ID 기준으로 병합
+                    const allItemsById = new Map();
+                    const baseSimId = sortedSelectedSimulationIds[0];
+                    const baseSimData = simulationsData[baseSimId];
 
-                          return (
-                            <div key={simId} className={styles.summaryCell}>
-                              {renderList(
-                                config,
-                                simData?.[config.key],
-                                defaultSimData?.[config.key]
-                              )}
-                            </div>
-                          );
-                        })}
+                    // 기준 시뮬레이션의 항목들을 먼저 추가
+                    if (baseSimData?.[config.key]) {
+                      baseSimData[config.key].forEach((item) => {
+                        allItemsById.set(item.id, {
+                          id: item.id,
+                          baseItem: item,
+                          items: { [baseSimId]: item },
+                        });
+                      });
+                    }
+
+                    // 다른 시뮬레이션의 항목들 추가
+                    sortedSelectedSimulationIds.forEach((simId) => {
+                      if (simId === baseSimId) return;
+                      const simData = simulationsData[simId];
+                      if (simData?.[config.key]) {
+                        simData[config.key].forEach((item) => {
+                          if (allItemsById.has(item.id)) {
+                            allItemsById.get(item.id).items[simId] = item;
+                          } else {
+                            allItemsById.set(item.id, {
+                              id: item.id,
+                              baseItem: null, // 신규 항목
+                              items: { [simId]: item },
+                            });
+                          }
+                        });
+                      }
+                    });
+
+                    // 항목이 없으면 표시 안 함
+                    if (allItemsById.size === 0) {
+                      return null;
+                    }
+
+                    return (
+                      <div key={config.key} className={styles.categorySection}>
+                        <h5 className={styles.categoryTitle}>{config.label}</h5>
+                        <div className={styles.summaryTable}>
+                          <div
+                            className={`${styles.summaryRow} ${styles.summaryHeader}`}
+                            style={{ gridTemplateColumns }}
+                          >
+                            <div className={styles.summaryCell}>항목</div>
+                            {sortedSelectedSimulationIds.map((simId) => (
+                              <div key={simId} className={styles.summaryCell}>
+                                {getSimulationTitle(simId)}
+                              </div>
+                            ))}
+                          </div>
+                          {Array.from(allItemsById.values()).map(
+                            (itemGroup) => (
+                              <div
+                                key={itemGroup.id}
+                                className={styles.summaryRow}
+                                style={{ gridTemplateColumns }}
+                              >
+                                <div
+                                  className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                                >
+                                  {itemGroup.baseItem?.title ||
+                                    Object.values(itemGroup.items)[0]?.title ||
+                                    "항목"}
+                                </div>
+                                {sortedSelectedSimulationIds.map(
+                                  (simId, index) => {
+                                    const item = itemGroup.items[simId];
+                                    const isFirstColumn = index === 0;
+
+                                    return (
+                                      <div
+                                        key={simId}
+                                        className={styles.summaryCell}
+                                      >
+                                        {renderDetailedFinancialItem(
+                                          item,
+                                          config,
+                                          itemGroup.baseItem,
+                                          isFirstColumn,
+                                          simId
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                )}
+                              </div>
+                            )
+                          )}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               )}
             </>

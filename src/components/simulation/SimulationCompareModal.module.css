@@ -530,3 +530,289 @@
   color: #991b1b;
   margin-left: 0.5rem;
 }
+
+/* 카테고리 섹션 스타일 */
+.categorySection {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.categoryTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* 상세 재무 항목 스타일 (기존 IncomeList 스타일과 동일) */
+.detailedFinancialItem {
+  padding: 12px 4px 20px 4px;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.detailedFinancialItem:hover {
+  background: #f9fafb;
+}
+
+.detailedItemNew {
+  background: #f0fdf4;
+}
+
+.detailedItemNew:hover {
+  background: #dcfce7;
+}
+
+.detailedItemRemoved {
+  background: #fef2f2;
+  opacity: 0.7;
+}
+
+.detailedItemRemoved:hover {
+  background: #fee2e2;
+}
+
+.detailedItemRemoved .detailedItemInfo {
+  cursor: not-allowed;
+}
+
+.detailedItemModified {
+  background: #fffbeb;
+}
+
+.detailedItemModified:hover {
+  background: #fef3c7;
+}
+
+.detailedItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.detailedItemTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.detailedItemActions {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.detailedItemBadges {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.detailedItemDeleteButton {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #374151;
+  font-weight: bold;
+  margin-bottom: 4px;
+  margin-right: 4px;
+  transition: all 0.15s;
+}
+
+.detailedItemDeleteButton:hover {
+  background: #f0f0f0;
+}
+
+.badgeNew {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: #dcfce7;
+  color: #166534;
+  white-space: nowrap;
+}
+
+.badgeRemoved {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #991b1b;
+  white-space: nowrap;
+}
+
+.badgeModified {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: #fef08a;
+  color: #854d0e;
+  white-space: nowrap;
+}
+
+.detailedItemInfo {
+  width: 100%;
+  cursor: pointer;
+}
+
+.detailedItemAmount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+/* 카테고리별 금액 색상 */
+.detailedItemAmount.income {
+  color: #059669;
+}
+
+.detailedItemAmount.expense {
+  color: #dc2626;
+}
+
+.detailedItemAmount.saving {
+  color: #2563eb;
+}
+
+.detailedItemAmount.pension {
+  color: #d97706;
+}
+
+.detailedItemAmount.realEstate {
+  color: #7c3aed;
+}
+
+.detailedItemAmount.asset {
+  color: #0891b2;
+}
+
+.detailedItemAmount.debt {
+  color: #dc2626;
+}
+
+.detailedItemPeriod {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.detailedItemMemo {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
+  background: #f9fafb;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+}
+
+/* 변경 표시 아이콘 */
+.changeIndicator {
+  color: #f59e0b;
+  font-weight: 700;
+  margin-left: 0.25rem;
+  font-size: 0.9rem;
+}
+
+/* 변경사항 상세 표시 */
+.changesDetail {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+}
+
+.changesDetailTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 0.5rem;
+}
+
+.changesDetailList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.changeDetailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: #ffffff;
+  border-radius: 4px;
+  border-left: 3px solid #f59e0b;
+}
+
+.changeDetailLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #78350f;
+}
+
+.changeDetailValues {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.changeDetailOld {
+  padding: 0.25rem 0.5rem;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 4px;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.changeDetailArrow {
+  color: #78350f;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.changeDetailNew {
+  padding: 0.25rem 0.5rem;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* 리스트 래퍼 (기존 renderList용) */
+.listWrapper {
+  width: 100%;
+}
