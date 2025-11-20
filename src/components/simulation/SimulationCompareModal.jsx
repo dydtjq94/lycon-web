@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import styles from "./SimulationCompareModal.module.css";
+import incomeStyles from "../income/IncomeList.module.css";
+import expenseStyles from "../expense/ExpenseList.module.css";
+import savingStyles from "../saving/SavingList.module.css";
+import pensionStyles from "../pension/PensionList.module.css";
+import realEstateStyles from "../realestate/RealEstateList.module.css";
+import assetStyles from "../asset/AssetList.module.css";
+import debtStyles from "../debt/DebtList.module.css";
 import IncomeList from "../income/IncomeList";
 import ExpenseList from "../expense/ExpenseList";
 import SavingList from "../saving/SavingList";
@@ -677,40 +684,111 @@ function SimulationCompareModal({
     savings: [
       { key: "title", label: "제목", format: (v) => v },
       {
-        key: "monthlyAmount",
-        label: "월 납입액",
-        format: (v) => formatAmount(v),
+        key: "currentAmount",
+        label: "기 보유",
+        format: (v) => (v > 0 ? formatAmount(v) : "-"),
+      },
+      {
+        key: "originalAmount",
+        label: "납입액",
+        format: (v, item) =>
+          `${formatAmount(v)}/${
+            item.originalFrequency === "monthly"
+              ? "월"
+              : item.originalFrequency === "yearly"
+              ? "년"
+              : "일회성"
+          }`,
       },
       { key: "startYear", label: "시작년도", format: (v) => `${v}년` },
       { key: "endYear", label: "종료년도", format: (v) => `${v}년` },
       {
-        key: "returnRate",
-        label: "수익률",
+        key: "interestRate",
+        label: "연평균 수익률",
         format: (v) => `${(v * 100).toFixed(2)}%`,
+      },
+      {
+        key: "yearlyGrowthRate",
+        label: "저축/투자액 증가율",
+        format: (v) => (v > 0 ? `${(v * 100).toFixed(2)}%` : "-"),
       },
       { key: "memo", label: "메모", format: (v) => v || "-" },
     ],
     pensions: [
       { key: "title", label: "제목", format: (v) => v },
-      { key: "startAge", label: "수령 시작 나이", format: (v) => `${v}세` },
-      { key: "endAge", label: "수령 종료 나이", format: (v) => `${v}세` },
+      {
+        key: "type",
+        label: "연금 타입",
+        format: (v) => {
+          switch (v) {
+            case "national":
+              return "국민연금";
+            case "retirement":
+              return "퇴직연금";
+            case "personal":
+              return "개인연금";
+            case "severance":
+              return "퇴직금/DB";
+            default:
+              return "연금";
+          }
+        },
+      },
       {
         key: "monthlyAmount",
         label: "월 수령액",
         format: (v) => formatAmount(v),
       },
-      { key: "growthRate", label: "상승률", format: (v) => `${v}%` },
+      {
+        key: "currentAmount",
+        label: "기 보유",
+        format: (v) => (v > 0 ? formatAmount(v) : "-"),
+      },
+      {
+        key: "contributionAmount",
+        label: "납입액",
+        format: (v, item) =>
+          v > 0
+            ? `${formatAmount(v)}/${
+                item.contributionFrequency === "monthly" ? "월" : "년"
+              }`
+            : "-",
+      },
+      {
+        key: "returnRate",
+        label: "연평균 수익률",
+        format: (v) => (v ? `${v}%` : "-"),
+      },
+      {
+        key: "inflationRate",
+        label: "물가상승률",
+        format: (v) => (v ? `${v}%` : "-"),
+      },
       { key: "memo", label: "메모", format: (v) => v || "-" },
     ],
     realEstates: [
       { key: "title", label: "제목", format: (v) => v },
-      { key: "purchasePrice", label: "매입가", format: (v) => formatAmount(v) },
-      { key: "purchaseYear", label: "매입년도", format: (v) => `${v}년` },
-      { key: "saleYear", label: "매도년도", format: (v) => `${v}년` },
       {
-        key: "appreciationRate",
-        label: "상승률",
-        format: (v) => `${(v * 100).toFixed(2)}%`,
+        key: "currentValue",
+        label: "부동산 가치",
+        format: (v) => formatAmount(v),
+      },
+      {
+        key: "growthRate",
+        label: "연평균 가치 상승률",
+        format: (v) => `${v.toFixed(2)}%`,
+      },
+      { key: "startYear", label: "시작년도", format: (v) => `${v}년` },
+      { key: "endYear", label: "종료년도", format: (v) => `${v}년` },
+      {
+        key: "hasRentalIncome",
+        label: "임대 수입",
+        format: (v) => (v ? "있음" : "-"),
+      },
+      {
+        key: "convertToPension",
+        label: "주택연금",
+        format: (v) => (v ? "전환" : "-"),
       },
       { key: "memo", label: "메모", format: (v) => v || "-" },
     ],
@@ -733,9 +811,32 @@ function SimulationCompareModal({
     debts: [
       { key: "title", label: "제목", format: (v) => v },
       {
-        key: "principalAmount",
-        label: "원금",
+        key: "debtAmount",
+        label: "부채 금액",
         format: (v) => formatAmount(v),
+      },
+      {
+        key: "debtType",
+        label: "상환 방식",
+        format: (v) => {
+          switch (v) {
+            case "bullet":
+              return "만기일시상환";
+            case "equal":
+              return "원리금균등상환";
+            case "principal":
+              return "원금균등상환";
+            case "grace":
+              return "거치식상환";
+            default:
+              return "알 수 없음";
+          }
+        },
+      },
+      {
+        key: "gracePeriod",
+        label: "거치 기간",
+        format: (v) => (v > 0 ? `${v}년` : "-"),
       },
       { key: "startYear", label: "시작년도", format: (v) => `${v}년` },
       { key: "endYear", label: "종료년도", format: (v) => `${v}년` },
@@ -795,14 +896,12 @@ function SimulationCompareModal({
       case "incomes":
         return (
           <>
-            <div
-              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
-            >
+            <div className={incomeStyles.incomeAmount}>
               {isFieldChanged("originalAmount") && changeIndicator}
               {formatAmount(item.originalAmount)}/
               {item.originalFrequency === "monthly" ? "월" : "년"}
             </div>
-            <div className={styles.detailedItemPeriod}>
+            <div className={incomeStyles.incomePeriod}>
               {isFieldChanged("startYear") && changeIndicator}
               {item.startYear}년 -{" "}
               {isFieldChanged("endYear") && changeIndicator}
@@ -812,7 +911,7 @@ function SimulationCompareModal({
               {item.growthRate}% 적용)
             </div>
             {item.memo && (
-              <div className={styles.detailedItemMemo}>
+              <div className={incomeStyles.incomeMemo}>
                 {isFieldChanged("memo") && changeIndicator}
                 {item.memo}
               </div>
@@ -823,14 +922,12 @@ function SimulationCompareModal({
       case "expenses":
         return (
           <>
-            <div
-              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
-            >
+            <div className={expenseStyles.expenseAmount}>
               {isFieldChanged("amount") && changeIndicator}
               {formatAmount(item.amount)}/
               {item.frequency === "monthly" ? "월" : "년"}
             </div>
-            <div className={styles.detailedItemPeriod}>
+            <div className={expenseStyles.expensePeriod}>
               {isFieldChanged("startYear") && changeIndicator}
               {item.startYear}년 -{" "}
               {isFieldChanged("endYear") && changeIndicator}
@@ -840,7 +937,7 @@ function SimulationCompareModal({
               {item.growthRate}% 적용)
             </div>
             {item.memo && (
-              <div className={styles.detailedItemMemo}>
+              <div className={expenseStyles.expenseMemo}>
                 {isFieldChanged("memo") && changeIndicator}
                 {item.memo}
               </div>
@@ -851,23 +948,43 @@ function SimulationCompareModal({
       case "savings":
         return (
           <>
-            <div
-              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
-            >
-              {isFieldChanged("monthlyAmount") && changeIndicator}
-              {formatAmount(item.monthlyAmount)}/월
+            {/* 시작 보유액 표시 */}
+            {item.currentAmount !== undefined &&
+              item.currentAmount !== null &&
+              item.currentAmount > 0 && (
+                <div className={savingStyles.savingCurrent}>
+                  기 보유: {formatAmount(item.currentAmount)}
+                </div>
+              )}
+
+            {/* 납입 주기 및 금액 */}
+            <div className={savingStyles.savingFrequency}>
+              {isFieldChanged("originalAmount") && changeIndicator}
+              {formatAmount(item.originalAmount)}/
+              {item.originalFrequency === "monthly"
+                ? "월"
+                : item.originalFrequency === "yearly"
+                ? "년"
+                : "일회성"}
             </div>
-            <div className={styles.detailedItemPeriod}>
+
+            <div className={savingStyles.savingPeriod}>
               {isFieldChanged("startYear") && changeIndicator}
               {item.startYear}년 -{" "}
               {isFieldChanged("endYear") && changeIndicator}
               {item.endYear}년
               <br />
-              (연 수익률 {isFieldChanged("returnRate") && changeIndicator}
-              {(item.returnRate * 100).toFixed(2)}% 적용)
+              (연평균 수익률 {isFieldChanged("interestRate") && changeIndicator}
+              {(item.interestRate * 100).toFixed(2)}% 적용
+              {item.yearlyGrowthRate > 0 &&
+                `, 저축/투자액 증가율 ${
+                  isFieldChanged("yearlyGrowthRate") ? "*" : ""
+                }${(item.yearlyGrowthRate * 100).toFixed(2)}%`}
+              )
             </div>
+
             {item.memo && (
-              <div className={styles.detailedItemMemo}>
+              <div className={savingStyles.savingMemo}>
                 {isFieldChanged("memo") && changeIndicator}
                 {item.memo}
               </div>
@@ -878,22 +995,75 @@ function SimulationCompareModal({
       case "pensions":
         return (
           <>
-            <div
-              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
-            >
-              {isFieldChanged("monthlyAmount") && changeIndicator}
-              {formatAmount(item.monthlyAmount)}/월
-            </div>
-            <div className={styles.detailedItemPeriod}>
-              {isFieldChanged("startAge") && changeIndicator}
-              {item.startAge}세 - {isFieldChanged("endAge") && changeIndicator}
-              {item.endAge}세
-              <br />
-              (상승률 {isFieldChanged("growthRate") && changeIndicator}
-              {item.growthRate}% 적용)
-            </div>
+            {item.type === "national" ? (
+              // 국민연금
+              <>
+                <div className={pensionStyles.pensionAmount}>
+                  {isFieldChanged("monthlyAmount") && changeIndicator}
+                  {formatAmount(item.monthlyAmount)}/월
+                </div>
+                <div className={pensionStyles.pensionPeriod}>
+                  {isFieldChanged("startYear") && changeIndicator}
+                  {item.startYear}년 -{" "}
+                  {isFieldChanged("endYear") && changeIndicator}
+                  {item.endYear}년
+                  <br />
+                  (물가상승률{" "}
+                  {isFieldChanged("inflationRate") && changeIndicator}
+                  {item.inflationRate || 2.5}% 적용)
+                </div>
+              </>
+            ) : (
+              // 퇴직연금/개인연금/퇴직금
+              <>
+                {item.currentAmount > 0 && (
+                  <div className={pensionStyles.pensionCurrentAmount}>
+                    {item.type === "severance" ? "퇴직금" : "기 보유"}:{" "}
+                    {formatAmount(item.currentAmount)}
+                  </div>
+                )}
+                {/* 추가 적립이 있는 경우만 적립 금액 표시 */}
+                {item.contributionAmount > 0 &&
+                  !(
+                    item.type === "severance" && item.noAdditionalContribution
+                  ) && (
+                    <div className={pensionStyles.pensionAmount}>
+                      {isFieldChanged("contributionAmount") && changeIndicator}
+                      {formatAmount(item.contributionAmount)}/
+                      {item.contributionFrequency === "monthly" ? "월" : "년"}
+                    </div>
+                  )}
+                <div className={pensionStyles.pensionPeriod}>
+                  {/* 추가 적립이 있는 경우만 적립 기간 표시 */}
+                  {item.type === "severance" &&
+                  !item.noAdditionalContribution ? (
+                    <>
+                      적립: {item.contributionStartYear}년 -{" "}
+                      {item.contributionEndYear}년
+                      <br />
+                    </>
+                  ) : item.type !== "severance" ? (
+                    <>
+                      적립: {item.contributionStartYear}년 -{" "}
+                      {item.contributionEndYear}년
+                      <br />
+                    </>
+                  ) : null}
+                  수령: {item.paymentStartYear}년부터{" "}
+                  {item.paymentYears ||
+                    (item.paymentEndYear
+                      ? item.paymentEndYear - item.paymentStartYear + 1
+                      : 10)}
+                  년간
+                  <br />
+                  (연평균 수익률{" "}
+                  {isFieldChanged("returnRate") && changeIndicator}
+                  {item.returnRate}% 적용, 연금인출 방식(PMT))
+                </div>
+              </>
+            )}
             {item.memo && (
-              <div className={styles.detailedItemMemo}>
+              <div className={pensionStyles.pensionMemo}>
                 {isFieldChanged("memo") && changeIndicator}
                 {item.memo}
               </div>
@@ -904,26 +1074,51 @@ function SimulationCompareModal({
       case "realEstates":
         return (
           <>
-            <div
-              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
-            >
-              {isFieldChanged("purchasePrice") && changeIndicator}
-              {formatAmount(item.purchasePrice)}
+            <div className={realEstateStyles.realEstateValue}>
+              {isFieldChanged("currentValue") && changeIndicator}
+              부동산 가치: {formatAmount(item.currentValue)}
             </div>
-            <div className={styles.detailedItemPeriod}>
-              {isFieldChanged("purchaseYear") && changeIndicator}
-              {item.purchaseYear}년 매입 -{" "}
-              {isFieldChanged("saleYear") && changeIndicator}
-              {item.saleYear}년 매도
-              <br />
-              (연평균 가치 상승률{" "}
-              {isFieldChanged("appreciationRate") && changeIndicator}
-              {(item.appreciationRate * 100).toFixed(2)}% 적용)
+            <div className={realEstateStyles.realEstateRate}>
+              연평균 가치 상승률:{" "}
+              {isFieldChanged("growthRate") && changeIndicator}
+              {item.growthRate.toFixed(2)}%
             </div>
+            <div className={realEstateStyles.realEstatePeriod}>
+              {isFieldChanged("startYear") && changeIndicator}
+              {item.startYear}년 -{" "}
+              {isFieldChanged("endYear") && changeIndicator}
+              {item.endYear}년
+            </div>
+
+            {item.hasRentalIncome && (
+              <div className={realEstateStyles.rentalInfo}>
+                <div className={realEstateStyles.rentalPeriod}>
+                  임대 수입: {item.rentalIncomeStartYear}년 -{" "}
+                  {item.rentalIncomeEndYear}년
+                </div>
+                <div className={realEstateStyles.rentalAmount}>
+                  월 임대 수입: {formatAmount(item.monthlyRentalIncome)}/월
+                </div>
+              </div>
+            )}
+
+            {item.convertToPension && (
+              <div className={realEstateStyles.pensionInfo}>
+                <div className={realEstateStyles.pensionPeriod}>
+                  주택연금: {item.pensionStartYear}년 - {item.pensionEndYear}년
+                </div>
+                <div className={realEstateStyles.pensionAmount}>
+                  월 수령액: {formatAmount(item.monthlyPensionAmount)}/월
+                </div>
+              </div>
+            )}
+
             {item.memo && (
-              <div className={styles.detailedItemMemo}>
-                {isFieldChanged("memo") && changeIndicator}
-                {item.memo}
+              <div className={realEstateStyles.memo}>
+                <span className={realEstateStyles.memoText}>
+                  {isFieldChanged("memo") && changeIndicator}
+                  {item.memo}
+                </span>
               </div>
             )}
           </>
@@ -932,13 +1127,11 @@ function SimulationCompareModal({
       case "assets":
         return (
           <>
-            <div
-              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
-            >
+            <div className={assetStyles.assetAmount}>
               {isFieldChanged("currentValue") && changeIndicator}
               {formatAmount(item.currentValue)}
             </div>
-            <div className={styles.detailedItemPeriod}>
+            <div className={assetStyles.assetPeriod}>
               {isFieldChanged("startYear") && changeIndicator}
               {item.startYear}년 -{" "}
               {isFieldChanged("endYear") && changeIndicator}
@@ -955,7 +1148,7 @@ function SimulationCompareModal({
               )
             </div>
             {item.memo && (
-              <div className={styles.detailedItemMemo}>
+              <div className={assetStyles.assetMemo}>
                 {isFieldChanged("memo") && changeIndicator}
                 {item.memo}
               </div>
@@ -966,23 +1159,41 @@ function SimulationCompareModal({
       case "debts":
         return (
           <>
-            <div
-              className={`${styles.detailedItemAmount} ${styles[categoryColorClass]}`}
-            >
-              {isFieldChanged("principalAmount") && changeIndicator}
-              {formatAmount(item.principalAmount)}
+            <div className={debtStyles.debtAmount}>
+              {isFieldChanged("debtAmount") && changeIndicator}
+              {formatAmount(item.debtAmount)}
             </div>
-            <div className={styles.detailedItemPeriod}>
-              {isFieldChanged("startYear") && changeIndicator}
-              {item.startYear}년 -{" "}
-              {isFieldChanged("endYear") && changeIndicator}
-              {item.endYear}년
-              <br />
-              (이자율 {isFieldChanged("interestRate") && changeIndicator}
-              {(item.interestRate * 100).toFixed(2)}% 적용)
+
+            <div className={debtStyles.debtDetails}>
+              <div className={debtStyles.debtType}>
+                {item.debtType === "bullet"
+                  ? "만기일시상환"
+                  : item.debtType === "equal"
+                  ? "원리금균등상환"
+                  : item.debtType === "principal"
+                  ? "원금균등상환"
+                  : item.debtType === "grace"
+                  ? "거치식상환"
+                  : "알 수 없음"}
+                {item.debtType === "grace" && item.gracePeriod > 0 && (
+                  <span className={debtStyles.gracePeriod}>
+                    (거치 {item.gracePeriod}년)
+                  </span>
+                )}
+              </div>
+              <div className={debtStyles.debtPeriod}>
+                {isFieldChanged("startYear") && changeIndicator}
+                {item.startYear}년 -{" "}
+                {isFieldChanged("endYear") && changeIndicator}
+                {item.endYear}년
+                <br />
+                (이자율 {isFieldChanged("interestRate") && changeIndicator}
+                {(item.interestRate * 100).toFixed(2)}% 적용)
+              </div>
             </div>
+
             {item.memo && (
-              <div className={styles.detailedItemMemo}>
+              <div className={debtStyles.debtMemo}>
                 {isFieldChanged("memo") && changeIndicator}
                 {item.memo}
               </div>

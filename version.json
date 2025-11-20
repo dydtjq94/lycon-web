@@ -1,7 +1,21 @@
 {
-  "version": "0.34.4",
+  "version": "0.34.5",
   "today": "2025-11-20",
   "history": [
+    {
+      "version": "0.34.5",
+      "date": "2025-11-20",
+      "changes": [
+        "🐛 상세 재무 데이터 표시 오류 수정",
+        "모든 재무 카테고리가 기존 List 컴포넌트의 CSS를 완전히 동일하게 사용",
+        "저축/투자 필드명 수정: monthlyAmount → originalAmount, returnRate → interestRate",
+        "부동산 필드명 수정: purchasePrice → currentValue, appreciationRate → growthRate",
+        "연금 필드명 수정: 국민연금과 다른 연금 타입 구분하여 올바른 필드 표시",
+        "부채 필드명 수정: principalAmount → debtAmount, 상환 방식 및 거치 기간 표시",
+        "저축/투자 '기 보유' 항목이 기존 리스트와 동일한 스타일로 표시",
+        "모든 카테고리에서 0만원 대신 올바른 금액이 표시됨"
+      ]
+    },
     {
       "version": "0.34.4",
       "date": "2025-11-20",

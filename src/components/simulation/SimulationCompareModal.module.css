@@ -684,6 +684,13 @@
   cursor: pointer;
 }
 
+.detailedItemCurrent {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
 .detailedItemAmount {
   font-size: 0.85rem;
   font-weight: 700;
