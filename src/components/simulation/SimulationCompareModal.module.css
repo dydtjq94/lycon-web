@@ -331,6 +331,12 @@
   padding: 0.35rem 0;
 }
 
+.categoryLastRow {
+  border-bottom: 1px solid #d1d5db;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
 .summaryHeader {
   border-bottom: 1px solid #e5e7eb;
   font-size: 0.78rem;

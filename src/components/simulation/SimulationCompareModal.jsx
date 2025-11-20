@@ -2421,6 +2421,20 @@ function SimulationCompareModal({
                   <h4 className={styles.financialDataTitle}>
                     상세 재무 데이터
                   </h4>
+                  {/* 헤더 행 */}
+                  <div className={styles.summaryTable}>
+                    <div
+                      className={`${styles.summaryRow} ${styles.summaryHeader}`}
+                      style={{ gridTemplateColumns }}
+                    >
+                      <div className={styles.summaryCell}>카테고리</div>
+                      {sortedSelectedSimulationIds.map((simId) => (
+                        <div key={simId} className={styles.summaryCell}>
+                          {getSimulationTitle(simId)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   {categoryConfigs.map((config) => {
                     // 모든 시뮬레이션의 데이터를 ID 기준으로 병합
                     const allItemsById = new Map();
@@ -2463,13 +2477,19 @@ function SimulationCompareModal({
                     }
 
                     const itemsArray = Array.from(allItemsById.values());
+                    const isLastItem = (index) =>
+                      index === itemsArray.length - 1;
 
                     return (
                       <React.Fragment key={config.key}>
                         {itemsArray.map((itemGroup, itemIndex) => (
                           <div
                             key={itemGroup.id}
-                            className={styles.summaryRow}
+                            className={`${styles.summaryRow} ${
+                              isLastItem(itemIndex)
+                                ? styles.categoryLastRow
+                                : ""
+                            }`}
                             style={{ gridTemplateColumns }}
                           >
                             {/* 첫 번째 열: 카테고리명 (첫 항목에만 표시) */}
