@@ -362,7 +362,7 @@ function SimulationCompareModal({
         simulationId: simulationId,
       });
 
-      // 로컬 state 즉시 업데이트
+      // 로컬 state 즉시 업데이트 (깜빡임 없이 즉시 반영)
       const updatedData = await fetchSimulationData(simulationId);
       if (updatedData) {
         setSimulationsData((prev) => ({
@@ -371,9 +371,7 @@ function SimulationCompareModal({
         }));
       }
 
-      if (onDataRefresh) {
-        await onDataRefresh();
-      }
+      // onDataRefresh는 호출하지 않음 (비교 모달이 새로고침되는 것을 방지)
       console.log("✅ 변경사항 반영 완료!");
     } catch (error) {
       console.error(`❌ [시뮬레이션 비교] ${type} 데이터 삭제 오류:`, error);
@@ -503,16 +501,19 @@ function SimulationCompareModal({
         simulationCount: simulationIdsToSave.length,
       });
 
-      // 모달 닫기
-      handleCloseEditModal();
-
-      // 로컬 state 즉시 업데이트 (서버 요청 없이 빠른 반영)
+      // 로컬 state 즉시 업데이트 (깜빡임 없이 즉시 반영)
       console.log("⚡ 로컬 state 즉시 업데이트...");
 
       // 영향을 받은 시뮬레이션들의 데이터 다시 로드
-      const affectedSimIds = simulationIdsToSave.filter((id) =>
+      // editModal.simulationId도 포함하여 확실히 업데이트
+      const affectedSimIdsSet = new Set(simulationIdsToSave);
+      if (editModal.simulationId) {
+        affectedSimIdsSet.add(editModal.simulationId);
+      }
+      const affectedSimIds = Array.from(affectedSimIdsSet).filter((id) =>
         selectedSimulationIds.includes(id)
       );
+
       if (affectedSimIds.length > 0) {
         const updatedData = {};
         for (const simId of affectedSimIds) {
@@ -522,14 +523,17 @@ function SimulationCompareModal({
           }
         }
         if (Object.keys(updatedData).length > 0) {
+          // 상태 업데이트 (비교 모달 내에서만 반영, 새로고침 없음)
           setSimulationsData((prev) => ({ ...prev, ...updatedData }));
         }
       }
 
-      if (onDataRefresh) {
-        await onDataRefresh();
-      }
+      // onDataRefresh는 호출하지 않음 (비교 모달이 새로고침되는 것을 방지)
+      // 모달을 닫을 때 부모에게 알려서 대시보드 리스트만 업데이트됨
       console.log("✅ 변경사항 반영 완료!");
+
+      // 편집 모달 닫기
+      handleCloseEditModal();
     } catch (error) {
       console.error(`❌ [시뮬레이션 비교] ${type} 데이터 저장 오류:`, error);
       alert(`저장 중 오류가 발생했습니다: ${error.message}`);
@@ -2053,11 +2057,15 @@ function SimulationCompareModal({
       simulationIds: selectedSimulationIds,
     });
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = async (event) => {
       if (event.key === "Escape") {
         // 재무 데이터 수정 모달이 열려있으면 비교 모달은 닫지 않음
         if (editModal.isOpen) {
           return;
+        }
+        // 모달을 닫을 때 대시보드의 재무 리스트를 업데이트
+        if (onDataRefresh) {
+          await onDataRefresh();
         }
         onClose?.();
         trackEvent("시뮬레이션 비교 모달 닫힘", {
@@ -2090,10 +2098,14 @@ function SimulationCompareModal({
   return (
     <div
       className={styles.overlay}
-      onClick={() => {
+      onClick={async () => {
         trackEvent("시뮬레이션 비교 모달 닫힘", {
           method: "오버레이 클릭",
         });
+        // 모달을 닫을 때 대시보드의 재무 리스트를 업데이트
+        if (onDataRefresh) {
+          await onDataRefresh();
+        }
         onClose?.();
       }}
     >
@@ -2130,10 +2142,14 @@ function SimulationCompareModal({
           </div>
           <button
             className={styles.closeButton}
-            onClick={() => {
+            onClick={async () => {
               trackEvent("시뮬레이션 비교 모달 닫힘", {
                 method: "닫기 버튼",
               });
+              // 모달을 닫을 때 대시보드의 재무 리스트를 업데이트
+              if (onDataRefresh) {
+                await onDataRefresh();
+              }
               onClose?.();
             }}
             type="button"

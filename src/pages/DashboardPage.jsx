@@ -2657,6 +2657,20 @@ function DashboardPage() {
         });
       }
 
+      // 대시보드의 재무 리스트도 업데이트 (비교 모달에서 수정한 내용 반영)
+      // 현재 활성 시뮬레이션의 재무 데이터를 다시 로드
+      const activeData = await fetchSimulationFinancialData(activeSimulationId);
+      if (activeData) {
+        setIncomes(activeData.incomes || []);
+        setExpenses(activeData.expenses || []);
+        setSavings(activeData.savings || []);
+        setPensions(activeData.pensions || []);
+        setRealEstates(activeData.realEstates || []);
+        setAssets(activeData.assets || []);
+        setDebts(activeData.debts || []);
+        console.log("✅ 대시보드 재무 리스트 업데이트 완료");
+      }
+
       console.log("✅ 시뮬레이션 비교 데이터 새로고침 완료");
     } catch (error) {
       console.error("시뮬레이션 비교 데이터 새로고침 오류:", error);
