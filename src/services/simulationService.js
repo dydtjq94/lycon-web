@@ -27,8 +27,6 @@ export const simulationService = {
    */
   async createSimulation(profileId, simulationData) {
     try {
-      console.log("시뮬레이션 생성 시작:", simulationData);
-
       // 현재 시뮬레이션 개수 확인하여 order 결정
       const existingSimulations = await this.getSimulations(profileId);
       const maxOrder = existingSimulations.reduce(
@@ -48,7 +46,6 @@ export const simulationService = {
         }
       );
 
-      console.log("시뮬레이션 생성 성공:", docRef.id);
       return docRef.id;
     } catch (error) {
       console.error("시뮬레이션 생성 오류:", error);
@@ -65,7 +62,6 @@ export const simulationService = {
    */
   async getSimulations(profileId) {
     try {
-      console.log("시뮬레이션 목록 조회 시작:", profileId);
       const querySnapshot = await getDocs(
         query(
           collection(db, "profiles", profileId, "simulations"),
@@ -78,7 +74,6 @@ export const simulationService = {
         ...doc.data(),
       }));
 
-      console.log("조회된 시뮬레이션 수:", simulations.length);
       return simulations;
     } catch (error) {
       console.error("시뮬레이션 조회 오류:", error);
@@ -149,7 +144,6 @@ export const simulationService = {
         ...updateData,
         updatedAt: new Date().toISOString(),
       });
-      console.log("시뮬레이션 업데이트 완료:", simulationId);
     } catch (error) {
       console.error("시뮬레이션 업데이트 오류:", error);
       throw error;
@@ -181,8 +175,6 @@ export const simulationService = {
         simulationId
       );
       await deleteDoc(docRef);
-
-      console.log("시뮬레이션 삭제 완료:", simulationId);
     } catch (error) {
       console.error("시뮬레이션 삭제 오류:", error);
       throw error;
@@ -225,9 +217,6 @@ export const simulationService = {
         }
       }
 
-      console.log(
-        `시뮬레이션 하위 데이터 삭제 완료: ${totalDeleted}개 문서 삭제됨`
-      );
       return totalDeleted;
     } catch (error) {
       console.error("시뮬레이션 하위 데이터 삭제 오류:", error);
@@ -244,11 +233,6 @@ export const simulationService = {
    */
   async copySimulation(profileId, sourceSimulationId, newTitle) {
     try {
-      console.log("시뮬레이션 복사 시작:", {
-        sourceSimulationId,
-        newTitle,
-      });
-
       const sourceSimulation = await this.getSimulation(
         profileId,
         sourceSimulationId
@@ -296,9 +280,6 @@ export const simulationService = {
         totalCopied += count;
       }
 
-      console.log(
-        `시뮬레이션 복사 완료: ${totalCopied}개 문서 복사됨, 새 ID: ${newSimulationId}`
-      );
       return newSimulationId;
     } catch (error) {
       console.error("시뮬레이션 복사 오류:", error);
@@ -337,7 +318,6 @@ export const simulationService = {
       );
 
       if (snapshot.empty) {
-        console.log(`${subcollectionName}: 복사할 데이터 없음`);
         return 0;
       }
 
@@ -368,7 +348,6 @@ export const simulationService = {
       });
 
       await batch.commit();
-      console.log(`${subcollectionName}: ${count}개 문서 복사 완료`);
       return count;
     } catch (error) {
       console.error(`${subcollectionName} 복사 오류:`, error);
@@ -394,7 +373,6 @@ export const simulationService = {
       });
 
       await batch.commit();
-      console.log("시뮬레이션 순서 업데이트 완료");
     } catch (error) {
       console.error("시뮬레이션 순서 업데이트 오류:", error);
       throw error;
@@ -420,7 +398,6 @@ export const simulationService = {
         cashflowInvestmentRules: investmentRules,
         updatedAt: new Date().toISOString(),
       });
-      console.log("투자 규칙 업데이트 완료:", simulationId);
     } catch (error) {
       console.error("투자 규칙 업데이트 오류:", error);
       throw error;
@@ -462,7 +439,6 @@ export const simulationService = {
         retirementYear: retirementYear,
         updatedAt: new Date().toISOString(),
       });
-      console.log("은퇴년도 업데이트 완료:", simulationId, retirementYear);
     } catch (error) {
       console.error("은퇴년도 업데이트 오류:", error);
       throw error;

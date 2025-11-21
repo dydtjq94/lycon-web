@@ -328,8 +328,6 @@ function SimulationCompareModal({
     }
 
     try {
-      console.log(`[시뮬레이션 비교] ${type} 데이터 삭제 시작:`, itemId);
-
       if (!profileData?.id) {
         throw new Error("프로필 ID가 없습니다.");
       }
@@ -355,8 +353,6 @@ function SimulationCompareModal({
       }`;
       await service[deleteMethodName](profileData.id, simulationId, itemId);
 
-      console.log(`✅ [시뮬레이션 비교] ${simulationId}에서 ${type} 삭제 완료`);
-
       trackEvent("시뮬레이션 비교 모달에서 재무 데이터 삭제 완료", {
         type: type,
         simulationId: simulationId,
@@ -372,7 +368,6 @@ function SimulationCompareModal({
       }
 
       // onDataRefresh는 호출하지 않음 (비교 모달이 새로고침되는 것을 방지)
-      console.log("✅ 변경사항 반영 완료!");
     } catch (error) {
       console.error(`❌ [시뮬레이션 비교] ${type} 데이터 삭제 오류:`, error);
       alert(`삭제 중 오류가 발생했습니다: ${error.message}`);
@@ -397,8 +392,6 @@ function SimulationCompareModal({
   // 재무 데이터 저장 핸들러
   const handleSaveFinancialData = async (type, data) => {
     try {
-      console.log(`[시뮬레이션 비교] ${type} 데이터 저장 시작:`, data);
-
       // profileId가 없으면 오류
       if (!profileData?.id) {
         throw new Error("프로필 ID가 없습니다.");
@@ -463,9 +456,6 @@ function SimulationCompareModal({
               data.id,
               data
             );
-            console.log(
-              `✅ [시뮬레이션 비교] ${simId}에서 ${type} 업데이트 완료`
-            );
           } else {
             // 같은 ID가 없으면 새로 생성 (ID 유지)
             if (service[createWithIdMethodName]) {
@@ -474,9 +464,6 @@ function SimulationCompareModal({
                 simId,
                 data.id,
                 data
-              );
-              console.log(
-                `✅ [시뮬레이션 비교] ${simId}에 ${type} 추가 완료 (ID 유지)`
               );
             } else {
               console.warn(
@@ -490,7 +477,6 @@ function SimulationCompareModal({
             type.charAt(0).toUpperCase() + type.slice(1)
           }`;
           await service[createMethodName](profileData.id, simId, data);
-          console.log(`✅ [시뮬레이션 비교] ${simId}에 ${type} 추가 완료`);
         }
       }
 
@@ -502,8 +488,6 @@ function SimulationCompareModal({
       });
 
       // 로컬 state 즉시 업데이트 (깜빡임 없이 즉시 반영)
-      console.log("⚡ 로컬 state 즉시 업데이트...");
-
       // 영향을 받은 시뮬레이션들의 데이터 다시 로드
       // editModal.simulationId도 포함하여 확실히 업데이트
       const affectedSimIdsSet = new Set(simulationIdsToSave);
@@ -530,7 +514,6 @@ function SimulationCompareModal({
 
       // onDataRefresh는 호출하지 않음 (비교 모달이 새로고침되는 것을 방지)
       // 모달을 닫을 때 부모에게 알려서 대시보드 리스트만 업데이트됨
-      console.log("✅ 변경사항 반영 완료!");
 
       // 편집 모달 닫기
       handleCloseEditModal();

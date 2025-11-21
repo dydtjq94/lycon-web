@@ -206,7 +206,6 @@ function FinancialDataStorePanel({
         title: template.title, // 템플릿 제목 그대로 사용
       };
 
-      console.log("저축/투자 템플릿 데이터 전달:", templateData); // 디버깅용
       onSelectTemplate(templateData);
       return;
     }
@@ -319,8 +318,6 @@ function FinancialDataStorePanel({
       
       // 복리 계산: 금액 × (1 + 상승률)^년수, 반올림하여 정수로
       adjustedAmount = Math.round(data.amount * Math.pow(1 + inflationRate, yearsUntilStart));
-      
-      console.log(`물가상승률 반영: ${data.amount}만원 → ${adjustedAmount}만원 (${yearsUntilStart}년, ${category === "income" ? "소득 3.3%" : "지출 1.89%"})`);
     }
 
     // 모달에 전달할 데이터 준비
@@ -334,8 +331,6 @@ function FinancialDataStorePanel({
       endYear, // 계산된 endYear로 덮어쓰기 (중요!)
       memo: data.memo || "", // memo 유지
     };
-
-    console.log("소득/지출 템플릿 데이터 전달:", templateData); // 디버깅용
 
     onSelectTemplate(templateData);
     // 사이드바는 유지 (onClose 호출 제거)

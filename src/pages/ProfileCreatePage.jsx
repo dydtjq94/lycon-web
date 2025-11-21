@@ -133,9 +133,6 @@ function ProfileCreatePage() {
     for (const incomeData of incomes) {
       try {
         await incomeService.createIncome(profileId, simulationId, incomeData);
-        console.log(
-          `소득 데이터 생성 완료: ${incomeData.startYear}~${incomeData.endYear}년 (${incomeData.growthRate}%)`
-        );
       } catch (error) {
         console.error(`소득 데이터 생성 오류 (${incomeData.title}):`, error);
       }
@@ -235,9 +232,6 @@ function ProfileCreatePage() {
     for (const incomeData of incomes) {
       try {
         await incomeService.createIncome(profileId, simulationId, incomeData);
-        console.log(
-          `배우자 소득 데이터 생성 완료: ${incomeData.startYear}~${incomeData.endYear}년 (${incomeData.growthRate}%)`
-        );
       } catch (error) {
         console.error(
           `배우자 소득 데이터 생성 오류 (${incomeData.title}):`,
@@ -695,9 +689,7 @@ function ProfileCreatePage() {
       };
 
       // Firebase에 프로필 저장
-      console.log("프로필 데이터 전송:", profileData);
       const createdProfile = await profileService.createProfile(profileData);
-      console.log("생성된 프로필:", createdProfile);
 
       // Firebase에서 체크리스트 템플릿 가져오기
       try {
@@ -709,10 +701,8 @@ function ProfileCreatePage() {
         if (template && template.items) {
           // Firebase 템플릿이 있으면 사용
           templateItems = template.items;
-          console.log("Firebase 템플릿을 사용합니다:", template);
         } else {
           // 템플릿이 없으면 기본 템플릿으로 초기화 후 사용
-          console.log("Firebase 템플릿이 없어서 기본 템플릿으로 초기화합니다.");
           const defaultItems = buildChecklistTemplateItems();
           await checklistTemplateService.initializeDefaultTemplate(
             defaultItems
@@ -739,7 +729,6 @@ function ProfileCreatePage() {
             isDefault: true,
           }
         );
-        console.log("기본 시뮬레이션 생성 완료:", defaultSimulationId);
       } catch (error) {
         console.error("기본 시뮬레이션 생성 오류:", error);
         throw new Error("기본 시뮬레이션 생성에 실패했습니다.");
@@ -754,7 +743,6 @@ function ProfileCreatePage() {
           formData.retirementAge,
           parseInt(formData.currentSalary) // 입력받은 현재 급여
         );
-        console.log("기본 소득 데이터 생성 완료 (본인)");
       } catch (error) {
         console.error("기본 소득 데이터 생성 오류 (본인):", error);
         // 기본 소득 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
@@ -770,7 +758,6 @@ function ProfileCreatePage() {
             parseInt(formData.spouse.retirementAge),
             parseInt(formData.spouse.currentSalary)
           );
-          console.log("배우자 소득 데이터 생성 완료");
         } catch (error) {
           console.error("배우자 소득 데이터 생성 오류:", error);
         }
@@ -785,7 +772,6 @@ function ProfileCreatePage() {
           formData.retirementAge,
           formData.currentLivingExpenses
         );
-        console.log("기본 지출 데이터 생성 완료");
       } catch (error) {
         console.error("기본 지출 데이터 생성 오류:", error);
         // 기본 지출 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
@@ -798,7 +784,6 @@ function ProfileCreatePage() {
           defaultSimulationId,
           birthYear
         );
-        console.log("기본 국민연금 데이터 생성 완료");
       } catch (error) {
         console.error("기본 국민연금 데이터 생성 오류:", error);
         // 기본 국민연금 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
@@ -807,7 +792,6 @@ function ProfileCreatePage() {
       // 기본 부동산 데이터 생성
       try {
         await createDefaultRealEstate(createdProfile.id, defaultSimulationId);
-        console.log("기본 부동산 데이터 생성 완료");
       } catch (error) {
         console.error("기본 부동산 데이터 생성 오류:", error);
         // 기본 부동산 데이터 생성 실패해도 프로필은 생성되었으므로 계속 진행
@@ -843,7 +827,6 @@ function ProfileCreatePage() {
             (child) => child.name.trim() && child.birthYear
           ).length,
         });
-        console.log("Mixpanel 사용자 등록 완료:", createdProfile.id);
       } catch (error) {
         console.error("Mixpanel 사용자 등록 오류:", error);
         // Mixpanel 등록 실패해도 프로필은 생성되었으므로 계속 진행

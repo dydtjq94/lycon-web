@@ -22,14 +22,12 @@ export const profileService = {
   // 프로필 생성
   async createProfile(profileData) {
     try {
-      console.log("프로필 생성 시작:", profileData);
       const docRef = await addDoc(collection(db, "profiles"), {
         ...profileData,
         isActive: true, // 기본값으로 활성 상태 설정
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      console.log("프로필 생성 성공:", docRef.id);
       return { id: docRef.id, ...profileData };
     } catch (error) {
       console.error("프로필 생성 오류:", error);
@@ -48,7 +46,6 @@ export const profileService = {
   // 모든 활성 프로필 조회 (isActive가 true이거나 undefined인 것들)
   async getAllProfiles() {
     try {
-      console.log("프로필 목록 조회 시작");
       const querySnapshot = await getDocs(
         query(collection(db, "profiles"), orderBy("createdAt", "desc"))
       );
@@ -58,7 +55,6 @@ export const profileService = {
           ...doc.data(),
         }))
         .filter((profile) => profile.isActive !== false); // isActive가 false가 아닌 것만
-      console.log("조회된 활성 프로필 수:", profiles.length);
       return profiles;
     } catch (error) {
       console.error("프로필 조회 오류:", error);
@@ -72,11 +68,9 @@ export const profileService = {
   // 모든 프로필 조회 (삭제된 것 포함)
   async getAllProfilesIncludingDeleted() {
     try {
-      console.log("모든 프로필 조회 시작 (삭제된 것 포함)");
       const querySnapshot = await getDocs(
         query(collection(db, "profiles"), orderBy("createdAt", "desc"))
       );
-      console.log("조회된 전체 프로필 수:", querySnapshot.docs.length);
       return querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -93,7 +87,6 @@ export const profileService = {
   // 삭제된 프로필만 조회 (휴지통)
   async getDeletedProfiles() {
     try {
-      console.log("삭제된 프로필 조회 시작");
       const querySnapshot = await getDocs(
         query(collection(db, "profiles"), orderBy("deletedAt", "desc"))
       );
@@ -103,7 +96,6 @@ export const profileService = {
           ...doc.data(),
         }))
         .filter((profile) => profile.isActive === false); // isActive가 false인 것만
-      console.log("조회된 삭제 프로필 수:", deletedProfiles.length);
       return deletedProfiles;
     } catch (error) {
       console.error("삭제 프로필 조회 오류:", error);
@@ -114,14 +106,12 @@ export const profileService = {
   // 프로필 휴지통으로 이동 (soft delete)
   async moveToTrash(profileId) {
     try {
-      console.log("프로필 휴지통 이동:", profileId);
       const docRef = doc(db, "profiles", profileId);
       await updateDoc(docRef, {
         isActive: false,
         deletedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      console.log("프로필 휴지통 이동 완료:", profileId);
     } catch (error) {
       console.error("프로필 휴지통 이동 오류:", error);
       throw error;
@@ -131,14 +121,12 @@ export const profileService = {
   // 프로필 복구 (휴지통에서 복원)
   async restoreFromTrash(profileId) {
     try {
-      console.log("프로필 복구:", profileId);
       const docRef = doc(db, "profiles", profileId);
       await updateDoc(docRef, {
         isActive: true,
         deletedAt: null,
         updatedAt: new Date().toISOString(),
       });
-      console.log("프로필 복구 완료:", profileId);
     } catch (error) {
       console.error("프로필 복구 오류:", error);
       throw error;
@@ -148,7 +136,6 @@ export const profileService = {
   // 프로필 조회
   async getProfile(profileId) {
     try {
-      console.log("프로필 조회 시작:", profileId);
       const docRef = doc(db, "profiles", profileId);
 
       // 타임아웃 설정 (10초)
@@ -162,7 +149,6 @@ export const profileService = {
       const docSnap = await Promise.race([getDoc(docRef), timeoutPromise]);
 
       if (docSnap.exists()) {
-        console.log("프로필 조회 성공:", docSnap.data());
         return { id: docSnap.id, ...docSnap.data() };
       } else {
         throw new Error("프로필을 찾을 수 없습니다.");
@@ -203,7 +189,6 @@ export const profileService = {
         deletedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      console.log("프로필 소프트 삭제 완료:", profileId);
     } catch (error) {
       console.error("프로필 삭제 오류:", error);
       throw error;
@@ -219,7 +204,6 @@ export const profileService = {
         restoredAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      console.log("프로필 복원 완료:", profileId);
     } catch (error) {
       console.error("프로필 복원 오류:", error);
       throw error;
@@ -231,7 +215,6 @@ export const profileService = {
     try {
       const docRef = doc(db, "profiles", profileId);
       await deleteDoc(docRef);
-      console.log("프로필 완전 삭제 완료:", profileId);
     } catch (error) {
       console.error("프로필 완전 삭제 오류:", error);
       throw error;
@@ -250,18 +233,12 @@ export const profileService = {
       const snapshot = await getDocs(subcollectionRef);
 
       if (snapshot.empty) {
-        console.log(`${subcollectionName} 하위 컬렉션이 비어있습니다.`);
         return 0;
       }
 
       const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
       await Promise.all(deletePromises);
 
-      console.log(
-        `${subcollectionName} 하위 컬렉션 삭제 완료:`,
-        snapshot.docs.length,
-        "개"
-      );
       return snapshot.docs.length;
     } catch (error) {
       console.error(`${subcollectionName} 하위 컬렉션 삭제 오류:`, error);
@@ -272,8 +249,6 @@ export const profileService = {
   // 프로필과 모든 관련 데이터 완전 삭제 (시뮬레이션 포함)
   async deleteProfileWithAllData(profileId) {
     try {
-      console.log("프로필 및 모든 관련 데이터 삭제 시작:", profileId);
-
       // 먼저 모든 시뮬레이션 조회
       const simulationsRef = collection(
         db,
@@ -288,7 +263,6 @@ export const profileService = {
       // 각 시뮬레이션의 하위 컬렉션 삭제
       for (const simDoc of simulationsSnapshot.docs) {
         const simulationId = simDoc.id;
-        console.log(`시뮬레이션 ${simulationId} 데이터 삭제 중...`);
 
         const subcollections = [
           "incomes",
@@ -326,17 +300,11 @@ export const profileService = {
 
         // 시뮬레이션 문서 삭제
         await deleteDoc(simDoc.ref);
-        console.log(`시뮬레이션 ${simulationId} 삭제 완료`);
       }
 
       // 마지막으로 프로필 문서 삭제
       const profileRef = doc(db, "profiles", profileId);
       await deleteDoc(profileRef);
-      console.log("프로필 문서 삭제 완료:", profileId);
-
-      console.log(
-        `프로필 및 모든 관련 데이터 삭제 완료: ${totalDeleted}개 문서 삭제됨`
-      );
     } catch (error) {
       console.error("프로필 및 관련 데이터 삭제 오류:", error);
       throw error;
@@ -352,7 +320,6 @@ export const incomeService = {
   // 수입 데이터 생성
   async createIncome(profileId, simulationId, incomeData) {
     try {
-      console.log("수입 데이터 생성 시작:", incomeData);
       const docRef = await addDoc(
         collection(
           db,
@@ -368,7 +335,6 @@ export const incomeService = {
           updatedAt: new Date().toISOString(),
         }
       );
-      console.log("수입 데이터 생성 성공:", docRef.id);
       return { id: docRef.id, ...incomeData };
     } catch (error) {
       console.error("수입 데이터 생성 오류:", error);
@@ -404,7 +370,6 @@ export const incomeService = {
   // 프로필의 모든 수입 데이터 조회
   async getIncomes(profileId, simulationId) {
     try {
-      console.log("수입 데이터 조회 시작:", profileId, simulationId);
       const querySnapshot = await getDocs(
         query(
           collection(
@@ -418,7 +383,6 @@ export const incomeService = {
           orderBy("createdAt", "desc")
         )
       );
-      console.log("조회된 수입 데이터 수:", querySnapshot.docs.length);
       return querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -498,12 +462,6 @@ export const incomeService = {
   // 모든 시뮬레이션의 은퇴년도 고정된 소득 항목들의 endYear 업데이트
   async updateFixedIncomesEndYear(profileId, retirementYear) {
     try {
-      console.log(
-        "고정된 소득 항목들의 endYear 업데이트 시작:",
-        profileId,
-        retirementYear
-      );
-
       // 모든 시뮬레이션 조회
       const simulationsRef = collection(
         db,
@@ -555,15 +513,9 @@ export const incomeService = {
           });
 
           await batch.commit();
-          console.log(
-            `시뮬레이션 ${simulationId}: ${fixedIncomes.length}개 소득 항목 업데이트 완료`
-          );
         }
       }
 
-      console.log(
-        `모든 고정된 소득 항목 업데이트 완료: ${totalUpdated}개 항목 업데이트됨`
-      );
       return totalUpdated;
     } catch (error) {
       console.error("고정된 소득 항목 업데이트 오류:", error);
@@ -715,12 +667,6 @@ export const expenseService = {
   // 모든 시뮬레이션의 은퇴년도 고정된 지출 항목들의 endYear 업데이트
   async updateFixedExpensesEndYear(profileId, retirementYear) {
     try {
-      console.log(
-        "고정된 지출 항목들의 endYear 업데이트 시작:",
-        profileId,
-        retirementYear
-      );
-
       // 모든 시뮬레이션 조회
       const simulationsRef = collection(
         db,
@@ -772,15 +718,9 @@ export const expenseService = {
           });
 
           await batch.commit();
-          console.log(
-            `시뮬레이션 ${simulationId}: ${fixedExpenses.length}개 지출 항목 업데이트 완료`
-          );
         }
       }
 
-      console.log(
-        `모든 고정된 지출 항목 업데이트 완료: ${totalUpdated}개 항목 업데이트됨`
-      );
       return totalUpdated;
     } catch (error) {
       console.error("고정된 지출 항목 업데이트 오류:", error);
@@ -930,12 +870,6 @@ export const savingsService = {
   // 모든 시뮬레이션의 은퇴년도 고정된 저축 항목들의 endYear 업데이트
   async updateFixedSavingsEndYear(profileId, retirementYear) {
     try {
-      console.log(
-        "고정된 저축 항목들의 endYear 업데이트 시작:",
-        profileId,
-        retirementYear
-      );
-
       // 모든 시뮬레이션 조회
       const simulationsRef = collection(
         db,
@@ -987,15 +921,9 @@ export const savingsService = {
           });
 
           await batch.commit();
-          console.log(
-            `시뮬레이션 ${simulationId}: ${fixedSavings.length}개 저축 항목 업데이트 완료`
-          );
         }
       }
 
-      console.log(
-        `모든 고정된 저축 항목 업데이트 완료: ${totalUpdated}개 항목 업데이트됨`
-      );
       return totalUpdated;
     } catch (error) {
       console.error("고정된 저축 항목 업데이트 오류:", error);
@@ -1148,12 +1076,6 @@ export const pensionService = {
   // 모든 시뮬레이션의 은퇴년도 고정된 연금 항목들의 endYear 업데이트
   async updateFixedPensionsEndYear(profileId, retirementYear) {
     try {
-      console.log(
-        "고정된 연금 항목들의 endYear 업데이트 시작:",
-        profileId,
-        retirementYear
-      );
-
       // 모든 시뮬레이션 조회
       const simulationsRef = collection(
         db,
@@ -1205,15 +1127,9 @@ export const pensionService = {
           });
 
           await batch.commit();
-          console.log(
-            `시뮬레이션 ${simulationId}: ${fixedPensions.length}개 연금 항목 업데이트 완료`
-          );
         }
       }
 
-      console.log(
-        `모든 고정된 연금 항목 업데이트 완료: ${totalUpdated}개 항목 업데이트됨`
-      );
       return totalUpdated;
     } catch (error) {
       console.error("고정된 연금 항목 업데이트 오류:", error);
@@ -1519,7 +1435,6 @@ export const debtService = {
   // 부채 데이터 생성
   async createDebt(profileId, simulationId, debtData) {
     try {
-      console.log("부채 데이터 생성 시작:", debtData);
       const docRef = await addDoc(
         collection(
           db,
@@ -1535,7 +1450,6 @@ export const debtService = {
           updatedAt: new Date().toISOString(),
         }
       );
-      console.log("부채 데이터 생성 성공:", docRef.id);
       return { id: docRef.id, ...debtData };
     } catch (error) {
       console.error("부채 데이터 생성 오류:", error);
@@ -1548,7 +1462,6 @@ export const debtService = {
   // 프로필의 모든 부채 데이터 조회
   async getDebts(profileId, simulationId) {
     try {
-      console.log("부채 데이터 조회 시작:", profileId, simulationId);
       const querySnapshot = await getDocs(
         query(
           collection(
@@ -1562,7 +1475,6 @@ export const debtService = {
           orderBy("createdAt", "desc")
         )
       );
-      console.log("조회된 부채 데이터 수:", querySnapshot.docs.length);
       return querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -1753,10 +1665,8 @@ export const checklistTemplateService = {
   // 체크리스트 템플릿 조회
   async getTemplate() {
     try {
-      const querySnapshot = await getDocs(
-        collection(db, "checklistTemplates")
-      );
-      
+      const querySnapshot = await getDocs(collection(db, "checklistTemplates"));
+
       // 가장 최신 템플릿 하나만 사용 (createdAt 기준 정렬)
       const templates = querySnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -1768,10 +1678,12 @@ export const checklistTemplateService = {
       }
 
       // 가장 최신 템플릿 반환
-      templates.sort((a, b) => 
-        new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)
+      templates.sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt) -
+          new Date(a.updatedAt || a.createdAt)
       );
-      
+
       return templates[0];
     } catch (error) {
       console.error("체크리스트 템플릿 조회 오류:", error);
@@ -1815,11 +1727,9 @@ export const checklistTemplateService = {
     try {
       const existing = await this.getTemplate();
       if (existing) {
-        console.log("템플릿이 이미 존재합니다:", existing.id);
         return existing;
       }
 
-      console.log("기본 템플릿 생성 중...");
       return await this.createTemplate({
         title: "상담 체크리스트 템플릿",
         items: defaultItems,
@@ -1856,15 +1766,13 @@ export const versionHistoryService = {
           ...versionData,
           updatedAt: new Date().toISOString(),
         });
-        console.log("버전 정보 업데이트:", versionData.version);
       } else {
         // 새 버전이면 추가
-        const docRef = await addDoc(collection(db, "versionHistory"), {
+        await addDoc(collection(db, "versionHistory"), {
           ...versionData,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
-        console.log("버전 정보 추가:", versionData.version, docRef.id);
       }
     } catch (error) {
       console.error("버전 정보 저장 오류:", error);
@@ -1938,7 +1846,6 @@ export const financialLibraryService = {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      console.log("재무 라이브러리 템플릿 생성 완료:", docRef.id);
       return docRef.id;
     } catch (error) {
       console.error("재무 라이브러리 템플릿 생성 오류:", error);
@@ -2030,7 +1937,6 @@ export const financialLibraryService = {
         ...updateData,
         updatedAt: new Date().toISOString(),
       });
-      console.log("재무 라이브러리 템플릿 수정 완료:", templateId);
     } catch (error) {
       console.error("재무 라이브러리 템플릿 수정 오류:", error);
       throw error;
@@ -2045,7 +1951,6 @@ export const financialLibraryService = {
     try {
       const docRef = doc(db, "financialLibrary", templateId);
       await deleteDoc(docRef);
-      console.log("재무 라이브러리 템플릿 삭제 완료:", templateId);
     } catch (error) {
       console.error("재무 라이브러리 템플릿 삭제 오류:", error);
       throw error;
@@ -2060,11 +1965,8 @@ export const financialLibraryService = {
     try {
       const existing = await this.getTemplates();
       if (existing.length > 0) {
-        console.log("재무 라이브러리 템플릿이 이미 존재합니다.");
         return;
       }
-
-      console.log("기본 재무 라이브러리 템플릿 생성 중...");
 
       // 기본 템플릿 데이터
       const defaultTemplates = [
@@ -2278,8 +2180,6 @@ export const financialLibraryService = {
       for (const template of defaultTemplates) {
         await this.createTemplate(template);
       }
-
-      console.log("기본 재무 라이브러리 템플릿 생성 완료");
     } catch (error) {
       console.error("기본 재무 라이브러리 템플릿 초기화 오류:", error);
       throw error;

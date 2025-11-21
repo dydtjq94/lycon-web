@@ -74,8 +74,6 @@ function IncomeModal({
       return;
     }
 
-    console.log("🔍 [소득모달] useEffect 시작 - editData:", editData);
-
     // 모달이 열리면 즉시 이전 상태 초기화 및 로딩 시작
     setIsSimSelectionLoading(true);
     setSimulationStatusMap({});
@@ -87,7 +85,6 @@ function IncomeModal({
       const startTime = Date.now();
 
       if (editData && editData.id && profileId && simulations.length > 0) {
-        console.log("✅ [소득모달] 수정 모드 - editData.id:", editData.id);
         try {
           // 모든 시뮬레이션에서 해당 ID가 존재하는지 확인
           const checkPromises = simulations.map(async (sim) => {
@@ -96,11 +93,6 @@ function IncomeModal({
               // 같은 ID의 항목이 있는지 확인
               const hasSameId = incomes.some(
                 (income) => income.id === editData.id
-              );
-              console.log(
-                `  📊 시뮬레이션 ${sim.title || sim.id}: ${
-                  hasSameId ? "수정" : "추가"
-                } (incomes 개수: ${incomes.length})`
               );
               return { simId: sim.id, status: hasSameId ? "update" : "create" };
             } catch (error) {
@@ -112,7 +104,6 @@ function IncomeModal({
 
           // 작업이 취소되었으면 상태 업데이트 안함
           if (cancelled) {
-            console.log("⚠️ [소득모달] 작업 취소됨");
             return;
           }
 
@@ -121,7 +112,6 @@ function IncomeModal({
           results.forEach(({ simId, status }) => {
             statusMap[simId] = status;
           });
-          console.log("📝 [소득모달] 최종 statusMap:", statusMap);
           setSimulationStatusMap(statusMap);
 
           // 현재 활성 시뮬레이션을 기본 선택
@@ -158,7 +148,6 @@ function IncomeModal({
         }
       } else {
         // 추가 모드일 때는 모든 시뮬레이션을 추가 상태로
-        console.log("➕ [소득모달] 추가 모드");
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, 1000 - elapsedTime);
         await new Promise((resolve) => setTimeout(resolve, remainingTime));

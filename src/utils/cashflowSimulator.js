@@ -693,12 +693,6 @@ export function calculateCashflowSimulation(
               investAmount * Math.pow(1 + interestRate, yearsFromInvestment);
             totalInvestedValue += investmentValue;
             totalInvestedAmount += investAmount;
-
-            console.log(
-              `  - ${investYear}년 투자: ${investAmount}만원 → ${yearsFromInvestment}년 수익률 적용 → ${
-                Math.round(investmentValue * 100) / 100
-              }만원`
-            );
           });
         }
 
@@ -786,14 +780,6 @@ export function calculateCashflowSimulation(
               capitalGainsTax,
               "양도세",
               `saving-tax-${saving.id || saving.title}`
-            );
-
-            console.log(
-              `${year}년: ${saving.title} 양도세 - 수령액: ${
-                Math.round(finalAmount * 100) / 100
-              }만원, 세율: ${taxRateFormatted}%, 양도세: ${
-                Math.round(capitalGainsTax * 100) / 100
-              }만원`
             );
           }
         }
@@ -1477,10 +1463,6 @@ export function calculateCashflowSimulation(
                     investAmount) *
                     100
                 ) / 100;
-
-              console.log(
-                `${year}년: ${investAmount}만원을 저축 ID ${allocation.targetId}에 투자 기록 (현금 흐름 지출에는 미반영)`
-              );
             } else if (allocation.targetType === "pension") {
               // 연금 상품에 대한 년도별 투자 금액 기록 (현금 흐름에는 반영 안 함)
               // 연금은 savingInvestments 대신 별도 추적이 필요하지만,
@@ -1497,10 +1479,6 @@ export function calculateCashflowSimulation(
                     investAmount) *
                     100
                 ) / 100;
-
-              console.log(
-                `${year}년: ${investAmount}만원을 연금 ID ${allocation.targetId}에 투자 기록 (현금 흐름 지출에는 미반영)`
-              );
             }
           }
         });
@@ -1973,10 +1951,6 @@ export function calculateAssetSimulation(
 
                 // 투자 정보 저장 (자산 차트에서 표시용 - 이번 해 투자 금액만)
                 investmentInfo[targetSaving.title] = investAmount;
-
-                console.log(
-                  `${year}년: ${investAmount}만원을 ${targetSaving.title}에 투자 (자산 시뮬레이션)`
-                );
               }
             } else if (
               allocation.targetType === "pension" &&
@@ -2005,14 +1979,9 @@ export function calculateAssetSimulation(
 
                 // 투자 정보 저장 (자산 차트에서 표시용 - 이번 해 투자 금액만)
                 investmentInfo[targetPension.title] = investAmount;
-
-                console.log(
-                  `${year}년: ${investAmount}만원을 ${targetPension.title}에 투자 (연금 추가 납입)`
-                );
               }
             } else if (allocation.targetType === "cash") {
               // 현금 유지: 아무것도 안 함 (이미 currentCash에 포함됨)
-              console.log(`${year}년: ${investAmount}만원을 현금으로 유지`);
             }
           }
         });

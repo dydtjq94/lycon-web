@@ -47,8 +47,6 @@ function ProfileEditModal({
   // 모달이 열릴 때 프로필 데이터 로드
   useEffect(() => {
     if (isOpen && profileData) {
-      console.log("프로필 데이터 로드:", profileData);
-
       // familyMembers를 자녀, 부모, 기타로 분리
       const children = [];
       const parents = [];
@@ -525,9 +523,6 @@ function ProfileEditModal({
               profileData.id || profileData.docId,
               activeSimulationId,
               newRetirementYear
-            );
-            console.log(
-              `현재 시뮬레이션(${activeSimulationId})의 은퇴년도가 ${newRetirementYear}년으로 업데이트되었습니다.`
             );
           }
         } catch (error) {

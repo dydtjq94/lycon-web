@@ -77,10 +77,6 @@ async function migrateInvestmentRulesToSimulations(profileId, simulationList) {
       return;
     }
 
-    console.log(
-      "프로필 레벨 투자 규칙 발견, 시뮬레이션으로 마이그레이션 시작..."
-    );
-
     // 모든 시뮬레이션에 투자 규칙 복사
     const migrationPromises = simulationList.map((sim) =>
       simulationService.updateInvestmentRules(
@@ -96,8 +92,6 @@ async function migrateInvestmentRulesToSimulations(profileId, simulationList) {
     await profileService.updateProfile(profileId, {
       cashflowInvestmentRules: {},
     });
-
-    console.log("투자 규칙 마이그레이션 완료");
   } catch (error) {
     console.error("투자 규칙 마이그레이션 오류:", error);
   }
@@ -605,10 +599,6 @@ function DashboardPage() {
           ...profileData,
           retirementAge: retirementAge,
         });
-
-        console.log(
-          `시뮬레이션 로드: 은퇴년도 ${retirementYear}년 → 은퇴나이 ${retirementAge}세로 프로필 업데이트`
-        );
       }
     }
   }, [activeSimulationId, simulations, profileData?.birthYear]);
@@ -1051,19 +1041,6 @@ function DashboardPage() {
         profileId
       );
       setSimulations(updatedSimulations);
-
-      if (Array.isArray(years)) {
-        console.log(
-          `${years.length}개 년도 투자 규칙 저장 완료 (시뮬레이션: ${activeSimulationId}):`,
-          years,
-          rule
-        );
-      } else {
-        console.log(
-          `${years}년 투자 규칙 저장 완료 (시뮬레이션: ${activeSimulationId}):`,
-          rule
-        );
-      }
     } catch (error) {
       console.error("투자 규칙 저장 오류:", error);
       alert("투자 규칙 저장 중 오류가 발생했습니다.");
@@ -2214,10 +2191,6 @@ function DashboardPage() {
         const birthYear = parseInt(prevProfileData.birthYear);
         const retirementAge = retirementYear - birthYear;
 
-        console.log(
-          `시뮬레이션 전환: 은퇴년도 ${retirementYear}년 → 은퇴나이 ${retirementAge}세로 프로필 업데이트`
-        );
-
         return {
           ...prevProfileData,
           retirementAge: retirementAge,
@@ -2668,10 +2641,7 @@ function DashboardPage() {
         setRealEstates(activeData.realEstates || []);
         setAssets(activeData.assets || []);
         setDebts(activeData.debts || []);
-        console.log("✅ 대시보드 재무 리스트 업데이트 완료");
       }
-
-      console.log("✅ 시뮬레이션 비교 데이터 새로고침 완료");
     } catch (error) {
       console.error("시뮬레이션 비교 데이터 새로고침 오류:", error);
     } finally {
