@@ -1,4 +1,11 @@
-import React, { useEffect, useMemo, useState, memo, useRef, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  memo,
+  useRef,
+  useCallback,
+} from "react";
 import {
   BarChart,
   Bar,
@@ -85,31 +92,44 @@ function RechartsAssetChart({
   const [hoveredData, setHoveredData] = useState(null); // 클릭으로 선택된 연도 데이터
   const hasData = Array.isArray(data) && data.length > 0;
   const chartContainerRef = useRef(null); // 차트 컨테이너 참조
-  
+
   // 전체 데이터 범위 계산
   const availableYears = useMemo(() => {
     if (!hasData) return [];
-    return data.map(d => d.year).sort((a, b) => a - b);
+    return data.map((d) => d.year).sort((a, b) => a - b);
   }, [hasData, data]);
-  
+
   const minYear = availableYears[0];
   const maxYear = availableYears[availableYears.length - 1];
-  
+
   // 외부에서 전달받은 범위 사용, 없으면 전체 범위 사용
-  const xAxisRange = externalXAxisRange && externalXAxisRange.start !== null && externalXAxisRange.end !== null
-    ? externalXAxisRange
-    : { start: minYear, end: maxYear };
-  
+  const xAxisRange =
+    externalXAxisRange &&
+    externalXAxisRange.start !== null &&
+    externalXAxisRange.end !== null
+      ? externalXAxisRange
+      : { start: minYear, end: maxYear };
+
   // X축 범위 변경 핸들러
-  const handleXAxisRangeChange = useCallback((newRange) => {
-    if (onXAxisRangeChange) {
-      onXAxisRangeChange(newRange);
-    }
-  }, [onXAxisRangeChange]);
-  
+  const handleXAxisRangeChange = useCallback(
+    (newRange) => {
+      if (onXAxisRangeChange) {
+        onXAxisRangeChange(newRange);
+      }
+    },
+    [onXAxisRangeChange]
+  );
+
   // 초기값 설정
   useEffect(() => {
-    if (minYear && maxYear && externalXAxisRange && externalXAxisRange.start === null && externalXAxisRange.end === null && onXAxisRangeChange) {
+    if (
+      minYear &&
+      maxYear &&
+      externalXAxisRange &&
+      externalXAxisRange.start === null &&
+      externalXAxisRange.end === null &&
+      onXAxisRangeChange
+    ) {
       onXAxisRangeChange({ start: minYear, end: maxYear });
     }
   }, [minYear, maxYear, externalXAxisRange, onXAxisRangeChange]);
@@ -161,14 +181,17 @@ function RechartsAssetChart({
     // 짧은 딜레이 후 실행 (차트가 완전히 렌더링된 후)
     const timer = setTimeout(() => {
       // 모든 SVG 요소에 focusable="false" 추가
-      const svgElements = container.querySelectorAll('svg, svg *');
+      const svgElements = container.querySelectorAll("svg, svg *");
       svgElements.forEach((element) => {
-        element.setAttribute('focusable', 'false');
-        element.setAttribute('tabindex', '-1');
+        element.setAttribute("focusable", "false");
+        element.setAttribute("tabindex", "-1");
       });
 
       // 혹시 포커스가 있다면 제거
-      if (document.activeElement && container.contains(document.activeElement)) {
+      if (
+        document.activeElement &&
+        container.contains(document.activeElement)
+      ) {
         document.activeElement.blur();
       }
     }, 100);
@@ -179,37 +202,43 @@ function RechartsAssetChart({
       if (isDistributionOpen || isPanelOpen) {
         return;
       }
-      
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+
+      if (
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowRight" ||
+        e.key === "ArrowUp" ||
+        e.key === "ArrowDown"
+      ) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
       }
     };
 
-    container.addEventListener('keydown', handleKeyDown, { capture: true });
-    container.addEventListener('focus', handleFocus, { capture: true });
+    container.addEventListener("keydown", handleKeyDown, { capture: true });
+    container.addEventListener("focus", handleFocus, { capture: true });
 
     return () => {
       clearTimeout(timer);
-      container.removeEventListener('keydown', handleKeyDown, { capture: true });
-      container.removeEventListener('focus', handleFocus, { capture: true });
+      container.removeEventListener("keydown", handleKeyDown, {
+        capture: true,
+      });
+      container.removeEventListener("focus", handleFocus, { capture: true });
     };
   }, [hasData, data, isDistributionOpen, isPanelOpen]); // 모달 상태도 의존성에 추가
 
-  // 현금이 마이너스로 변하는 시점 감지
+  // 현금이 처음 마이너스로 나온 시점 감지
   const findCashNegativeTransition = () => {
     if (!hasData) return null;
-    for (let i = 0; i < data.length - 1; i++) {
-      const currentCash = data[i]["현금"] || 0;
-      const nextCash = data[i + 1]["현금"] || 0;
+    for (let i = 0; i < data.length; i++) {
+      const cash = data[i]["현금"] || 0;
 
-      // 양수에서 음수로 변하는 시점 감지
-      if (currentCash >= 0 && nextCash < 0) {
+      // 처음으로 음수가 나온 시점 감지
+      if (cash < 0) {
         return {
-          year: data[i + 1].year,
-          age: data[i + 1].age,
-          cashAmount: nextCash,
+          year: data[i].year,
+          age: data[i].age,
+          cashAmount: cash,
         };
       }
     }
@@ -526,13 +555,13 @@ function RechartsAssetChart({
   // 차트 데이터 포맷팅 - 4개 카테고리로 단순화 (성능 최적화)
   const chartData = useMemo(() => {
     if (!hasData) return [];
-    
+
     // X축 범위에 따른 데이터 필터링
     const filteredData = data.filter((item) => {
       if (xAxisRange.start === null || xAxisRange.end === null) return true;
       return item.year >= xAxisRange.start && item.year <= xAxisRange.end;
     });
-    
+
     return filteredData.map((item) => {
       // 배우자 나이 계산
       const spouseAge =
@@ -819,7 +848,12 @@ function RechartsAssetChart({
         tabIndex={-1}
         onKeyDown={(e) => {
           // 차트 내부의 방향키 이벤트 차단 (툴팁 이동 방지)
-          if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+          if (
+            e.key === "ArrowLeft" ||
+            e.key === "ArrowRight" ||
+            e.key === "ArrowUp" ||
+            e.key === "ArrowDown"
+          ) {
             e.preventDefault();
             e.stopPropagation();
           }
@@ -842,7 +876,7 @@ function RechartsAssetChart({
           scale="linear"
           domain={[
             xAxisRange.start ? xAxisRange.start - 1 : "dataMin - 1",
-            xAxisRange.end ? xAxisRange.end + 1 : "dataMax + 1"
+            xAxisRange.end ? xAxisRange.end + 1 : "dataMax + 1",
           ]}
           tickFormatter={(value) => `${value}`}
           stroke="#6b7280"
@@ -1471,7 +1505,11 @@ function RechartsAssetChart({
     if (item.sourceType) {
       switch (item.sourceType) {
         case "cash":
-          return { category: "현금", order: 5, color: getAssetColor("양수현금") };
+          return {
+            category: "현금",
+            order: 5,
+            color: getAssetColor("양수현금"),
+          };
         case "saving":
           return {
             category: "저축투자",
@@ -1481,7 +1519,11 @@ function RechartsAssetChart({
         case "pension":
           return { category: "연금", order: 2, color: getAssetColor("연금") };
         case "realEstate":
-          return { category: "부동산", order: 3, color: getAssetColor("부동산") };
+          return {
+            category: "부동산",
+            order: 3,
+            color: getAssetColor("부동산"),
+          };
         case "asset":
           return { category: "자산", order: 4, color: getAssetColor("자산") };
         case "debt":
@@ -1493,7 +1535,7 @@ function RechartsAssetChart({
 
     // sourceType이 없으면 라벨로 판별 (하위 호환성)
     const label = item.label || "";
-    
+
     if (label.includes("현금") || label.includes("cash")) {
       return { category: "현금", order: 5, color: getAssetColor("양수현금") };
     } else if (
@@ -1623,7 +1665,7 @@ function RechartsAssetChart({
               onXAxisRangeChange={handleXAxisRangeChange}
               retirementYear={retirementYear}
             />
-            
+
             {/* 컨텐츠 영역: 그래프 */}
             <div className={styles.chartContent}>
               <div className={styles.chartWrapper}>{renderChart()}</div>
@@ -1674,13 +1716,14 @@ function RechartsAssetChart({
                                   1
                                 )
                               : "0.0";
-                          
+
                           // 해당 자산에 대한 잉여 현금 투자 정보 확인
                           const yearData = detailedData.find(
                             (item) => item.year === distributionEntry?.year
                           );
-                          const investmentAmount = yearData?.investmentInfo?.[slice.name] || 0;
-                          
+                          const investmentAmount =
+                            yearData?.investmentInfo?.[slice.name] || 0;
+
                           return (
                             <div
                               key={`asset-list-${slice.name}`}
@@ -1695,7 +1738,8 @@ function RechartsAssetChart({
                                   {slice.name}
                                   {investmentAmount > 0 && (
                                     <span className={styles.investmentBadge}>
-                                      잉여현금 +{formatAmountForChart(investmentAmount)}
+                                      잉여현금 +
+                                      {formatAmountForChart(investmentAmount)}
                                     </span>
                                   )}
                                 </span>
