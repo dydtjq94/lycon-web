@@ -345,6 +345,33 @@
   padding-bottom: 0.45rem;
 }
 
+/* 생애 자금 수급/수요 탭용 헤더 셀 */
+.summaryHeaderCashflow {
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 500;
+  padding-bottom: 0.45rem;
+}
+
+/* 시점별 순자산 탭용 헤더 셀 */
+.summaryHeaderNetworth {
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 500;
+  padding-bottom: 0.45rem;
+}
+
+/* 상세 재무 데이터 탭용 헤더 셀 */
+.summaryHeaderDetail {
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 500;
+  padding-bottom: 0.45rem;
+}
+
 .summaryCell {
   font-size: 0.85rem;
   color: #1f2937;
@@ -352,7 +379,43 @@
   flex-direction: column;
 }
 
+/* 생애 자금 수급/수요 탭용 셀 스타일 */
+.summaryCellCashflow {
+  font-size: 0.85rem;
+  color: #1f2937;
+  display: flex;
+
+  align-items: flex-start;
+}
+
+/* 시점별 순자산 탭용 셀 스타일 */
+.summaryCellNetworth {
+  font-size: 0.85rem;
+  color: #1f2937;
+  display: flex;
+
+  align-items: flex-start;
+}
+
+/* 상세 재무 데이터 탭용 셀 스타일 */
+.summaryCellDetail {
+  font-size: 0.85rem;
+  color: #1f2937;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  min-height: auto;
+}
+
 .summaryLabel {
+  font-weight: 600;
+  color: #111827;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.summaryLabel2 {
   font-weight: 600;
   color: #111827;
   display: flex;
@@ -375,6 +438,7 @@
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
+  margin-top: 3px;
 }
 
 .toggleButton:hover {

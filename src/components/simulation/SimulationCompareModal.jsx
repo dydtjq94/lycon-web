@@ -2217,12 +2217,15 @@ function SimulationCompareModal({
                     </div>
                     <div className={styles.summaryTable}>
                       <div
-                        className={`${styles.summaryRow} ${styles.summaryHeader}`}
+                        className={`${styles.summaryRow} ${styles.summaryHeaderCashflow}`}
                         style={{ gridTemplateColumns }}
                       >
-                        <div className={styles.summaryCell}>항목</div>
+                        <div className={styles.summaryCellCashflow}>항목</div>
                         {sortedSelectedSimulationIds.map((simId) => (
-                          <div key={simId} className={styles.summaryCell}>
+                          <div
+                            key={simId}
+                            className={styles.summaryCellCashflow}
+                          >
                             {getSimulationTitle(simId)}
                           </div>
                         ))}
@@ -2234,7 +2237,7 @@ function SimulationCompareModal({
                             style={{ gridTemplateColumns }}
                           >
                             <div
-                              className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                              className={`${styles.summaryCellCashflow} ${styles.summaryLabel}`}
                             >
                               {row.key !== "net" && (
                                 <button
@@ -2256,7 +2259,10 @@ function SimulationCompareModal({
                               const isFirstCol = index === 0;
 
                               return (
-                                <div key={simId} className={styles.summaryCell}>
+                                <div
+                                  key={simId}
+                                  className={styles.summaryCellCashflow}
+                                >
                                   {value !== null && value !== undefined ? (
                                     <>
                                       <span
@@ -2318,12 +2324,12 @@ function SimulationCompareModal({
                   <h4 className={styles.netWorthTitle}>시점별 순자산</h4>
                   <div className={styles.summaryTable}>
                     <div
-                      className={`${styles.summaryRow} ${styles.summaryHeader}`}
+                      className={`${styles.summaryRow} ${styles.summaryHeaderNetworth}`}
                       style={{ gridTemplateColumns }}
                     >
-                      <div className={styles.summaryCell}>시점</div>
+                      <div className={styles.summaryCellNetworth}>시점</div>
                       {sortedSelectedSimulationIds.map((simId) => (
-                        <div key={simId} className={styles.summaryCell}>
+                        <div key={simId} className={styles.summaryCellNetworth}>
                           {getSimulationTitle(simId)}
                         </div>
                       ))}
@@ -2335,7 +2341,7 @@ function SimulationCompareModal({
                           style={{ gridTemplateColumns }}
                         >
                           <div
-                            className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                            className={`${styles.summaryCellNetworth} ${styles.summaryLabel}`}
                           >
                             {!row.isGoal && (
                               <button
@@ -2359,7 +2365,10 @@ function SimulationCompareModal({
                             const isFirstCol = index === 0;
 
                             return (
-                              <div key={simId} className={styles.summaryCell}>
+                              <div
+                                key={simId}
+                                className={styles.summaryCellNetworth}
+                              >
                                 {value !== null &&
                                 value !== undefined &&
                                 !Number.isNaN(value) ? (
@@ -2423,12 +2432,12 @@ function SimulationCompareModal({
                   {/* 헤더 행 */}
                   <div className={styles.summaryTable}>
                     <div
-                      className={`${styles.summaryRow} ${styles.summaryHeader}`}
+                      className={`${styles.summaryRow} ${styles.summaryHeaderDetail}`}
                       style={{ gridTemplateColumns }}
                     >
-                      <div className={styles.summaryCell}>카테고리</div>
+                      <div className={styles.summaryCellDetail}>카테고리</div>
                       {sortedSelectedSimulationIds.map((simId) => (
-                        <div key={simId} className={styles.summaryCell}>
+                        <div key={simId} className={styles.summaryCellDetail}>
                           {getSimulationTitle(simId)}
                         </div>
                       ))}
@@ -2493,7 +2502,7 @@ function SimulationCompareModal({
                           >
                             {/* 첫 번째 열: 카테고리명 (첫 항목에만 표시) */}
                             <div
-                              className={`${styles.summaryCell} ${styles.summaryLabel}`}
+                              className={`${styles.summaryCellDetail} ${styles.summaryLabel2}`}
                             >
                               {itemIndex === 0 ? config.label : ""}
                             </div>
@@ -2507,7 +2516,7 @@ function SimulationCompareModal({
                                 return (
                                   <div
                                     key={simId}
-                                    className={styles.summaryCell}
+                                    className={styles.summaryCellDetail}
                                   >
                                     {renderDetailedFinancialItem(
                                       item,
