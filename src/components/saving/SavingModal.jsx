@@ -58,6 +58,16 @@ function SavingModal({
   const [simulationStatusMap, setSimulationStatusMap] = useState({});
   const [isSimSelectionLoading, setIsSimSelectionLoading] = useState(false);
 
+  // 퍼센트 입력값을 UI 표시용으로 변환
+  // 0~1은 소수로 간주해 100배, 1보다 크면 이미 % 값으로 처리
+  const formatRateInput = (value, defaultValue) => {
+    if (value === undefined || value === null || value === "") return defaultValue;
+    const num = parseFloat(value);
+    if (!Number.isFinite(num)) return defaultValue;
+    const normalized = Math.abs(num) <= 1 ? num * 100 : num;
+    return normalized.toFixed(2);
+  };
+
   // 은퇴년도 고정이 켜져있으면 endYear를 자동으로 은퇴년도로 업데이트
   useEffect(() => {
     if (formData.isFixedToRetirementYear && profileData) {
@@ -194,25 +204,10 @@ function SavingModal({
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
           endYear: parseInt(editData.endYear) || getRetirementYear(),
           memo: editData.memo || "",
-          interestRate:
-            editData.interestRate !== undefined &&
-            editData.interestRate !== null
-              ? (editData.interestRate * 100).toFixed(2)
-              : "2.86",
-          yearlyGrowthRate:
-            editData.yearlyGrowthRate !== undefined &&
-            editData.yearlyGrowthRate !== null
-              ? (editData.yearlyGrowthRate * 100).toFixed(2)
-              : "1.89",
-          incomeRate:
-            editData.incomeRate !== undefined && editData.incomeRate !== null
-              ? (editData.incomeRate * 100).toFixed(2)
-              : "3",
-          capitalGainsTaxRate:
-            editData.capitalGainsTaxRate !== undefined &&
-            editData.capitalGainsTaxRate !== null
-              ? (editData.capitalGainsTaxRate * 100).toFixed(2)
-              : "",
+          interestRate: formatRateInput(editData.interestRate, "2.86"),
+          yearlyGrowthRate: formatRateInput(editData.yearlyGrowthRate, "1.89"),
+          incomeRate: formatRateInput(editData.incomeRate, "3"),
+          capitalGainsTaxRate: formatRateInput(editData.capitalGainsTaxRate, ""),
           isFixedToRetirementYear: editData.isFixedToRetirementYear || false,
         });
       } else if (initialData) {
@@ -227,26 +222,10 @@ function SavingModal({
           startYear: initialData.startYear || new Date().getFullYear(),
           endYear: initialData.endYear || getRetirementYear(),
           memo: initialData.memo || "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
-          interestRate:
-            initialData.interestRate !== undefined &&
-            initialData.interestRate !== null
-              ? (initialData.interestRate * 100).toFixed(2)
-              : "2.86",
-          yearlyGrowthRate:
-            initialData.yearlyGrowthRate !== undefined &&
-            initialData.yearlyGrowthRate !== null
-              ? (initialData.yearlyGrowthRate * 100).toFixed(2)
-              : "1.89",
-          incomeRate:
-            initialData.incomeRate !== undefined &&
-            initialData.incomeRate !== null
-              ? (initialData.incomeRate * 100).toFixed(2)
-              : "3",
-          capitalGainsTaxRate:
-            initialData.capitalGainsTaxRate !== undefined &&
-            initialData.capitalGainsTaxRate !== null
-              ? (initialData.capitalGainsTaxRate * 100).toFixed(2)
-              : "",
+          interestRate: formatRateInput(initialData.interestRate, "2.86"),
+          yearlyGrowthRate: formatRateInput(initialData.yearlyGrowthRate, "1.89"),
+          incomeRate: formatRateInput(initialData.incomeRate, "3"),
+          capitalGainsTaxRate: formatRateInput(initialData.capitalGainsTaxRate, ""),
           isFixedToRetirementYear: initialData.isFixedToRetirementYear || false,
         });
       } else {
