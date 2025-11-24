@@ -2398,7 +2398,7 @@ function SimulationCompareModal({
                                   {value !== null &&
                                   value !== undefined &&
                                   !Number.isNaN(value) ? (
-                                    <>
+                                    <div className={styles.summaryValueRow}>
                                       {row.isNetWorth ? (
                                         <span
                                           className={`${styles.summaryValue} ${
@@ -2432,7 +2432,7 @@ function SimulationCompareModal({
                                             ? "demand"
                                             : "supply"
                                         )}
-                                    </>
+                                    </div>
                                   ) : (
                                     <span className={styles.summaryEmpty}>
                                       -
