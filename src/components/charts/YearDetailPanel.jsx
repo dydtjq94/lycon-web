@@ -563,6 +563,19 @@ function YearDetailPanel({
         <div className={styles.header}>
           <h2 className={styles.title}>
             {yearData?.year}년 ({yearData?.age}세)
+            <span className={styles.netInline}>
+              <span
+                className={`${styles.netValueInline} ${
+                  netAssets > 0
+                    ? styles.positive
+                    : netAssets < 0
+                    ? styles.negative
+                    : ""
+                }`}
+              >
+                {formatAmountForChart(netAssets)}
+              </span>
+            </span>
           </h2>
           <button
             className={styles.closeButton}
@@ -576,22 +589,14 @@ function YearDetailPanel({
         {/* 컨텐츠 */}
         <div className={styles.content}>
           <div className={styles.distributionModalContent}>
-            <div className={styles.compactSection}>
-              <div className={styles.compactTitleRow}>
-                <h5 className={styles.compactTitle}>순자산</h5>
-                <span
-                  className={`${styles.compactTotalNet} ${
-                    netAssets > 0
-                      ? styles.positive
-                      : netAssets < 0
-                      ? styles.negative
-                      : ""
-                  }`}
-                >
-                  {formatAmountForChart(yearDetail.netAssets)}
-                </span>
+            {/* 자산 파이 차트 (카테고리별) */}
+            {assetPieData.length > 0 && (
+              <div className={styles.compactSection}>
+                <div className={styles.chartWrapper}>
+                  <SimplePieChart assetData={assetPieData} />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 자산 리스트 (개별 항목) */}
             {hasAssetItems && (
@@ -642,15 +647,6 @@ function YearDetailPanel({
                         </div>
                       );
                     })}
-                </div>
-              </div>
-            )}
-
-            {/* 자산 파이 차트 (카테고리별) */}
-            {assetPieData.length > 0 && (
-              <div className={styles.compactSection}>
-                <div className={styles.chartWrapper}>
-                  <SimplePieChart assetData={assetPieData} />
                 </div>
               </div>
             )}
