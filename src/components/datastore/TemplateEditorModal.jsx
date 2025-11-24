@@ -164,7 +164,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
     }));
   };
 
-  // 유효성 검사
+  // 유효성 검사: 필수 입력 및 숫자값 검증
   const validateForm = () => {
     const newErrors = {};
 
@@ -172,8 +172,18 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
       newErrors.title = "제목을 입력해주세요.";
     }
 
-    if (!formData.data.amount || formData.data.amount <= 0) {
-      newErrors.amount = "금액을 입력해주세요.";
+    const amountValue = Number(formData.data.amount);
+    // 숫자가 아니거나 비어 있으면 에러 처리 (저축/투자에서도 최소 0원은 허용)
+    if (formData.data.amount === "" || Number.isNaN(amountValue)) {
+      newErrors.amount = "금액을 숫자로 입력해주세요.";
+    } else {
+      // 저축/투자는 0원 이상, 소득/지출은 1원 이상만 허용
+      if (formData.category === "saving" && amountValue < 0) {
+        newErrors.amount = "0원 이상 입력해주세요.";
+      }
+      if (formData.category !== "saving" && amountValue <= 0) {
+        newErrors.amount = "0보다 큰 금액을 입력해주세요.";
+      }
     }
 
     // 저축/투자가 아닐 때만 나이 범위 검증
@@ -269,10 +279,11 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
             : parseInt(formData.ageEnd);
         templateData.data = {
           frequency: formData.data.frequency,
-          amount: parseFloat(formData.data.amount),
+          // 0원도 허용하기 위해 Number 변환 (NaN은 위 검증에서 걸러짐)
+          amount: Number(formData.data.amount),
           memo: formData.data.memo.trim(),
           growthRate: parseFloat(formData.data.growthRate) || 0,
-      };
+        };
       }
 
       // 수정 모드일 경우 id 포함
