@@ -47,7 +47,6 @@ import DebtModal from "../components/debt/DebtModal";
 import DebtList from "../components/debt/DebtList";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
 import ProfileSummary from "../components/profile/ProfileSummary";
-import FinancialDataModal from "../components/profile/FinancialDataModal";
 import ProfilePasswordModal from "../components/profile/ProfilePasswordModal";
 import CalculatorModal from "../components/common/CalculatorModal";
 import SimulationCompareModal from "../components/simulation/SimulationCompareModal";
@@ -271,8 +270,6 @@ function DashboardPage() {
   const [editingDebt, setEditingDebt] = useState(null);
   const [sidebarView, setSidebarView] = useState("categories"); // "categories" or "list"
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
-  const [isFinancialDataModalOpen, setIsFinancialDataModalOpen] =
-    useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isAIOptionModalOpen, setIsAIOptionModalOpen] = useState(false); // AI 옵션 선택 모달
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // 사이드바 접기/펼치기 상태
@@ -1980,109 +1977,6 @@ function DashboardPage() {
     }
   };
 
-  // 재무 데이터 모달 핸들러
-  const handleOpenFinancialModal = () => {
-    setIsFinancialDataModalOpen(true);
-  };
-
-  const handleCloseFinancialModal = () => {
-    setIsFinancialDataModalOpen(false);
-  };
-
-  const handleFinancialDataEdit = (category, item) => {
-    // 기존 편집 핸들러들을 재사용
-    switch (category) {
-      case "incomes":
-        setEditingIncome(item);
-        setIsIncomeModalOpen(true);
-        break;
-      case "expenses":
-        setEditingExpense(item);
-        setIsExpenseModalOpen(true);
-        break;
-      case "savings":
-        setEditingSaving(item);
-        setIsSavingModalOpen(true);
-        break;
-      case "pensions":
-        setEditingPension(item);
-        setIsPensionModalOpen(true);
-        break;
-      case "realEstates":
-        setEditingRealEstate(item);
-        setIsRealEstateModalOpen(true);
-        break;
-      case "assets":
-        setEditingAsset(item);
-        setIsAssetModalOpen(true);
-        break;
-      case "debts":
-        setEditingDebt(item);
-        setIsDebtModalOpen(true);
-        break;
-      default:
-        break;
-    }
-    // 재무 데이터 모달은 열어둠 (수정 모달 위에 표시)
-    // setIsFinancialDataModalOpen(false);
-  };
-
-  const handleFinancialDataDelete = (category, itemId) => {
-    // 기존 삭제 핸들러들을 재사용
-    switch (category) {
-      case "incomes":
-        handleDeleteIncome(itemId);
-        break;
-      case "expenses":
-        handleDeleteExpense(itemId);
-        break;
-      case "savings":
-        handleDeleteSaving(itemId);
-        break;
-      case "pensions":
-        handleDeletePension(itemId);
-        break;
-      case "realEstates":
-        handleDeleteRealEstate(itemId);
-        break;
-      case "assets":
-        handleDeleteAsset(itemId);
-        break;
-      case "debts":
-        handleDeleteDebt(itemId);
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleFinancialDataAdd = (category) => {
-    switch (category) {
-      case "incomes":
-        handleAddIncome();
-        break;
-      case "expenses":
-        handleAddExpense();
-        break;
-      case "savings":
-        handleAddSaving();
-        break;
-      case "pensions":
-        handleAddPension();
-        break;
-      case "realEstates":
-        handleAddRealEstate();
-        break;
-      case "assets":
-        handleAddAsset();
-        break;
-      case "debts":
-        handleAddDebt();
-        break;
-      default:
-        break;
-    }
-  };
   const handleProfileSummaryItemClick = (type, item) => {
     switch (type) {
       case "income":
@@ -3392,8 +3286,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
             )}
             <button
               className={styles.sidebarIconButton}
-              title="재무 데이터 전체 보기"
-              onClick={handleOpenFinancialModal}
+              title="시뮬레이션 비교"
+              onClick={handleOpenCompareModal}
+              disabled={!activeSimulationId}
             >
               <svg
                 width="20"
@@ -3405,35 +3300,11 @@ ${JSON.stringify(analysisData, null, 2)}`;
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <rect x="3" y="4" width="18" height="16" rx="2" />
-                <path d="M7 8h10" />
-                <path d="M7 12h10" />
-                <path d="M7 16h6" />
+                <rect x="4" y="4" width="6" height="12" rx="1" />
+                <rect x="14" y="8" width="6" height="12" rx="1" />
+                <path d="M4 20h16" />
               </svg>
             </button>
-            {!isActiveSimulationDefault && (
-              <button
-                className={styles.sidebarIconButton}
-                title="시뮬레이션 비교"
-                onClick={handleOpenCompareModal}
-                disabled={!activeSimulationId}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="4" y="4" width="6" height="12" rx="1" />
-                  <rect x="14" y="8" width="6" height="12" rx="1" />
-                  <path d="M4 20h16" />
-                </svg>
-              </button>
-            )}
           </div>
         </div>
         {/* 프로필 하단 차트 선택 탭 */}
@@ -3919,26 +3790,6 @@ ${JSON.stringify(analysisData, null, 2)}`;
       />
 
       {/* 재무 데이터 모달 */}
-      <FinancialDataModal
-        isOpen={isFinancialDataModalOpen}
-        onClose={handleCloseFinancialModal}
-        isLoading={isFinancialDataLoading}
-        profileData={profileData}
-        financialData={{
-          incomes,
-          expenses,
-          savings,
-          pensions,
-          realEstates,
-          assets,
-          debts,
-        }}
-        onEdit={handleFinancialDataEdit}
-        onDelete={handleFinancialDataDelete}
-        onAdd={handleFinancialDataAdd}
-        isReadOnly={false}
-      />
-
       <SimulationCompareModal
         isOpen={isCompareModalOpen}
         onClose={() => setIsCompareModalOpen(false)}

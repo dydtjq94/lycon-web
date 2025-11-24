@@ -1420,6 +1420,82 @@ function SimulationCompareModal({
     simulations,
   ]);
 
+  const currentAssetsBySimulation = useMemo(() => {
+    if (!profileData) return {};
+
+    const currentYear = new Date().getFullYear();
+
+    const toNumber = (value) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const ensureVisibleYear = (value) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : currentYear;
+    };
+
+    const result = {};
+
+    selectedSimulationIds.forEach((simId) => {
+      const simData = simulationsData[simId];
+      if (!simData) return;
+
+      const savingsTotal = (simData.savings || []).reduce((sum, saving) => {
+        const startYear = ensureVisibleYear(saving?.startYear);
+        if (startYear <= currentYear) {
+          return sum + toNumber(saving?.currentAmount);
+        }
+        return sum;
+      }, 0);
+
+      const assetsTotal = (simData.assets || []).reduce(
+        (sum, asset) => sum + toNumber(asset?.currentValue),
+        0
+      );
+
+      const realEstatesTotal = (simData.realEstates || []).reduce(
+        (sum, realEstate) => sum + toNumber(realEstate?.currentValue),
+        0
+      );
+
+      const pensionsTotal = (simData.pensions || []).reduce((sum, pension) => {
+        const startYear = ensureVisibleYear(pension?.contributionStartYear);
+        if (startYear <= currentYear) {
+          return sum + toNumber(pension?.currentAmount);
+        }
+        return sum;
+      }, 0);
+
+      const debtsTotal = (simData.debts || []).reduce(
+        (sum, debt) => sum + toNumber(debt?.debtAmount),
+        0
+      );
+
+      const currentCash = toNumber(profileData.currentCash);
+
+      const netWorth =
+        currentCash +
+        savingsTotal +
+        assetsTotal +
+        realEstatesTotal +
+        pensionsTotal -
+        debtsTotal;
+
+      result[simId] = {
+        currentCash,
+        savingsTotal,
+        assetsTotal,
+        realEstatesTotal,
+        pensionsTotal,
+        debtsTotal: -Math.abs(debtsTotal),
+        netWorth,
+      };
+    });
+
+    return result;
+  }, [profileData, selectedSimulationIds, simulationsData]);
+
   // 선택된 시뮬레이션 개수로 컬럼 수 결정
   const valueColumnCount = selectedSimulationIds.length;
   const gridTemplateColumns = `minmax(160px, 1.2fr) repeat(${valueColumnCount}, minmax(140px, 1fr))`;
@@ -2027,6 +2103,7 @@ function SimulationCompareModal({
       "networth-start": true,
       "networth-retirement": true,
       "networth-age90": true,
+      currentAssetsNetworth: true,
     };
     setExpandedRows(initialExpandedRows);
   }, [isOpen]);
@@ -2150,6 +2227,14 @@ function SimulationCompareModal({
               <div className={styles.mainTabs}>
                 <button
                   className={`${styles.mainTab} ${
+                    activeTab === "currentAssets" ? styles.mainTabActive : ""
+                  }`}
+                  onClick={() => setActiveTab("currentAssets")}
+                >
+                  현재 자산 현황
+                </button>
+                <button
+                  className={`${styles.mainTab} ${
                     activeTab === "cashflow" ? styles.mainTabActive : ""
                   }`}
                   onClick={() => setActiveTab("cashflow")}
@@ -2173,6 +2258,132 @@ function SimulationCompareModal({
                   상세 재무 데이터
                 </button>
               </div>
+
+              {/* 현재 자산 현황 탭 */}
+              {activeTab === "currentAssets" && (
+                    <div className={styles.summarySection}>
+                      <div className={styles.sectionHeader}>
+                        <div className={styles.sectionHeaderLeft}>
+                          <h4 className={styles.summaryTitle}>현재 자산 현황</h4>
+                          <p className={styles.summaryNote}>
+                        입력된 현재 재무 데이터 기준
+                      </p>
+                    </div>
+                  </div>
+                  {Object.keys(currentAssetsBySimulation).length > 0 ? (
+                    <div className={styles.summaryTable}>
+                      <div
+                        className={`${styles.summaryRow} ${styles.summaryHeaderDetail}`}
+                        style={{ gridTemplateColumns }}
+                      >
+                        <div className={styles.summaryCellDetail}>항목</div>
+                        {sortedSelectedSimulationIds.map((simId) => (
+                          <div
+                            key={simId}
+                            className={styles.summaryCellDetail}
+                          >
+                            {getSimulationTitle(simId)}
+                          </div>
+                        ))}
+                      </div>
+                      {(() => {
+                        return [
+                          {
+                            key: "netWorth",
+                            label: "순자산",
+                            isNetWorth: true,
+                          },
+                          { key: "currentCash", label: "현금" },
+                          { key: "savingsTotal", label: "저축/투자 보유" },
+                          { key: "assetsTotal", label: "자산 가치" },
+                          { key: "realEstatesTotal", label: "부동산 가치" },
+                          { key: "pensionsTotal", label: "연금 보유" },
+                          { key: "debtsTotal", label: "부채" },
+                        ];
+                      })().map((row) => (
+                        <React.Fragment key={row.key}>
+                          <div
+                            className={styles.summaryRow}
+                            style={{ gridTemplateColumns }}
+                          >
+                            <div
+                            className={`${styles.summaryCellDetail} ${
+                              row.isNetWorth
+                                ? styles.summaryLabel
+                                : styles.summarySubLabel
+                            }`}
+                          >
+                            {row.label}
+                          </div>
+                            {sortedSelectedSimulationIds.map((simId, index) => {
+                              const value =
+                                currentAssetsBySimulation[simId]?.[row.key];
+                              const isFirstCol = index === 0;
+
+                              return (
+                                <div
+                                  key={simId}
+                                  className={styles.summaryCellDetail}
+                                >
+                                  {value !== null &&
+                                  value !== undefined &&
+                                  !Number.isNaN(value) ? (
+                                    <>
+                                      {row.isNetWorth ? (
+                                        <span
+                                          className={`${styles.summaryValue} ${
+                                            value >= 0
+                                              ? styles.positive
+                                              : styles.negative
+                                          }`}
+                                        >
+                                          {formatAmountForChart(value)}
+                                        </span>
+                                      ) : (
+                                        <span
+                                          className={`${styles.summaryValueSubtle} ${
+                                            row.key === "debtsTotal"
+                                              ? styles.negative
+                                              : ""
+                                          }`}
+                                        >
+                                          {formatAmountForChart(value)}
+                                        </span>
+                                      )}
+                                      {!isFirstCol &&
+                                        sortedSelectedSimulationIds.length >
+                                          1 &&
+                                        renderDifference(
+                                          currentAssetsBySimulation[
+                                            sortedSelectedSimulationIds[0]
+                                          ]?.[row.key],
+                                          value,
+                                          row.key === "debtsTotal"
+                                            ? "demand"
+                                            : "supply"
+                                        )}
+                                    </>
+                                  ) : (
+                                    <span className={styles.summaryEmpty}>
+                                      -
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.summaryTable}>
+                      <div className={styles.summaryEmpty}>
+                        데이터가 없습니다.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* 생애 자금 수급/수요 현재가 요약 */}
               {activeTab === "cashflow" &&
@@ -2319,108 +2530,125 @@ function SimulationCompareModal({
                     </div>
                   </div>
                 )}
-              {activeTab === "networth" && netWorthRows.length > 0 && (
-                <div className={styles.netWorthSection}>
-                  <h4 className={styles.netWorthTitle}>시점별 순자산</h4>
-                  <div className={styles.summaryTable}>
-                    <div
-                      className={`${styles.summaryRow} ${styles.summaryHeaderNetworth}`}
-                      style={{ gridTemplateColumns }}
-                    >
-                      <div className={styles.summaryCellNetworth}>시점</div>
-                      {sortedSelectedSimulationIds.map((simId) => (
-                        <div key={simId} className={styles.summaryCellNetworth}>
-                          {getSimulationTitle(simId)}
-                        </div>
-                      ))}
-                    </div>
-                    {netWorthRows.map((row) => (
-                      <React.Fragment key={row.key}>
+              {activeTab === "networth" && (
+                <>
+                  {netWorthRows.length > 0 && (
+                    <div className={styles.netWorthSection}>
+                      <h4 className={styles.netWorthTitle}>시점별 순자산</h4>
+                      <div className={styles.summaryTable}>
                         <div
-                          className={styles.summaryRow}
+                          className={`${styles.summaryRow} ${styles.summaryHeaderNetworth}`}
                           style={{ gridTemplateColumns }}
                         >
-                          <div
-                            className={`${styles.summaryCellNetworth} ${styles.summaryLabel}`}
-                          >
-                            {!row.isGoal && (
-                              <button
-                                className={styles.toggleButton}
-                                onClick={() => toggleRow(`networth-${row.key}`)}
-                                aria-label={
-                                  expandedRows[`networth-${row.key}`]
-                                    ? "세부 항목 접기"
-                                    : "세부 항목 펼치기"
-                                }
-                              >
-                                {expandedRows[`networth-${row.key}`]
-                                  ? "▼"
-                                  : "▶"}
-                              </button>
-                            )}
-                            {row.label}
-                          </div>
-                          {sortedSelectedSimulationIds.map((simId, index) => {
-                            const value = row.values[simId];
-                            const isFirstCol = index === 0;
-
-                            return (
-                              <div
-                                key={simId}
-                                className={styles.summaryCellNetworth}
-                              >
-                                {value !== null &&
-                                value !== undefined &&
-                                !Number.isNaN(value) ? (
-                                  <>
-                                    <span
-                                      className={`${styles.summaryValue} ${
-                                        row.isGoal
-                                          ? ""
-                                          : value >= 0
-                                          ? styles.positive
-                                          : styles.negative
-                                      }`}
-                                    >
-                                      {formatAmountForChart(value)}
-                                    </span>
-                                    {!isFirstCol &&
-                                      sortedSelectedSimulationIds.length > 1 &&
-                                      renderDifference(
-                                        row.values[
-                                          sortedSelectedSimulationIds[0]
-                                        ],
-                                        value,
-                                        "supply"
-                                      )}
-                                  </>
-                                ) : (
-                                  <span className={styles.summaryEmpty}>-</span>
-                                )}
-                              </div>
-                            );
-                          })}
+                          <div className={styles.summaryCellNetworth}>시점</div>
+                          {sortedSelectedSimulationIds.map((simId) => (
+                            <div
+                              key={simId}
+                              className={styles.summaryCellNetworth}
+                            >
+                              {getSimulationTitle(simId)}
+                            </div>
+                          ))}
                         </div>
-                        {/* 세부 내용 표시 - 펼쳐졌을 때만 */}
-                        {!row.isGoal && expandedRows[`networth-${row.key}`] && (
-                          <div
-                            style={{
-                              gridColumn: "1 / -1",
-                              paddingTop: "0.5rem",
-                            }}
-                          >
-                            {renderBreakdownComparison(
-                              row.breakdowns,
-                              `networth-comparison-${row.key}`,
-                              gridTemplateColumns,
-                              "supply"
-                            )}
-                          </div>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
+                        {netWorthRows.map((row) => (
+                          <React.Fragment key={row.key}>
+                            <div
+                              className={styles.summaryRow}
+                              style={{ gridTemplateColumns }}
+                            >
+                              <div
+                                className={`${styles.summaryCellNetworth} ${styles.summaryLabel}`}
+                              >
+                                {!row.isGoal && (
+                                  <button
+                                    className={styles.toggleButton}
+                                    onClick={() =>
+                                      toggleRow(`networth-${row.key}`)
+                                    }
+                                    aria-label={
+                                      expandedRows[`networth-${row.key}`]
+                                        ? "세부 항목 접기"
+                                        : "세부 항목 펼치기"
+                                    }
+                                  >
+                                    {expandedRows[`networth-${row.key}`]
+                                      ? "▼"
+                                      : "▶"}
+                                  </button>
+                                )}
+                                {row.label}
+                              </div>
+                              {sortedSelectedSimulationIds.map(
+                                (simId, index) => {
+                                  const value = row.values[simId];
+                                  const isFirstCol = index === 0;
+
+                                  return (
+                                    <div
+                                      key={simId}
+                                      className={styles.summaryCellNetworth}
+                                    >
+                                      {value !== null &&
+                                      value !== undefined &&
+                                      !Number.isNaN(value) ? (
+                                        <>
+                                          <span
+                                            className={`${
+                                              styles.summaryValue
+                                            } ${
+                                              row.isGoal
+                                                ? ""
+                                                : value >= 0
+                                                ? styles.positive
+                                                : styles.negative
+                                            }`}
+                                          >
+                                            {formatAmountForChart(value)}
+                                          </span>
+                                          {!isFirstCol &&
+                                            sortedSelectedSimulationIds.length >
+                                              1 &&
+                                            renderDifference(
+                                              row.values[
+                                                sortedSelectedSimulationIds[0]
+                                              ],
+                                              value,
+                                              "supply"
+                                            )}
+                                        </>
+                                      ) : (
+                                        <span className={styles.summaryEmpty}>
+                                          -
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                }
+                              )}
+                            </div>
+                            {/* 세부 내용 표시 - 펼쳐졌을 때만 */}
+                            {!row.isGoal &&
+                              expandedRows[`networth-${row.key}`] && (
+                                <div
+                                  style={{
+                                    gridColumn: "1 / -1",
+                                    paddingTop: "0.5rem",
+                                  }}
+                                >
+                                  {renderBreakdownComparison(
+                                    row.breakdowns,
+                                    `networth-comparison-${row.key}`,
+                                    gridTemplateColumns,
+                                    "supply"
+                                  )}
+                                </div>
+                              )}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* 상세 재무 데이터 비교 */}
