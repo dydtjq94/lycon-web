@@ -152,9 +152,23 @@ function RechartsCashflowChart({
     }
   }, [minYear, maxYear, externalXAxisRange, onXAxisRangeChange]);
 
-  // 은퇴년도 계산
-  const retirementYear =
-    profileData?.retirementYear || new Date().getFullYear();
+  // 은퇴년도 계산 (자산 차트와 동일한 로직)
+  // 시뮬레이션별 은퇴년도가 있으면 우선 사용, 없으면 retirementAge와 데이터를 기반으로 계산
+  const retirementYear = (() => {
+    // 시뮬레이션별 은퇴년도가 있으면 우선 사용
+    if (currentSimulation?.retirementYear) {
+      return currentSimulation.retirementYear;
+    }
+    // profileData에 retirementYear가 있으면 사용
+    if (profileData?.retirementYear) {
+      return profileData.retirementYear;
+    }
+    // retirementAge와 데이터를 기반으로 계산 (자산 차트와 동일한 로직)
+    if (hasData && retirementAge) {
+      return data[0].year + (retirementAge - data[0].age);
+    }
+    return null;
+  })();
 
   // 배우자 은퇴 년도 계산
   const spouseRetirementYear = (() => {
@@ -748,7 +762,7 @@ function RechartsCashflowChart({
         />
 
         {/* 은퇴 시점 표시 */}
-        {retirementData && (
+        {retirementData && retirementYear && (
           <ReferenceLine
             x={retirementYear}
             stroke="#9ca3af"

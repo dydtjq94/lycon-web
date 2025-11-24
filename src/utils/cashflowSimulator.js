@@ -21,6 +21,84 @@ function calculatePMT(pv, rate, nper) {
 }
 
 /**
+ * 연간 이자율을 월간 이자율로 변환 (복리 기준)
+ * @param {number} annualRate - 연간 이자율 (소수, 예: 0.12 = 12%)
+ * @returns {number} 월간 이자율 (소수)
+ * @example
+ * convertAnnualToMonthlyRate(0.12) // 0.009488... (약 0.9488%)
+ */
+function convertAnnualToMonthlyRate(annualRate) {
+  if (annualRate === 0) return 0;
+  // 복리 변환: (1 + r_annual)^(1/12) - 1 = r_monthly
+  return Math.pow(1 + annualRate, 1 / 12) - 1;
+}
+
+/**
+ * 연간 상승률을 월간 상승률로 변환 (복리 기준)
+ * @param {number} annualGrowthRate - 연간 상승률 (소수, 예: 0.03 = 3%)
+ * @returns {number} 월간 상승률 (소수)
+ */
+function convertAnnualToMonthlyGrowthRate(annualGrowthRate) {
+  return convertAnnualToMonthlyRate(annualGrowthRate);
+}
+
+/**
+ * 날짜가 지정된 범위 내에 있는지 확인
+ * @param {Date} currentDate - 확인할 날짜
+ * @param {number} startYear - 시작 년도
+ * @param {number} startMonth - 시작 월 (1-12)
+ * @param {number} endYear - 종료 년도
+ * @param {number} endMonth - 종료 월 (1-12)
+ * @returns {boolean} 범위 내에 있으면 true
+ */
+function isDateInRange(currentDate, startYear, startMonth, endYear, endMonth) {
+  const startDate = new Date(startYear, (startMonth || 1) - 1);
+  const endDate = new Date(endYear, (endMonth || 12) - 1);
+  return currentDate >= startDate && currentDate <= endDate;
+}
+
+/**
+ * 월 단위 PMT 계산 함수 (정기 지불액 계산)
+ * @param {number} pv - 현재 가치 (Present Value)
+ * @param {number} monthlyRate - 월간 이자율 (소수)
+ * @param {number} months - 총 지불/수령 개월 수
+ * @returns {number} 매월 지불액
+ * @example
+ * calculateMonthlyPMT(10000, 0.01, 120) // 월간 PMT 계산
+ */
+function calculateMonthlyPMT(pv, monthlyRate, months) {
+  if (monthlyRate === 0) {
+    // 이자율이 0이면 단순히 원금을 개월 수로 나눔
+    return pv / months;
+  }
+  // PMT = (PV × r × (1 + r)^n) / ((1 + r)^n - 1)
+  const pow = Math.pow(1 + monthlyRate, months);
+  return (pv * monthlyRate * pow) / (pow - 1);
+}
+
+/**
+ * 경과 개월 수 계산
+ * @param {number} startYear - 시작 년도
+ * @param {number} startMonth - 시작 월 (1-12)
+ * @param {number} endYear - 종료 년도
+ * @param {number} endMonth - 종료 월 (1-12)
+ * @returns {number} 경과 개월 수
+ */
+function calculateMonthsElapsed(startYear, startMonth, endYear, endMonth) {
+  return (endYear - startYear) * 12 + ((endMonth || 12) - (startMonth || 1));
+}
+
+/**
+ * 년도와 월을 Date 객체로 변환
+ * @param {number} year - 년도
+ * @param {number} month - 월 (1-12)
+ * @returns {Date} Date 객체
+ */
+function createDateFromYearMonth(year, month) {
+  return new Date(year, (month || 1) - 1);
+}
+
+/**
  * 부동산 취득세 계산 함수
  * @param {number} propertyValue - 부동산 가치 (만원 단위)
  * @returns {number} 취득세 (만원 단위)
@@ -194,26 +272,93 @@ export function calculateCashflowSimulation(
       });
     };
 
-    // 소득 계산
+    // 소득 계산 (월 단위 기준)
     incomes.forEach((income, incomeIndex) => {
-      if (year >= income.startYear && year <= income.endYear) {
-        const yearsElapsed = year - income.startYear;
-        const growthRate = income.growthRate / 100;
+      const startYear = income.startYear;
+      const startMonth = income.startMonth || 1; // 기본값: 1월 (월초)
+      const endYear = income.endYear;
+      const endMonth = income.endMonth || 12; // 기본값: 12월 (월말)
 
-        // 빈도에 따라 연간 금액 계산
-        const yearlyAmount =
-          income.frequency === "monthly" ? income.amount * 12 : income.amount;
+      // 해당 년도에 소득이 발생하는지 확인
+      if (year >= startYear && year <= endYear) {
+        // 해당 년도에 포함된 개월 수 계산
+        let monthsInYear = 0;
+        let firstMonthInYear = 1;
+        let lastMonthInYear = 12;
 
-        const adjustedAmount =
-          yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
-        totalIncome += adjustedAmount;
+        if (year === startYear && year === endYear) {
+          // 시작년도와 종료년도가 같은 경우
+          firstMonthInYear = startMonth;
+          lastMonthInYear = endMonth;
+          monthsInYear = endMonth - startMonth + 1;
+        } else if (year === startYear) {
+          // 시작년도인 경우
+          firstMonthInYear = startMonth;
+          lastMonthInYear = 12;
+          monthsInYear = 12 - startMonth + 1;
+        } else if (year === endYear) {
+          // 종료년도인 경우
+          firstMonthInYear = 1;
+          lastMonthInYear = endMonth;
+          monthsInYear = endMonth;
+        } else {
+          // 중간 년도인 경우 (전체 12개월)
+          firstMonthInYear = 1;
+          lastMonthInYear = 12;
+          monthsInYear = 12;
+        }
 
-        addPositive(
-          income.title,
-          adjustedAmount,
-          "소득",
-          income.id ? `income-${income.id}` : `income-${incomeIndex}`
-        );
+        if (monthsInYear > 0) {
+          const growthRate = income.growthRate / 100;
+          const monthlyGrowthRate =
+            convertAnnualToMonthlyGrowthRate(growthRate);
+
+          let yearTotalIncome = 0;
+
+          if (income.frequency === "monthly") {
+            // 월간 빈도: 각 월마다 개별 계산
+            const monthlyAmount = income.amount;
+
+            // 해당 년도의 첫 월부터 시작하는 기준으로 경과 개월 수 계산
+            const baseMonthsElapsed =
+              (year - startYear) * 12 + (firstMonthInYear - startMonth);
+
+            // 각 월마다 소득 계산 및 합산
+            for (let m = firstMonthInYear; m <= lastMonthInYear; m++) {
+              // 현재 월까지의 경과 개월 수
+              const monthsElapsed = baseMonthsElapsed + (m - firstMonthInYear);
+
+              // 월 단위 상승률 적용
+              const adjustedMonthlyAmount =
+                monthlyAmount * Math.pow(1 + monthlyGrowthRate, monthsElapsed);
+              yearTotalIncome += adjustedMonthlyAmount;
+            }
+          } else {
+            // 연간 빈도: 해당 년도에 포함된 개월 수만큼 비율로 계산
+            // 예: 연간 120만원, 10개월이면 120만원 * (10/12) = 100만원
+            const annualAmount = income.amount;
+            const ratioInYear = monthsInYear / 12; // 해당 년도에 포함된 비율
+
+            // 시작 시점부터 현재 년도까지의 경과 년 수 계산
+            const yearsElapsed = year - startYear;
+
+            // 연간 상승률 적용 (년 단위)
+            const adjustedAnnualAmount =
+              annualAmount * Math.pow(1 + growthRate, yearsElapsed);
+
+            // 해당 년도에 포함된 개월 수만큼 비율로 계산
+            yearTotalIncome = adjustedAnnualAmount * ratioInYear;
+          }
+
+          totalIncome += yearTotalIncome;
+
+          addPositive(
+            income.title,
+            yearTotalIncome,
+            "소득",
+            income.id ? `income-${income.id}` : `income-${incomeIndex}`
+          );
+        }
       }
     });
 

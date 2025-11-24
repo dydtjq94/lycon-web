@@ -230,22 +230,22 @@ function SavingModal({
           interestRate:
             initialData.interestRate !== undefined &&
             initialData.interestRate !== null
-              ? initialData.interestRate.toString()
+              ? (initialData.interestRate * 100).toFixed(2)
               : "2.86",
           yearlyGrowthRate:
             initialData.yearlyGrowthRate !== undefined &&
             initialData.yearlyGrowthRate !== null
-              ? initialData.yearlyGrowthRate.toString()
+              ? (initialData.yearlyGrowthRate * 100).toFixed(2)
               : "1.89",
           incomeRate:
             initialData.incomeRate !== undefined &&
             initialData.incomeRate !== null
-              ? initialData.incomeRate.toString()
+              ? (initialData.incomeRate * 100).toFixed(2)
               : "3",
           capitalGainsTaxRate:
             initialData.capitalGainsTaxRate !== undefined &&
             initialData.capitalGainsTaxRate !== null
-              ? initialData.capitalGainsTaxRate.toString()
+              ? (initialData.capitalGainsTaxRate * 100).toFixed(2)
               : "",
           isFixedToRetirementYear: initialData.isFixedToRetirementYear || false,
         });
