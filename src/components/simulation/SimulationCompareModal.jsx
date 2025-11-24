@@ -105,6 +105,19 @@ const filterCashflowByPeriod = (cashflow, period, retirementYear) => {
   }
 };
 
+const parseNumericInput = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === "string") {
+    const normalized = value.replace(/,/g, "");
+    const parsed = Number(normalized);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  return null;
+};
+
 function SimulationCompareModal({
   isOpen,
   onClose,
@@ -197,6 +210,7 @@ function SimulationCompareModal({
         const profileDataWithSimulation = {
           ...profileData,
           cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
+          retirementYear: simulation?.retirementYear || profileData?.retirementYear,
         };
 
         // cashflow 계산 (투자 규칙이 포함된 profileData 사용)
@@ -1315,11 +1329,45 @@ function SimulationCompareModal({
 
   // 은퇴년도 계산
   const retirementYear = useMemo(() => {
+    const explicitYear = parseNumericInput(profileData?.retirementYear);
+    if (explicitYear !== null) return explicitYear;
     if (!profileData?.birthYear || !profileData?.retirementAge) return null;
     const currentYear = new Date().getFullYear();
     const currentAge = currentYear - parseInt(profileData.birthYear, 10);
     return currentYear + (parseInt(profileData.retirementAge, 10) - currentAge);
   }, [profileData]);
+
+  // 시뮬레이션별 은퇴년도/나이 매핑
+  const retirementYearBySimulation = useMemo(() => {
+    const fallbackYear = retirementYear;
+    const map = {};
+
+    simulations?.forEach((sim) => {
+      const simYear = parseNumericInput(sim?.retirementYear);
+      if (sim?.id) {
+        map[sim.id] =
+          simYear !== null && Number.isFinite(simYear)
+            ? simYear
+            : fallbackYear;
+      }
+    });
+
+    return map;
+  }, [simulations, retirementYear]);
+
+  const retirementAgeBySimulation = useMemo(() => {
+    const birth = parseNumericInput(profileData?.birthYear);
+    const map = {};
+    if (!Number.isFinite(birth)) return map;
+
+    Object.entries(retirementYearBySimulation).forEach(([simId, year]) => {
+      if (Number.isFinite(year)) {
+        map[simId] = year - birth;
+      }
+    });
+
+    return map;
+  }, [retirementYearBySimulation, profileData]);
 
   // 선택된 시뮬레이션들의 생애 자금 수급/수요 계산
   const simulationsPV = useMemo(() => {
@@ -1332,9 +1380,13 @@ function SimulationCompareModal({
 
       // 해당 시뮬레이션의 투자 규칙을 반영하여 cashflow 재계산
       const simulation = simulations?.find((sim) => sim.id === simId);
+      const simulationRetirementYear =
+        retirementYearBySimulation[simId] ?? retirementYear;
       const profileDataWithSimulation = {
         ...profileData,
         cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
+        retirementYear:
+          simulationRetirementYear ?? profileData?.retirementYear,
       };
 
       // 투자 규칙이 반영된 최신 cashflow 계산
@@ -1352,7 +1404,7 @@ function SimulationCompareModal({
       const filteredCashflow = filterCashflowByPeriod(
         cashflow,
         cashflowPeriod,
-        retirementYear
+        simulationRetirementYear
       );
       result[simId] = calculateLifetimeCashFlowTotals(filteredCashflow);
     });
@@ -1366,6 +1418,7 @@ function SimulationCompareModal({
     isOpen,
     cashflowPeriod,
     retirementYear,
+    retirementYearBySimulation,
   ]);
 
   // 선택된 시뮬레이션들의 자산 타임라인 계산
@@ -1379,9 +1432,13 @@ function SimulationCompareModal({
 
       // 해당 시뮬레이션의 투자 규칙을 반영하여 cashflow 재계산
       const simulation = simulations?.find((sim) => sim.id === simId);
+      const simulationRetirementYear =
+        retirementYearBySimulation[simId] ?? retirementYear;
       const profileDataWithSimulation = {
         ...profileData,
         cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
+        retirementYear:
+          simulationRetirementYear ?? profileData?.retirementYear,
       };
 
       // 투자 규칙이 반영된 최신 cashflow 계산
@@ -1418,6 +1475,8 @@ function SimulationCompareModal({
     profileData,
     isOpen,
     simulations,
+    retirementYear,
+    retirementYearBySimulation,
   ]);
 
   const currentAssetsBySimulation = useMemo(() => {
@@ -1890,19 +1949,6 @@ function SimulationCompareModal({
     );
   };
 
-  const parseNumericInput = (value) => {
-    if (value === null || value === undefined || value === "") return null;
-    if (typeof value === "number") {
-      return Number.isFinite(value) ? value : null;
-    }
-    if (typeof value === "string") {
-      const normalized = value.replace(/,/g, "");
-      const parsed = Number(normalized);
-      return Number.isNaN(parsed) ? null : parsed;
-    }
-    return null;
-  };
-
   const buildAssetBreakdown = (entry) => {
     if (!entry || typeof entry !== "object") return [];
 
@@ -1938,10 +1984,8 @@ function SimulationCompareModal({
         });
       }
 
-      // 금액 절댓값 기준으로 정렬하고 상위 8개만
-      return items
-        .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
-        .slice(0, 8);
+      // 금액 절댓값 기준으로 정렬 (모든 항목 노출)
+      return items.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
     }
 
     // 구 데이터 구조 지원 (fallback)
@@ -1960,9 +2004,7 @@ function SimulationCompareModal({
       });
     });
 
-    return items
-      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
-      .slice(0, 8);
+    return items.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
   };
 
   const findEntryByAge = (timeline, age) => {
@@ -1979,7 +2021,7 @@ function SimulationCompareModal({
     birthYear !== null && !Number.isNaN(birthYear)
       ? currentYear - birthYear
       : null;
-  const retirementAge = parseNumericInput(profileData?.retirementAge);
+  const profileRetirementAge = parseNumericInput(profileData?.retirementAge);
   const targetAssetGoal = parseNumericInput(profileData?.targetAssets);
 
   const netWorthRows = useMemo(() => {
@@ -2004,21 +2046,36 @@ function SimulationCompareModal({
     }
 
     // 시점별 순자산 계산
+    const retirementAgesForSelected = sortedSelectedSimulationIds
+      .map(
+        (simId) =>
+          retirementAgeBySimulation[simId] ??
+          profileRetirementAge
+      )
+      .filter((age) => Number.isFinite(age));
+
+    const retirementLabel =
+      retirementAgesForSelected.length > 0 &&
+      new Set(retirementAgesForSelected).size === 1
+        ? `은퇴 (${retirementAgesForSelected[0]}세)`
+        : "은퇴 (시뮬레이션별)";
+
     const checkpoints = [
       {
         key: "start",
         label: startAge !== null ? `현재 (${startAge}세)` : "현재",
-        age: startAge,
+        resolveAge: () => startAge,
       },
       {
         key: "retirement",
-        label: retirementAge !== null ? `은퇴 (${retirementAge}세)` : "은퇴",
-        age: retirementAge,
+        label: retirementLabel,
+        resolveAge: (simId) =>
+          retirementAgeBySimulation[simId] ?? profileRetirementAge,
       },
       {
         key: "age90",
         label: "90세",
-        age: 90,
+        resolveAge: () => 90,
       },
     ];
 
@@ -2029,6 +2086,11 @@ function SimulationCompareModal({
       // breakdown 정보가 있으면 이를 우선 사용 (새로운 데이터 구조)
       if (entry.breakdown && typeof entry.breakdown.netAssets === "number") {
         return entry.breakdown.netAssets;
+      }
+
+      // totalAmount가 있으면 우선 사용 (자산 시뮬레이션 총합)
+      if (typeof entry.totalAmount === "number" && !Number.isNaN(entry.totalAmount)) {
+        return entry.totalAmount;
       }
 
       // 구 데이터 구조 지원 (fallback)
@@ -2049,10 +2111,6 @@ function SimulationCompareModal({
     };
 
     checkpoints.forEach((checkpoint) => {
-      if (checkpoint.age === null || Number.isNaN(checkpoint.age)) {
-        return;
-      }
-
       const checkpointRow = {
         key: checkpoint.key,
         label: checkpoint.label,
@@ -2063,8 +2121,19 @@ function SimulationCompareModal({
       let hasAnyData = false;
 
       sortedSelectedSimulationIds.forEach((simId) => {
+        const age =
+          typeof checkpoint.resolveAge === "function"
+            ? checkpoint.resolveAge(simId)
+            : checkpoint.age;
+
+        if (age === null || Number.isNaN(age)) {
+          checkpointRow.values[simId] = null;
+          checkpointRow.breakdowns[simId] = [];
+          return;
+        }
+
         const timeline = simulationsAssetsTimeline[simId];
-        const entry = findEntryByAge(timeline, checkpoint.age);
+        const entry = findEntryByAge(timeline, age);
 
         if (entry) {
           hasAnyData = true;
@@ -2085,10 +2154,11 @@ function SimulationCompareModal({
     return rows;
   }, [
     startAge,
-    retirementAge,
+    profileRetirementAge,
     sortedSelectedSimulationIds,
     simulationsAssetsTimeline,
     targetAssetGoal,
+    retirementAgeBySimulation,
   ]);
 
   // 모달이 열릴 때 토글을 모두 열린 상태로 초기화
