@@ -362,28 +362,93 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 지출 계산
+    // 지출 계산 (월 단위 기준)
     expenses.forEach((expense, expenseIndex) => {
-      if (year >= expense.startYear && year <= expense.endYear) {
-        const yearsElapsed = year - expense.startYear;
-        const growthRate = expense.growthRate / 100;
+      const startYear = expense.startYear;
+      const startMonth = expense.startMonth || 1; // 기본값: 1월 (월초)
+      const endYear = expense.endYear;
+      const endMonth = expense.endMonth || 12; // 기본값: 12월 (월말)
+      
+      // 해당 년도에 지출이 발생하는지 확인
+      if (year >= startYear && year <= endYear) {
+        // 해당 년도에 포함된 개월 수 계산
+        let monthsInYear = 0;
+        let firstMonthInYear = 1;
+        let lastMonthInYear = 12;
+        
+        if (year === startYear && year === endYear) {
+          // 시작년도와 종료년도가 같은 경우
+          firstMonthInYear = startMonth;
+          lastMonthInYear = endMonth;
+          monthsInYear = endMonth - startMonth + 1;
+        } else if (year === startYear) {
+          // 시작년도인 경우
+          firstMonthInYear = startMonth;
+          lastMonthInYear = 12;
+          monthsInYear = 12 - startMonth + 1;
+        } else if (year === endYear) {
+          // 종료년도인 경우
+          firstMonthInYear = 1;
+          lastMonthInYear = endMonth;
+          monthsInYear = endMonth;
+        } else {
+          // 중간 년도인 경우 (전체 12개월)
+          firstMonthInYear = 1;
+          lastMonthInYear = 12;
+          monthsInYear = 12;
+        }
+        
+        if (monthsInYear > 0) {
+          const growthRate = expense.growthRate / 100;
+          const monthlyGrowthRate =
+            convertAnnualToMonthlyGrowthRate(growthRate);
 
-        // 빈도에 따라 연간 금액 계산
-        const yearlyAmount =
-          expense.frequency === "monthly"
-            ? expense.amount * 12
-            : expense.amount;
+          let yearTotalExpense = 0;
 
-        const adjustedAmount =
-          yearlyAmount * Math.pow(1 + growthRate, yearsElapsed);
-        totalExpense += adjustedAmount;
+          if (expense.frequency === "monthly") {
+            // 월간 빈도: 각 월마다 개별 계산
+            const monthlyAmount = expense.amount;
 
-        addNegative(
-          expense.title,
-          adjustedAmount,
-          "지출",
-          expense.id ? `expense-${expense.id}` : `expense-${expenseIndex}`
-        );
+            // 해당 년도의 첫 월부터 시작하는 기준으로 경과 개월 수 계산
+            const baseMonthsElapsed =
+              (year - startYear) * 12 + (firstMonthInYear - startMonth);
+
+            // 각 월마다 지출 계산 및 합산
+            for (let m = firstMonthInYear; m <= lastMonthInYear; m++) {
+              // 현재 월까지의 경과 개월 수
+              const monthsElapsed = baseMonthsElapsed + (m - firstMonthInYear);
+
+              // 월 단위 상승률 적용
+              const adjustedMonthlyAmount =
+                monthlyAmount * Math.pow(1 + monthlyGrowthRate, monthsElapsed);
+              yearTotalExpense += adjustedMonthlyAmount;
+            }
+          } else {
+            // 연간 빈도: 해당 년도에 포함된 개월 수만큼 비율로 계산
+            // 예: 연간 120만원, 10개월이면 120만원 * (10/12) = 100만원
+            const annualAmount = expense.amount;
+            const ratioInYear = monthsInYear / 12; // 해당 년도에 포함된 비율
+
+            // 시작 시점부터 현재 년도까지의 경과 년 수 계산
+            const yearsElapsed = year - startYear;
+
+            // 연간 상승률 적용 (년 단위)
+            const adjustedAnnualAmount =
+              annualAmount * Math.pow(1 + growthRate, yearsElapsed);
+
+            // 해당 년도에 포함된 개월 수만큼 비율로 계산
+            yearTotalExpense = adjustedAnnualAmount * ratioInYear;
+          }
+
+          totalExpense += yearTotalExpense;
+
+          addNegative(
+            expense.title,
+            yearTotalExpense,
+            "지출",
+            expense.id ? `expense-${expense.id}` : `expense-${expenseIndex}`
+          );
+        }
       }
     });
 

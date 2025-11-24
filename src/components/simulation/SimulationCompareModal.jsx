@@ -1162,7 +1162,7 @@ function SimulationCompareModal({
           <>
             <div className={debtStyles.debtAmount}>
               {isFieldChanged("debtAmount") && changeIndicator}
-              {formatAmount(item.debtAmount)}
+              {formatAmount(-Math.abs(item.debtAmount))}
             </div>
 
             <div className={debtStyles.debtDetails}>

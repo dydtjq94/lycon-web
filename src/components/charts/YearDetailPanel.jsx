@@ -536,6 +536,12 @@ function YearDetailPanel({
   // 총 자산/부채 계산
   const totalAssetValue = yearDetail.totalAssets || 0;
   const totalDebtValue = yearDetail.totalDebt || 0;
+  const hasAssetItems =
+    yearDetail.assetItems.filter((item) => item.amount > 0).length > 0;
+  const hasDebtItems = debtPieData.length > 0;
+  const hasEvents = yearEvents.length > 0;
+  const hasAnyData = hasAssetItems || hasDebtItems || hasEvents;
+  const netAssets = yearDetail.netAssets || 0;
 
   // 잉여현금 투자 정보 가져오기
   const yearDetailData = detailedData.find(
@@ -570,14 +576,25 @@ function YearDetailPanel({
         {/* 컨텐츠 */}
         <div className={styles.content}>
           <div className={styles.distributionModalContent}>
-            {/* 자산 파이 차트 (카테고리별) */}
-            <div className={styles.chartWrapper}>
-              <SimplePieChart assetData={assetPieData} />
+            <div className={styles.compactSection}>
+              <div className={styles.compactTitleRow}>
+                <h5 className={styles.compactTitle}>순자산</h5>
+                <span
+                  className={`${styles.compactTotalNet} ${
+                    netAssets > 0
+                      ? styles.positive
+                      : netAssets < 0
+                      ? styles.negative
+                      : ""
+                  }`}
+                >
+                  {formatAmountForChart(yearDetail.netAssets)}
+                </span>
+              </div>
             </div>
 
             {/* 자산 리스트 (개별 항목) */}
-            {yearDetail.assetItems.filter((item) => item.amount > 0).length >
-              0 && (
+            {hasAssetItems && (
               <div className={styles.compactSection}>
                 <div className={styles.compactTitleRow}>
                   <h5 className={styles.compactTitle}>자산</h5>
@@ -629,13 +646,22 @@ function YearDetailPanel({
               </div>
             )}
 
+            {/* 자산 파이 차트 (카테고리별) */}
+            {assetPieData.length > 0 && (
+              <div className={styles.compactSection}>
+                <div className={styles.chartWrapper}>
+                  <SimplePieChart assetData={assetPieData} />
+                </div>
+              </div>
+            )}
+
             {/* 부채 리스트 */}
-            {debtPieData.length > 0 && (
+            {hasDebtItems && (
               <div className={styles.compactSection}>
                 <div className={styles.compactTitleRow}>
                   <h5 className={styles.compactTitle}>부채</h5>
                   <span className={styles.compactTotalDebt}>
-                    {formatAmountForChart(totalDebtValue)}
+                    {formatAmountForChart(-Math.abs(totalDebtValue))}
                   </span>
                 </div>
                 <div className={styles.compactList}>
@@ -644,6 +670,10 @@ function YearDetailPanel({
                       totalDebtValue > 0
                         ? ((slice.value / totalDebtValue) * 100).toFixed(1)
                         : "0.0";
+                    const debtDisplayValue =
+                      slice.originalValue < 0
+                        ? slice.originalValue
+                        : -Math.abs(slice.value);
                     return (
                       <div
                         key={`debt-list-${slice.name}`}
@@ -657,7 +687,7 @@ function YearDetailPanel({
                           {slice.name}
                         </span>
                         <span className={styles.compactValue}>
-                          {formatAmountForChart(Math.abs(slice.originalValue))}
+                          {formatAmountForChart(debtDisplayValue)}
                           <span className={styles.compactPercent}>
                             {percent}%
                           </span>
@@ -696,13 +726,11 @@ function YearDetailPanel({
               </div>
             )}
 
-            {yearEvents.length === 0 &&
-              assetPieData.length === 0 &&
-              yearDetail.debtItems.length === 0 && (
-                <div className={styles.noDistributionData}>
-                  해당 연도의 데이터가 없습니다.
-                </div>
-              )}
+            {!hasAnyData && (
+              <div className={styles.noDistributionData}>
+                해당 연도의 데이터가 없습니다.
+              </div>
+            )}
           </div>
         </div>
       </div>

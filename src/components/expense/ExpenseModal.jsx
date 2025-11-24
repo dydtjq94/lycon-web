@@ -40,7 +40,9 @@ function ExpenseModal({
     frequency: "monthly", // monthly, yearly
     amount: "",
     startYear: new Date().getFullYear(),
+    startMonth: 1, // 시작 월 (1-12)
     endYear: getRetirementYear(),
+    endMonth: 12, // 종료 월 (1-12)
     memo: "2014년부터 2024년까지의 10년간 평균",
     growthRate: "1.89", // 기본 상승률 1.89%
     isFixedToRetirementYear: false, // 은퇴년도 고정 여부
@@ -184,7 +186,9 @@ function ExpenseModal({
             editData.originalFrequency || editData.frequency || "monthly",
           amount: editData.originalAmount || editData.amount || "",
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
+          startMonth: editData.startMonth || 1, // 기존 데이터 호환성: 없으면 1월
           endYear: parseInt(editData.endYear) || getRetirementYear(),
+          endMonth: editData.endMonth || 12, // 기존 데이터 호환성: 없으면 12월
           memo: editData.memo || "",
           growthRate: editData.growthRate !== undefined && editData.growthRate !== null
             ? editData.growthRate.toString()
@@ -198,7 +202,9 @@ function ExpenseModal({
           frequency: initialData.frequency || "monthly",
           amount: initialData.amount || "",
           startYear: initialData.startYear || new Date().getFullYear(),
+          startMonth: initialData.startMonth || 1,
           endYear: initialData.endYear || getRetirementYear(),
+          endMonth: initialData.endMonth || 12,
           memo: initialData.memo || "",
           growthRate:
             initialData.growthRate !== undefined
@@ -213,7 +219,9 @@ function ExpenseModal({
           frequency: "monthly",
           amount: "",
           startYear: new Date().getFullYear(),
+          startMonth: 1,
           endYear: getRetirementYear(),
+          endMonth: 12,
           memo: "2014년부터 2024년까지의 10년간 평균",
           growthRate: "1.89",
           isFixedToRetirementYear: false,
@@ -286,7 +294,9 @@ function ExpenseModal({
       ...formData,
       amount: parseInt(formData.amount),
       startYear: parseInt(formData.startYear), // 문자열을 숫자로 변환
+      startMonth: formData.startMonth || 1, // 기본값 1월
       endYear: parseInt(formData.endYear), // 문자열을 숫자로 변환
+      endMonth: formData.endMonth || 12, // 기본값 12월
       growthRate: parseFloat(formData.growthRate), // 백분율 그대로 저장 (마이너스 값 포함)
       originalAmount: parseInt(formData.amount),
       originalFrequency: formData.frequency,
@@ -318,7 +328,9 @@ function ExpenseModal({
       frequency: "monthly",
       amount: "",
       startYear: new Date().getFullYear(),
+      startMonth: 1,
       endYear: new Date().getFullYear() + 10,
+      endMonth: 12,
       memo: "2014년부터 2024년까지의 10년간 평균",
       growthRate: "1.89",
       isFixedToRetirementYear: false,
@@ -443,6 +455,31 @@ function ExpenseModal({
             </div>
 
             <div className={styles.field}>
+              <label htmlFor="startMonth" className={styles.label}>
+                시작 월 *
+              </label>
+              <select
+                id="startMonth"
+                value={formData.startMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    startMonth: parseInt(e.target.value),
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.field}>
               <div className={styles.endYearWrapper}>
                 <label htmlFor="endYear" className={styles.label}>
                   종료년도 *
@@ -502,6 +539,29 @@ function ExpenseModal({
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}
+            </div>
+
+            <div className={styles.field}>
+              <label htmlFor="endMonth" className={styles.label}>
+                종료 월 *
+              </label>
+              <select
+                id="endMonth"
+                value={formData.endMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    endMonth: parseInt(e.target.value),
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

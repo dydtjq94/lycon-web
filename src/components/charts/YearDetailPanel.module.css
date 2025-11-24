@@ -97,12 +97,13 @@
 .summaryRow {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.5rem;
   font-size: 0.75rem;
   padding: 0.5rem;
   background: transparent; /* #fafafa → transparent */
   border-radius: 4px;
+  flex-wrap: wrap;
 }
 
 .summaryItem {
@@ -122,6 +123,24 @@
   font-size: 0.85rem; /* 0.8rem → 0.85rem */
   font-weight: 700;
   color: #111827;
+}
+
+.summaryNegative {
+  color: #dc2626;
+}
+
+.compactTotalNet {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.positive {
+  color: #10b981; /* 자산에 쓰이는 초록 */
+}
+
+.negative {
+  color: #ef4444; /* 부채에 쓰이는 빨강 */
 }
 
 /* 컴팩트 섹션 (자산/부채 리스트) */
