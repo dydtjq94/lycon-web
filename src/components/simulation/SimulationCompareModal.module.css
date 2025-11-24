@@ -419,6 +419,8 @@
   align-items: flex-start;
   padding: 0;
   min-height: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .summaryLabel {
@@ -628,6 +630,8 @@
   height: 100%;
   display: flex;
   align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .detailedFinancialItem:hover {

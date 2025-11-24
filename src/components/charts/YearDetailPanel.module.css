@@ -44,6 +44,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.35);
 }
 
 .title {
@@ -57,17 +59,47 @@
   flex-wrap: wrap;
 }
 
+.titleEmphasis {
+  font-weight: 800;
+  color: #111827;
+}
+
+.titleAge {
+  color: #6b7280;
+  font-weight: 600;
+}
+
 .netInline {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #6b7280;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 
 .netValueInline {
   font-weight: 800;
   color: #0f172a;
+}
+
+.netInlineLabel {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.netInlinePositive {
+  border-color: #bbf7d0;
+  background: linear-gradient(135deg, #ecfdf3, #f0fdf4);
+}
+
+.netInlineNegative {
+  border-color: #fecdd3;
+  background: linear-gradient(135deg, #fef2f2, #fff7f7);
 }
 
 .closeButton {

@@ -562,8 +562,18 @@ function YearDetailPanel({
         {/* 헤더 */}
         <div className={styles.header}>
           <h2 className={styles.title}>
-            {yearData?.year}년 ({yearData?.age}세)
-            <span className={styles.netInline}>
+            <span className={styles.titleEmphasis}>{yearData?.year}년</span>
+            <span className={styles.titleAge}>({yearData?.age}세)</span>
+            <span
+              className={`${styles.netInline} ${
+                netAssets > 0
+                  ? styles.netInlinePositive
+                  : netAssets < 0
+                  ? styles.netInlineNegative
+                  : ""
+              }`}
+            >
+              <span className={styles.netInlineLabel}>순자산</span>
               <span
                 className={`${styles.netValueInline} ${
                   netAssets > 0
