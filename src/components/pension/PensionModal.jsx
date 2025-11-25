@@ -101,7 +101,7 @@ function PensionModal({
     contributionEndYear: new Date().getFullYear() + 10,
     contributionEndMonth: 12, // 적립 종료 월
     returnRate: 2.86, // 투자 수익률
-    paymentStartYear: age65Year, // 수령 시작년도
+    paymentStartYear: getRetirementYear() + 1, // 수령 시작년도: 은퇴년도+1
     paymentStartMonth: 1, // 수령 시작 월
     paymentYears: 10, // 수령 기간(년) - PMT 방식
     memo: "",
@@ -204,7 +204,9 @@ function PensionModal({
           setSimulationStatusMap(statusMap);
 
           // 현재 활성 시뮬레이션을 기본 선택
-          const defaultSelected = activeSimulationId ? [activeSimulationId] : [];
+          const defaultSelected = activeSimulationId
+            ? [activeSimulationId]
+            : [];
           setSelectedSimulationIds(defaultSelected);
 
           // 최소 1초 로딩 유지
@@ -279,9 +281,11 @@ function PensionModal({
           startMonth: editData.startMonth || 1, // 기존 데이터 호환성: 없으면 1월
           endYear: editData.endYear || new Date().getFullYear() + 20,
           endMonth: editData.endMonth || 12, // 기존 데이터 호환성: 없으면 12월
-          inflationRate: editData.inflationRate !== undefined && editData.inflationRate !== null
-            ? editData.inflationRate.toFixed(2)
-            : 1.89,
+          inflationRate:
+            editData.inflationRate !== undefined &&
+            editData.inflationRate !== null
+              ? editData.inflationRate.toFixed(2)
+              : 1.89,
           currentAmount:
             editData.currentAmount !== undefined &&
             editData.currentAmount !== null
@@ -304,7 +308,7 @@ function PensionModal({
               ? editData.returnRate.toFixed(2)
               : 2.86,
           paymentStartYear:
-            editData.paymentStartYear || new Date().getFullYear() + 11,
+            editData.paymentStartYear || getRetirementYear() + 1,
           paymentStartMonth: editData.paymentStartMonth || 1, // 기존 데이터 호환성: 없으면 1월
           paymentYears: editData.paymentYears
             ? editData.paymentYears
@@ -340,9 +344,11 @@ function PensionModal({
           startMonth: initialData.startMonth || 1,
           endYear: initialData.endYear || new Date().getFullYear() + 20,
           endMonth: initialData.endMonth || 12,
-          inflationRate: initialData.inflationRate !== undefined && initialData.inflationRate !== null
-            ? initialData.inflationRate.toFixed(2)
-            : 1.89,
+          inflationRate:
+            initialData.inflationRate !== undefined &&
+            initialData.inflationRate !== null
+              ? initialData.inflationRate.toFixed(2)
+              : 1.89,
           currentAmount:
             initialData.currentAmount !== undefined &&
             initialData.currentAmount !== null
@@ -365,7 +371,7 @@ function PensionModal({
               ? initialData.returnRate.toFixed(2)
               : 2.86,
           paymentStartYear:
-            initialData.paymentStartYear || new Date().getFullYear() + 11,
+            initialData.paymentStartYear || getRetirementYear() + 1,
           paymentStartMonth: initialData.paymentStartMonth || 1,
           paymentYears: initialData.paymentYears
             ? initialData.paymentYears
@@ -385,7 +391,8 @@ function PensionModal({
             initialData.yearsOfService !== null
               ? initialData.yearsOfService.toString()
               : "",
-          noAdditionalContribution: initialData.noAdditionalContribution || false,
+          noAdditionalContribution:
+            initialData.noAdditionalContribution || false,
         });
       } else {
         // 새 데이터일 때 초기화
@@ -407,7 +414,7 @@ function PensionModal({
           contributionEndYear: new Date().getFullYear() + 10,
           contributionEndMonth: 12,
           returnRate: 2.86,
-          paymentStartYear: age65Year,
+          paymentStartYear: getRetirementYear() + 1,
           paymentStartMonth: 1,
           paymentYears: 10,
           memo: "",
@@ -499,7 +506,7 @@ function PensionModal({
     switch (newType) {
       case "national":
         newFormData.title = "국민연금";
-        newFormData.startYear = age65Year;
+        newFormData.startYear = age65Year + 1;
         newFormData.startMonth = 1;
         newFormData.endYear = age90Year;
         newFormData.endMonth = 12;
@@ -511,7 +518,7 @@ function PensionModal({
         newFormData.contributionStartMonth = 1;
         newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
         newFormData.contributionEndMonth = 12;
-        newFormData.paymentStartYear = retirementYear; // 은퇴년도부터 수령
+        newFormData.paymentStartYear = retirementYear + 1; // 은퇴년도부터 수령
         newFormData.paymentStartMonth = 1;
         newFormData.paymentYears = 10; // 10년간 수령
         newFormData.noAdditionalContribution = false; // 퇴직연금은 추가 적립 안함 해제
@@ -522,7 +529,7 @@ function PensionModal({
         newFormData.contributionStartMonth = 1;
         newFormData.contributionEndYear = retirementYear; // 은퇴 나이까지 적립
         newFormData.contributionEndMonth = 12;
-        newFormData.paymentStartYear = retirementYear; // 은퇴년도부터 수령
+        newFormData.paymentStartYear = retirementYear + 1; // 은퇴년도부터 수령
         newFormData.paymentStartMonth = 1;
         newFormData.paymentYears = 10; // 10년간 수령
         newFormData.noAdditionalContribution = false; // 개인연금은 추가 적립 안함 해제
@@ -534,7 +541,7 @@ function PensionModal({
         newFormData.contributionStartMonth = 1;
         newFormData.contributionEndYear = retirementYear; // 은퇴년도 (추가 적립 안함이므로 의미 없음)
         newFormData.contributionEndMonth = 12;
-        newFormData.paymentStartYear = retirementYear; // 은퇴년도 즉시 수령
+        newFormData.paymentStartYear = retirementYear + 1; // 은퇴년도 즉시 수령
         newFormData.paymentStartMonth = 1;
         newFormData.paymentYears = 1; // 은퇴년도 즉시 수령 (한번에 현금으로)
         break;
@@ -654,10 +661,11 @@ function PensionModal({
         formData.type === "national" ? parseInt(formData.monthlyAmount) : 0,
       inflationRate:
         formData.type === "national" ? parseFloat(formData.inflationRate) : 0,
-      startYear: formData.type === "national" ? parseInt(formData.startYear) : 0,
-      startMonth: formData.type === "national" ? (formData.startMonth || 1) : 0,
+      startYear:
+        formData.type === "national" ? parseInt(formData.startYear) : 0,
+      startMonth: formData.type === "national" ? formData.startMonth || 1 : 0,
       endYear: formData.type === "national" ? parseInt(formData.endYear) : 0,
-      endMonth: formData.type === "national" ? (formData.endMonth || 12) : 0,
+      endMonth: formData.type === "national" ? formData.endMonth || 12 : 0,
       currentAmount:
         formData.type !== "national" && formData.currentAmount
           ? parseInt(formData.currentAmount)
@@ -667,19 +675,23 @@ function PensionModal({
           ? parseInt(formData.contributionAmount)
           : 0,
       contributionStartYear:
-        formData.type !== "national" ? parseInt(formData.contributionStartYear) : 0,
+        formData.type !== "national"
+          ? parseInt(formData.contributionStartYear)
+          : 0,
       contributionStartMonth:
-        formData.type !== "national" ? (formData.contributionStartMonth || 1) : 0,
+        formData.type !== "national" ? formData.contributionStartMonth || 1 : 0,
       contributionEndYear:
-        formData.type !== "national" ? parseInt(formData.contributionEndYear) : 0,
+        formData.type !== "national"
+          ? parseInt(formData.contributionEndYear)
+          : 0,
       contributionEndMonth:
-        formData.type !== "national" ? (formData.contributionEndMonth || 12) : 0,
+        formData.type !== "national" ? formData.contributionEndMonth || 12 : 0,
       returnRate:
         formData.type !== "national" ? parseFloat(formData.returnRate) : 0, // 백분율로 저장 (사용 시 /100 해야 함)
       paymentStartYear:
         formData.type !== "national" ? parseInt(formData.paymentStartYear) : 0,
       paymentStartMonth:
-        formData.type !== "national" ? (formData.paymentStartMonth || 1) : 0,
+        formData.type !== "national" ? formData.paymentStartMonth || 1 : 0,
       paymentYears:
         formData.type !== "national" ? parseInt(formData.paymentYears) : 0,
       isFixedContributionEndYearToRetirement:
@@ -718,20 +730,26 @@ function PensionModal({
   // 모달 닫기 핸들러
   const handleClose = () => {
     const { age65Year, age90Year } = getDefaultYears();
+    const retirementYear = getRetirementYear();
     setFormData({
       type: "",
       title: "",
       monthlyAmount: "",
       startYear: age65Year,
+      startMonth: 1,
       endYear: age90Year,
+      endMonth: 12,
       inflationRate: 1.89,
       currentAmount: "",
       contributionAmount: "",
       contributionFrequency: "monthly",
       contributionStartYear: new Date().getFullYear(),
+      contributionStartMonth: 1,
       contributionEndYear: new Date().getFullYear() + 10,
+      contributionEndMonth: 12,
       returnRate: 2.86,
-      paymentStartYear: age65Year,
+      paymentStartYear: retirementYear + 1,
+      paymentStartMonth: 1,
       paymentYears: 10,
       memo: "",
       isFixedContributionEndYearToRetirement: false,
@@ -1225,16 +1243,20 @@ function PensionModal({
                             onChange={(e) =>
                               setFormData({
                                 ...formData,
-                                contributionStartMonth: parseInt(e.target.value),
+                                contributionStartMonth: parseInt(
+                                  e.target.value
+                                ),
                               })
                             }
                             className={styles.select}
                           >
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                              <option key={m} value={m}>
-                                {m}월
-                              </option>
-                            ))}
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(
+                              (m) => (
+                                <option key={m} value={m}>
+                                  {m}월
+                                </option>
+                              )
+                            )}
                           </select>
                         </div>
                       </div>
@@ -1289,11 +1311,13 @@ function PensionModal({
                             }
                             className={styles.select}
                           >
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                              <option key={m} value={m}>
-                                {m}월
-                              </option>
-                            ))}
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(
+                              (m) => (
+                                <option key={m} value={m}>
+                                  {m}월
+                                </option>
+                              )
+                            )}
                           </select>
                         </div>
                       </div>
@@ -1501,6 +1525,7 @@ function PensionModal({
                     )}
                   </div>
 
+                  {/* 적립 시작년도 / 시작월 */}
                   <div className={styles.row}>
                     <div className={styles.field}>
                       <label className={styles.label}>적립 시작년도</label>
@@ -1518,7 +1543,6 @@ function PensionModal({
                         className={styles.input}
                         placeholder="2025"
                       />
-                      {/* 적립 시작년도 나이 표시 */}
                       {formData.contributionStartYear &&
                         profileData &&
                         profileData.birthYear && (
@@ -1531,7 +1555,30 @@ function PensionModal({
                           </div>
                         )}
                     </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>적립 시작 월</label>
+                      <select
+                        value={formData.contributionStartMonth}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            contributionStartMonth:
+                              parseInt(e.target.value) || 1,
+                          })
+                        }
+                        className={styles.select}
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                          <option key={m} value={m}>
+                            {m}월
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
+                  {/* 적립 종료년도 / 종료월 */}
+                  <div className={styles.row}>
                     <div className={styles.field}>
                       <div className={styles.endYearWrapper}>
                         <label className={styles.label}>적립 종료년도</label>
@@ -1546,7 +1593,6 @@ function PensionModal({
                               setFormData({
                                 ...formData,
                                 isFixedContributionEndYearToRetirement: isFixed,
-                                // 체크 시 은퇴년도로 자동 설정
                                 contributionEndYear: isFixed
                                   ? getRetirementYear()
                                   : formData.contributionEndYear,
@@ -1567,7 +1613,6 @@ function PensionModal({
                           setFormData({
                             ...formData,
                             contributionEndYear: value,
-                            // 수동으로 변경하면 고정 해제
                             isFixedContributionEndYearToRetirement: false,
                           });
                         }}
@@ -1584,7 +1629,6 @@ function PensionModal({
                         }`}
                         placeholder="2035"
                       />
-                      {/* 적립 종료년도 나이 표시 */}
                       {formData.contributionEndYear &&
                         profileData &&
                         profileData.birthYear && (
@@ -1602,8 +1646,86 @@ function PensionModal({
                         </span>
                       )}
                     </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>적립 종료 월</label>
+                      <select
+                        value={formData.contributionEndMonth}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            contributionEndMonth:
+                              parseInt(e.target.value) || 12,
+                          })
+                        }
+                        className={styles.select}
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                          <option key={m} value={m}>
+                            {m}월
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
+                  {/* 수령 시작년도 / 시작월 */}
+                  <div className={styles.row}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>수령 시작년도</label>
+                      <input
+                        type="text"
+                        value={formData.paymentStartYear}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            paymentStartYear: e.target.value,
+                          })
+                        }
+                        onKeyPress={handleKeyPress}
+                        className={`${styles.input} ${
+                          errors.paymentStartYear ? styles.error : ""
+                        }`}
+                        placeholder="2041"
+                      />
+                      {formData.paymentStartYear &&
+                        profileData &&
+                        profileData.birthYear && (
+                          <div className={styles.agePreview}>
+                            {calculateKoreanAge(
+                              profileData.birthYear,
+                              formData.paymentStartYear
+                            )}
+                            세
+                          </div>
+                        )}
+                      {errors.paymentStartYear && (
+                        <span className={styles.errorText}>
+                          {errors.paymentStartYear}
+                        </span>
+                      )}
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>수령 시작 월 *</label>
+                      <select
+                        value={formData.paymentStartMonth}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            paymentStartMonth: parseInt(e.target.value),
+                          })
+                        }
+                        className={styles.select}
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                          <option key={m} value={m}>
+                            {m}월
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* 연평균 수익률 / 수령 기간 */}
                   <div className={`${styles.row} ${styles.rowWithMargin}`}>
                     <div className={styles.field}>
                       <label className={styles.label}>연평균 수익률 (%)</label>
@@ -1612,8 +1734,7 @@ function PensionModal({
                         value={formData.returnRate}
                         onChange={(e) => {
                           const value = e.target.value;
-                          // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
-                          if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          if (value === "" || /^-?\\d*\\.?\\d*$/.test(value)) {
                             setFormData({
                               ...formData,
                               returnRate: value,
@@ -1632,65 +1753,6 @@ function PensionModal({
                         </span>
                       )}
                     </div>
-
-                    <div className={styles.row}>
-                      <div className={styles.field}>
-                        <label className={styles.label}>수령 시작년도</label>
-                        <input
-                          type="text"
-                          value={formData.paymentStartYear}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              paymentStartYear: e.target.value,
-                            })
-                          }
-                          onKeyPress={handleKeyPress}
-                          className={`${styles.input} ${
-                            errors.paymentStartYear ? styles.error : ""
-                          }`}
-                          placeholder="2041"
-                        />
-                        {/* 수령 시작년도 나이 표시 */}
-                        {formData.paymentStartYear &&
-                          profileData &&
-                          profileData.birthYear && (
-                            <div className={styles.agePreview}>
-                              {calculateKoreanAge(
-                                profileData.birthYear,
-                                formData.paymentStartYear
-                              )}
-                              세
-                            </div>
-                          )}
-                        {errors.paymentStartYear && (
-                          <span className={styles.errorText}>
-                            {errors.paymentStartYear}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className={styles.field}>
-                        <label className={styles.label}>수령 시작 월 *</label>
-                        <select
-                          value={formData.paymentStartMonth}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              paymentStartMonth: parseInt(e.target.value),
-                            })
-                          }
-                          className={styles.select}
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                            <option key={m} value={m}>
-                              {m}월
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
                     <div className={styles.field}>
                       <label className={styles.label}>수령 기간(년)</label>
                       <input
