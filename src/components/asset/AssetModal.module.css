@@ -62,9 +62,15 @@
 }
 
 .row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.row .field {
+  flex: 1 1 0;
+  margin-bottom: 0;
 }
 
 .label {
@@ -81,11 +87,19 @@
   font-size: 0.8rem;
 }
 
+.label + .label {
+  margin-top: 0.5rem;
+}
+
 .fieldHelper {
   margin-top: 0.375rem;
   font-size: 0.75rem;
   color: #6b7280;
   line-height: 1.4;
+}
+
+.taxField {
+  margin-top: 1rem;
 }
 
 .input,
@@ -144,11 +158,16 @@
 .yearInputs {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .yearInput {
   flex: 1;
+}
+
+.yearInputs .select {
+  flex: 1 0 110px;
+  min-width: 110px;
 }
 
 .yearSeparator {
@@ -311,13 +330,8 @@
     padding: 1rem;
   }
 
-  .yearInputs {
+  .row {
     flex-direction: column;
-    align-items: stretch;
-  }
-
-  .yearSeparator {
-    text-align: center;
-    padding: 8px 0;
+    gap: 0.75rem;
   }
 }

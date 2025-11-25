@@ -24,15 +24,21 @@ const RealEstateModal = ({
     acquisitionYear: "", // 취득일자 (양도세 계산용)
     growthRate: "2.4",
     startYear: new Date().getFullYear(),
+    startMonth: 1,
     endYear: new Date().getFullYear() + 30, // 종료년도 추가
+    endMonth: 12,
     holdingPeriod: "",
     hasRentalIncome: false,
     monthlyRentalIncome: "",
     rentalIncomeStartYear: "",
+    rentalIncomeStartMonth: 1,
     rentalIncomeEndYear: "",
+    rentalIncomeEndMonth: 12,
     convertToPension: false,
     pensionStartYear: "",
+    pensionStartMonth: 1,
     pensionEndYear: "",
+    pensionEndMonth: 12,
     monthlyPensionAmount: "",
     memo: "(서울) 연평균 : 9.3%\n(디폴트) 10년간 전국 주택의 총 매매가 연평균 상승률 : 2.4%\n주택연금은 12억원 미만만 가능",
     isPurchase: false, // 구매 여부
@@ -92,7 +98,9 @@ const RealEstateModal = ({
           setSimulationStatusMap(statusMap);
 
           // 현재 활성 시뮬레이션을 기본 선택
-          const defaultSelected = activeSimulationId ? [activeSimulationId] : [];
+          const defaultSelected = activeSimulationId
+            ? [activeSimulationId]
+            : [];
           setSelectedSimulationIds(defaultSelected);
 
           // 최소 1초 로딩 유지
@@ -165,19 +173,26 @@ const RealEstateModal = ({
           currentValue: editData.currentValue || "",
           acquisitionPrice: editData.acquisitionPrice || "",
           acquisitionYear: editData.acquisitionYear || "",
-          growthRate: editData.growthRate !== undefined && editData.growthRate !== null
-            ? editData.growthRate.toFixed(2)
-            : "2.4",
+          growthRate:
+            editData.growthRate !== undefined && editData.growthRate !== null
+              ? editData.growthRate.toFixed(2)
+              : "2.4",
           startYear: editData.startYear || new Date().getFullYear(),
+          startMonth: editData.startMonth || 1,
           endYear: editData.endYear || new Date().getFullYear() + 30,
+          endMonth: editData.endMonth || 12,
           holdingPeriod: editData.holdingPeriod || "",
           hasRentalIncome: editData.hasRentalIncome || false,
           monthlyRentalIncome: editData.monthlyRentalIncome || "",
           rentalIncomeStartYear: editData.rentalIncomeStartYear || "",
+          rentalIncomeStartMonth: editData.rentalIncomeStartMonth || 1,
           rentalIncomeEndYear: editData.rentalIncomeEndYear || "",
+          rentalIncomeEndMonth: editData.rentalIncomeEndMonth || 12,
           convertToPension: editData.convertToPension || false,
           pensionStartYear: editData.pensionStartYear || "",
+          pensionStartMonth: editData.pensionStartMonth || 1,
           pensionEndYear: editData.pensionEndYear || "",
+          pensionEndMonth: editData.pensionEndMonth || 12,
           monthlyPensionAmount: editData.monthlyPensionAmount || "",
           memo: editData.memo || "",
           isPurchase: editData.isPurchase || false,
@@ -194,19 +209,27 @@ const RealEstateModal = ({
           currentValue: initialData.currentValue || "",
           acquisitionPrice: initialData.acquisitionPrice || "",
           acquisitionYear: initialData.acquisitionYear || "",
-          growthRate: initialData.growthRate !== undefined && initialData.growthRate !== null
-            ? initialData.growthRate.toFixed(2)
-            : "2.4",
+          growthRate:
+            initialData.growthRate !== undefined &&
+            initialData.growthRate !== null
+              ? initialData.growthRate.toFixed(2)
+              : "2.4",
           startYear: initialData.startYear || new Date().getFullYear(),
+          startMonth: initialData.startMonth || 1,
           endYear: initialData.endYear || new Date().getFullYear() + 30,
+          endMonth: initialData.endMonth || 12,
           holdingPeriod: initialData.holdingPeriod || "",
           hasRentalIncome: initialData.hasRentalIncome || false,
           monthlyRentalIncome: initialData.monthlyRentalIncome || "",
           rentalIncomeStartYear: initialData.rentalIncomeStartYear || "",
+          rentalIncomeStartMonth: initialData.rentalIncomeStartMonth || 1,
           rentalIncomeEndYear: initialData.rentalIncomeEndYear || "",
+          rentalIncomeEndMonth: initialData.rentalIncomeEndMonth || 12,
           convertToPension: initialData.convertToPension || false,
           pensionStartYear: initialData.pensionStartYear || "",
+          pensionStartMonth: initialData.pensionStartMonth || 1,
           pensionEndYear: initialData.pensionEndYear || "",
+          pensionEndMonth: initialData.pensionEndMonth || 12,
           monthlyPensionAmount: initialData.monthlyPensionAmount || "",
           memo: initialData.memo || "",
           isPurchase: initialData.isPurchase || false,
@@ -222,15 +245,21 @@ const RealEstateModal = ({
           acquisitionYear: "",
           growthRate: "2.4",
           startYear: new Date().getFullYear(),
+          startMonth: 1,
           endYear: new Date().getFullYear() + 30,
+          endMonth: 12,
           holdingPeriod: "",
           hasRentalIncome: false,
           monthlyRentalIncome: "",
           rentalIncomeStartYear: "",
+          rentalIncomeStartMonth: 1,
           rentalIncomeEndYear: "",
+          rentalIncomeEndMonth: 12,
           convertToPension: false,
           pensionStartYear: "",
+          pensionStartMonth: 1,
           pensionEndYear: "",
+          pensionEndMonth: 12,
           monthlyPensionAmount: "",
           memo: "(서울) 연평균 : 9.3%\n(디폴트) 10년간 전국 주택의 총 매매가 연평균 상승률 : 2.4%\n주택연금은 12억원 미만만 가능",
           isPurchase: false,
@@ -268,15 +297,21 @@ const RealEstateModal = ({
       currentValue: "",
       growthRate: "2.4",
       startYear: new Date().getFullYear(),
+      startMonth: 1,
       endYear: new Date().getFullYear() + 30,
+      endMonth: 12,
       holdingPeriod: "",
       hasRentalIncome: false,
       monthlyRentalIncome: "",
       rentalIncomeStartYear: "",
+      rentalIncomeStartMonth: 1,
       rentalIncomeEndYear: "",
+      rentalIncomeEndMonth: 12,
       convertToPension: false,
       pensionStartYear: "",
+      pensionStartMonth: 1,
       pensionEndYear: "",
+      pensionEndMonth: 12,
       monthlyPensionAmount: "",
       memo: "(서울) 연평균 : 9.3%\n(디폴트) 10년간 전국 주택의 총 매매가 연평균 상승률 : 2.4%\n주택연금은 12억원 미만만 가능",
       isPurchase: false,
@@ -377,7 +412,9 @@ const RealEstateModal = ({
           : null, // 취득일자 (양도세 계산용)
       growthRate: parseFloat(formData.growthRate), // 백분율 그대로 저장
       startYear: parseInt(formData.startYear),
+      startMonth: parseInt(formData.startMonth) || 1,
       endYear: parseInt(formData.endYear),
+      endMonth: parseInt(formData.endMonth) || 12,
       holdingPeriod: holdingPeriod,
       hasRentalIncome: formData.hasRentalIncome,
       monthlyRentalIncome: formData.hasRentalIncome
@@ -386,15 +423,27 @@ const RealEstateModal = ({
       rentalIncomeStartYear: formData.hasRentalIncome
         ? parseInt(formData.rentalIncomeStartYear)
         : null,
+      rentalIncomeStartMonth: formData.hasRentalIncome
+        ? parseInt(formData.rentalIncomeStartMonth) || 1
+        : null,
       rentalIncomeEndYear: formData.hasRentalIncome
         ? parseInt(formData.rentalIncomeEndYear)
+        : null,
+      rentalIncomeEndMonth: formData.hasRentalIncome
+        ? parseInt(formData.rentalIncomeEndMonth) || 12
         : null,
       convertToPension: formData.convertToPension,
       pensionStartYear: formData.convertToPension
         ? parseInt(formData.pensionStartYear)
         : null,
+      pensionStartMonth: formData.convertToPension
+        ? parseInt(formData.pensionStartMonth) || 1
+        : null,
       pensionEndYear: formData.convertToPension
         ? parseInt(formData.pensionEndYear)
+        : null,
+      pensionEndMonth: formData.convertToPension
+        ? parseInt(formData.pensionEndMonth) || 12
         : null,
       monthlyPensionAmount: formData.convertToPension
         ? parseInt(formData.monthlyPensionAmount)
@@ -613,56 +662,99 @@ const RealEstateModal = ({
           </div>
 
           {/* 보유 기간 */}
-          <div className={styles.field}>
-            <label className={styles.label}>보유 기간 *</label>
-            <div className={styles.yearInputs}>
-              <input
-                type="text"
-                value={formData.startYear}
-                onChange={(e) =>
-                  setFormData({ ...formData, startYear: e.target.value })
-                }
-                onKeyPress={handleKeyPress}
-                className={`${styles.input} ${styles.yearInput} ${
-                  errors.startYear ? styles.error : ""
-                }`}
-                placeholder="보유 시작"
-              />
-              <span className={styles.yearSeparator}>~</span>
-              <input
-                type="text"
-                value={formData.endYear}
-                onChange={(e) =>
-                  setFormData({ ...formData, endYear: e.target.value })
-                }
-                onKeyPress={handleKeyPress}
-                className={`${styles.input} ${styles.yearInput} ${
-                  errors.endYear ? styles.error : ""
-                }`}
-                placeholder="보유 종료"
-              />
-            </div>
-            {/* 년도별 나이 표시 */}
-            {formData.startYear && profileData && profileData.birthYear && (
-              <div className={styles.agePreview}>
-                {calculateKoreanAge(profileData.birthYear, formData.startYear)}
-                세
-                {formData.endYear &&
-                  ` ~ ${calculateKoreanAge(
-                    profileData.birthYear,
-                    parseInt(formData.endYear)
-                  )}세`}
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <label className={styles.label}>보유 시작 *</label>
+              <div className={styles.yearInputs}>
+                <input
+                  type="text"
+                  value={formData.startYear}
+                  onChange={(e) =>
+                    setFormData({ ...formData, startYear: e.target.value })
+                  }
+                  onKeyPress={handleKeyPress}
+                  className={`${styles.input} ${
+                    errors.startYear ? styles.error : ""
+                  }`}
+                  placeholder="보유 시작"
+                />
+                <select
+                  value={formData.startMonth}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      startMonth: parseInt(e.target.value) || 1,
+                    })
+                  }
+                  className={styles.select}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
+                  ))}
+                </select>
               </div>
-            )}
-            {(errors.startYear || errors.endYear) && (
-              <span className={styles.errorText}>
-                {errors.startYear || errors.endYear}
-              </span>
-            )}
+              {formData.startYear && profileData?.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(
+                    profileData.birthYear,
+                    formData.startYear
+                  )}
+                  세
+                </div>
+              )}
+              {errors.startYear && (
+                <span className={styles.errorText}>{errors.startYear}</span>
+              )}
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>보유 종료 *</label>
+              <div className={styles.yearInputs}>
+                <input
+                  type="text"
+                  value={formData.endYear}
+                  onChange={(e) =>
+                    setFormData({ ...formData, endYear: e.target.value })
+                  }
+                  onKeyPress={handleKeyPress}
+                  className={`${styles.input} ${
+                    errors.endYear ? styles.error : ""
+                  }`}
+                  placeholder="보유 종료"
+                />
+                <select
+                  value={formData.endMonth}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      endMonth: parseInt(e.target.value) || 12,
+                    })
+                  }
+                  className={styles.select}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {formData.endYear && profileData?.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(profileData.birthYear, formData.endYear)}
+                  세
+                </div>
+              )}
+              {errors.endYear && (
+                <span className={styles.errorText}>{errors.endYear}</span>
+              )}
+            </div>
           </div>
 
           {/* 임대 소득 여부 */}
-          <div className={styles.field}>
+          <div className={styles.field} style={{ marginTop: "1.5rem" }}>
             <label className={styles.checkboxLabel}>
               <input
                 type="checkbox"
@@ -672,15 +764,23 @@ const RealEstateModal = ({
                   setFormData({
                     ...formData,
                     hasRentalIncome: isChecked,
-                    // 체크 시 자동으로 임대 시작/종료년도를 부동산 보유 기간으로 설정
+                    // 체크 시 자동으로 임대 시작/종료 연·월을 부동산 보유 기간으로 설정
                     rentalIncomeStartYear:
                       isChecked && !formData.rentalIncomeStartYear
                         ? formData.startYear || new Date().getFullYear()
                         : formData.rentalIncomeStartYear,
+                    rentalIncomeStartMonth:
+                      isChecked && !formData.rentalIncomeStartMonth
+                        ? formData.startMonth || 1
+                        : formData.rentalIncomeStartMonth || 1,
                     rentalIncomeEndYear:
                       isChecked && !formData.rentalIncomeEndYear
                         ? formData.endYear || new Date().getFullYear() + 30
                         : formData.rentalIncomeEndYear,
+                    rentalIncomeEndMonth:
+                      isChecked && !formData.rentalIncomeEndMonth
+                        ? formData.endMonth || 12
+                        : formData.rentalIncomeEndMonth || 12,
                   });
                 }}
                 className={styles.checkbox}
@@ -728,23 +828,40 @@ const RealEstateModal = ({
 
               <div className={styles.row}>
                 <div className={styles.field}>
-                  <label className={styles.label}>임대 소득 시작년도</label>
-                  <input
-                    type="text"
-                    value={formData.rentalIncomeStartYear}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        rentalIncomeStartYear: e.target.value,
-                      })
-                    }
-                    onKeyPress={handleKeyPress}
-                    className={`${styles.input} ${
-                      errors.rentalIncomeStartYear ? styles.error : ""
-                    }`}
-                    placeholder="예: 2025"
-                  />
-                  {/* 임대 소득 시작년도 나이 표시 */}
+                  <label className={styles.label}>임대 소득 시작</label>
+                  <div className={styles.yearInputs}>
+                    <input
+                      type="text"
+                      value={formData.rentalIncomeStartYear}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          rentalIncomeStartYear: e.target.value,
+                        })
+                      }
+                      onKeyPress={handleKeyPress}
+                      className={`${styles.input} ${
+                        errors.rentalIncomeStartYear ? styles.error : ""
+                      }`}
+                      placeholder="예: 2025"
+                    />
+                    <select
+                      value={formData.rentalIncomeStartMonth}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          rentalIncomeStartMonth: parseInt(e.target.value) || 1,
+                        })
+                      }
+                      className={styles.select}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                        <option key={m} value={m}>
+                          {m}월
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   {formData.rentalIncomeStartYear &&
                     profileData &&
                     profileData.birthYear && (
@@ -764,23 +881,40 @@ const RealEstateModal = ({
                 </div>
 
                 <div className={styles.field}>
-                  <label className={styles.label}>임대 소득 종료년도</label>
-                  <input
-                    type="text"
-                    value={formData.rentalIncomeEndYear}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        rentalIncomeEndYear: e.target.value,
-                      })
-                    }
-                    onKeyPress={handleKeyPress}
-                    className={`${styles.input} ${
-                      errors.rentalIncomeEndYear ? styles.error : ""
-                    }`}
-                    placeholder="예: 2083"
-                  />
-                  {/* 임대 소득 종료년도 나이 표시 */}
+                  <label className={styles.label}>임대 소득 종료</label>
+                  <div className={styles.yearInputs}>
+                    <input
+                      type="text"
+                      value={formData.rentalIncomeEndYear}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          rentalIncomeEndYear: e.target.value,
+                        })
+                      }
+                      onKeyPress={handleKeyPress}
+                      className={`${styles.input} ${
+                        errors.rentalIncomeEndYear ? styles.error : ""
+                      }`}
+                      placeholder="예: 2083"
+                    />
+                    <select
+                      value={formData.rentalIncomeEndMonth}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          rentalIncomeEndMonth: parseInt(e.target.value) || 12,
+                        })
+                      }
+                      className={styles.select}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                        <option key={m} value={m}>
+                          {m}월
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   {formData.rentalIncomeEndYear &&
                     profileData &&
                     profileData.birthYear && (
@@ -803,7 +937,7 @@ const RealEstateModal = ({
           )}
 
           {/* 주택연금 전환 여부 */}
-          <div className={styles.field}>
+          <div className={styles.field} style={{ marginTop: "1.5rem" }}>
             <label className={styles.checkboxLabel}>
               <input
                 type="checkbox"
@@ -823,65 +957,6 @@ const RealEstateModal = ({
           {/* 주택연금 관련 필드들 */}
           {formData.convertToPension && (
             <>
-              <div className={styles.field}>
-                <label className={styles.label}>주택연금 수령기간 *</label>
-                <div className={styles.yearInputs}>
-                  <input
-                    type="text"
-                    value={formData.pensionStartYear}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        pensionStartYear: e.target.value,
-                      })
-                    }
-                    onKeyPress={handleKeyPress}
-                    className={`${styles.input} ${styles.yearInput} ${
-                      errors.pensionStartYear ? styles.error : ""
-                    }`}
-                    placeholder="수령 시작년도"
-                  />
-                  <span className={styles.yearSeparator}>~</span>
-                  <input
-                    type="text"
-                    value={formData.pensionEndYear}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        pensionEndYear: e.target.value,
-                      })
-                    }
-                    onKeyPress={handleKeyPress}
-                    className={`${styles.input} ${styles.yearInput} ${
-                      errors.pensionEndYear ? styles.error : ""
-                    }`}
-                    placeholder="수령 종료년도"
-                  />
-                </div>
-                {/* 년도별 나이 표시 */}
-                {formData.pensionStartYear &&
-                  profileData &&
-                  profileData.birthYear && (
-                    <div className={styles.agePreview}>
-                      {calculateKoreanAge(
-                        profileData.birthYear,
-                        formData.pensionStartYear
-                      )}
-                      세
-                      {formData.pensionEndYear &&
-                        ` ~ ${calculateKoreanAge(
-                          profileData.birthYear,
-                          parseInt(formData.pensionEndYear)
-                        )}세`}
-                    </div>
-                  )}
-                {(errors.pensionStartYear || errors.pensionEndYear) && (
-                  <span className={styles.errorText}>
-                    {errors.pensionStartYear || errors.pensionEndYear}
-                  </span>
-                )}
-              </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>월 수령액 (만원)</label>
                 <input
@@ -913,11 +988,115 @@ const RealEstateModal = ({
                   </span>
                 )}
               </div>
+
+              <div className={styles.row}>
+                <div className={styles.field}>
+                  <label className={styles.label}>주택연금 수령 시작</label>
+                  <div className={styles.yearInputs}>
+                    <input
+                      type="text"
+                      value={formData.pensionStartYear}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          pensionStartYear: e.target.value,
+                        })
+                      }
+                      onKeyPress={handleKeyPress}
+                      className={`${styles.input} ${
+                        errors.pensionStartYear ? styles.error : ""
+                      }`}
+                      placeholder="예: 2035"
+                    />
+                    <select
+                      value={formData.pensionStartMonth}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          pensionStartMonth: parseInt(e.target.value) || 1,
+                        })
+                      }
+                      className={styles.select}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                        <option key={m} value={m}>
+                          {m}월
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {formData.pensionStartYear && profileData?.birthYear && (
+                    <div className={styles.agePreview}>
+                      {calculateKoreanAge(
+                        profileData.birthYear,
+                        formData.pensionStartYear
+                      )}
+                      세
+                    </div>
+                  )}
+                  {errors.pensionStartYear && (
+                    <span className={styles.errorText}>
+                      {errors.pensionStartYear}
+                    </span>
+                  )}
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label}>주택연금 수령 종료</label>
+                  <div className={styles.yearInputs}>
+                    <input
+                      type="text"
+                      value={formData.pensionEndYear}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          pensionEndYear: e.target.value,
+                        })
+                      }
+                      onKeyPress={handleKeyPress}
+                      className={`${styles.input} ${
+                        errors.pensionEndYear ? styles.error : ""
+                      }`}
+                      placeholder="예: 2055"
+                    />
+                    <select
+                      value={formData.pensionEndMonth}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          pensionEndMonth: parseInt(e.target.value) || 12,
+                        })
+                      }
+                      className={styles.select}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                        <option key={m} value={m}>
+                          {m}월
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {formData.pensionEndYear && profileData?.birthYear && (
+                    <div className={styles.agePreview}>
+                      {calculateKoreanAge(
+                        profileData.birthYear,
+                        formData.pensionEndYear
+                      )}
+                      세
+                    </div>
+                  )}
+                  {errors.pensionEndYear && (
+                    <span className={styles.errorText}>
+                      {errors.pensionEndYear}
+                    </span>
+                  )}
+                </div>
+              </div>
             </>
           )}
 
           {/* 메모 */}
-          <div className={styles.field}>
+          <div className={styles.field} style={{ marginTop: "1.5rem" }}>
             <label className={styles.label}>비고</label>
             <textarea
               value={formData.memo}
@@ -950,7 +1129,8 @@ const RealEstateModal = ({
                 ) : (
                   simulations.map((sim) => {
                     const status = simulationStatusMap[sim.id] || "create";
-                    const statusText = status === "update" ? "(수정)" : "(추가)";
+                    const statusText =
+                      status === "update" ? "(수정)" : "(추가)";
                     return (
                       <label key={sim.id} className={styles.fixedCheckboxLabel}>
                         <input
@@ -972,7 +1152,8 @@ const RealEstateModal = ({
                           {sim.title || (sim.isDefault ? "현재" : "시뮬레이션")}{" "}
                           <span
                             style={{
-                              color: status === "update" ? "#2196F3" : "#4CAF50",
+                              color:
+                                status === "update" ? "#2196F3" : "#4CAF50",
                             }}
                           >
                             {statusText}

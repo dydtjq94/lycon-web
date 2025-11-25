@@ -237,6 +237,12 @@ export function calculateCashflowSimulation(
   // 저축별 연도별 투자 금액 추적 (저축 ID별, 년도별)
   const savingInvestments = {}; // { savingId: { year: amount } }
 
+  // 숫자 변환 유틸 (fallback 허용)
+  const toNumberOr = (value, fallback = undefined) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : fallback;
+  };
+
   // 저축/투자 월 단위 계산을 위한 상태 초기화
   const savingStates = {};
   savings.forEach((saving, index) => {
@@ -275,6 +281,94 @@ export function calculateCashflowSimulation(
       started: false,
       matured: false,
       initialPurchaseApplied: false,
+    };
+  });
+
+  // 부동산 월 단위 계산을 위한 상태 초기화
+  const realEstateStates = {};
+  realEstates.forEach((realEstate, index) => {
+    const startYear = toNumberOr(realEstate.startYear);
+    const startMonth = toNumberOr(realEstate.startMonth, 1) || 1;
+    const endYear = toNumberOr(realEstate.endYear);
+    const endMonth = toNumberOr(realEstate.endMonth, 12) || 12;
+    const rentalStartYear = toNumberOr(realEstate.rentalIncomeStartYear);
+    const rentalStartMonth = toNumberOr(realEstate.rentalIncomeStartMonth, 1);
+    const rentalEndYear = toNumberOr(realEstate.rentalIncomeEndYear);
+    const rentalEndMonth = toNumberOr(realEstate.rentalIncomeEndMonth, 12);
+    const pensionStartYear = toNumberOr(realEstate.pensionStartYear);
+    const pensionStartMonth = toNumberOr(realEstate.pensionStartMonth, 1);
+    const pensionEndYear = toNumberOr(realEstate.pensionEndYear);
+    const pensionEndMonth = toNumberOr(realEstate.pensionEndMonth, 12);
+
+    const growthRate = (realEstate.growthRate || 0) / 100;
+    const monthlyGrowthRate = convertAnnualToMonthlyGrowthRate(growthRate);
+
+    const key = realEstate.id || realEstate.title || `realestate-${index}`;
+    realEstateStates[key] = {
+      key,
+      title: realEstate.title || `부동산${index + 1}`,
+      isPurchase: !!realEstate.isPurchase,
+      isResidential: !!realEstate.isResidential,
+      acquisitionPrice: toNumberOr(realEstate.acquisitionPrice),
+      acquisitionYear: toNumberOr(realEstate.acquisitionYear, startYear),
+      startYear,
+      startMonth,
+      endYear,
+      endMonth,
+      rentalStartYear,
+      rentalStartMonth: rentalStartMonth || 1,
+      rentalEndYear,
+      rentalEndMonth: rentalEndMonth || 12,
+      hasRentalIncome: !!realEstate.hasRentalIncome,
+      monthlyRentalIncome: toNumberOr(realEstate.monthlyRentalIncome, 0) || 0,
+      convertToPension: !!realEstate.convertToPension,
+      pensionStartYear,
+      pensionStartMonth: pensionStartMonth || 1,
+      pensionEndYear,
+      pensionEndMonth: pensionEndMonth || 12,
+      monthlyPensionAmount: toNumberOr(realEstate.monthlyPensionAmount, 0) || 0,
+      growthRate,
+      monthlyGrowthRate,
+      currentValue: toNumberOr(realEstate.currentValue, 0) || 0,
+      started: false,
+      sold: false,
+      monthsHeld: 0,
+    };
+  });
+
+  // 자산 월 단위 계산을 위한 상태 초기화
+  const assetStates = {};
+  assets.forEach((asset, index) => {
+    const startYear = toNumberOr(asset.startYear);
+    const startMonth = toNumberOr(asset.startMonth, 1) || 1;
+    const endYear = toNumberOr(asset.endYear);
+    const endMonth = toNumberOr(asset.endMonth, 12) || 12;
+    const growthRate = asset.growthRate || 0;
+    const monthlyGrowthRate = convertAnnualToMonthlyGrowthRate(growthRate);
+    const incomeRate = asset.incomeRate || 0;
+    const monthlyIncomeRate = convertAnnualToMonthlyRate(incomeRate);
+
+    const key = asset.id || asset.title || `asset-${index}`;
+    assetStates[key] = {
+      key,
+      title: asset.title || `자산${index + 1}`,
+      startYear,
+      startMonth,
+      endYear,
+      endMonth,
+      growthRate,
+      monthlyGrowthRate,
+      incomeRate,
+      monthlyIncomeRate,
+      currentValue: toNumberOr(asset.currentValue, 0) || 0,
+      initialValue: toNumberOr(asset.currentValue, 0) || 0,
+      isPurchase: !!asset.isPurchase,
+      assetType: asset.assetType || "general",
+      capitalGainsTaxRate: asset.capitalGainsTaxRate || 0,
+      started: false,
+      sold: false,
+      monthsHeld: 0,
+      purchaseApplied: false,
     };
   });
 
@@ -863,7 +957,8 @@ export function calculateCashflowSimulation(
 
         // 현재 연/월 기준 상태 계산
         const isBeforeStart =
-          year < sStartYear || (year === sStartYear && month < state.startMonth);
+          year < sStartYear ||
+          (year === sStartYear && month < state.startMonth);
         const isAfterEnd =
           year > sEndYear || (year === sEndYear && month > state.endMonth);
 
@@ -915,9 +1010,7 @@ export function calculateCashflowSimulation(
         if (inActiveRange) {
           // 적립
           const monthlyAmountBase =
-            state.frequency === "monthly"
-              ? state.amount
-              : state.amount / 12; // 연간 빈도도 월로 균등 분할
+            state.frequency === "monthly" ? state.amount : state.amount / 12; // 연간 빈도도 월로 균등 분할
           const adjustedContribution =
             monthlyAmountBase *
             Math.pow(1 + state.monthlyGrowthRate, state.monthsElapsed);
@@ -935,7 +1028,6 @@ export function calculateCashflowSimulation(
             }
             contributionTotals[stateKey].amount += adjustedContribution;
           }
-
         }
 
         // 수익형 저축 배당/이자 (현금 유입, 재투자 X)
@@ -1224,7 +1316,10 @@ export function calculateCashflowSimulation(
             }
             // 퇴직연금은 적립 시 현금이 빠져나가지 않음 (회사에서 적립)
           }
-        } else if (Number.isFinite(paymentStartYear) && year === paymentStartYear) {
+        } else if (
+          Number.isFinite(paymentStartYear) &&
+          year === paymentStartYear
+        ) {
           // PMT 방식: 수령 시작년도에 PMT 금액 계산 (한 번만, 월 단위)
           const returnRate = pension.returnRate / 100;
           const monthlyReturnRate = convertAnnualToMonthlyRate(returnRate);
@@ -1434,7 +1529,7 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 부동산 관련 계산
+    // 부동산 관련 계산 (월 단위 → 연 집계)
     let totalRentalIncome = 0; // 임대 소득
     let totalRealEstatePension = 0; // 주택연금 수령액
     let totalRealEstateSale = 0; // 부동산 매각 수입
@@ -1444,327 +1539,393 @@ export function calculateCashflowSimulation(
     const realEstatePurchases = []; // 부동산 구매 상세 정보
     const realEstateSales = []; // 부동산 매각 상세 정보
     const realEstateTaxes = []; // 부동산 취득세 상세 정보
-
-    const normalizeYear = (value) => {
-      if (value === null || value === undefined || value === "") {
-        return undefined;
-      }
-      if (typeof value === "number") {
-        return Number.isFinite(value) ? value : undefined;
-      }
-      const parsed = parseInt(value, 10);
-      return Number.isNaN(parsed) ? undefined : parsed;
-    };
-
-    realEstates.forEach((realEstate) => {
-      const startYear = normalizeYear(realEstate.startYear);
-      const endYear = normalizeYear(realEstate.endYear);
-      const rentalStartYear = normalizeYear(realEstate.rentalIncomeStartYear);
-      const rentalEndYear = normalizeYear(realEstate.rentalIncomeEndYear);
-      const pensionStartYear = normalizeYear(realEstate.pensionStartYear);
-      const pensionEndYear = normalizeYear(realEstate.pensionEndYear);
-      const purchaseAmount = Number(realEstate.currentValue) || 0;
-      const rentalMonthly = Number(realEstate.monthlyRentalIncome) || 0;
-      const pensionMonthly = Number(realEstate.monthlyPensionAmount) || 0;
-
-      // 부동산 구매 비용 계산 (첫 년도에 현금으로 차감)
-      if (
-        realEstate.isPurchase &&
-        Number.isFinite(startYear) &&
-        year === startYear &&
-        purchaseAmount > 0
-      ) {
-        totalRealEstatePurchase += purchaseAmount;
-        realEstatePurchases.push({
-          title: realEstate.title,
-          amount: purchaseAmount,
-        });
-        addNegative(
-          `${realEstate.title} | 추가`,
-          purchaseAmount,
-          "부동산 구매",
-          `realestate-purchase-${realEstate.id || realEstate.title}`
-        );
-
-        // 부동산 취득세 계산 및 적용
-        const acquisitionTax = calculateAcquisitionTax(purchaseAmount);
-        totalRealEstateTax += acquisitionTax;
-        realEstateTaxes.push({
-          title: realEstate.title,
-          amount: acquisitionTax,
-          taxRate:
-            purchaseAmount <= 60000
-              ? "1.1%"
-              : purchaseAmount <= 90000
-              ? "2.2%"
-              : "3.3%",
-        });
-        addNegative(
-          `${realEstate.title} | 취득세`,
-          acquisitionTax,
-          "부동산 취득세",
-          `realestate-tax-${realEstate.id || realEstate.title}`
-        );
-      }
-
-      // 임대 소득 계산
-      if (
-        realEstate.hasRentalIncome &&
-        Number.isFinite(rentalStartYear) &&
-        year >= rentalStartYear &&
-        (rentalEndYear === undefined || year <= rentalEndYear) &&
-        rentalMonthly > 0
-      ) {
-        const yearlyRentalIncome = rentalMonthly * 12;
-        totalRentalIncome += yearlyRentalIncome;
-        addPositive(
-          `${realEstate.title} | 임대소득`,
-          yearlyRentalIncome,
-          "임대소득",
-          `realestate-rent-${realEstate.id || realEstate.title}`
-        );
-      }
-
-      // 주택연금 수령액 계산
-      if (
-        realEstate.convertToPension &&
-        Number.isFinite(pensionStartYear) &&
-        year >= pensionStartYear &&
-        (pensionEndYear === undefined || year <= pensionEndYear) &&
-        pensionMonthly > 0
-      ) {
-        const yearlyPensionAmount = pensionMonthly * 12;
-        totalRealEstatePension += yearlyPensionAmount;
-        addPositive(
-          `${realEstate.title} | 주택연금`,
-          yearlyPensionAmount,
-          "주택연금",
-          `realestate-pension-${realEstate.id || realEstate.title}`
-        );
-      }
-
-      // 부동산 매각 수입 계산 (연말 기준: endYear에 매각)
-      if (
-        Number.isFinite(endYear) &&
-        Number.isFinite(startYear) &&
-        year === endYear &&
-        purchaseAmount > 0
-      ) {
-        // 부동산 가치에 상승률을 적용한 최종 가치 계산
-        const growthRate = (realEstate.growthRate || 0) / 100;
-        let finalValue;
-
-        // 주택연금을 받았다면, 연말 기준으로 매년 상승하고 차감
-        if (
-          realEstate.convertToPension &&
-          Number.isFinite(pensionStartYear) &&
-          pensionStartYear <= endYear &&
-          pensionMonthly > 0
-        ) {
-          const yearlyPensionAmount = pensionMonthly * 12;
-
-          // 1. 주택연금 시작 전까지 상승
-          let currentValue = purchaseAmount;
-          for (let y = startYear + 1; y < pensionStartYear; y++) {
-            currentValue = currentValue * (1 + growthRate);
-          }
-
-          // 2. 주택연금 시작부터 매각 전까지: 매년 상승 후 주택연금 차감
-          const actualPensionEndYear = pensionEndYear || endYear;
-          for (let y = pensionStartYear; y < endYear; y++) {
-            currentValue = currentValue * (1 + growthRate);
-            // 주택연금 수령 중이면 차감
-            if (y >= pensionStartYear && y <= actualPensionEndYear) {
-              currentValue = currentValue - yearlyPensionAmount;
-            }
-            // 자산이 0 이하가 되면 0으로 설정
-            if (currentValue < 0) {
-              currentValue = 0;
-              break;
-            }
-          }
-
-          // 3. 매각년도의 상승률 적용
-          if (currentValue > 0) {
-            currentValue = currentValue * (1 + growthRate);
-            // 매각년도에도 주택연금 수령 중이면 차감
-            if (
-              endYear >= pensionStartYear &&
-              endYear <= actualPensionEndYear
-            ) {
-              currentValue = currentValue - yearlyPensionAmount;
-            }
-          }
-
-          finalValue = Math.max(0, currentValue);
-        } else {
-          // 주택연금 없는 경우: 단순 상승률 적용
-          const yearsElapsed = endYear - startYear;
-          finalValue = purchaseAmount * Math.pow(1 + growthRate, yearsElapsed);
-        }
-
-        totalRealEstateSale += finalValue;
-        realEstateSales.push({
-          title: realEstate.title,
-          amount: finalValue,
-        });
-        addPositive(
-          `${realEstate.title} | 수령`,
-          finalValue,
-          "부동산 수령",
-          `realestate-sale-${realEstate.id || realEstate.title}`
-        );
-
-        // 거주용 부동산의 경우 양도소득세 계산
-        if (realEstate.isResidential) {
-          // 취득가액 결정: acquisitionPrice가 있으면 사용, 없으면 currentValue 사용
-          const acquisitionPrice = realEstate.acquisitionPrice
-            ? Number(realEstate.acquisitionPrice)
-            : purchaseAmount;
-
-          // 취득년도 결정: acquisitionYear가 있으면 사용, 없으면 startYear 사용
-          const acquisitionYear = realEstate.acquisitionYear
-            ? Number(realEstate.acquisitionYear)
-            : startYear;
-
-          // 보유기간 계산: 양도년도(endYear) - 취득년도
-          const holdingYears = year - acquisitionYear;
-
-          // 양도소득세 계산 (양도가액 = 매각 시 최종 가치)
-          const { totalTax } = calculateCapitalGainsTax(
-            finalValue,
-            acquisitionPrice,
-            holdingYears
-          );
-
-          // 양도소득세가 있으면 차감
-          if (totalTax > 0) {
-            totalCapitalGainsTax += totalTax;
-            capitalGainsTaxes.push({
-              title: realEstate.title,
-              amount: totalTax,
-              salePrice: finalValue,
-              acquisitionPrice: acquisitionPrice,
-              holdingYears: holdingYears,
-            });
-            addNegative(
-              `${realEstate.title} | 양도세`,
-              totalTax,
-              "양도소득세",
-              `realestate-capitalgains-${realEstate.id || realEstate.title}`
-            );
-          }
-        }
-      }
-    });
-
-    // 자산 수익 계산 (수익형 자산의 이자/배당)
+    const rentalIncomeTotals = {}; // {key: yearlyAmount}
+    const pensionIncomeTotals = {}; // {key: yearlyAmount}
+    // 자산 수익/매각 계산 (월 단위 → 연 집계)
     let totalAssetIncome = 0;
     let totalAssetSale = 0; // 자산 매각 수입
     let totalAssetPurchase = 0; // 자산 구매 비용
     const assetPurchases = []; // 자산 구매 상세 정보
     const assetSales = []; // 자산 매각 상세 정보
+    const assetIncomeTotals = {}; // {key: yearlyAmount}
 
-    assets.forEach((asset) => {
-      // 년도 데이터 타입 확인 및 변환
-      const startYear =
-        typeof asset.startYear === "string"
-          ? parseInt(asset.startYear)
-          : asset.startYear;
-      const endYear =
-        typeof asset.endYear === "string"
-          ? parseInt(asset.endYear)
-          : asset.endYear;
+    // 월 루프
+    for (let month = 1; month <= 12; month++) {
+      Object.values(realEstateStates).forEach((state) => {
+        if (!state || state.sold) return;
 
-      // 자산 구매 비용 계산 (첫 년도에 현금으로 차감)
-      if (asset.isPurchase && year === startYear) {
-        totalAssetPurchase += asset.currentValue;
-        assetPurchases.push({
-          title: asset.title,
-          amount: asset.currentValue,
-        });
-        addNegative(
-          `${asset.title} | 추가`,
-          asset.currentValue,
-          "자산 구매",
-          `asset-purchase-${asset.id || asset.title}`
-        );
-      }
+        const {
+          startYear,
+          startMonth,
+          endYear,
+          endMonth,
+          monthlyGrowthRate,
+          monthlyRentalIncome,
+          hasRentalIncome,
+          rentalStartYear,
+          rentalStartMonth,
+          rentalEndYear,
+          rentalEndMonth,
+          convertToPension,
+          pensionStartYear,
+          pensionStartMonth,
+          pensionEndYear,
+          pensionEndMonth,
+          monthlyPensionAmount,
+          isPurchase,
+          currentValue,
+        } = state;
 
-      if (
-        asset.assetType === "income" &&
-        asset.incomeRate > 0 &&
-        year > startYear &&
-        year < endYear
-      ) {
-        // 연말 기준: 수익은 시작 다음 해부터 종료 전까지 발생
-        // 전년도 말 자산 가치 = currentValue * (1 + growthRate)^(year - startYear - 1)
-        // 수익 = 전년도 말 자산 가치 * 수익률
-        const yearsElapsed = year - startYear; // 시작부터 현재 해까지 경과 년수
-        const previousYearEndValue =
-          asset.currentValue * Math.pow(1 + asset.growthRate, yearsElapsed - 1);
-        const yearlyIncome = previousYearEndValue * asset.incomeRate;
-        totalAssetIncome += yearlyIncome;
-        addPositive(
-          `${asset.title} | 수령`,
-          yearlyIncome,
-          "자산 수령",
-          `asset-income-${asset.id || asset.title}`
-        );
-      }
+        const inHoldingPeriod =
+          Number.isFinite(startYear) &&
+          Number.isFinite(endYear) &&
+          (year > startYear || (year === startYear && month >= startMonth)) &&
+          (year < endYear || (year === endYear && month <= endMonth));
 
-      // 자산 매각 수입 계산 (종료년도에 매각)
-      if (year === endYear) {
-        // 자산 가치에 상승률을 적용한 최종 가치 계산
-        // 시작년도: 원금, 다음 해부터 상승률 적용
-        const yearsElapsed = endYear - startYear;
-        const growthRate = asset.growthRate || 0;
-        const finalValue =
-          asset.currentValue * Math.pow(1 + growthRate, yearsElapsed);
-        totalAssetSale += finalValue;
-        assetSales.push({
-          title: asset.title,
-          amount: finalValue,
-        });
-        addPositive(
-          `${asset.title} | 수령`,
-          finalValue,
-          "자산 수령",
-          `asset-sale-${asset.id || asset.title}`
-        );
+        // 구매 이벤트 (시작월에 현금 유출)
+        if (
+          isPurchase &&
+          !state.purchasedApplied &&
+          Number.isFinite(startYear) &&
+          year === startYear &&
+          month === startMonth &&
+          currentValue > 0
+        ) {
+          totalRealEstatePurchase += currentValue;
+          realEstatePurchases.push({
+            title: state.title,
+            amount: currentValue,
+          });
+          addNegative(
+            `${state.title} | 추가`,
+            currentValue,
+            "부동산 구매",
+            `realestate-purchase-${state.key}`
+          );
 
-        // 양도세 계산 (종료년도에 바로 처리)
-        const taxRate = asset.capitalGainsTaxRate || 0;
-        if (taxRate > 0) {
-          // 양도소득 = 최종가치 - 초기가치
-          const capitalGain = Math.max(0, finalValue - asset.currentValue);
-          const capitalGainsTax = capitalGain * taxRate;
+          const acquisitionTax = calculateAcquisitionTax(currentValue);
+          totalRealEstateTax += acquisitionTax;
+          realEstateTaxes.push({
+            title: state.title,
+            amount: acquisitionTax,
+            taxRate:
+              currentValue <= 60000
+                ? "1.1%"
+                : currentValue <= 90000
+                ? "2.2%"
+                : "3.3%",
+          });
+          addNegative(
+            `${state.title} | 취득세`,
+            acquisitionTax,
+            "부동산 취득세",
+            `realestate-tax-${state.key}`
+          );
 
-          // 양도세를 종료년도에 바로 지출 처리
-          if (capitalGainsTax > 0) {
-            // 소수점이 있으면 소수점 첫째 자리까지 표시
-            const taxRatePercent = taxRate * 100;
-            const taxRateFormatted =
-              taxRatePercent % 1 !== 0
-                ? taxRatePercent.toFixed(1)
-                : Math.floor(taxRatePercent);
-
-            totalCapitalGainsTax += capitalGainsTax;
-
-            // capitalGainsTaxes 배열에 추가 (툴팁 표시용)
-            capitalGainsTaxes.push({
-              title: `${asset.title} | 양도세 ${taxRateFormatted}%`,
-              amount: capitalGainsTax,
-            });
-
-            addNegative(
-              `${asset.title} | 양도세 ${taxRateFormatted}%`,
-              capitalGainsTax,
-              "양도세",
-              `asset-tax-${asset.id || asset.title}`
-            );
-          }
+          state.purchasedApplied = true;
+          state.started = true;
+          state.monthsHeld = 0;
         }
+
+        // 활성화 체크
+        if (inHoldingPeriod && !state.started) {
+          state.started = true;
+          state.monthsHeld = 0;
+        }
+        if (!inHoldingPeriod) {
+          return; // forEach에서는 continue 대신 return 사용
+        }
+
+        // 월 성장률 적용 (시작 월에는 적용하지 않고, 보유 1개월 경과부터 적용)
+        if (state.started && state.monthsHeld > 0 && monthlyGrowthRate !== 0) {
+          state.currentValue =
+            Math.round(state.currentValue * (1 + monthlyGrowthRate) * 1000000) /
+            1000000;
+        }
+
+        // 임대 소득
+        const isActiveHolding = state.started && !state.sold;
+
+        const rentActive =
+          hasRentalIncome &&
+          isActiveHolding &&
+          Number.isFinite(rentalStartYear) &&
+          (year > rentalStartYear ||
+            (year === rentalStartYear && month >= (rentalStartMonth || 1))) &&
+          (rentalEndYear === undefined ||
+            year < rentalEndYear ||
+            (year === rentalEndYear && month <= (rentalEndMonth || 12))) &&
+          (year < endYear || (year === endYear && month <= endMonth));
+        if (rentActive && monthlyRentalIncome > 0) {
+          totalRentalIncome += monthlyRentalIncome;
+          if (!rentalIncomeTotals[state.key]) rentalIncomeTotals[state.key] = 0;
+          rentalIncomeTotals[state.key] += monthlyRentalIncome;
+        }
+
+        // 주택연금 수령 + 자산 차감
+        const pensionActive =
+          convertToPension &&
+          isActiveHolding &&
+          Number.isFinite(pensionStartYear) &&
+          (year > pensionStartYear ||
+            (year === pensionStartYear && month >= (pensionStartMonth || 1))) &&
+          (pensionEndYear === undefined ||
+            year < pensionEndYear ||
+            (year === pensionEndYear && month <= (pensionEndMonth || 12))) &&
+          (year < endYear || (year === endYear && month <= endMonth));
+        if (pensionActive && monthlyPensionAmount > 0) {
+          totalRealEstatePension += monthlyPensionAmount;
+          if (!pensionIncomeTotals[state.key])
+            pensionIncomeTotals[state.key] = 0;
+          pensionIncomeTotals[state.key] += monthlyPensionAmount;
+          state.currentValue = Math.max(
+            0,
+            state.currentValue - monthlyPensionAmount
+          );
+        }
+
+        // 매각 처리 (매각월에 자산 유입 + 양도세)
+        if (
+          Number.isFinite(endYear) &&
+          year === endYear &&
+          month === endMonth &&
+          !state.sold
+        ) {
+          const finalValue = Math.max(0, state.currentValue);
+          totalRealEstateSale += finalValue;
+          realEstateSales.push({
+            title: state.title,
+            amount: finalValue,
+          });
+          addPositive(
+            `${state.title} | 수령`,
+            finalValue,
+            "부동산 수령",
+            `realestate-sale-${state.key}`
+          );
+
+          if (state.isResidential) {
+            const acquisitionPrice =
+              state.acquisitionPrice !== undefined &&
+              state.acquisitionPrice !== null
+                ? state.acquisitionPrice
+                : currentValue;
+            const acquisitionYear =
+              state.acquisitionYear !== undefined &&
+              state.acquisitionYear !== null
+                ? state.acquisitionYear
+                : startYear;
+            const holdingYears = Math.max(
+              0,
+              ((endYear - startYear) * 12 + (endMonth - startMonth)) / 12
+            );
+            const { totalTax } = calculateCapitalGainsTax(
+              finalValue,
+              acquisitionPrice,
+              holdingYears
+            );
+            if (totalTax > 0) {
+              totalCapitalGainsTax += totalTax;
+              capitalGainsTaxes.push({
+                title: state.title,
+                amount: totalTax,
+                salePrice: finalValue,
+                acquisitionPrice: acquisitionPrice,
+                holdingYears: holdingYears,
+              });
+              addNegative(
+                `${state.title} | 양도세`,
+                totalTax,
+                "양도소득세",
+                `realestate-capitalgains-${state.key}`
+              );
+            }
+          }
+
+          state.sold = true;
+          state.started = false;
+          state.currentValue = 0;
+        }
+
+        // 월 경과 증가
+        if (state.started && !state.sold) {
+          state.monthsHeld += 1;
+        }
+      });
+
+      // 자산 월 단위 계산
+      Object.values(assetStates).forEach((state) => {
+        if (!state || state.sold) return;
+
+        const {
+          startYear,
+          startMonth,
+          endYear,
+          endMonth,
+          monthlyGrowthRate,
+          monthlyIncomeRate,
+          assetType,
+          isPurchase,
+          currentValue,
+          initialValue,
+          capitalGainsTaxRate,
+        } = state;
+
+        const inHoldingPeriod =
+          Number.isFinite(startYear) &&
+          Number.isFinite(endYear) &&
+          (year > startYear || (year === startYear && month >= startMonth)) &&
+          (year < endYear || (year === endYear && month <= endMonth));
+
+        // 구매 이벤트 (시작월에 현금 유출)
+        if (
+          isPurchase &&
+          !state.purchaseApplied &&
+          Number.isFinite(startYear) &&
+          year === startYear &&
+          month === startMonth &&
+          currentValue > 0
+        ) {
+          totalAssetPurchase += currentValue;
+          assetPurchases.push({
+            title: state.title,
+            amount: currentValue,
+          });
+          addNegative(
+            `${state.title} | 추가`,
+            currentValue,
+            "자산 구매",
+            `asset-purchase-${state.key}`
+          );
+          state.purchaseApplied = true;
+        }
+
+        // 활성화 체크
+        if (inHoldingPeriod && !state.started) {
+          state.started = true;
+          state.monthsHeld = 0;
+        }
+        if (!inHoldingPeriod) {
+          return;
+        }
+
+        // 월 성장률 적용 (시작 월에는 적용하지 않음)
+        if (state.started && state.monthsHeld > 0 && monthlyGrowthRate !== 0) {
+          state.currentValue =
+            Math.round(state.currentValue * (1 + monthlyGrowthRate) * 1000000) /
+            1000000;
+        }
+
+        // 월 수익 (수익형 자산)
+        const incomeActive =
+          assetType === "income" &&
+          state.started &&
+          !state.sold &&
+          monthlyIncomeRate > 0;
+        if (incomeActive) {
+          const monthlyIncome = state.currentValue * monthlyIncomeRate;
+          totalAssetIncome += monthlyIncome;
+          if (!assetIncomeTotals[state.key]) assetIncomeTotals[state.key] = 0;
+          assetIncomeTotals[state.key] += monthlyIncome;
+        }
+
+        // 매각 처리 (매각월에 자산 유입 + 양도세)
+        if (
+          Number.isFinite(endYear) &&
+          year === endYear &&
+          month === endMonth &&
+          !state.sold
+        ) {
+          const finalValue = Math.max(0, state.currentValue);
+          totalAssetSale += finalValue;
+          assetSales.push({
+            title: state.title,
+            amount: finalValue,
+          });
+          addPositive(
+            `${state.title} | 수령`,
+            finalValue,
+            "자산 수령",
+            `asset-sale-${state.key}`
+          );
+
+          const taxRate = capitalGainsTaxRate || 0;
+          if (taxRate > 0) {
+            const capitalGain = Math.max(0, finalValue - initialValue);
+            const capitalGainsTax = capitalGain * taxRate;
+
+            if (capitalGainsTax > 0) {
+              const taxRatePercent = taxRate * 100;
+              const taxRateFormatted =
+                taxRatePercent % 1 !== 0
+                  ? taxRatePercent.toFixed(1)
+                  : Math.floor(taxRatePercent);
+
+              totalCapitalGainsTax += capitalGainsTax;
+              capitalGainsTaxes.push({
+                title: `${state.title} | 양도세 ${taxRateFormatted}%`,
+                amount: capitalGainsTax,
+              });
+
+              addNegative(
+                `${state.title} | 양도세 ${taxRateFormatted}%`,
+                capitalGainsTax,
+                "양도세",
+                `asset-tax-${state.key}`
+              );
+            }
+          }
+
+          state.sold = true;
+          state.started = false;
+          state.currentValue = 0;
+        }
+
+        if (state.started && !state.sold) {
+          state.monthsHeld += 1;
+        }
+      });
+    }
+
+    // 월 누적된 임대/주택연금 합계를 연간 한 번만 breakdown에 추가
+    Object.keys(rentalIncomeTotals).forEach((key) => {
+      const amount = rentalIncomeTotals[key];
+      if (amount > 0) {
+        const title =
+          realEstateStates[key]?.title || realEstateStates[key]?.key || key;
+        addPositive(
+          `${title} | 임대소득`,
+          amount,
+          "임대소득",
+          `realestate-rent-${key}-${year}`
+        );
+      }
+    });
+    Object.keys(pensionIncomeTotals).forEach((key) => {
+      const amount = pensionIncomeTotals[key];
+      if (amount > 0) {
+        const title =
+          realEstateStates[key]?.title || realEstateStates[key]?.key || key;
+        addPositive(
+          `${title} | 주택연금`,
+          amount,
+          "주택연금",
+          `realestate-pension-${key}-${year}`
+        );
+      }
+    });
+
+    // 월 누적된 자산 수익 합계를 연간 한 번만 breakdown에 추가
+    Object.keys(assetIncomeTotals).forEach((key) => {
+      const amount = assetIncomeTotals[key];
+      if (amount > 0) {
+        const title = assetStates[key]?.title || key;
+        addPositive(
+          `${title} | 수령`,
+          amount,
+          "자산 수령",
+          `asset-income-${key}-${year}`
+        );
       }
     });
 
@@ -2011,33 +2172,64 @@ export function calculateAssetSimulation(
     }
   });
 
-  // 부동산별 자산 (제목별로 분리)
+  // 부동산별 자산 (제목별로 분리, 월 단위 상태)
   const realEstatesByTitle = {};
   realEstates.forEach((realEstate) => {
-    // 년도 데이터 타입 확인 및 변환
     const startYear =
       typeof realEstate.startYear === "string"
         ? parseInt(realEstate.startYear)
         : realEstate.startYear || currentYear;
+    const startMonth =
+      typeof realEstate.startMonth === "string"
+        ? parseInt(realEstate.startMonth, 10)
+        : realEstate.startMonth || 1;
     const endYear =
       typeof realEstate.endYear === "string"
         ? parseInt(realEstate.endYear)
         : realEstate.endYear;
+    const endMonth =
+      typeof realEstate.endMonth === "string"
+        ? parseInt(realEstate.endMonth, 10)
+        : realEstate.endMonth || 12;
+
+    const monthlyGrowthRate = convertAnnualToMonthlyGrowthRate(
+      (realEstate.growthRate || 0) / 100
+    );
+
+    const pensionStartYear =
+      typeof realEstate.pensionStartYear === "string"
+        ? parseInt(realEstate.pensionStartYear, 10)
+        : realEstate.pensionStartYear;
+    const pensionStartMonth =
+      typeof realEstate.pensionStartMonth === "string"
+        ? parseInt(realEstate.pensionStartMonth, 10)
+        : realEstate.pensionStartMonth || 1;
+    const pensionEndYear =
+      typeof realEstate.pensionEndYear === "string"
+        ? parseInt(realEstate.pensionEndYear, 10)
+        : realEstate.pensionEndYear;
+    const pensionEndMonth =
+      typeof realEstate.pensionEndMonth === "string"
+        ? parseInt(realEstate.pensionEndMonth, 10)
+        : realEstate.pensionEndMonth || 12;
 
     const initialRealEstateValue = realEstate.currentValue || 0;
     realEstatesByTitle[realEstate.title] = {
-      amount: initialRealEstateValue, // 현재 가치로 시작
-      startYear: startYear,
-      endYear: endYear,
-      growthRate: realEstate.growthRate || 2.5, // 백분율 그대로 사용
+      amount: initialRealEstateValue,
+      startYear,
+      startMonth,
+      endYear,
+      endMonth,
+      monthlyGrowthRate,
       convertToPension: realEstate.convertToPension || false,
-      pensionStartYear: realEstate.pensionStartYear,
-      pensionEndYear: realEstate.pensionEndYear,
-      monthlyPensionAmount: realEstate.monthlyPensionAmount,
-      isPurchase: realEstate.isPurchase || false, // 구매 여부 저장
-      isActive: false, // 초기에는 비활성화 (startYear에 활성화)
-      _initialValue: initialRealEstateValue, // 초기값 저장
-      _pensionBaseValue: 0, // 주택연금 시작 직전 가치 (상승률 적용 기준)
+      pensionStartYear,
+      pensionStartMonth,
+      pensionEndYear,
+      pensionEndMonth,
+      monthlyPensionAmount: realEstate.monthlyPensionAmount || 0,
+      isPurchase: realEstate.isPurchase || false,
+      isActive: false,
+      monthsHeld: 0,
     };
   });
 
@@ -2049,23 +2241,39 @@ export function calculateAssetSimulation(
       typeof asset.startYear === "string"
         ? parseInt(asset.startYear)
         : asset.startYear;
+    const startMonth =
+      typeof asset.startMonth === "string"
+        ? parseInt(asset.startMonth)
+        : asset.startMonth || 1;
     const endYear =
       typeof asset.endYear === "string"
         ? parseInt(asset.endYear)
         : asset.endYear;
+    const endMonth =
+      typeof asset.endMonth === "string"
+        ? parseInt(asset.endMonth)
+        : asset.endMonth || 12;
 
     const initialValue = asset.currentValue || 0;
+    const growthRate = asset.growthRate || 0; // 이미 소수로 저장됨 (예: 0.0286)
     assetsByTitle[asset.title] = {
-      amount: initialValue, // 현재 가치로 시작
+      amount: 0,
       startYear: startYear,
+      startMonth: startMonth,
       endYear: endYear,
-      growthRate: asset.growthRate || 0, // 이미 소수로 저장됨 (예: 0.0286)
+      endMonth: endMonth,
+      growthRate: growthRate,
+      monthlyGrowthRate: convertAnnualToMonthlyGrowthRate(growthRate),
       assetType: asset.assetType || "general", // "general" 또는 "income"
-      incomeRate: asset.incomeRate || 0, // 수익형 자산의 수익률
+      incomeRate: asset.incomeRate || 0, // 수익형 자산의 수익률 (연)
+      monthlyIncomeRate: convertAnnualToMonthlyRate(asset.incomeRate || 0),
       capitalGainsTaxRate: asset.capitalGainsTaxRate || 0, // 양도세율 저장
       isPurchase: asset.isPurchase || false, // 구매 여부 저장
-      isActive: true,
+      isActive: false,
+      sold: false,
+      monthsHeld: 0,
       _initialValue: initialValue, // 초기값 저장
+      initialValue: initialValue,
     };
   });
 
@@ -2597,87 +2805,136 @@ export function calculateAssetSimulation(
       }
     });
 
-    // 부동산 처리
+    // 부동산 처리 (월 단위 업데이트 후 연말 스냅샷)
     Object.keys(realEstatesByTitle).forEach((title) => {
       const realEstate = realEstatesByTitle[title];
+      const {
+        startYear,
+        startMonth,
+        endYear,
+        endMonth,
+        monthlyGrowthRate,
+        convertToPension,
+        pensionStartYear,
+        pensionStartMonth,
+        pensionEndYear,
+        pensionEndMonth,
+        monthlyPensionAmount,
+      } = realEstate;
 
-      if (year < realEstate.startYear) {
-        // 보유 시작 전: 부동산 비활성화
-        realEstate.isActive = false;
-        realEstate.amount = 0;
-      } else if (year >= realEstate.endYear) {
-        // 연말 기준: endYear에 매각하므로 endYear부터 비활성화
-        realEstate.isActive = false;
-        realEstate.amount = 0;
-      } else if (year >= realEstate.startYear && year < realEstate.endYear) {
-        // 보유 기간 중 (endYear 전까지만): 부동산 활성화
-        realEstate.isActive = true;
+      // 연중 월 단위 시뮬레이션
+      for (let month = 1; month <= 12; month++) {
+        const inHoldingPeriod =
+          year > startYear ||
+          (year === startYear && month >= startMonth && month <= 12);
 
-        if (year === realEstate.startYear) {
-          // 첫 해: 현재 가치로 시작 (상승률 적용 X)
+        const beforeEnd =
+          year < endYear || (year === endYear && month <= endMonth);
+
+        if (!inHoldingPeriod || !beforeEnd) {
+          continue;
+        }
+
+        if (!realEstate.isActive && inHoldingPeriod && beforeEnd) {
+          realEstate.isActive = true;
+          realEstate.monthsHeld = 0;
+          // 시작 월에는 초기값 그대로
+        }
+
+        // 월 성장률 (시작 월은 제외)
+        if (realEstate.isActive && realEstate.monthsHeld > 0) {
           realEstate.amount =
-            realEstate._initialValue || realEstate.amount || 0;
-        } else {
-          const growthRate = realEstate.growthRate / 100; // 상승률을 소수로 변환
+            Math.round(realEstate.amount * (1 + monthlyGrowthRate) * 1000000) /
+            1000000;
+        }
 
-          const isPensionActive =
-            realEstate.convertToPension &&
-            year >= realEstate.pensionStartYear &&
-            year <= (realEstate.pensionEndYear || 9999);
+        // 주택연금 차감 (월 단위)
+        const pensionActive =
+          convertToPension &&
+          Number.isFinite(pensionStartYear) &&
+          (year > pensionStartYear ||
+            (year === pensionStartYear && month >= pensionStartMonth)) &&
+          (pensionEndYear === undefined ||
+            year < pensionEndYear ||
+            (year === pensionEndYear && month <= pensionEndMonth));
+        if (pensionActive && monthlyPensionAmount > 0 && realEstate.isActive) {
+          realEstate.amount = Math.max(
+            0,
+            realEstate.amount - monthlyPensionAmount
+          );
+        }
 
-          if (isPensionActive) {
-            // 연말 기준: 매년 상승률 적용 후 주택연금 차감
-            const yearlyPensionAmount = realEstate.monthlyPensionAmount * 12;
+        // 매각 월이면 이후 비활성화
+        if (year === endYear && month === endMonth) {
+          realEstate.isActive = false;
+          realEstate.monthsHeld += 1;
+          break; // 이후 월은 보유하지 않음
+        }
 
-            if (year === realEstate.pensionStartYear) {
-              // 주택연금 시작 년도: 작년 말 잔액에 상승률 적용 후 주택연금 차감
-              realEstate.amount =
-                realEstate.amount * (1 + growthRate) - yearlyPensionAmount;
-            } else {
-              // 주택연금 수령 중: 작년 말 잔액(이미 주택연금 차감된 상태)에 상승률 적용 후 주택연금 차감
-              realEstate.amount =
-                realEstate.amount * (1 + growthRate) - yearlyPensionAmount;
-            }
+        if (realEstate.isActive) {
+          realEstate.monthsHeld += 1;
+        }
+      }
 
-            // 자산이 0 이하가 되면 비활성화
-            if (realEstate.amount <= 0) {
-              realEstate.amount = 0;
-              realEstate.isActive = false;
-            }
-          } else {
-            // 주택연금 없는 경우: 작년 말 잔액에 상승률 적용
-            realEstate.amount = realEstate.amount * (1 + growthRate);
-          }
+      // 보유 기간 종료 이후 정리
+      if (year > endYear || (year === endYear && 12 >= endMonth)) {
+        if (year >= endYear) {
+          realEstate.isActive = false;
+          realEstate.amount = 0;
         }
       }
     });
 
-    // 자산 계산 (제목별로)
+    // 자산 계산 (월 단위 업데이트 후 연말 스냅샷)
     Object.keys(assetsByTitle).forEach((title) => {
       const asset = assetsByTitle[title];
+      const {
+        startYear,
+        startMonth,
+        endYear,
+        endMonth,
+        monthlyGrowthRate,
+      } = asset;
 
-      // endYear 이상이면 자산 비활성화 (현금으로 전환)
-      if (year >= asset.endYear) {
-        asset.isActive = false;
-        asset.amount = 0;
-        return;
+      for (let month = 1; month <= 12; month++) {
+        const inHoldingPeriod =
+          year > startYear ||
+          (year === startYear && month >= startMonth && month <= 12);
+        const beforeEnd =
+          year < endYear || (year === endYear && month <= endMonth);
+
+        if (!inHoldingPeriod || !beforeEnd) {
+          continue;
+        }
+
+        if (!asset.isActive && inHoldingPeriod && beforeEnd) {
+          asset.isActive = true;
+          asset.monthsHeld = 0;
+          asset.amount = asset._initialValue || asset.amount || 0;
+        }
+
+        if (asset.isActive && asset.monthsHeld > 0 && monthlyGrowthRate !== 0) {
+          asset.amount =
+            Math.round(asset.amount * (1 + monthlyGrowthRate) * 1000000) /
+            1000000;
+        }
+
+        if (asset.isActive) {
+          asset.monthsHeld += 1;
+        }
+
+        if (year === endYear && month === endMonth) {
+          asset.isActive = false;
+          break;
+        }
       }
 
-      // 보유 기간 중 (endYear 전까지만)
-      if (year >= asset.startYear && year < asset.endYear) {
-        asset.isActive = true;
-
-        if (year === asset.startYear) {
-          // 첫 해: 현재 가치로 시작 (상승률 적용 X)
-          asset.amount = asset._initialValue || asset.amount || 0;
-        } else {
-          // 다음 해부터: 상승률 적용
-          asset.amount = asset.amount * (1 + asset.growthRate);
+      // 보유 기간 종료 이후 정리
+      if (year > endYear || (year === endYear && 12 >= endMonth)) {
+        if (year >= endYear) {
+          asset.isActive = false;
+          asset.amount = 0;
         }
-      } else {
-        // 보유 시작 전: 자산 비활성화
-        asset.isActive = false;
-        asset.amount = 0;
       }
     });
 

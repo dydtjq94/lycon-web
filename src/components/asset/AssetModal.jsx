@@ -24,7 +24,9 @@ function AssetModal({
     currentValue: "",
     growthRate: "2.86", // % 단위로 기본값 설정
     startYear: new Date().getFullYear(),
+    startMonth: 1,
     endYear: "",
+    endMonth: 12,
     assetType: "general", // "general" 또는 "income"
     incomeRate: "3", // % 단위로 기본값 설정
     capitalGainsTaxRate: "", // 양도세율 (%)
@@ -72,7 +74,7 @@ function AssetModal({
             }
           });
           const results = await Promise.all(checkPromises);
-          
+
           // 작업이 취소되었으면 상태 업데이트 안함
           if (cancelled) {
             return;
@@ -86,7 +88,9 @@ function AssetModal({
           setSimulationStatusMap(statusMap);
 
           // 현재 활성 시뮬레이션을 기본 선택
-          const defaultSelected = activeSimulationId ? [activeSimulationId] : [];
+          const defaultSelected = activeSimulationId
+            ? [activeSimulationId]
+            : [];
           setSelectedSimulationIds(defaultSelected);
 
           const elapsedTime = Date.now() - startTime;
@@ -94,7 +98,7 @@ function AssetModal({
           await new Promise((resolve) => setTimeout(resolve, remainingTime));
         } catch (error) {
           console.error("❌ [자산모달] 시뮬레이션 상태 확인 오류:", error);
-          
+
           if (cancelled) return;
 
           // 오류 시 모든 시뮬레이션을 추가 상태로 설정
@@ -119,7 +123,7 @@ function AssetModal({
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, 1000 - elapsedTime);
         await new Promise((resolve) => setTimeout(resolve, remainingTime));
-        
+
         if (cancelled) return;
 
         const statusMap = {};
@@ -154,7 +158,9 @@ function AssetModal({
               ? (editData.growthRate * 100).toFixed(2)
               : "2.86",
           startYear: editData.startYear || new Date().getFullYear(),
+          startMonth: editData.startMonth || 1,
           endYear: editData.endYear || "",
+          endMonth: editData.endMonth || 12,
           assetType: editData.assetType || "general",
           incomeRate:
             editData.incomeRate !== undefined
@@ -178,7 +184,9 @@ function AssetModal({
               ? (initialData.growthRate * 100).toFixed(2)
               : "2.86",
           startYear: initialData.startYear || new Date().getFullYear(),
+          startMonth: initialData.startMonth || 1,
           endYear: initialData.endYear || "",
+          endMonth: initialData.endMonth || 12,
           assetType: initialData.assetType || "general",
           incomeRate:
             initialData.incomeRate !== undefined
@@ -204,7 +212,9 @@ function AssetModal({
           currentValue: "",
           growthRate: "2.86",
           startYear: currentYear,
+          startMonth: 1,
           endYear: deathYear,
+          endMonth: 12,
           assetType: "general",
           incomeRate: "3",
           capitalGainsTaxRate: "",
@@ -259,6 +269,15 @@ function AssetModal({
     if (!formData.endYear || parseInt(formData.endYear) < formData.startYear) {
       newErrors.endYear = "종료 연도는 시작 연도보다 크거나 같아야 합니다.";
     }
+    if (
+      formData.startYear &&
+      formData.endYear &&
+      parseInt(formData.startYear, 10) === parseInt(formData.endYear, 10) &&
+      formData.startMonth > formData.endMonth
+    ) {
+      newErrors.endYear =
+        "같은 해라면 종료 월이 시작 월보다 크거나 같아야 합니다.";
+    }
 
     if (formData.assetType === "income") {
       const incomeRateNum = parseFloat(formData.incomeRate);
@@ -298,7 +317,9 @@ function AssetModal({
       currentValue: parseFloat(formData.currentValue),
       growthRate: parseFloat(formData.growthRate) / 100, // 백분율을 소수로 변환
       startYear: parseInt(formData.startYear),
+      startMonth: parseInt(formData.startMonth) || 1,
       endYear: parseInt(formData.endYear),
+      endMonth: parseInt(formData.endMonth) || 12,
       assetType: formData.assetType,
       incomeRate:
         formData.assetType === "income"
@@ -337,7 +358,9 @@ function AssetModal({
       currentValue: "",
       growthRate: "",
       startYear: new Date().getFullYear(),
+      startMonth: 1,
       endYear: "",
+      endMonth: 12,
       assetType: "general",
       incomeRate: "",
       capitalGainsTaxRate: "",
@@ -479,7 +502,7 @@ function AssetModal({
           {formData.assetType === "income" && (
             <div className={styles.field}>
               <label className={styles.label}>
-                연간 수익률(배당, 이자 등) (%) *
+                연간 수익률 (배당, 이자 등) (%) *
               </label>
               <input
                 type="text"
@@ -502,7 +525,98 @@ function AssetModal({
             </div>
           )}
 
-          <div className={styles.field}>
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <label className={styles.label}>보유 시작 *</label>
+              <div className={styles.yearInputs}>
+                <input
+                  type="text"
+                  value={formData.startYear}
+                  onChange={(e) =>
+                    setFormData({ ...formData, startYear: e.target.value })
+                  }
+                  onKeyPress={handleKeyPress}
+                  className={`${styles.input} ${
+                    errors.startYear ? styles.error : ""
+                  }`}
+                  placeholder="보유 시작"
+                />
+                <select
+                  value={formData.startMonth}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      startMonth: parseInt(e.target.value) || 1,
+                    })
+                  }
+                  className={styles.select}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {formData.startYear && profileData?.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(
+                    profileData.birthYear,
+                    formData.startYear
+                  )}
+                  세
+                </div>
+              )}
+              {errors.startYear && (
+                <span className={styles.errorText}>{errors.startYear}</span>
+              )}
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>보유 종료 *</label>
+              <div className={styles.yearInputs}>
+                <input
+                  type="text"
+                  value={formData.endYear}
+                  onChange={(e) =>
+                    setFormData({ ...formData, endYear: e.target.value })
+                  }
+                  onKeyPress={handleKeyPress}
+                  className={`${styles.input} ${
+                    errors.endYear ? styles.error : ""
+                  }`}
+                  placeholder="보유 종료"
+                />
+                <select
+                  value={formData.endMonth}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      endMonth: parseInt(e.target.value) || 12,
+                    })
+                  }
+                  className={styles.select}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {formData.endYear && profileData?.birthYear && (
+                <div className={styles.agePreview}>
+                  {calculateKoreanAge(profileData.birthYear, formData.endYear)}
+                  세
+                </div>
+              )}
+              {errors.endYear && (
+                <span className={styles.errorText}>{errors.endYear}</span>
+              )}
+            </div>
+          </div>
+
+          <div className={`${styles.field} ${styles.taxField}`}>
             <label className={styles.label}>
               양도세율 (%) <span className={styles.optional}>- 선택</span>
             </label>
@@ -526,54 +640,6 @@ function AssetModal({
             <div className={styles.fieldHelper}>
               매각 시 (최종가치 - 초기가치) × 양도세율을 세금으로 납부합니다.
             </div>
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>보유 기간 *</label>
-            <div className={styles.yearInputs}>
-              <input
-                type="text"
-                value={formData.startYear}
-                onChange={(e) =>
-                  setFormData({ ...formData, startYear: e.target.value })
-                }
-                onKeyPress={handleKeyPress}
-                className={`${styles.input} ${styles.yearInput} ${
-                  errors.startYear ? styles.error : ""
-                }`}
-                placeholder="보유 시작년도"
-              />
-              <span className={styles.yearSeparator}>~</span>
-              <input
-                type="text"
-                value={formData.endYear}
-                onChange={(e) =>
-                  setFormData({ ...formData, endYear: e.target.value })
-                }
-                onKeyPress={handleKeyPress}
-                className={`${styles.input} ${styles.yearInput} ${
-                  errors.endYear ? styles.error : ""
-                }`}
-                placeholder="보유 종료년도"
-              />
-            </div>
-            {/* 년도별 나이 표시 */}
-            {formData.startYear && profileData && profileData.birthYear && (
-              <div className={styles.agePreview}>
-                {calculateKoreanAge(profileData.birthYear, formData.startYear)}
-                세
-                {formData.endYear &&
-                  ` ~ ${calculateKoreanAge(
-                    profileData.birthYear,
-                    formData.endYear
-                  )}세`}
-              </div>
-            )}
-            {(errors.startYear || errors.endYear) && (
-              <span className={styles.errorText}>
-                {errors.startYear || errors.endYear}
-              </span>
-            )}
           </div>
 
           <div className={styles.field}>
@@ -609,7 +675,8 @@ function AssetModal({
                 ) : (
                   simulations.map((sim) => {
                     const status = simulationStatusMap[sim.id] || "create";
-                    const statusText = status === "update" ? "(수정)" : "(추가)";
+                    const statusText =
+                      status === "update" ? "(수정)" : "(추가)";
                     return (
                       <label key={sim.id} className={styles.fixedCheckboxLabel}>
                         <input
@@ -629,7 +696,12 @@ function AssetModal({
                         />
                         <span className={styles.fixedCheckboxText}>
                           {sim.title || (sim.isDefault ? "현재" : "시뮬레이션")}{" "}
-                          <span style={{ color: status === "update" ? "#2196F3" : "#4CAF50" }}>
+                          <span
+                            style={{
+                              color:
+                                status === "update" ? "#2196F3" : "#4CAF50",
+                            }}
+                          >
                             {statusText}
                           </span>
                         </span>
