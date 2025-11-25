@@ -63,7 +63,8 @@ function SavingModal({
   // 퍼센트 입력값을 UI 표시용으로 변환
   // 0~1은 소수로 간주해 100배, 1보다 크면 이미 % 값으로 처리
   const formatRateInput = (value, defaultValue) => {
-    if (value === undefined || value === null || value === "") return defaultValue;
+    if (value === undefined || value === null || value === "")
+      return defaultValue;
     const num = parseFloat(value);
     if (!Number.isFinite(num)) return defaultValue;
     const normalized = Math.abs(num) <= 1 ? num * 100 : num;
@@ -133,7 +134,9 @@ function SavingModal({
           setSimulationStatusMap(statusMap);
 
           // 현재 활성 시뮬레이션을 기본 선택
-          const defaultSelected = activeSimulationId ? [activeSimulationId] : [];
+          const defaultSelected = activeSimulationId
+            ? [activeSimulationId]
+            : [];
           setSelectedSimulationIds(defaultSelected);
 
           // 최소 1초 로딩 유지
@@ -211,7 +214,10 @@ function SavingModal({
           interestRate: formatRateInput(editData.interestRate, "2.86"),
           yearlyGrowthRate: formatRateInput(editData.yearlyGrowthRate, "1.89"),
           incomeRate: formatRateInput(editData.incomeRate, "3"),
-          capitalGainsTaxRate: formatRateInput(editData.capitalGainsTaxRate, ""),
+          capitalGainsTaxRate: formatRateInput(
+            editData.capitalGainsTaxRate,
+            ""
+          ),
           isFixedToRetirementYear: editData.isFixedToRetirementYear || false,
         });
       } else if (initialData) {
@@ -227,11 +233,19 @@ function SavingModal({
           startMonth: initialData.startMonth || 1,
           endYear: initialData.endYear || getRetirementYear(),
           endMonth: initialData.endMonth || 12,
-          memo: initialData.memo || "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
+          memo:
+            initialData.memo ||
+            "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
           interestRate: formatRateInput(initialData.interestRate, "2.86"),
-          yearlyGrowthRate: formatRateInput(initialData.yearlyGrowthRate, "1.89"),
+          yearlyGrowthRate: formatRateInput(
+            initialData.yearlyGrowthRate,
+            "1.89"
+          ),
           incomeRate: formatRateInput(initialData.incomeRate, "3"),
-          capitalGainsTaxRate: formatRateInput(initialData.capitalGainsTaxRate, ""),
+          capitalGainsTaxRate: formatRateInput(
+            initialData.capitalGainsTaxRate,
+            ""
+          ),
           isFixedToRetirementYear: initialData.isFixedToRetirementYear || false,
         });
       } else {
@@ -586,7 +600,7 @@ function SavingModal({
                     marginTop: "0.25rem",
                   }}
                 >
-                  ※ 구매로 처리 시 시작년도에 현금흐름에서 차감됩니다
+                  ※ 현금 유출로 처리
                 </span>
               )}
             </div>
@@ -889,7 +903,8 @@ function SavingModal({
                 ) : (
                   simulations.map((sim) => {
                     const status = simulationStatusMap[sim.id] || "create";
-                    const statusText = status === "update" ? "(수정)" : "(추가)";
+                    const statusText =
+                      status === "update" ? "(수정)" : "(추가)";
                     return (
                       <label key={sim.id} className={styles.fixedCheckboxLabel}>
                         <input
@@ -911,7 +926,8 @@ function SavingModal({
                           {sim.title || (sim.isDefault ? "현재" : "시뮬레이션")}{" "}
                           <span
                             style={{
-                              color: status === "update" ? "#2196F3" : "#4CAF50",
+                              color:
+                                status === "update" ? "#2196F3" : "#4CAF50",
                             }}
                           >
                             {statusText}
