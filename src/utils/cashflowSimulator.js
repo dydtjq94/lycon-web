@@ -319,16 +319,15 @@ export function calculateCashflowSimulation(
             // 월간 빈도: 각 월마다 개별 계산
             const monthlyAmount = income.amount;
 
-            // 해당 년도의 첫 월부터 시작하는 기준으로 경과 개월 수 계산
-            const baseMonthsElapsed =
-              (year - startYear) * 12 + (firstMonthInYear - startMonth);
-
             // 각 월마다 소득 계산 및 합산
             for (let m = firstMonthInYear; m <= lastMonthInYear; m++) {
-              // 현재 월까지의 경과 개월 수
-              const monthsElapsed = baseMonthsElapsed + (m - firstMonthInYear);
+              // 시작 월부터 현재 월까지의 경과 개월 수 계산
+              // 시작 월은 0개월 경과 (원래 금액 그대로)
+              // 다음 월부터는 상승률 적용
+              const monthsElapsed = (year - startYear) * 12 + (m - startMonth);
 
               // 월 단위 상승률 적용
+              // 시작 월(monthsElapsed = 0)은 상승률 없음, 다음 월부터 상승률 적용
               const adjustedMonthlyAmount =
                 monthlyAmount * Math.pow(1 + monthlyGrowthRate, monthsElapsed);
               yearTotalIncome += adjustedMonthlyAmount;
@@ -409,16 +408,15 @@ export function calculateCashflowSimulation(
             // 월간 빈도: 각 월마다 개별 계산
             const monthlyAmount = expense.amount;
 
-            // 해당 년도의 첫 월부터 시작하는 기준으로 경과 개월 수 계산
-            const baseMonthsElapsed =
-              (year - startYear) * 12 + (firstMonthInYear - startMonth);
-
             // 각 월마다 지출 계산 및 합산
             for (let m = firstMonthInYear; m <= lastMonthInYear; m++) {
-              // 현재 월까지의 경과 개월 수
-              const monthsElapsed = baseMonthsElapsed + (m - firstMonthInYear);
+              // 시작 월부터 현재 월까지의 경과 개월 수 계산
+              // 시작 월은 0개월 경과 (원래 금액 그대로)
+              // 다음 월부터는 상승률 적용
+              const monthsElapsed = (year - startYear) * 12 + (m - startMonth);
 
               // 월 단위 상승률 적용
+              // 시작 월(monthsElapsed = 0)은 상승률 없음, 다음 월부터 상승률 적용
               const adjustedMonthlyAmount =
                 monthlyAmount * Math.pow(1 + monthlyGrowthRate, monthsElapsed);
               yearTotalExpense += adjustedMonthlyAmount;
