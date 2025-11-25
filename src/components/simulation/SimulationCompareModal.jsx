@@ -1648,17 +1648,23 @@ function SimulationCompareModal({
 
     return (
       <ul className={styles.summaryBreakdown}>
-        {filteredItems.map((item, index) => (
-          <li
-            key={`${prefix}-${item.name}-${item.category || "기타"}-${index}`}
-            className={styles.summaryBreakdownItem}
-          >
-            <span className={styles.summaryBreakdownLabel}>{item.name}</span>
-            <span className={styles.summaryBreakdownValue}>
-              {formatAmountForChart(item.amount)}
-            </span>
-          </li>
-        ))}
+        {filteredItems.map((item, index) => {
+          // 카테고리 색상 가져오기 (item 객체를 전달하여 category 필드 우선 사용)
+          const borderColor = getCategoryColor(item);
+          
+          return (
+            <li
+              key={`${prefix}-${item.name}-${item.category || "기타"}-${index}`}
+              className={styles.summaryBreakdownItem}
+              style={{ borderLeftColor: borderColor }}
+            >
+              <span className={styles.summaryBreakdownLabel}>{item.name}</span>
+              <span className={styles.summaryBreakdownValue}>
+                {formatAmountForChart(item.amount)}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     );
   };
@@ -1741,9 +1747,104 @@ function SimulationCompareModal({
     return "assets";
   };
 
-  // 카테고리별 색상 결정 함수
-  const getCategoryColor = (itemName) => {
-    const categoryType = getCategoryType(itemName);
+  // 카테고리 문자열을 정규화
+  const normalizeCategoryKey = (value) => {
+    if (!value || typeof value !== "string") return "";
+    return value.replace(/\s+/g, "").toLowerCase();
+  };
+
+  // category/sourceType 기반 카테고리 판별 (라벨에 의존하지 않음)
+  const resolveCategoryType = (itemOrName) => {
+    // sourceType이 있는 경우 우선 사용 (자산 시뮬레이션 구조)
+    if (itemOrName && typeof itemOrName === "object" && itemOrName.sourceType) {
+      switch (itemOrName.sourceType) {
+        case "cash":
+          // 원본 값 기준으로 양수/음수 현금 구분
+          if (typeof itemOrName.originalValue === "number") {
+            return itemOrName.originalValue < 0 ? "cashNegative" : "cashPositive";
+          }
+          return "cashPositive";
+        case "saving":
+          return "savings";
+        case "pension":
+          return "pension";
+        case "realEstate":
+          return "realEstate";
+        case "asset":
+          return "assets";
+        case "debt":
+          return "debt";
+        default:
+          break;
+      }
+    }
+
+    // category 필드 매핑 (라벨 대신 카테고리 문자열 사용)
+    const rawCategory =
+      typeof itemOrName === "object" && itemOrName !== null
+        ? itemOrName.category
+        : itemOrName;
+    const normalizedCategory = normalizeCategoryKey(rawCategory);
+
+    const categoryMap = {
+      income: "income",
+      소득: "income",
+      지출: "expense",
+      비용: "expense",
+      저축: "savings",
+      "저축/투자": "savings",
+      저축투자: "savings",
+      투자: "savings",
+      saving: "savings",
+      savings: "savings",
+      연금: "pension",
+      국민연금: "pension",
+      퇴직연금: "pension",
+      개인연금: "pension",
+      주택연금: "pension",
+      부동산: "realEstate",
+      임대소득: "realEstate",
+      "임대소득": "realEstate",
+      "임대 소득": "realEstate",
+      realestate: "realEstate",
+      자산: "assets",
+      asset: "assets",
+      assets: "assets",
+      현금: "assets",
+      양수현금: "cashPositive",
+      음수현금: "cashNegative",
+      대출: "debt",
+      부채: "debt",
+      debt: "debt",
+      "대출유입": "debt",
+      "대출 유입": "debt",
+      이자: "debt",
+      부채이자: "debt",
+      "부채 이자": "debt",
+      원금상환: "debt",
+      "원금 상환": "debt",
+      부채원금상환: "debt",
+      "부채 원금 상환": "debt",
+      세금: "tax",
+      취득세: "tax",
+      양도소득세: "tax",
+      양도세: "tax",
+    };
+
+    if (categoryMap[normalizedCategory]) {
+      return categoryMap[normalizedCategory];
+    }
+
+    return null;
+  };
+
+  // 카테고리별 색상 결정 함수 (item 객체 또는 itemName 문자열을 받음)
+  const getCategoryColor = (itemOrName) => {
+    const resolvedCategory =
+      resolveCategoryType(itemOrName) ||
+      (typeof itemOrName === "object" && itemOrName !== null
+        ? getCategoryType(itemOrName.name || "")
+        : getCategoryType(itemOrName));
 
     const colorMap = {
       income: "#10b981", // 소득 - 초록색
@@ -1754,9 +1855,11 @@ function SimulationCompareModal({
       debt: "#6b7280", // 부채 - 회색
       assets: "#06b6d4", // 자산 - 청록색
       tax: "#8b4513", // 세금 - 갈색
+      cashPositive: "#10b981", // 현금(+)
+      cashNegative: "#ef4444", // 현금(-)
     };
 
-    return colorMap[categoryType] || "#06b6d4";
+    return colorMap[resolvedCategory] || colorMap.assets;
   };
 
   // 여러 breakdown을 비교하여 같은 이름끼리 행을 맞춰서 표시
@@ -1817,15 +1920,30 @@ function SimulationCompareModal({
       "realEstate",
       "assets",
       "debt",
+      "tax",
     ];
 
-    // 카테고리별 정렬 함수
+    // 카테고리별 정렬 함수 (item 객체를 받아서 category 필드 사용)
     const sortByCategory = (names) => {
       return names.sort((a, b) => {
-        const categoryA = getCategoryType(a);
-        const categoryB = getCategoryType(b);
-        const orderA = categoryOrder.indexOf(categoryA);
-        const orderB = categoryOrder.indexOf(categoryB);
+        // 이름으로 항목 찾기
+        const itemA = findItem(filteredBreakdowns[firstSimId], a);
+        const itemB = findItem(filteredBreakdowns[firstSimId], b);
+
+        const categoryA =
+          resolveCategoryType(itemA) || getCategoryType(a) || "assets";
+        const categoryB =
+          resolveCategoryType(itemB) || getCategoryType(b) || "assets";
+
+        const resolveOrder = (category) => {
+          if (category === "cashPositive") return categoryOrder.indexOf("assets");
+          if (category === "cashNegative") return categoryOrder.indexOf("debt");
+          const idx = categoryOrder.indexOf(category);
+          return idx === -1 ? categoryOrder.length : idx;
+        };
+
+        const orderA = resolveOrder(categoryA);
+        const orderB = resolveOrder(categoryB);
 
         if (orderA !== orderB) {
           return orderA - orderB;
@@ -1834,19 +1952,21 @@ function SimulationCompareModal({
       });
     };
 
+    // 이름으로 아이템 찾기
+    const findItem = (items, name) => items?.find((item) => item.name === name);
+
     // 정렬
     const sortedExistingNames = sortByCategory(existingNames);
     const sortedNewNames = sortByCategory(newNames);
     const sortedNames = [...sortedExistingNames, ...sortedNewNames];
 
-    // 이름으로 아이템 찾기
-    const findItem = (items, name) => items?.find((item) => item.name === name);
-
     return (
       <>
         {sortedNames.map((name, index) => {
-          // 카테고리 색상 가져오기
-          const borderColor = getCategoryColor(name);
+          // 첫 번째 시뮬레이션의 항목을 찾아서 category 정보 가져오기
+          const firstItem = findItem(filteredBreakdowns[firstSimId], name);
+          // 카테고리 색상 가져오기 (item 객체를 전달하여 category 필드 우선 사용)
+          const borderColor = getCategoryColor(firstItem || name);
 
           return (
             <div
@@ -1952,6 +2072,28 @@ function SimulationCompareModal({
   const buildAssetBreakdown = (entry) => {
     if (!entry || typeof entry !== "object") return [];
 
+    const mapSourceTypeToCategory = (item, isAsset) => {
+      switch (item?.sourceType) {
+        case "cash":
+          if (typeof item?.originalValue === "number" && item.originalValue < 0) {
+            return "음수현금";
+          }
+          return "양수현금";
+        case "saving":
+          return "저축";
+        case "pension":
+          return "연금";
+        case "realEstate":
+          return "부동산";
+        case "asset":
+          return "자산";
+        case "debt":
+          return "부채";
+        default:
+          return isAsset ? "자산" : "부채";
+      }
+    };
+
     // breakdown 정보가 있으면 이를 사용 (새로운 데이터 구조)
     if (entry.breakdown) {
       const items = [];
@@ -1966,6 +2108,8 @@ function SimulationCompareModal({
             name: item.label || item.name,
             amount: item.amount,
             isAsset: true,
+            category: mapSourceTypeToCategory(item, true),
+            sourceType: item.sourceType,
           });
         });
       }
@@ -1980,6 +2124,8 @@ function SimulationCompareModal({
             name: item.label || item.name,
             amount: -Math.abs(item.amount), // 부채는 음수로
             isAsset: false,
+            category: mapSourceTypeToCategory(item, false),
+            sourceType: item.sourceType,
           });
         });
       }
@@ -2001,6 +2147,7 @@ function SimulationCompareModal({
         name: key,
         amount: value,
         isAsset: value > 0,
+        category: value > 0 ? "자산" : "부채",
       });
     });
 
