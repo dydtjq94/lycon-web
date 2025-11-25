@@ -410,6 +410,14 @@
   align-items: flex-start;
 }
 
+.summaryCellCashflow button {
+  padding-top: 3px;
+}
+
+.summaryCellNetworth button {
+  padding-top: 3px;
+}
+
 /* 상세 재무 데이터 탭용 셀 스타일 */
 .summaryCellDetail {
   font-size: 0.8rem;
