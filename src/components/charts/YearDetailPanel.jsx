@@ -543,6 +543,43 @@ function YearDetailPanel({
   const hasAnyData = hasAssetItems || hasDebtItems || hasEvents;
   const netAssets = yearDetail.netAssets || 0;
 
+  // 작년 대비 변동률 계산
+  const yearOverYearChange = useMemo(() => {
+    if (!yearData || !detailedData || detailedData.length === 0) {
+      return null;
+    }
+
+    const currentYear = yearData.year;
+    const previousYear = currentYear - 1;
+
+    // 작년 데이터 찾기
+    const previousYearData = detailedData.find(
+      (item) => item.year === previousYear
+    );
+
+    if (!previousYearData || !previousYearData.breakdown) {
+      return null;
+    }
+
+    const previousNetAssets =
+      (previousYearData.breakdown.totalAssets || 0) -
+      (previousYearData.breakdown.totalDebt || 0);
+
+    // 작년 순자산이 0이면 변동률 계산 불가
+    if (previousNetAssets === 0) {
+      return null;
+    }
+
+    // 변동률 계산: ((현재 - 작년) / 작년) * 100
+    const changePercent =
+      ((netAssets - previousNetAssets) / Math.abs(previousNetAssets)) * 100;
+
+    return {
+      changePercent,
+      previousNetAssets,
+    };
+  }, [yearData, detailedData, netAssets]);
+
   // 잉여현금 투자 정보 가져오기
   const yearDetailData = detailedData.find(
     (item) => item.year === yearData?.year
@@ -585,6 +622,18 @@ function YearDetailPanel({
               >
                 {formatAmountForChart(netAssets)}
               </span>
+              {yearOverYearChange !== null && (
+                <span
+                  className={`${styles.yearOverYearChange} ${
+                    yearOverYearChange.changePercent >= 0
+                      ? styles.positive
+                      : styles.negative
+                  }`}
+                >
+                  {yearOverYearChange.changePercent >= 0 ? "+" : ""}
+                  {yearOverYearChange.changePercent.toFixed(1)}%
+                </span>
+              )}
             </span>
           </h2>
           <button

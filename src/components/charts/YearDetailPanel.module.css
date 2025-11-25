@@ -44,8 +44,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-  box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.35);
+  background: #ffffff;
 }
 
 .title {
@@ -55,51 +54,49 @@
   color: #111827;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   flex-wrap: wrap;
 }
 
 .titleEmphasis {
-  font-weight: 800;
+  font-weight: 600;
   color: #111827;
 }
 
 .titleAge {
-  color: #6b7280;
+  color: #888888;
   font-weight: 600;
 }
 
 .netInline {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.9rem;
+  gap: 0.2rem;
+  font-size: 0.75rem;
   color: #6b7280;
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+  padding: 0;
+  padding-top: 6px;
+  padding-left: 4px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 .netValueInline {
-  font-weight: 800;
-  color: #0f172a;
+  font-weight: 600;
+  color: #111827;
 }
 
 .netInlineLabel {
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 500;
+  color: #6b7280;
 }
 
-.netInlinePositive {
-  border-color: #bbf7d0;
-  background: linear-gradient(135deg, #ecfdf3, #f0fdf4);
-}
-
-.netInlineNegative {
-  border-color: #fecdd3;
-  background: linear-gradient(135deg, #fef2f2, #fff7f7);
+.yearOverYearChange {
+  font-weight: 500;
+  margin-left: 0.25rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid #e5e7eb;
 }
 
 .closeButton {

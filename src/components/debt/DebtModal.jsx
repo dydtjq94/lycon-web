@@ -40,7 +40,9 @@ function DebtModal({
     debtType: "bullet", // bullet: 만기일시상환, equal: 원리금균등상환, principal: 원금균등상환, grace: 거치식상환
     debtAmount: "",
     startYear: new Date().getFullYear(),
+    startMonth: 1,
     endYear: getRetirementYear(),
+    endMonth: 12,
     interestRate: "3.5", // 이자율 3.5%
     gracePeriod: 5, // 거치기간 (년) - 기본값 5년
     memo: "",
@@ -168,7 +170,9 @@ function DebtModal({
           debtAmount: editData.debtAmount || "",
           startYear:
             parseInt(editData.startYear, 10) || new Date().getFullYear(),
+          startMonth: parseInt(editData.startMonth, 10) || 1,
           endYear: parseInt(editData.endYear, 10) || getRetirementYear(),
+          endMonth: parseInt(editData.endMonth, 10) || 12,
           interestRate: editData.interestRate !== undefined && editData.interestRate !== null
             ? (editData.interestRate * 100).toFixed(2)
             : "3.5",
@@ -189,7 +193,9 @@ function DebtModal({
           debtAmount: initialData.debtAmount || "",
           startYear:
             parseInt(initialData.startYear, 10) || new Date().getFullYear(),
+          startMonth: parseInt(initialData.startMonth, 10) || 1,
           endYear: parseInt(initialData.endYear, 10) || getRetirementYear(),
+          endMonth: parseInt(initialData.endMonth, 10) || 12,
           interestRate: initialData.interestRate !== undefined && initialData.interestRate !== null
             ? (initialData.interestRate * 100).toFixed(2)
             : "3.5",
@@ -204,7 +210,9 @@ function DebtModal({
           debtType: "bullet",
           debtAmount: "",
           startYear: new Date().getFullYear(),
+          startMonth: 1,
           endYear: getRetirementYear(),
+          endMonth: 12,
           interestRate: "3.5",
           gracePeriod: 5, // 거치식 상환의 기본값을 5년으로 설정
           memo: "",
@@ -251,6 +259,14 @@ function DebtModal({
     if (formData.startYear > formData.endYear) {
       newErrors.endYear = "종료년도는 시작년도보다 늦어야 합니다.";
     }
+    if (
+      formData.startYear &&
+      formData.endYear &&
+      parseInt(formData.startYear, 10) === parseInt(formData.endYear, 10) &&
+      formData.startMonth > formData.endMonth
+    ) {
+      newErrors.endYear = "같은 해라면 종료 월이 시작 월보다 크거나 같아야 합니다.";
+    }
 
     const interestRateNum = parseFloat(formData.interestRate);
     if (
@@ -287,7 +303,9 @@ function DebtModal({
       ...formData,
       debtAmount: parseInt(formData.debtAmount, 10),
       startYear: parseInt(formData.startYear, 10),
+      startMonth: parseInt(formData.startMonth, 10) || 1,
       endYear: parseInt(formData.endYear, 10),
+      endMonth: parseInt(formData.endMonth, 10) || 12,
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
       gracePeriod: parseInt(formData.gracePeriod, 10), // 10진수로 명확하게 변환
       addCashToFlow: !!formData.addCashToFlow,
@@ -318,9 +336,11 @@ function DebtModal({
       debtType: "bullet",
       debtAmount: "",
       startYear: new Date().getFullYear(),
+      startMonth: 1,
       endYear: new Date().getFullYear() + 5,
+      endMonth: 12,
       interestRate: "3.5",
-      gracePeriod: 0,
+      gracePeriod: 5,
       memo: "",
       addCashToFlow: false,
     });
@@ -407,9 +427,28 @@ function DebtModal({
           {/* 대출 금액과 이자율 */}
           <div className={styles.row}>
             <div className={styles.field}>
-              <label htmlFor="debtAmount" className={styles.label}>
-                금액 (만원) *
-              </label>
+              <div className={styles.endYearWrapper}>
+                <label htmlFor="debtAmount" className={styles.label}>
+                  금액 (만원) *
+                </label>
+                <label className={styles.fixedCheckboxLabel}>
+                  <input
+                    id="addCashToFlow"
+                    type="checkbox"
+                    checked={formData.addCashToFlow}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        addCashToFlow: e.target.checked,
+                      })
+                    }
+                    className={styles.fixedCheckbox}
+                  />
+                  <span className={styles.fixedCheckboxText}>
+                    현금유입으로 처리
+                  </span>
+                </label>
+              </div>
               <input
                 type="text"
                 id="debtAmount"
@@ -431,21 +470,6 @@ function DebtModal({
               {errors.debtAmount && (
                 <span className={styles.errorText}>{errors.debtAmount}</span>
               )}
-              <label className={styles.checkboxRow} htmlFor="addCashToFlow">
-                <input
-                  id="addCashToFlow"
-                  type="checkbox"
-                  checked={formData.addCashToFlow}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      addCashToFlow: e.target.checked,
-                    })
-                  }
-                  className={styles.checkboxInput}
-                />
-                <span>현금유입으로 처리</span>
-              </label>
             </div>
 
             <div className={styles.field}>
@@ -475,8 +499,8 @@ function DebtModal({
             </div>
           </div>
 
-          {/* 기간 */}
-          <div className={styles.row}>
+          {/* 기간 (연/월) */}
+          <div className={styles.row} style={{ marginTop: "1.5rem" }}>
             <div className={styles.field}>
               <label htmlFor="startYear" className={styles.label}>
                 시작년도 *
@@ -487,8 +511,7 @@ function DebtModal({
                 value={formData.startYear}
                 onChange={(e) => {
                   const value = e.target.value;
-                  // 숫자만 허용하고 4자리 제한
-                  if (value === "" || /^\d{0,4}$/.test(value)) {
+                  if (value === "" || /^\\d{0,4}$/.test(value)) {
                     setFormData({ ...formData, startYear: value });
                   }
                 }}
@@ -496,7 +519,6 @@ function DebtModal({
                 className={styles.input}
                 placeholder="2025"
               />
-              {/* 시작년도 나이 표시 */}
               {formData.startYear && profileData && profileData.birthYear && (
                 <div className={styles.agePreview}>
                   {calculateKoreanAge(
@@ -509,6 +531,31 @@ function DebtModal({
             </div>
 
             <div className={styles.field}>
+              <label htmlFor="startMonth" className={styles.label}>
+                시작 월 *
+              </label>
+              <select
+                id="startMonth"
+                value={formData.startMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    startMonth: parseInt(e.target.value, 10) || 1,
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.field}>
               <label htmlFor="endYear" className={styles.label}>
                 종료년도 *
               </label>
@@ -518,8 +565,7 @@ function DebtModal({
                 value={formData.endYear}
                 onChange={(e) => {
                   const value = e.target.value;
-                  // 숫자만 허용하고 4자리 제한
-                  if (value === "" || /^\d{0,4}$/.test(value)) {
+                  if (value === "" || /^\\d{0,4}$/.test(value)) {
                     setFormData({ ...formData, endYear: value });
                   }
                 }}
@@ -529,7 +575,6 @@ function DebtModal({
                 }`}
                 placeholder="2030"
               />
-              {/* 종료년도 나이 표시 */}
               {formData.endYear && profileData && profileData.birthYear && (
                 <div className={styles.agePreview}>
                   {calculateKoreanAge(profileData.birthYear, formData.endYear)}
@@ -539,6 +584,29 @@ function DebtModal({
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}
+            </div>
+
+            <div className={styles.field}>
+              <label htmlFor="endMonth" className={styles.label}>
+                종료 월 *
+              </label>
+              <select
+                id="endMonth"
+                value={formData.endMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    endMonth: parseInt(e.target.value, 10) || 12,
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

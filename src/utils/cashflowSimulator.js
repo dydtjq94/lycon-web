@@ -372,6 +372,65 @@ export function calculateCashflowSimulation(
     };
   });
 
+  // 부채 월 단위 계산을 위한 상태 초기화
+  const debtStates = {};
+  debts.forEach((debt, index) => {
+    const startYear = toNumberOr(debt.startYear);
+    const startMonth = toNumberOr(debt.startMonth, 1) || 1;
+    const endYear = toNumberOr(debt.endYear);
+    const endMonth = toNumberOr(debt.endMonth, 12) || 12;
+    const debtAmount = toNumberOr(debt.debtAmount, 0) || 0;
+    const interestRate = debt.interestRate || 0; // 연 이율(소수)
+    const monthlyInterestRate = convertAnnualToMonthlyRate(interestRate);
+    const totalMonths =
+      Number.isFinite(startYear) && Number.isFinite(endYear)
+        ? (endYear - startYear) * 12 + (endMonth - startMonth) + 1
+        : 0;
+    const graceMonths = Math.max(
+      0,
+      (parseInt(debt.gracePeriod, 10) || 0) * 12
+    );
+    const repaymentMonths = Math.max(totalMonths - graceMonths, 0);
+    const monthlyPMT =
+      debt.debtType === "equal" && totalMonths > 0
+        ? calculateMonthlyPMT(debtAmount, monthlyInterestRate, totalMonths)
+        : 0;
+    const principalPerMonth =
+      debt.debtType === "principal" && totalMonths > 0
+        ? debtAmount / totalMonths
+        : 0;
+    const gracePrincipalPerMonth =
+      debt.debtType === "grace" && repaymentMonths > 0
+        ? debtAmount / repaymentMonths
+        : 0;
+
+    const key = debt.id || debt.title || `debt-${index}`;
+    debtStates[key] = {
+      key,
+      title: debt.title || `부채${index + 1}`,
+      startYear,
+      startMonth,
+      endYear,
+      endMonth,
+      debtType: debt.debtType || "bullet",
+      interestRate,
+      monthlyInterestRate,
+      debtAmount,
+      totalMonths,
+      graceMonths,
+      repaymentMonths,
+      monthlyPMT,
+      principalPerMonth,
+      gracePrincipalPerMonth,
+      addCashToFlow: !!debt.addCashToFlow,
+      started: false,
+      finished: false,
+      monthIndex: 0,
+      balance: 0,
+      addCashApplied: false,
+    };
+  });
+
   for (let i = 0; i < simulationYears; i++) {
     const year = currentYear + i;
     const age = startAge + i;
@@ -2888,13 +2947,8 @@ export function calculateAssetSimulation(
     // 자산 계산 (월 단위 업데이트 후 연말 스냅샷)
     Object.keys(assetsByTitle).forEach((title) => {
       const asset = assetsByTitle[title];
-      const {
-        startYear,
-        startMonth,
-        endYear,
-        endMonth,
-        monthlyGrowthRate,
-      } = asset;
+      const { startYear, startMonth, endYear, endMonth, monthlyGrowthRate } =
+        asset;
 
       for (let month = 1; month <= 12; month++) {
         const inHoldingPeriod =
