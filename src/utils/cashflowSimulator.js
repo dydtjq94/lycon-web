@@ -1512,7 +1512,9 @@ export function calculateCashflowSimulation(
             }
             // 퇴직연금은 적립 시 현금이 빠져나가지 않음 (회사에서 적립)
           }
-        } else if (
+        }
+
+        if (
           Number.isFinite(paymentStartYear) &&
           year === paymentStartYear
         ) {

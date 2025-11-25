@@ -210,7 +210,8 @@ function SimulationCompareModal({
         const profileDataWithSimulation = {
           ...profileData,
           cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
-          retirementYear: simulation?.retirementYear || profileData?.retirementYear,
+          retirementYear:
+            simulation?.retirementYear || profileData?.retirementYear,
         };
 
         // cashflow 계산 (투자 규칙이 포함된 profileData 사용)
@@ -1346,9 +1347,7 @@ function SimulationCompareModal({
       const simYear = parseNumericInput(sim?.retirementYear);
       if (sim?.id) {
         map[sim.id] =
-          simYear !== null && Number.isFinite(simYear)
-            ? simYear
-            : fallbackYear;
+          simYear !== null && Number.isFinite(simYear) ? simYear : fallbackYear;
       }
     });
 
@@ -1385,8 +1384,7 @@ function SimulationCompareModal({
       const profileDataWithSimulation = {
         ...profileData,
         cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
-        retirementYear:
-          simulationRetirementYear ?? profileData?.retirementYear,
+        retirementYear: simulationRetirementYear ?? profileData?.retirementYear,
       };
 
       // 투자 규칙이 반영된 최신 cashflow 계산
@@ -1437,8 +1435,7 @@ function SimulationCompareModal({
       const profileDataWithSimulation = {
         ...profileData,
         cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
-        retirementYear:
-          simulationRetirementYear ?? profileData?.retirementYear,
+        retirementYear: simulationRetirementYear ?? profileData?.retirementYear,
       };
 
       // 투자 규칙이 반영된 최신 cashflow 계산
@@ -1651,7 +1648,7 @@ function SimulationCompareModal({
         {filteredItems.map((item, index) => {
           // 카테고리 색상 가져오기 (item 객체를 전달하여 category 필드 우선 사용)
           const borderColor = getCategoryColor(item);
-          
+
           return (
             <li
               key={`${prefix}-${item.name}-${item.category || "기타"}-${index}`}
@@ -1761,7 +1758,9 @@ function SimulationCompareModal({
         case "cash":
           // 원본 값 기준으로 양수/음수 현금 구분
           if (typeof itemOrName.originalValue === "number") {
-            return itemOrName.originalValue < 0 ? "cashNegative" : "cashPositive";
+            return itemOrName.originalValue < 0
+              ? "cashNegative"
+              : "cashPositive";
           }
           return "cashPositive";
         case "saving":
@@ -1804,7 +1803,7 @@ function SimulationCompareModal({
       주택연금: "pension",
       부동산: "realEstate",
       임대소득: "realEstate",
-      "임대소득": "realEstate",
+      임대소득: "realEstate",
       "임대 소득": "realEstate",
       realestate: "realEstate",
       자산: "assets",
@@ -1816,7 +1815,7 @@ function SimulationCompareModal({
       대출: "debt",
       부채: "debt",
       debt: "debt",
-      "대출유입": "debt",
+      대출유입: "debt",
       "대출 유입": "debt",
       이자: "debt",
       부채이자: "debt",
@@ -1936,7 +1935,8 @@ function SimulationCompareModal({
           resolveCategoryType(itemB) || getCategoryType(b) || "assets";
 
         const resolveOrder = (category) => {
-          if (category === "cashPositive") return categoryOrder.indexOf("assets");
+          if (category === "cashPositive")
+            return categoryOrder.indexOf("assets");
           if (category === "cashNegative") return categoryOrder.indexOf("debt");
           const idx = categoryOrder.indexOf(category);
           return idx === -1 ? categoryOrder.length : idx;
@@ -2075,7 +2075,10 @@ function SimulationCompareModal({
     const mapSourceTypeToCategory = (item, isAsset) => {
       switch (item?.sourceType) {
         case "cash":
-          if (typeof item?.originalValue === "number" && item.originalValue < 0) {
+          if (
+            typeof item?.originalValue === "number" &&
+            item.originalValue < 0
+          ) {
             return "음수현금";
           }
           return "양수현금";
@@ -2194,11 +2197,7 @@ function SimulationCompareModal({
 
     // 시점별 순자산 계산
     const retirementAgesForSelected = sortedSelectedSimulationIds
-      .map(
-        (simId) =>
-          retirementAgeBySimulation[simId] ??
-          profileRetirementAge
-      )
+      .map((simId) => retirementAgeBySimulation[simId] ?? profileRetirementAge)
       .filter((age) => Number.isFinite(age));
 
     const retirementLabel =
@@ -2236,7 +2235,10 @@ function SimulationCompareModal({
       }
 
       // totalAmount가 있으면 우선 사용 (자산 시뮬레이션 총합)
-      if (typeof entry.totalAmount === "number" && !Number.isNaN(entry.totalAmount)) {
+      if (
+        typeof entry.totalAmount === "number" &&
+        !Number.isNaN(entry.totalAmount)
+      ) {
         return entry.totalAmount;
       }
 
@@ -2478,11 +2480,11 @@ function SimulationCompareModal({
 
               {/* 현재 자산 현황 탭 */}
               {activeTab === "currentAssets" && (
-                    <div className={styles.summarySection}>
-                      <div className={styles.sectionHeader}>
-                        <div className={styles.sectionHeaderLeft}>
-                          <h4 className={styles.summaryTitle}>현재 자산 현황</h4>
-                          <p className={styles.summaryNote}>
+                <div className={styles.summarySection}>
+                  <div className={styles.sectionHeader}>
+                    <div className={styles.sectionHeaderLeft}>
+                      <h4 className={styles.summaryTitle}>현재 자산 현황</h4>
+                      <p className={styles.summaryNote}>
                         입력된 현재 재무 데이터 기준
                       </p>
                     </div>
@@ -2495,10 +2497,7 @@ function SimulationCompareModal({
                       >
                         <div className={styles.summaryCellDetail}>항목</div>
                         {sortedSelectedSimulationIds.map((simId) => (
-                          <div
-                            key={simId}
-                            className={styles.summaryCellDetail}
-                          >
+                          <div key={simId} className={styles.summaryCellDetail}>
                             {getSimulationTitle(simId)}
                           </div>
                         ))}
@@ -2524,14 +2523,14 @@ function SimulationCompareModal({
                             style={{ gridTemplateColumns }}
                           >
                             <div
-                            className={`${styles.summaryCellDetail} ${
-                              row.isNetWorth
-                                ? styles.summaryLabel
-                                : styles.summarySubLabel
-                            }`}
-                          >
-                            {row.label}
-                          </div>
+                              className={`${styles.summaryCellDetail} ${
+                                row.isNetWorth
+                                  ? styles.summaryLabel
+                                  : styles.summarySubLabel
+                              }`}
+                            >
+                              {row.label}
+                            </div>
                             {sortedSelectedSimulationIds.map((simId, index) => {
                               const value =
                                 currentAssetsBySimulation[simId]?.[row.key];
@@ -2558,7 +2557,9 @@ function SimulationCompareModal({
                                         </span>
                                       ) : (
                                         <span
-                                          className={`${styles.summaryValueSubtle} ${
+                                          className={`${
+                                            styles.summaryValueSubtle
+                                          } ${
                                             row.key === "debtsTotal"
                                               ? styles.negative
                                               : ""
