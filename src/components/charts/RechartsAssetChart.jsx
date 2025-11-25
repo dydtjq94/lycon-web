@@ -552,6 +552,17 @@ function RechartsAssetChart({
     return acc;
   }, {});
 
+  // detailedData를 년도별로 빠르게 찾기 위한 맵
+  const detailByYear = useMemo(() => {
+    if (!detailedData || detailedData.length === 0) return {};
+    return detailedData.reduce((acc, item) => {
+      if (item?.year !== undefined && item?.year !== null) {
+        acc[item.year] = item;
+      }
+      return acc;
+    }, {});
+  }, [detailedData]);
+
   // 차트 데이터 포맷팅 - 4개 카테고리로 단순화 (성능 최적화)
   const chartData = useMemo(() => {
     if (!hasData) return [];
@@ -599,58 +610,97 @@ function RechartsAssetChart({
       let negativeCash = 0; // -현금
       let debtAmount = 0; // 부채
 
-      Object.keys(item).forEach((key) => {
-        if (key !== "year" && key !== "age" && key !== "totalAmount") {
-          const value = item[key] || 0;
+      const applyBySourceType = (type, amount) => {
+        switch (type) {
+          case "cash":
+            if (amount >= 0) positiveCash += amount;
+            else negativeCash += amount;
+            break;
+          case "saving":
+            savingAmount += amount;
+            break;
+          case "pension":
+            pensionAmount += amount;
+            break;
+          case "realEstate":
+            realEstateAmount += amount;
+            break;
+          case "asset":
+            assetAmount += amount;
+            break;
+          case "debt":
+            debtAmount += amount;
+            break;
+          default:
+            assetAmount += amount;
+        }
+      };
 
-          if (key === "현금" || key === "현금 자산") {
-            // 현금 처리
-            if (value >= 0) {
-              positiveCash += value;
-            } else {
-              negativeCash += value; // 음수 그대로
-            }
-          } else if (value < 0) {
-            // 음수 값은 모두 부채로 처리
-            debtAmount += value; // 음수 그대로
-          } else if (value > 0) {
-            // 양수 값을 카테고리별로 분류
-            if (
-              key.includes("저축") ||
-              key.includes("투자") ||
-              key.includes("예금") ||
-              key.includes("적금") ||
-              key.includes("채권") ||
-              key.includes("주식") ||
-              key.includes("펀드") ||
-              key.includes("ETF")
-            ) {
-              savingAmount += value;
-            } else if (
-              key.includes("연금") ||
-              key.includes("퇴직") ||
-              key.includes("국민연금") ||
-              key.includes("IRP") ||
-              key.includes("DB")
-            ) {
-              pensionAmount += value;
-            } else if (
-              key.includes("부동산") ||
-              key.includes("아파트") ||
-              key.includes("자택") ||
-              key.includes("주택") ||
-              key.includes("토지") ||
-              key.includes("건물") ||
-              key.includes("상가")
-            ) {
-              realEstateAmount += value;
-            } else {
-              // 나머지는 자산
-              assetAmount += value;
+      // breakdown이 있으면 sourceType 기반으로 정확히 분류
+      const breakdown =
+        item.breakdown || detailByYear[item.year]?.breakdown || null;
+
+      if (breakdown && breakdown.assetItems) {
+        (breakdown.assetItems || []).forEach((assetItem) => {
+          const amount = Number(assetItem.amount) || 0;
+          const sourceType = assetItem.sourceType || "asset";
+          applyBySourceType(sourceType, amount);
+        });
+
+        (breakdown.debtItems || []).forEach((debtItem) => {
+          // debtItem.amount는 양수, originalValue에 부호가 들어있음
+          const raw = debtItem.originalValue ?? -Math.abs(debtItem.amount || 0);
+          const amount = Number(raw) || 0;
+          applyBySourceType(debtItem.sourceType || "debt", amount);
+        });
+      } else {
+        // fallback: 기존 키워드 기반 (구 데이터 구조 대비)
+        Object.keys(item).forEach((key) => {
+          if (key !== "year" && key !== "age" && key !== "totalAmount") {
+            const value = item[key] || 0;
+
+            if (key === "현금" || key === "현금 자산") {
+              if (value >= 0) positiveCash += value;
+              else negativeCash += value;
+            } else if (value < 0) {
+              debtAmount += value;
+            } else if (value > 0) {
+              if (
+                key.includes("저축") ||
+                key.includes("투자") ||
+                key.includes("예금") ||
+                key.includes("적금") ||
+                key.includes("채권") ||
+                key.includes("주식") ||
+                key.includes("펀드") ||
+                key.includes("ETF")
+              ) {
+                savingAmount += value;
+              } else if (
+                key.includes("연금") ||
+                key.includes("퇴직") ||
+                key.includes("국민연금") ||
+                key.includes("IRP") ||
+                key.includes("DB")
+              ) {
+                pensionAmount += value;
+              } else if (
+                key.includes("부동산") ||
+                key.includes("아파트") ||
+                key.includes("자택") ||
+                key.includes("주택") ||
+                key.includes("토지") ||
+                key.includes("건물") ||
+                key.includes("상가")
+              ) {
+                realEstateAmount += value;
+              } else {
+                assetAmount += value;
+              }
             }
           }
-        }
-      });
+        });
+      }
 
       return {
         age: item.age,
@@ -669,7 +719,7 @@ function RechartsAssetChart({
         부채: debtAmount,
       };
     });
-  }, [hasData, data, profileData, eventsByYear, xAxisRange]);
+  }, [hasData, data, profileData, eventsByYear, xAxisRange, detailByYear]);
 
   // 7개 카테고리 (렌더링 순서: 양수 역순, 음수 순서대로)
   const assetKeys = [

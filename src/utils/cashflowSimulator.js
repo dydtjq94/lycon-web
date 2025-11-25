@@ -367,14 +367,14 @@ export function calculateCashflowSimulation(
       const startMonth = expense.startMonth || 1; // 기본값: 1월 (월초)
       const endYear = expense.endYear;
       const endMonth = expense.endMonth || 12; // 기본값: 12월 (월말)
-      
+
       // 해당 년도에 지출이 발생하는지 확인
       if (year >= startYear && year <= endYear) {
         // 해당 년도에 포함된 개월 수 계산
         let monthsInYear = 0;
         let firstMonthInYear = 1;
         let lastMonthInYear = 12;
-        
+
         if (year === startYear && year === endYear) {
           // 시작년도와 종료년도가 같은 경우
           firstMonthInYear = startMonth;
@@ -396,7 +396,7 @@ export function calculateCashflowSimulation(
           lastMonthInYear = 12;
           monthsInYear = 12;
         }
-        
+
         if (monthsInYear > 0) {
           const growthRate = expense.growthRate / 100;
           const monthlyGrowthRate =
@@ -804,40 +804,75 @@ export function calculateCashflowSimulation(
         typeof saving.startYear === "string"
           ? parseInt(saving.startYear, 10)
           : saving.startYear;
+      const sStartMonth = saving.startMonth || 1; // 기본값: 1월
       const sEndYear =
         typeof saving.endYear === "string"
           ? parseInt(saving.endYear, 10)
           : saving.endYear;
+      const sEndMonth = saving.endMonth || 12; // 기본값: 12월
 
-      // 구매로 처리: 시작년도에 현재 보유 금액 차감
-      if (year === sStartYear && saving.treatAsInitialPurchase) {
-        const currentAmount = Number(saving.currentAmount) || 0;
-        if (currentAmount > 0) {
-          totalSavings += currentAmount;
+      // 해당 년도에 포함된 개월 수 계산
+      let monthsInYear = 0;
+      let firstMonthInYear = 1;
+      let lastMonthInYear = 12;
 
-          // 저축 구매 상세 정보 추가
-          savingPurchases.push({
-            title: saving.title,
-            amount: currentAmount,
-          });
-
-          addNegative(
-            `${saving.title} | 추가`,
-            currentAmount,
-            "저축 구매",
-            `saving-purchase-${saving.id || saving.title}`
-          );
+      if (year >= sStartYear && year <= sEndYear) {
+        if (year === sStartYear && year === sEndYear) {
+          // 시작년도와 종료년도가 같은 경우
+          firstMonthInYear = sStartMonth;
+          lastMonthInYear = sEndMonth;
+          monthsInYear = sEndMonth - sStartMonth + 1;
+        } else if (year === sStartYear) {
+          // 시작년도인 경우
+          firstMonthInYear = sStartMonth;
+          lastMonthInYear = 12;
+          monthsInYear = 12 - sStartMonth + 1;
+        } else if (year === sEndYear) {
+          // 종료년도인 경우
+          firstMonthInYear = 1;
+          lastMonthInYear = sEndMonth;
+          monthsInYear = sEndMonth;
+        } else {
+          // 중간 년도인 경우 (전체 12개월)
+          firstMonthInYear = 1;
+          lastMonthInYear = 12;
+          monthsInYear = 12;
         }
       }
 
-      if (year >= sStartYear && year <= sEndYear) {
-        // 종료년도 연말까지 적립 (연말 기준)
-        const yearsElapsed = year - sStartYear;
+      // 구매로 처리: 시작 월에 현재 보유 금액 차감
+      if (year === sStartYear && monthsInYear > 0) {
+        // 해당 년도의 첫 월이 시작 월인지 확인
+        if (firstMonthInYear === sStartMonth && saving.treatAsInitialPurchase) {
+          const currentAmount = Number(saving.currentAmount) || 0;
+          if (currentAmount > 0) {
+            totalSavings += currentAmount;
+
+            // 저축 구매 상세 정보 추가
+            savingPurchases.push({
+              title: saving.title,
+              amount: currentAmount,
+            });
+
+            addNegative(
+              `${saving.title} | 추가`,
+              currentAmount,
+              "저축 구매",
+              `saving-purchase-${saving.id || saving.title}`
+            );
+          }
+        }
+      }
+
+      // 적립 기간 체크
+      if (monthsInYear > 0) {
         const yearlyGrowthRate = saving.yearlyGrowthRate || 0; // 이미 소수로 저장됨
+        const monthlyGrowthRate =
+          convertAnnualToMonthlyGrowthRate(yearlyGrowthRate);
 
         if (saving.frequency === "one_time") {
-          // 일회성 저축: 시작년도에만 현금흐름에 반영
-          if (year === saving.startYear) {
+          // 일회성 저축: 시작 월에만 현금흐름에 반영
+          if (year === sStartYear && firstMonthInYear === sStartMonth) {
             totalSavings += saving.amount;
 
             // 저축 적립 상세 정보 추가
@@ -854,83 +889,171 @@ export function calculateCashflowSimulation(
             );
           }
         } else {
-          // 월간/연간 저축
-          const monthlyAmount =
-            saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
+          // 월간/연간 저축: 해당 년도에 포함된 각 월마다 적립
+          let yearTotalSavings = 0;
 
-          // 년간 저축 상승률 적용 (월간 금액에 년간 상승률을 적용)
-          const adjustedMonthlyAmount =
-            monthlyAmount * Math.pow(1 + yearlyGrowthRate, yearsElapsed);
-          const yearlyAmount = adjustedMonthlyAmount * 12;
+          if (saving.frequency === "monthly") {
+            // 월간 빈도: 각 월마다 개별 계산
+            const monthlyAmount = saving.amount;
 
-          totalSavings += yearlyAmount;
+            // 시작 시점부터 현재 년도까지의 경과 개월 수 계산
+            const baseMonthsElapsed =
+              (year - sStartYear) * 12 + (firstMonthInYear - sStartMonth);
+
+            // 각 월마다 적립 계산 및 합산
+            for (let m = firstMonthInYear; m <= lastMonthInYear; m++) {
+              // 현재 월까지의 경과 개월 수
+              const monthsElapsed = baseMonthsElapsed + (m - firstMonthInYear);
+
+              // 월 단위 상승률 적용
+              const adjustedMonthlyAmount =
+                monthlyAmount * Math.pow(1 + monthlyGrowthRate, monthsElapsed);
+              yearTotalSavings += adjustedMonthlyAmount;
+            }
+          } else {
+            // 연간 빈도: 해당 년도에 포함된 개월 수만큼 비율로 계산
+            const annualAmount = saving.amount;
+            const ratioInYear = monthsInYear / 12; // 해당 년도에 포함된 비율
+
+            // 시작 시점부터 현재 년도까지의 경과 년 수 계산
+            const yearsElapsed = year - sStartYear;
+
+            // 연간 상승률 적용 (년 단위)
+            const adjustedAnnualAmount =
+              annualAmount * Math.pow(1 + yearlyGrowthRate, yearsElapsed);
+
+            // 해당 년도에 포함된 개월 수만큼 비율로 계산
+            yearTotalSavings = adjustedAnnualAmount * ratioInYear;
+          }
+
+          totalSavings += yearTotalSavings;
 
           // 저축 적립 상세 정보 추가
           savingContributions.push({
             title: saving.title,
-            amount: yearlyAmount,
+            amount: yearTotalSavings,
           });
 
           addNegative(
             `${saving.title} | 적립`,
-            yearlyAmount,
+            yearTotalSavings,
             "저축 적립",
             `saving-contrib-${saving.id || saving.title}`
           );
         }
       }
 
+      // 만료 시점 체크: 종료 년도이고 해당 년도의 마지막 월인 경우
+      // 년 단위 루프이므로, 종료 년도이고 종료 월이 12월이거나 해당 년도가 마지막 년도인 경우 처리
+      // 실제로는 년 단위 집계이므로, 종료 년도에 만료 처리
       if (year === sEndYear) {
-        // 종료년도: 종료년도까지 수익률 계산하고 현금흐름에 추가
-        const yearsElapsed = sEndYear - sStartYear;
+        // 종료 월에 만료 처리 (년 단위 루프이므로 종료 년도에 처리)
         const interestRate = saving.interestRate || 0;
+        const monthlyInterestRate = convertAnnualToMonthlyRate(interestRate);
         const yearlyGrowthRate = saving.yearlyGrowthRate || 0;
+        const monthlyGrowthRate =
+          convertAnnualToMonthlyGrowthRate(yearlyGrowthRate);
 
         let finalAmount = 0;
         const currentAmount = Number(saving.currentAmount) || 0; // 현재 보유 금액 포함
 
-        // 잉여 현금 투자 금액 계산 (년도별로 수익률 적용)
+        // 보유 개월 수 계산
+        const totalMonthsElapsed =
+          (sEndYear - sStartYear) * 12 + (sEndMonth - sStartMonth);
+
+        // 잉여 현금 투자 금액 계산 (월 단위로 수익률 적용)
         let totalInvestedValue = 0;
         let totalInvestedAmount = 0;
         if (savingInvestments[saving.id]) {
-          Object.keys(savingInvestments[saving.id]).forEach((investYear) => {
-            const investAmount = savingInvestments[saving.id][investYear];
-            const yearsFromInvestment = sEndYear - parseInt(investYear);
-            // 투자한 해의 다음 해부터 수익률 적용 (연말 투자이므로 투자한 해는 수익률 X)
-            const investmentValue =
-              investAmount * Math.pow(1 + interestRate, yearsFromInvestment);
-            totalInvestedValue += investmentValue;
-            totalInvestedAmount += investAmount;
+          Object.keys(savingInvestments[saving.id]).forEach((investKey) => {
+            // 년-월 키 형식 지원 (새로운 형식)
+            let investYear, investMonth;
+            if (investKey.includes("-")) {
+              [investYear, investMonth] = investKey.split("-").map(Number);
+            } else {
+              // 기존 년도만 있는 형식 (호환성)
+              investYear = parseInt(investKey);
+              investMonth = 12; // 연말 투자로 가정
+            }
+
+            const investAmount = savingInvestments[saving.id][investKey];
+            const investMonthsElapsed =
+              totalMonthsElapsed -
+              ((investYear - sStartYear) * 12 + (investMonth - sStartMonth));
+
+            // 투자한 월의 다음 달부터 수익률 적용
+            if (investMonthsElapsed > 0) {
+              const investmentValue =
+                investAmount *
+                Math.pow(1 + monthlyInterestRate, investMonthsElapsed);
+              totalInvestedValue += investmentValue;
+              totalInvestedAmount += investAmount;
+            } else {
+              // 투자한 월에는 수익률 없음
+              totalInvestedValue += investAmount;
+              totalInvestedAmount += investAmount;
+            }
           });
         }
 
         if (saving.frequency === "one_time") {
-          // 일회성 저축: 시작년도에 원금, 다음 해부터 수익률 적용
-          // 예: 2025-2030이라면 5년치 이자 (2026~2030)
+          // 일회성 저축: 시작 월에 원금, 다음 달부터 수익률 적용
           finalAmount =
             (currentAmount + (Number(saving.amount) || 0)) *
-              Math.pow(1 + interestRate, yearsElapsed) +
+              Math.pow(1 + monthlyInterestRate, totalMonthsElapsed) +
             totalInvestedValue;
         } else {
-          // 월간/연간 저축: 각 년도에 적립, 다음 해부터 수익률 적용
-          const monthlyAmount =
-            saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
+          // 월간/연간 저축: 각 월마다 적립, 다음 달부터 수익률 적용
+          let monthlyAmount;
+          if (saving.frequency === "monthly") {
+            monthlyAmount = saving.amount;
+          } else {
+            // 연간 빈도: 월간으로 분할
+            monthlyAmount = saving.amount / 12;
+          }
 
           let accumulated = currentAmount;
-          for (let i = 0; i <= yearsElapsed; i++) {
-            const adjustedMonthlyAmount =
-              monthlyAmount * Math.pow(1 + yearlyGrowthRate, i);
-            const yearlyAmount = adjustedMonthlyAmount * 12;
 
-            if (i === 0) {
-              // 시작년도: 적립금만 (수익률 X)
-              accumulated = accumulated + yearlyAmount;
-            } else {
-              // 다음 해부터: 작년 말 잔액에 수익률 + 올해 적립금
-              accumulated = accumulated * (1 + interestRate) + yearlyAmount;
+          // 각 월마다 적립 및 수익률 적용
+          for (let m = 0; m <= totalMonthsElapsed; m++) {
+            const currentYear =
+              sStartYear + Math.floor((sStartMonth - 1 + m) / 12);
+            const currentMonth = ((sStartMonth - 1 + m) % 12) + 1;
+
+            // 해당 월이 적립 기간 내인지 확인
+            const isInRange = isDateInRange(
+              createDateFromYearMonth(currentYear, currentMonth),
+              sStartYear,
+              sStartMonth,
+              sEndYear,
+              sEndMonth
+            );
+
+            if (isInRange) {
+              // 월간 금액 계산 (상승률 적용)
+              const yearsElapsedForGrowth = Math.floor(m / 12);
+              const adjustedMonthlyAmount =
+                monthlyAmount *
+                Math.pow(
+                  1 + monthlyGrowthRate,
+                  yearsElapsedForGrowth * 12 + (m % 12)
+                );
+
+              if (m === 0) {
+                // 시작 월: 적립만 (수익률 X)
+                accumulated += adjustedMonthlyAmount;
+              } else {
+                // 다음 달부터: 전월 말 잔액에 수익률 적용 + 올해 적립금
+                accumulated =
+                  accumulated * (1 + monthlyInterestRate) +
+                  adjustedMonthlyAmount;
+              }
+            } else if (m > 0) {
+              // 적립 기간이 아니지만 수익률은 계속 적용
+              accumulated = accumulated * (1 + monthlyInterestRate);
             }
           }
-          // 투자 금액은 년도별로 수익률 계산하여 합산
+
           finalAmount = accumulated + totalInvestedValue;
         }
 
@@ -994,92 +1117,183 @@ export function calculateCashflowSimulation(
       }
     });
 
-    // 수익형 저축: 매년 현금 수입 발생 (자산 가치에 대한 수익률)
+    // 수익형 저축: 매월 현금 수입 발생 (자산 가치에 대한 수익률)
     savings.forEach((saving) => {
       const sStartYear =
         typeof saving.startYear === "string"
           ? parseInt(saving.startYear, 10)
           : saving.startYear;
+      const sStartMonth = saving.startMonth || 1;
       const sEndYear =
         typeof saving.endYear === "string"
           ? parseInt(saving.endYear, 10)
           : saving.endYear;
+      const sEndMonth = saving.endMonth || 12;
+
+      // 해당 년도에 포함된 개월 수 계산
+      let monthsInYear = 0;
+      let firstMonthInYear = 1;
+      let lastMonthInYear = 12;
+
+      if (year >= sStartYear && year <= sEndYear) {
+        if (year === sStartYear && year === sEndYear) {
+          firstMonthInYear = sStartMonth;
+          lastMonthInYear = sEndMonth;
+          monthsInYear = sEndMonth - sStartMonth + 1;
+        } else if (year === sStartYear) {
+          firstMonthInYear = sStartMonth;
+          lastMonthInYear = 12;
+          monthsInYear = 12 - sStartMonth + 1;
+        } else if (year === sEndYear) {
+          firstMonthInYear = 1;
+          lastMonthInYear = sEndMonth;
+          monthsInYear = sEndMonth;
+        } else {
+          firstMonthInYear = 1;
+          lastMonthInYear = 12;
+          monthsInYear = 12;
+        }
+      }
 
       if (
         saving.savingType === "income" &&
         saving.incomeRate > 0 &&
-        year > sStartYear &&
-        year <= sEndYear
+        monthsInYear > 0 &&
+        (year > sStartYear ||
+          (year === sStartYear && firstMonthInYear < sStartMonth))
       ) {
-        // 연말 기준: 수익은 시작 다음 해부터 종료년도 연말까지 발생
-        // 전년도 말 저축 자산 가치 계산
-        const yearsElapsed = year - sStartYear;
+        // 수익은 시작 월의 다음 달부터 종료 월까지 발생
+        // 해당 년도에 발생하는 배당/이자 계산
         const interestRate = saving.interestRate || 0;
+        const monthlyInterestRate = convertAnnualToMonthlyRate(interestRate);
         const yearlyGrowthRate = saving.yearlyGrowthRate || 0;
+        const monthlyGrowthRate =
+          convertAnnualToMonthlyGrowthRate(yearlyGrowthRate);
+        const monthlyIncomeRate = saving.incomeRate / 12; // 연간 수익률을 월간으로 단순 분할
 
-        let previousYearEndValue = 0;
+        let yearTotalIncome = 0;
         const currentAmount = Number(saving.currentAmount) || 0;
 
-        if (saving.frequency === "one_time") {
-          // 일회성 저축: 원금 + 수익률 복리
-          previousYearEndValue =
-            (currentAmount + (Number(saving.amount) || 0)) *
-            Math.pow(1 + interestRate, yearsElapsed - 1);
-        } else {
-          // 월간/연간 저축: 각 년도 적립 + 수익률 복리
-          const monthlyAmount =
-            saving.frequency === "monthly" ? saving.amount : saving.amount / 12;
-
-          let accumulated = currentAmount;
-          for (let i = 0; i < yearsElapsed; i++) {
-            const adjustedMonthlyAmount =
-              monthlyAmount * Math.pow(1 + yearlyGrowthRate, i);
-            const yearlyAmount = adjustedMonthlyAmount * 12;
-
-            if (i === 0) {
-              accumulated = accumulated + yearlyAmount;
-            } else {
-              accumulated = accumulated * (1 + interestRate) + yearlyAmount;
-            }
+        // 각 월마다 배당/이자 계산
+        for (let m = firstMonthInYear; m <= lastMonthInYear; m++) {
+          // 시작 월의 다음 달부터만 배당 발생
+          if (year === sStartYear && m <= sStartMonth) {
+            continue; // 시작 월에는 배당 없음
           }
-          previousYearEndValue = accumulated;
-        }
 
-        // ⚠️ 중요: 잉여 현금 투자 금액도 배당/이자 계산에 포함
-        // 전년도까지 투자한 금액에 대한 가치 계산 (전년도 말 기준)
-        let investedValue = 0;
-        if (savingInvestments[saving.id]) {
-          Object.keys(savingInvestments[saving.id]).forEach((investYear) => {
-            const investYearNum = parseInt(investYear);
-            if (investYearNum < year) {
-              // 전년도까지 투자한 금액만 포함
-              const investAmount = savingInvestments[saving.id][investYear];
-              const yearsFromInvestment = year - investYearNum - 1; // 전년도 말 기준
-              // 투자한 해의 다음 해부터 수익률 적용
-              const investmentValue =
-                investAmount * Math.pow(1 + interestRate, yearsFromInvestment);
-              investedValue += investmentValue;
+          // 전월 말 자산 가치 계산
+          const monthsElapsed =
+            (year - sStartYear) * 12 + (m - sStartMonth) - 1;
+
+          let previousMonthEndValue = 0;
+
+          if (saving.frequency === "one_time") {
+            // 일회성 저축: 원금 + 월 단위 복리
+            previousMonthEndValue =
+              (currentAmount + (Number(saving.amount) || 0)) *
+              Math.pow(1 + monthlyInterestRate, monthsElapsed);
+          } else {
+            // 월간/연간 저축: 각 월마다 적립 + 월 단위 복리
+            let monthlyAmount;
+            if (saving.frequency === "monthly") {
+              monthlyAmount = saving.amount;
+            } else {
+              monthlyAmount = saving.amount / 12;
             }
-          });
+
+            let accumulated = currentAmount;
+
+            // 전월 말까지의 자산 가치 계산
+            for (let prevM = 0; prevM <= monthsElapsed; prevM++) {
+              const prevYear =
+                sStartYear + Math.floor((sStartMonth - 1 + prevM) / 12);
+              const prevMonth = ((sStartMonth - 1 + prevM) % 12) + 1;
+
+              // 해당 월이 적립 기간 내인지 확인
+              const isInRange = isDateInRange(
+                createDateFromYearMonth(prevYear, prevMonth),
+                sStartYear,
+                sStartMonth,
+                sEndYear,
+                sEndMonth
+              );
+
+              if (isInRange) {
+                // 월간 금액 계산 (상승률 적용)
+                const yearsElapsedForGrowth = Math.floor(prevM / 12);
+                const adjustedMonthlyAmount =
+                  monthlyAmount *
+                  Math.pow(
+                    1 + monthlyGrowthRate,
+                    yearsElapsedForGrowth * 12 + (prevM % 12)
+                  );
+
+                if (prevM === 0) {
+                  accumulated += adjustedMonthlyAmount;
+                } else {
+                  accumulated =
+                    accumulated * (1 + monthlyInterestRate) +
+                    adjustedMonthlyAmount;
+                }
+              } else if (prevM > 0) {
+                accumulated = accumulated * (1 + monthlyInterestRate);
+              }
+            }
+
+            previousMonthEndValue = accumulated;
+          }
+
+          // 잉여 현금 투자 금액도 배당 계산에 포함
+          let investedValue = 0;
+          if (savingInvestments[saving.id]) {
+            Object.keys(savingInvestments[saving.id]).forEach((investKey) => {
+              let investYear, investMonth;
+              if (investKey.includes("-")) {
+                [investYear, investMonth] = investKey.split("-").map(Number);
+              } else {
+                investYear = parseInt(investKey);
+                investMonth = 12;
+              }
+
+              // 전월 말까지의 투자 금액만 포함
+              const investMonthsElapsed =
+                monthsElapsed -
+                ((investYear - sStartYear) * 12 + (investMonth - sStartMonth));
+
+              if (investMonthsElapsed >= 0) {
+                const investAmount = savingInvestments[saving.id][investKey];
+                if (investMonthsElapsed > 0) {
+                  investedValue +=
+                    investAmount *
+                    Math.pow(1 + monthlyInterestRate, investMonthsElapsed);
+                } else {
+                  investedValue += investAmount;
+                }
+              }
+            });
+          }
+
+          // 전월 말 총 자산 가치 = 정기 적립 자산 + 잉여 현금 투자 자산
+          const totalPreviousMonthEndValue =
+            previousMonthEndValue + investedValue;
+
+          // 월간 배당/이자 = 전월 말 총 자산 가치 × 월간 수익률
+          const monthlyIncome = totalPreviousMonthEndValue * monthlyIncomeRate;
+          yearTotalIncome += monthlyIncome;
         }
 
-        // 전년도 말 총 자산 가치 = 정기 적립 자산 + 잉여 현금 투자 자산
-        const totalPreviousYearEndValue = previousYearEndValue + investedValue;
-
-        // 매년 수익 = 전년도 말 총 자산 가치 * 수익률
-        const yearlyIncome = totalPreviousYearEndValue * saving.incomeRate;
-        if (yearlyIncome > 0) {
-          totalSavingIncome += yearlyIncome; // 저축 수익 합계에 추가
+        if (yearTotalIncome > 0) {
+          totalSavingIncome += yearTotalIncome;
 
           // 저축 수익 상세 정보 추가 (배당/이자)
           savingIncomes.push({
             title: saving.title,
-            amount: yearlyIncome,
+            amount: yearTotalIncome,
           });
 
           addPositive(
             `${saving.title} | 배당/이자`,
-            yearlyIncome,
+            yearTotalIncome,
             "저축 수익",
             `saving-income-${saving.id || saving.title}`
           );
@@ -1090,18 +1304,60 @@ export function calculateCashflowSimulation(
     // 연금 계산
     pensions.forEach((pension) => {
       if (pension.type === "national") {
-        // 국민연금: 수령 기간 동안 현금흐름에 추가
-        if (year >= pension.startYear && year <= pension.endYear) {
-          const yearsElapsed = year - pension.startYear;
-          const inflationRate = (pension.inflationRate || 2.5) / 100; // 물가상승률
-          const adjustedAmount =
-            pension.monthlyAmount *
-            12 *
-            Math.pow(1 + inflationRate, yearsElapsed);
-          totalPension += adjustedAmount;
+        // 국민연금: 수령 기간 동안 현금흐름에 추가 (월 단위)
+        const startYear = pension.startYear;
+        const startMonth = pension.startMonth || 1;
+        const endYear = pension.endYear;
+        const endMonth = pension.endMonth || 12;
+
+        // 해당 년도에 포함된 개월 수 계산
+        let monthsInYear = 0;
+        let firstMonthInYear = 1;
+        let lastMonthInYear = 12;
+
+        if (year >= startYear && year <= endYear) {
+          if (year === startYear && year === endYear) {
+            firstMonthInYear = startMonth;
+            lastMonthInYear = endMonth;
+            monthsInYear = endMonth - startMonth + 1;
+          } else if (year === startYear) {
+            firstMonthInYear = startMonth;
+            lastMonthInYear = 12;
+            monthsInYear = 12 - startMonth + 1;
+          } else if (year === endYear) {
+            firstMonthInYear = 1;
+            lastMonthInYear = endMonth;
+            monthsInYear = endMonth;
+          } else {
+            firstMonthInYear = 1;
+            lastMonthInYear = 12;
+            monthsInYear = 12;
+          }
+        }
+
+        if (monthsInYear > 0) {
+          const inflationRate = (pension.inflationRate || 2.5) / 100;
+          const monthlyInflationRate =
+            convertAnnualToMonthlyGrowthRate(inflationRate);
+
+          // 해당 년도에 포함된 각 월마다 월간 수령액 계산
+          const baseMonthsElapsed =
+            (year - startYear) * 12 + (firstMonthInYear - startMonth);
+
+          let yearTotalPension = 0;
+
+          for (let m = firstMonthInYear; m <= lastMonthInYear; m++) {
+            const monthsElapsed = baseMonthsElapsed + (m - firstMonthInYear);
+            const adjustedMonthlyAmount =
+              pension.monthlyAmount *
+              Math.pow(1 + monthlyInflationRate, monthsElapsed);
+            yearTotalPension += adjustedMonthlyAmount;
+          }
+
+          totalPension += yearTotalPension;
           addPositive(
             `${pension.title} | 수령`,
-            adjustedAmount,
+            yearTotalPension,
             "국민연금",
             `pension-national-${pension.id || pension.title}`
           );
@@ -1109,145 +1365,251 @@ export function calculateCashflowSimulation(
       } else {
         // 퇴직연금/개인연금: PMT 방식으로 수령
         const paymentStartYear = pension.paymentStartYear;
+        const paymentStartMonth = pension.paymentStartMonth || 1; // 먼저 선언
         const paymentYears = pension.paymentYears || 10; // 수령 기간(년)
         const paymentEndYear = paymentStartYear + paymentYears - 1; // 종료년도 계산
 
-        // 적립/수령 기간 처리
-        // 추가 적립 안함인 경우 적립 기간 건너뛰기 (즉시 수령 처리)
-        // 적립 종료년도 = 수령 시작년도인 경우 수령 로직 우선 (year < paymentStartYear)
+        // 적립/수령 기간 처리 (월 단위)
+        const contributionStartYear = pension.contributionStartYear;
+        const contributionStartMonth = pension.contributionStartMonth || 1;
+        const contributionEndYear = pension.contributionEndYear;
+        const contributionEndMonth = pension.contributionEndMonth || 12;
+
+        // 해당 년도에 포함된 적립 개월 수 계산
+        let contributionMonthsInYear = 0;
+        let contributionFirstMonth = 1;
+        let contributionLastMonth = 12;
+
         if (
           !pension.noAdditionalContribution &&
-          year >= pension.contributionStartYear &&
-          year <= pension.contributionEndYear &&
-          year < paymentStartYear
+          year >= contributionStartYear &&
+          year <= contributionEndYear &&
+          (year < paymentStartYear ||
+            (year === paymentStartYear &&
+              contributionEndMonth < paymentStartMonth))
         ) {
           // 적립 기간 처리
-          // 퇴직금/DB만 추가 적립 시 현금이 빠져나감 (실제 내 현금을 사용)
-          if (
-            pension.type === "severance" &&
-            pension.contributionAmount &&
-            pension.contributionAmount > 0
-          ) {
-            const monthlyAmount =
-              pension.contributionFrequency === "monthly"
-                ? pension.contributionAmount
-                : pension.contributionAmount / 12;
-            const yearlyContribution = monthlyAmount * 12;
-            // 적립액을 음수로 현금흐름에 반영 (현금이 빠져나감)
-            totalExpense += yearlyContribution;
-            addNegative(
-              `${pension.title} | 추가 적립`,
-              yearlyContribution,
-              "퇴직금 IRP 적립",
-              `pension-contrib-${pension.id || pension.title}`
-            );
+          if (year === contributionStartYear && year === contributionEndYear) {
+            contributionFirstMonth = contributionStartMonth;
+            contributionLastMonth = contributionEndMonth;
+            contributionMonthsInYear =
+              contributionEndMonth - contributionStartMonth + 1;
+          } else if (year === contributionStartYear) {
+            contributionFirstMonth = contributionStartMonth;
+            contributionLastMonth = 12;
+            contributionMonthsInYear = 12 - contributionStartMonth + 1;
+          } else if (year === contributionEndYear) {
+            contributionFirstMonth = 1;
+            contributionLastMonth = contributionEndMonth;
+            contributionMonthsInYear = contributionEndMonth;
+          } else {
+            contributionFirstMonth = 1;
+            contributionLastMonth = 12;
+            contributionMonthsInYear = 12;
           }
-          // 개인연금은 적립 시 현금이 빠져나감
-          else if (pension.type === "personal") {
-            const monthlyAmount =
-              pension.contributionFrequency === "monthly"
-                ? pension.contributionAmount
-                : pension.contributionAmount / 12;
-            const yearlyContribution = monthlyAmount * 12;
-            // 적립액을 음수로 현금흐름에 반영 (현금이 빠져나감)
-            totalExpense += yearlyContribution;
-            addNegative(
-              `${pension.title} | 적립`,
-              yearlyContribution,
-              "연금 적립",
-              `pension-contrib-${pension.id || pension.title}`
-            );
-          }
-          // 퇴직연금은 적립 시 현금이 빠져나가지 않음 (회사에서 적립)
-        } else if (year === paymentStartYear) {
-          // PMT 방식: 수령 시작년도에 PMT 금액 계산 (한 번만)
-          const returnRate = pension.returnRate / 100;
 
-          // 적립 완료 시점의 총 금액 계산
+          if (contributionMonthsInYear > 0) {
+            // 퇴직금/DB만 추가 적립 시 현금이 빠져나감
+            if (
+              pension.type === "severance" &&
+              pension.contributionAmount &&
+              pension.contributionAmount > 0
+            ) {
+              let yearTotalContribution = 0;
+              const monthlyAmount =
+                pension.contributionFrequency === "monthly"
+                  ? pension.contributionAmount
+                  : pension.contributionAmount / 12;
+
+              const baseMonthsElapsed =
+                (year - contributionStartYear) * 12 +
+                (contributionFirstMonth - contributionStartMonth);
+
+              for (
+                let m = contributionFirstMonth;
+                m <= contributionLastMonth;
+                m++
+              ) {
+                const monthsElapsed =
+                  baseMonthsElapsed + (m - contributionFirstMonth);
+                yearTotalContribution += monthlyAmount;
+              }
+              totalExpense += yearTotalContribution;
+              addNegative(
+                `${pension.title} | 추가 적립`,
+                yearTotalContribution,
+                "퇴직금 IRP 적립",
+                `pension-contrib-${pension.id || pension.title}`
+              );
+            }
+            // 개인연금은 적립 시 현금이 빠져나감
+            else if (pension.type === "personal") {
+              let yearTotalContribution = 0;
+              const monthlyAmount =
+                pension.contributionFrequency === "monthly"
+                  ? pension.contributionAmount
+                  : pension.contributionAmount / 12;
+
+              const baseMonthsElapsed =
+                (year - contributionStartYear) * 12 +
+                (contributionFirstMonth - contributionStartMonth);
+
+              for (
+                let m = contributionFirstMonth;
+                m <= contributionLastMonth;
+                m++
+              ) {
+                yearTotalContribution += monthlyAmount;
+              }
+
+              totalExpense += yearTotalContribution;
+              addNegative(
+                `${pension.title} | 적립`,
+                yearTotalContribution,
+                "연금 적립",
+                `pension-contrib-${pension.id || pension.title}`
+              );
+            }
+            // 퇴직연금은 적립 시 현금이 빠져나가지 않음 (회사에서 적립)
+          }
+        } else if (
+          year === paymentStartYear &&
+          (contributionEndYear < paymentStartYear ||
+            (contributionEndYear === paymentStartYear &&
+              contributionEndMonth < paymentStartMonth))
+        ) {
+          // PMT 방식: 수령 시작년도에 PMT 금액 계산 (한 번만, 월 단위)
+          const returnRate = pension.returnRate / 100;
+          const monthlyReturnRate = convertAnnualToMonthlyRate(returnRate);
+
+          // 적립 완료 시점의 총 금액 계산 (월 단위)
           let totalAccumulated = pension.currentAmount || 0;
 
-          // 적립 기간 동안 현재 보유액 + 추가 적립액에 수익률 적용 (연말 기준)
-          const contributionYears =
-            pension.contributionEndYear - pension.contributionStartYear + 1;
+          // 적립 기간 계산 (월 단위)
+          const totalContributionMonths =
+            (contributionEndYear - contributionStartYear) * 12 +
+            (contributionEndMonth - contributionStartMonth) +
+            1;
 
           // 추가 적립 금액 계산 (있는 경우만)
-          let yearlyContribution = 0;
+          let monthlyContribution = 0;
           if (
             !pension.noAdditionalContribution &&
             pension.contributionAmount &&
             pension.contributionAmount > 0
           ) {
-            const monthlyAmount =
+            monthlyContribution =
               pension.contributionFrequency === "monthly"
                 ? pension.contributionAmount
                 : pension.contributionAmount / 12;
-            yearlyContribution = monthlyAmount * 12;
           }
 
-          // 적립 기간 동안 수익률 적용 (추가 적립 여부와 무관하게 현재 보유액은 수익률 적용)
-          for (let i = 0; i < contributionYears; i++) {
-            if (i === 0) {
-              // 시작년도: 현재 보유액 + 적립금 (수익률 X)
-              totalAccumulated = totalAccumulated + yearlyContribution;
-            } else {
-              // 다음 해부터: 수익률 + 적립금
-              totalAccumulated =
-                totalAccumulated * (1 + returnRate) + yearlyContribution;
+          // 적립 기간 동안 월 단위로 적립 및 수익률 적용
+          for (let m = 0; m <= totalContributionMonths; m++) {
+            const currentYear =
+              contributionStartYear +
+              Math.floor((contributionStartMonth - 1 + m) / 12);
+            const currentMonth = ((contributionStartMonth - 1 + m) % 12) + 1;
+
+            // 해당 월이 적립 기간 내인지 확인
+            const isInRange = isDateInRange(
+              createDateFromYearMonth(currentYear, currentMonth),
+              contributionStartYear,
+              contributionStartMonth,
+              contributionEndYear,
+              contributionEndMonth
+            );
+
+            if (isInRange && monthlyContribution > 0) {
+              if (m === 0) {
+                // 시작 월: 적립만 (수익률 X)
+                totalAccumulated += monthlyContribution;
+              } else {
+                // 다음 달부터: 전월 말 잔액에 수익률 적용 + 올해 적립금
+                totalAccumulated =
+                  totalAccumulated * (1 + monthlyReturnRate) +
+                  monthlyContribution;
+              }
+            } else if (m > 0) {
+              // 적립 기간이 아니지만 수익률은 계속 적용
+              totalAccumulated = totalAccumulated * (1 + monthlyReturnRate);
             }
           }
 
-          // 적립 종료 후 ~ 수령 시작 전 공백 기간의 수익률 적용
-          const gapYears = paymentStartYear - pension.contributionEndYear - 1;
-          for (let i = 0; i < gapYears; i++) {
-            totalAccumulated = totalAccumulated * (1 + returnRate);
+          // 적립 종료 후 ~ 수령 시작 전 공백 기간의 수익률 적용 (월 단위)
+          const gapMonths =
+            (paymentStartYear - contributionEndYear) * 12 +
+            (paymentStartMonth - contributionEndMonth) -
+            1;
+          for (let i = 0; i < gapMonths; i++) {
+            totalAccumulated = totalAccumulated * (1 + monthlyReturnRate);
           }
 
-          // 잉여 현금 투자 금액 추가 (년도별로 수익률 적용)
+          // 잉여 현금 투자 금액 추가 (월 단위로 수익률 적용)
           let totalInvestedValue = 0;
           if (savingInvestments[pension.id]) {
-            Object.keys(savingInvestments[pension.id]).forEach((investYear) => {
-              const investAmount = savingInvestments[pension.id][investYear];
-              const yearsFromInvestment =
-                paymentStartYear - parseInt(investYear);
-              // 투자한 해의 다음 해부터 수익률 적용 (연말 투자이므로 투자한 해는 수익률 X)
-              const investmentValue =
-                investAmount * Math.pow(1 + returnRate, yearsFromInvestment);
-              totalInvestedValue += investmentValue;
+            Object.keys(savingInvestments[pension.id]).forEach((investKey) => {
+              let investYear, investMonth;
+              if (investKey.includes("-")) {
+                [investYear, investMonth] = investKey.split("-").map(Number);
+              } else {
+                investYear = parseInt(investKey);
+                investMonth = 12;
+              }
+
+              const investMonthsElapsed =
+                (paymentStartYear - investYear) * 12 +
+                (paymentStartMonth - investMonth);
+              const investAmount = savingInvestments[pension.id][investKey];
+
+              if (investMonthsElapsed > 0) {
+                const investmentValue =
+                  investAmount *
+                  Math.pow(1 + monthlyReturnRate, investMonthsElapsed);
+                totalInvestedValue += investmentValue;
+              } else {
+                totalInvestedValue += investAmount;
+              }
             });
           }
           totalAccumulated += totalInvestedValue;
 
           // 즉시 수령 판단 (수익률 적용 안 함):
-          // 적립 종료년도 = 수령 시작년도이고, 추가 적립이 있는 경우만 (연말 기준, 같은 해에 적립하고 바로 수령)
-          // 단, 퇴직금은 이미 보유한 금액이므로 항상 수익률 적용
-          // 기 보유 금액만 있는 경우(추가 적립 없음)는 일반 수령으로 처리 (수익률 적용)
+          // 적립 종료월 = 수령 시작월이고, 추가 적립이 있는 경우만
           const hasAdditionalContribution =
-            !pension.noAdditionalContribution && yearlyContribution > 0;
+            !pension.noAdditionalContribution && monthlyContribution > 0;
           const isImmediateWithdrawal =
             pension.type !== "severance" &&
-            pension.contributionEndYear === paymentStartYear &&
+            contributionEndYear === paymentStartYear &&
+            contributionEndMonth === paymentStartMonth &&
             hasAdditionalContribution;
 
-          // PMT 계산: 매년 동일한 금액 수령 (한 번만 계산하고 저장)
+          // PMT 계산: 월 단위 PMT (월 단위로 수령)
+          const paymentMonths = paymentYears * 12;
+
           if (isImmediateWithdrawal) {
             // 즉시 수령: 수익률 적용 없이 그대로 수령
-            pension._cashflowPMT = calculatePMT(
+            pension._cashflowMonthlyPMT = calculateMonthlyPMT(
               totalAccumulated,
               0, // 수익률 0
-              paymentYears
+              paymentMonths
             );
-            pension._cashflowIsImmediateWithdrawal = true; // 저장
+            pension._cashflowIsImmediateWithdrawal = true;
           } else {
             // 일반 수령: 수익률 적용
-            pension._cashflowPMT = calculatePMT(
+            pension._cashflowMonthlyPMT = calculateMonthlyPMT(
               totalAccumulated,
-              returnRate,
-              paymentYears
+              monthlyReturnRate,
+              paymentMonths
             );
-            pension._cashflowIsImmediateWithdrawal = false; // 저장
+            pension._cashflowIsImmediateWithdrawal = false;
           }
 
-          totalPension += pension._cashflowPMT;
+          // 해당 년도에 포함된 개월 수만큼 수령
+          const monthsInYear =
+            year === paymentStartYear ? 13 - paymentStartMonth : 12;
+          const yearTotalPension = pension._cashflowMonthlyPMT * monthsInYear;
+          totalPension += yearTotalPension;
 
           const pensionTypeLabel =
             pension.type === "retirement"
@@ -1263,10 +1625,20 @@ export function calculateCashflowSimulation(
             `pension-payment-${pension.id || pension.title}`
           );
         } else if (year > paymentStartYear && year <= paymentEndYear) {
-          // PMT 방식: 수령 기간 중 (이미 계산된 PMT 사용)
-          const yearlyPayment = pension._cashflowPMT || 0;
+          // PMT 방식: 수령 기간 중 (이미 계산된 월 단위 PMT 사용)
+          const monthlyPMT = pension._cashflowMonthlyPMT || 0;
 
-          totalPension += yearlyPayment;
+          // 해당 년도에 포함된 개월 수 계산
+          let monthsInYear = 12;
+          if (year === paymentEndYear) {
+            const paymentEndMonth =
+              (pension.paymentStartMonth || 1) + paymentYears * 12 - 1;
+            const actualEndMonth = ((paymentEndMonth - 1) % 12) + 1;
+            monthsInYear = actualEndMonth;
+          }
+
+          const yearTotalPension = monthlyPMT * monthsInYear;
+          totalPension += yearTotalPension;
 
           const pensionTypeLabel =
             pension.type === "retirement"
@@ -1277,7 +1649,7 @@ export function calculateCashflowSimulation(
 
           addPositive(
             `${pension.title} | 수령`,
-            yearlyPayment,
+            yearTotalPension,
             pensionTypeLabel,
             `pension-payment-${pension.id || pension.title}`
           );
@@ -1658,32 +2030,35 @@ export function calculateCashflowSimulation(
 
           if (investAmount > 0 && allocation.targetId) {
             if (allocation.targetType === "saving") {
-              // 저축 상품에 대한 년도별 투자 금액 기록만 함 (현금 흐름에는 반영 안 함)
+              // 저축 상품에 대한 투자 금액 기록 (년-월 키 형식)
+              // 년 단위 루프이므로 해당 년도의 마지막 월(12월)에 투자하는 것으로 처리
+              const investKey = `${year}-12`;
               if (!savingInvestments[allocation.targetId]) {
                 savingInvestments[allocation.targetId] = {};
               }
-              if (!savingInvestments[allocation.targetId][year]) {
-                savingInvestments[allocation.targetId][year] = 0;
+              if (!savingInvestments[allocation.targetId][investKey]) {
+                savingInvestments[allocation.targetId][investKey] = 0;
               }
-              savingInvestments[allocation.targetId][year] =
+              savingInvestments[allocation.targetId][investKey] =
                 Math.round(
-                  (savingInvestments[allocation.targetId][year] +
+                  (savingInvestments[allocation.targetId][investKey] +
                     investAmount) *
                     100
                 ) / 100;
             } else if (allocation.targetType === "pension") {
-              // 연금 상품에 대한 년도별 투자 금액 기록 (현금 흐름에는 반영 안 함)
+              // 연금 상품에 대한 투자 금액 기록 (년-월 키 형식)
               // 연금은 savingInvestments 대신 별도 추적이 필요하지만,
               // 현재는 저축과 동일하게 처리 (추후 개선 가능)
+              const investKey = `${year}-12`;
               if (!savingInvestments[allocation.targetId]) {
                 savingInvestments[allocation.targetId] = {};
               }
-              if (!savingInvestments[allocation.targetId][year]) {
-                savingInvestments[allocation.targetId][year] = 0;
+              if (!savingInvestments[allocation.targetId][investKey]) {
+                savingInvestments[allocation.targetId][investKey] = 0;
               }
-              savingInvestments[allocation.targetId][year] =
+              savingInvestments[allocation.targetId][investKey] =
                 Math.round(
-                  (savingInvestments[allocation.targetId][year] +
+                  (savingInvestments[allocation.targetId][investKey] +
                     investAmount) *
                     100
                 ) / 100;
@@ -2085,39 +2460,92 @@ export function calculateAssetSimulation(
         return;
       }
 
-      if (year >= saving.startYear && year < saving.endYear) {
+      // 해당 년도에 포함된 개월 수 계산
+      const sStartMonth = saving.startMonth || 1;
+      const sEndMonth = saving.endMonth || 12;
+
+      let monthsInYear = 0;
+      let firstMonthInYear = 1;
+      let lastMonthInYear = 12;
+
+      if (year >= saving.startYear && year <= saving.endYear) {
+        if (year === saving.startYear && year === saving.endYear) {
+          firstMonthInYear = sStartMonth;
+          lastMonthInYear = sEndMonth;
+          monthsInYear = sEndMonth - sStartMonth + 1;
+        } else if (year === saving.startYear) {
+          firstMonthInYear = sStartMonth;
+          lastMonthInYear = 12;
+          monthsInYear = 12 - sStartMonth + 1;
+        } else if (year === saving.endYear) {
+          firstMonthInYear = 1;
+          lastMonthInYear = sEndMonth;
+          monthsInYear = sEndMonth;
+        } else {
+          firstMonthInYear = 1;
+          lastMonthInYear = 12;
+          monthsInYear = 12;
+        }
+      }
+
+      if (
+        year >= saving.startYear &&
+        year < saving.endYear &&
+        monthsInYear > 0
+      ) {
         // 저축 기간 중 (endYear 전까지만 - 종료년도에는 자산에서 제거)
-        const yearsElapsed = year - saving.startYear;
         const interestRate = saving.interestRate; // 이미 소수로 저장됨
+        const monthlyInterestRate = convertAnnualToMonthlyRate(interestRate);
         const yearlyGrowthRate = saving.yearlyGrowthRate; // 이미 소수로 저장됨
+        const monthlyGrowthRate =
+          convertAnnualToMonthlyGrowthRate(yearlyGrowthRate);
 
         if (saving.frequency === "one_time") {
           // 일회성 저축 (정기예금 등)
-          if (year === saving.startYear) {
-            // 시작년도: 현재 보유액 + 원금 (수익률 적용 X)
+          if (year === saving.startYear && firstMonthInYear === sStartMonth) {
+            // 시작 월: 현재 보유액 + 원금 (수익률 적용 X)
             saving.amount = saving.amount + saving.originalAmount;
-          } else if (year > saving.startYear) {
-            // 다음 해부터 수익률 적용
-            saving.amount = saving.amount * (1 + interestRate);
+          } else if (
+            year > saving.startYear ||
+            (year === saving.startYear && firstMonthInYear > sStartMonth)
+          ) {
+            // 다음 달부터 수익률 적용 (월 단위 복리)
+            const monthsElapsed =
+              (year - saving.startYear) * 12 + (firstMonthInYear - sStartMonth);
+            saving.amount =
+              saving.amount * Math.pow(1 + monthlyInterestRate, monthsInYear);
           }
         } else {
-          // 월간/연간 저축
-          const monthlyAmount =
-            saving.frequency === "monthly"
-              ? saving.originalAmount
-              : saving.originalAmount / 12;
-
-          // 년간 저축 상승률 적용
-          const adjustedMonthlyAmount =
-            monthlyAmount * Math.pow(1 + yearlyGrowthRate, yearsElapsed);
-          const yearlyAmount = adjustedMonthlyAmount * 12;
-
-          if (year === saving.startYear) {
-            // 시작년도: 현재 보유액 + 적립금 (수익률 적용 X)
-            saving.amount = saving.amount + yearlyAmount;
+          // 월간/연간 저축: 해당 년도에 포함된 각 월마다 적립 및 수익률 적용
+          let monthlyAmount;
+          if (saving.frequency === "monthly") {
+            monthlyAmount = saving.originalAmount;
           } else {
-            // 다음 해부터: 작년 말 잔액에 수익률 적용 + 올해 적립금
-            saving.amount = saving.amount * (1 + interestRate) + yearlyAmount;
+            monthlyAmount = saving.originalAmount / 12;
+          }
+
+          // 해당 년도의 첫 월부터 시작하는 기준으로 경과 개월 수 계산
+          const baseMonthsElapsed =
+            (year - saving.startYear) * 12 + (firstMonthInYear - sStartMonth);
+
+          // 각 월마다 적립 및 수익률 적용
+          for (let m = firstMonthInYear; m <= lastMonthInYear; m++) {
+            // 현재 월까지의 경과 개월 수
+            const monthsElapsed = baseMonthsElapsed + (m - firstMonthInYear);
+
+            // 월 단위 상승률 적용
+            const adjustedMonthlyAmount =
+              monthlyAmount * Math.pow(1 + monthlyGrowthRate, monthsElapsed);
+
+            if (monthsElapsed === 0) {
+              // 시작 월: 적립만 (수익률 X)
+              saving.amount = saving.amount + adjustedMonthlyAmount;
+            } else {
+              // 다음 달부터: 전월 말 잔액에 수익률 적용 + 올해 적립금
+              saving.amount =
+                saving.amount * (1 + monthlyInterestRate) +
+                adjustedMonthlyAmount;
+            }
           }
         }
       }
@@ -2738,8 +3166,30 @@ export function calculateAssetSimulation(
       }
     };
 
-    // 카테고리 판별 및 색상 반환 함수
-    const getCategoryAndColor = (label) => {
+    // 카테고리 판별 및 색상 반환 함수 (sourceType 우선, 라벨은 보조)
+    const getCategoryAndColor = (item) => {
+      const label = item?.label || "";
+      const sourceType = item?.sourceType;
+
+      if (sourceType) {
+        switch (sourceType) {
+          case "cash":
+            return { category: "현금", color: getAssetColor("양수현금") };
+          case "saving":
+            return { category: "저축투자", color: getAssetColor("저축투자") };
+          case "pension":
+            return { category: "연금", color: getAssetColor("연금") };
+          case "realEstate":
+            return { category: "부동산", color: getAssetColor("부동산") };
+          case "asset":
+            return { category: "자산", color: getAssetColor("자산") };
+          case "debt":
+            return { category: "부채", color: getAssetColor("부채") };
+          default:
+            break;
+        }
+      }
+
       if (label.includes("현금") || label.includes("cash")) {
         return { category: "현금", color: getAssetColor("양수현금") };
       } else if (
@@ -2790,7 +3240,7 @@ export function calculateAssetSimulation(
     };
 
     assetItems.forEach((item) => {
-      const { category, color } = getCategoryAndColor(item.label);
+      const { category, color } = getCategoryAndColor(item);
       const itemWithColor = { ...item, color };
 
       if (item.label === "현금" || item.label === "현금 자산") {

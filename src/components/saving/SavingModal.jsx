@@ -43,7 +43,9 @@ function SavingModal({
     currentAmount: "", // 현재 보유 금액
     treatAsInitialPurchase: false, // 현재 보유 금액을 구매로 처리할지 여부
     startYear: new Date().getFullYear(),
+    startMonth: 1, // 시작 월 (1-12)
     endYear: getRetirementYear(),
+    endMonth: 12, // 종료 월 (1-12)
     memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
     interestRate: "2.86", // 기본 수익률 2.86%
     yearlyGrowthRate: "1.89", // 연간 저축/투자금액 증가율 1.89%
@@ -202,7 +204,9 @@ function SavingModal({
           currentAmount: editData.currentAmount ?? "",
           treatAsInitialPurchase: editData.treatAsInitialPurchase || false,
           startYear: parseInt(editData.startYear) || new Date().getFullYear(),
+          startMonth: editData.startMonth || 1, // 기존 데이터 호환성: 없으면 1월
           endYear: parseInt(editData.endYear) || getRetirementYear(),
+          endMonth: editData.endMonth || 12, // 기존 데이터 호환성: 없으면 12월
           memo: editData.memo || "",
           interestRate: formatRateInput(editData.interestRate, "2.86"),
           yearlyGrowthRate: formatRateInput(editData.yearlyGrowthRate, "1.89"),
@@ -220,7 +224,9 @@ function SavingModal({
           currentAmount: initialData.currentAmount || "",
           treatAsInitialPurchase: initialData.treatAsInitialPurchase || false,
           startYear: initialData.startYear || new Date().getFullYear(),
+          startMonth: initialData.startMonth || 1,
           endYear: initialData.endYear || getRetirementYear(),
+          endMonth: initialData.endMonth || 12,
           memo: initialData.memo || "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
           interestRate: formatRateInput(initialData.interestRate, "2.86"),
           yearlyGrowthRate: formatRateInput(initialData.yearlyGrowthRate, "1.89"),
@@ -238,7 +244,9 @@ function SavingModal({
           currentAmount: "",
           treatAsInitialPurchase: false,
           startYear: new Date().getFullYear(),
+          startMonth: 1,
           endYear: getRetirementYear(),
+          endMonth: 12,
           memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
           interestRate: "2.86",
           yearlyGrowthRate: "1.89",
@@ -337,7 +345,9 @@ function SavingModal({
         : 0,
       treatAsInitialPurchase: formData.treatAsInitialPurchase || false,
       startYear: parseInt(formData.startYear), // 문자열을 숫자로 변환
+      startMonth: formData.startMonth || 1, // 기본값 1월
       endYear: parseInt(formData.endYear), // 문자열을 숫자로 변환
+      endMonth: formData.endMonth || 12, // 기본값 12월
       interestRate: parseFloat(formData.interestRate) / 100, // 백분율을 소수로 변환
       yearlyGrowthRate: parseFloat(formData.yearlyGrowthRate) / 100, // 백분율을 소수로 변환
       incomeRate:
@@ -380,7 +390,9 @@ function SavingModal({
       currentAmount: "",
       treatAsInitialPurchase: false,
       startYear: new Date().getFullYear(),
+      startMonth: 1,
       endYear: new Date().getFullYear() + 10,
+      endMonth: 12,
       memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
       interestRate: "2.86",
       yearlyGrowthRate: "1.89",
@@ -614,6 +626,31 @@ function SavingModal({
             </div>
 
             <div className={styles.field}>
+              <label htmlFor="startMonth" className={styles.label}>
+                시작 월 *
+              </label>
+              <select
+                id="startMonth"
+                value={formData.startMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    startMonth: parseInt(e.target.value),
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.field}>
               <div className={styles.endYearWrapper}>
                 <label htmlFor="endYear" className={styles.label}>
                   종료년도 *
@@ -673,6 +710,29 @@ function SavingModal({
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}
+            </div>
+
+            <div className={styles.field}>
+              <label htmlFor="endMonth" className={styles.label}>
+                종료 월 *
+              </label>
+              <select
+                id="endMonth"
+                value={formData.endMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    endMonth: parseInt(e.target.value),
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
