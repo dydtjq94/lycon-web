@@ -15,6 +15,32 @@ import {
 } from "firebase/firestore";
 import { db } from "../libs/firebase.js";
 
+const DEFAULT_PROFILE_PASSWORD = "lycon1111";
+
+// 프로필에 기본 비밀번호가 없으면 설정
+const ensureProfilePassword = async (docRef, data) => {
+  if (data?.password && data.password.trim()) {
+    return data;
+  }
+  const patchedData = {
+    ...data,
+    password: DEFAULT_PROFILE_PASSWORD,
+  };
+
+  if (docRef) {
+    try {
+      await updateDoc(docRef, {
+        password: DEFAULT_PROFILE_PASSWORD,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("기본 프로필 비밀번호 설정 오류:", error);
+    }
+  }
+
+  return patchedData;
+};
+
 /**
  * 프로필 관련 서비스
  */
@@ -22,13 +48,19 @@ export const profileService = {
   // 프로필 생성
   async createProfile(profileData) {
     try {
+      const passwordToUse =
+        profileData?.password && profileData.password.trim()
+          ? profileData.password
+          : DEFAULT_PROFILE_PASSWORD;
+
       const docRef = await addDoc(collection(db, "profiles"), {
         ...profileData,
+        password: passwordToUse,
         isActive: true, // 기본값으로 활성 상태 설정
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      return { id: docRef.id, ...profileData };
+      return { id: docRef.id, ...profileData, password: passwordToUse };
     } catch (error) {
       console.error("프로필 생성 오류:", error);
       if (error.code === "unavailable") {
@@ -49,12 +81,17 @@ export const profileService = {
       const querySnapshot = await getDocs(
         query(collection(db, "profiles"), orderBy("createdAt", "desc"))
       );
-      const profiles = querySnapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .filter((profile) => profile.isActive !== false); // isActive가 false가 아닌 것만
+      const profiles = (
+        await Promise.all(
+          querySnapshot.docs.map(async (docSnap) => {
+            const data = await ensureProfilePassword(
+              doc(db, "profiles", docSnap.id),
+              docSnap.data()
+            );
+            return { id: docSnap.id, ...data };
+          })
+        )
+      ).filter((profile) => profile.isActive !== false); // isActive가 false가 아닌 것만
       return profiles;
     } catch (error) {
       console.error("프로필 조회 오류:", error);
@@ -71,10 +108,15 @@ export const profileService = {
       const querySnapshot = await getDocs(
         query(collection(db, "profiles"), orderBy("createdAt", "desc"))
       );
-      return querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      return Promise.all(
+        querySnapshot.docs.map(async (docSnap) => {
+          const data = await ensureProfilePassword(
+            doc(db, "profiles", docSnap.id),
+            docSnap.data()
+          );
+          return { id: docSnap.id, ...data };
+        })
+      );
     } catch (error) {
       console.error("전체 프로필 조회 오류:", error);
       if (error.name === "AbortError") {
@@ -90,12 +132,17 @@ export const profileService = {
       const querySnapshot = await getDocs(
         query(collection(db, "profiles"), orderBy("deletedAt", "desc"))
       );
-      const deletedProfiles = querySnapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .filter((profile) => profile.isActive === false); // isActive가 false인 것만
+      const deletedProfiles = (
+        await Promise.all(
+          querySnapshot.docs.map(async (docSnap) => {
+            const data = await ensureProfilePassword(
+              doc(db, "profiles", docSnap.id),
+              docSnap.data()
+            );
+            return { id: docSnap.id, ...data };
+          })
+        )
+      ).filter((profile) => profile.isActive === false); // isActive가 false인 것만
       return deletedProfiles;
     } catch (error) {
       console.error("삭제 프로필 조회 오류:", error);
@@ -149,7 +196,11 @@ export const profileService = {
       const docSnap = await Promise.race([getDoc(docRef), timeoutPromise]);
 
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
+        const dataWithPassword = await ensureProfilePassword(
+          docRef,
+          docSnap.data()
+        );
+        return { id: docSnap.id, ...dataWithPassword };
       } else {
         throw new Error("프로필을 찾을 수 없습니다.");
       }
