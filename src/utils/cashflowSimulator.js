@@ -1393,7 +1393,11 @@ export function calculateCashflowSimulation(
         const paymentStartYear = toNumber(pension.paymentStartYear);
         const paymentStartMonth = toNumber(pension.paymentStartMonth, 1) || 1;
         const paymentYears = toNumber(pension.paymentYears, 10) || 10; // 수령 기간(년)
-        const paymentEndYear = paymentStartYear + paymentYears - 1; // 종료년도 계산
+        // 총 수령 개월과 종료 시점(년/월) 계산 (시작 월이 1월이 아닐 때도 정확히 60개월 등 계산)
+        const totalPaymentMonths = paymentYears * 12;
+        const endMonthIndex = paymentStartMonth - 1 + totalPaymentMonths - 1; // 0 기반 index
+        const paymentEndYear = paymentStartYear + Math.floor(endMonthIndex / 12);
+        const paymentEndMonth = (endMonthIndex % 12) + 1;
 
         // 적립/수령 기간 처리 (월 단위)
         const contributionStartYear = toNumber(pension.contributionStartYear);
@@ -1650,7 +1654,7 @@ export function calculateCashflowSimulation(
             hasAdditionalContribution;
 
           // PMT 계산: 월 단위 PMT (월 단위로 수령)
-          const paymentMonths = paymentYears * 12;
+          const paymentMonths = totalPaymentMonths;
 
           if (isImmediateWithdrawal) {
             // 즉시 수령: 수익률 적용 없이 그대로 수령
@@ -1700,10 +1704,7 @@ export function calculateCashflowSimulation(
           // 해당 년도에 포함된 개월 수 계산
           let monthsInYear = 12;
           if (year === paymentEndYear) {
-            const paymentEndMonth =
-              (pension.paymentStartMonth || 1) + paymentYears * 12 - 1;
-            const actualEndMonth = ((paymentEndMonth - 1) % 12) + 1;
-            monthsInYear = actualEndMonth;
+            monthsInYear = paymentEndMonth;
           }
 
           const yearTotalPension = monthlyPMT * monthsInYear;
