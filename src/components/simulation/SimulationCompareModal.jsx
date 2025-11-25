@@ -2043,6 +2043,27 @@ function SimulationCompareModal({
       return null;
     }
 
+    // 부채 전용: 더 음수가 커지면 (diff < 0) 빨간색, 줄어들면 초록색
+    if (context === "debt") {
+      if (diff === 0) {
+        return (
+          <span className={`${styles.summaryDelta} ${styles.deltaNeutral}`}>
+            변화 없음
+          </span>
+        );
+      }
+      const directionClass =
+        diff > 0 ? styles.deltaPositive : styles.deltaNegative;
+      const formatted =
+        diff > 0 ? `+${formatAmountForChart(diff)}` : formatAmountForChart(diff);
+      const arrow = diff > 0 ? "↑" : "↓";
+      return (
+        <span className={`${styles.summaryDelta} ${directionClass}`}>
+          {formatted} {arrow}
+        </span>
+      );
+    }
+
     if (diff === 0) {
       return (
         <span className={`${styles.summaryDelta} ${styles.deltaNeutral}`}>
@@ -2577,7 +2598,7 @@ function SimulationCompareModal({
                                           ]?.[row.key],
                                           value,
                                           row.key === "debtsTotal"
-                                            ? "demand"
+                                            ? "debt"
                                             : "supply"
                                         )}
                                     </div>
