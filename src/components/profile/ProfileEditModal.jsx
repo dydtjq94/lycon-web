@@ -544,11 +544,8 @@ function ProfileEditModal({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div
-        className={styles.modalContent}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className={styles.modalOverlay}>
+      <div className={styles.modalContent}>
         {/* 헤더 */}
         <div className={styles.header}>
           <h2 className={styles.title}>프로필 수정</h2>

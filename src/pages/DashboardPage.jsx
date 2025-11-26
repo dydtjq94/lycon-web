@@ -2187,6 +2187,18 @@ function DashboardPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isDataStorePanelOpen]);
 
+  // AI 옵션 모달 ESC 키로 닫기
+  useEffect(() => {
+    if (!isAIOptionModalOpen) return;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsAIOptionModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isAIOptionModalOpen]);
+
   // 재무 라이브러리에서 템플릿 선택 시 처리
   const handleSelectTemplate = (templateData) => {
     const { category } = templateData;
@@ -3850,14 +3862,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
 
       {/* AI 옵션 선택 모달 */}
       {isAIOptionModalOpen && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setIsAIOptionModalOpen(false)}
-        >
-          <div
-            className={styles.aiOptionModal}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className={styles.modalOverlay}>
+          <div className={styles.aiOptionModal}>
             <div className={styles.aiOptionHeader}>
               <h3 className={styles.aiOptionTitle}>AI 데이터 추출 옵션</h3>
               <button
