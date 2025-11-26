@@ -432,27 +432,7 @@ function SavingModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {/* 저축 항목명 */}
-          <div className={styles.field}>
-            <label htmlFor="title" className={styles.label}>
-              항목명 *
-            </label>
-            <input
-              type="text"
-              id="title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              className={`${styles.input} ${errors.title ? styles.error : ""}`}
-              placeholder="예: 정기예금, 적금, 주식투자"
-            />
-            {errors.title && (
-              <span className={styles.errorText}>{errors.title}</span>
-            )}
-          </div>
-
+        <form id="savingForm" onSubmit={handleSubmit} className={styles.form}>
           {/* 저축 타입 선택 */}
           <div className={styles.field}>
             <label className={styles.label}>저축/투자 타입 *</label>
@@ -486,6 +466,26 @@ function SavingModal({
                 </span>
               </label>
             </div>
+          </div>
+
+          {/* 저축 항목명 */}
+          <div className={styles.field}>
+            <label htmlFor="title" className={styles.label}>
+              항목명 *
+            </label>
+            <input
+              type="text"
+              id="title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              className={`${styles.input} ${errors.title ? styles.error : ""}`}
+              placeholder="예: 정기예금, 적금, 주식투자"
+            />
+            {errors.title && (
+              <span className={styles.errorText}>{errors.title}</span>
+            )}
           </div>
 
           {/* 주기와 금액 */}
@@ -592,17 +592,6 @@ function SavingModal({
               )}
             <div className={styles.helperText}>
               시작년도 기준으로 이미 보유하고 있는 금액입니다 (선택사항)
-              {formData.treatAsInitialPurchase && (
-                <span
-                  style={{
-                    display: "block",
-                    color: "#ef4444",
-                    marginTop: "0.25rem",
-                  }}
-                >
-                  ※ 현금 유출로 처리
-                </span>
-              )}
             </div>
           </div>
 
@@ -941,19 +930,21 @@ function SavingModal({
             </div>
           )}
 
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={handleClose}
-            >
-              취소
-            </button>
-            <button type="submit" className={styles.saveButton}>
-              {editData ? "수정" : "추가"}
-            </button>
-          </div>
         </form>
+
+        {/* 버튼 */}
+        <div className={styles.modalFooter}>
+          <button
+            type="button"
+            className={styles.cancelButton}
+            onClick={handleClose}
+          >
+            취소
+          </button>
+          <button type="submit" form="savingForm" className={styles.saveButton}>
+            {editData ? "수정" : "추가"}
+          </button>
+        </div>
       </div>
     </div>
   );

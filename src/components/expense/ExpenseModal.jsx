@@ -353,7 +353,7 @@ function ExpenseModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form id="expenseForm" onSubmit={handleSubmit} className={styles.form}>
           {/* 지출 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
@@ -660,19 +660,21 @@ function ExpenseModal({
             </div>
           )}
 
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={handleClose}
-            >
-              취소
-            </button>
-            <button type="submit" className={styles.saveButton}>
-              {editData ? "수정" : "추가"}
-            </button>
-          </div>
         </form>
+
+        {/* 버튼 */}
+        <div className={styles.modalFooter}>
+          <button
+            type="button"
+            className={styles.cancelButton}
+            onClick={handleClose}
+          >
+            취소
+          </button>
+          <button type="submit" form="expenseForm" className={styles.saveButton}>
+            {editData ? "수정" : "추가"}
+          </button>
+        </div>
       </div>
     </div>
   );

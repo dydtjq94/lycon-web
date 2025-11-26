@@ -354,7 +354,7 @@ function IncomeModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form id="incomeForm" onSubmit={handleSubmit} className={styles.form}>
           {/* 소득 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
@@ -668,20 +668,21 @@ function IncomeModal({
             </div>
           )}
 
-          {/* 버튼 */}
-          <div className={styles.buttonGroup}>
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={handleClose}
-            >
-              취소
-            </button>
-            <button type="submit" className={styles.saveButton}>
-              {editData ? "수정" : "추가"}
-            </button>
-          </div>
         </form>
+
+        {/* 버튼 */}
+        <div className={styles.buttonGroup}>
+          <button
+            type="button"
+            className={styles.cancelButton}
+            onClick={handleClose}
+          >
+            취소
+          </button>
+          <button type="submit" form="incomeForm" className={styles.saveButton}>
+            {editData ? "수정" : "추가"}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -484,10 +484,34 @@ const RealEstateModal = ({
           </button>
         </div>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form
+          id="realEstateForm"
+          className={styles.form}
+          onSubmit={handleSubmit}
+        >
+          {/* 거주용 여부 */}
+          <div className={styles.field}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={formData.isResidential}
+                onChange={(e) =>
+                  setFormData({ ...formData, isResidential: e.target.checked })
+                }
+                className={styles.checkbox}
+              />
+              <span className={styles.checkboxText}>거주용</span>
+            </label>
+            {formData.isResidential && (
+              <div className={styles.helperText}>
+                거주용 부동산은 양도세가 자동으로 계산됩니다
+              </div>
+            )}
+          </div>
+
           {/* 부동산명 */}
           <div className={styles.field}>
-            <label className={styles.label}>항목명</label>
+            <label className={styles.label}>항목명 *</label>
             <input
               type="text"
               value={formData.title}
@@ -502,20 +526,8 @@ const RealEstateModal = ({
             )}
           </div>
 
-          {/* 거주용 여부 & 올해 이전에 취득 */}
-          <div className={styles.checkboxRow}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={formData.isResidential}
-                onChange={(e) =>
-                  setFormData({ ...formData, isResidential: e.target.checked })
-                }
-                className={styles.checkbox}
-              />
-              <span className={styles.checkboxText}>거주용</span>
-            </label>
-
+          {/* 올해 이전에 취득 */}
+          <div className={styles.field}>
             <label className={styles.checkboxLabel}>
               <input
                 type="checkbox"
@@ -590,111 +602,87 @@ const RealEstateModal = ({
             </div>
           )}
 
-          {/* 가치 */}
-          <div className={styles.field}>
-            <label className={styles.label}>부동산 가치 (만원)</label>
-            <input
-              type="text"
-              value={formData.currentValue}
-              onChange={(e) =>
-                setFormData({ ...formData, currentValue: e.target.value })
-              }
-              onKeyPress={handleKeyPress}
-              className={`${styles.input} ${
-                errors.currentValue ? styles.error : ""
-              }`}
-              placeholder="예: 50000"
-            />
-            {formData.currentValue &&
-              !isNaN(parseInt(formData.currentValue)) && (
-                <div className={styles.amountPreview}>
-                  {formatAmountForChart(parseInt(formData.currentValue))}
-                </div>
-              )}
-            {errors.currentValue && (
-              <span className={styles.errorText}>{errors.currentValue}</span>
-            )}
-          </div>
-
-          {/* 구매 여부 */}
-          <div className={styles.field}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={formData.isPurchase}
-                onChange={(e) =>
-                  setFormData({ ...formData, isPurchase: e.target.checked })
-                }
-                className={styles.checkbox}
-              />
-              <span className={styles.checkboxText}>현금유출로 처리</span>
-            </label>
-            {formData.isPurchase && (
-              <div className={styles.purchaseNotice}>
-                💡 {formData.startYear}년에{" "}
-                {formatAmountForChart(parseInt(formData.currentValue) || 0)}의
-                현금이 차감됩니다.
+          {/* 가치 및 상승률 */}
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <div className={styles.endYearWrapper}>
+                <label className={styles.label}>부동산 가치 (만원) *</label>
+                <label className={styles.fixedCheckboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isPurchase}
+                    onChange={(e) =>
+                      setFormData({ ...formData, isPurchase: e.target.checked })
+                    }
+                    className={styles.fixedCheckbox}
+                  />
+                  <span className={styles.fixedCheckboxText}>
+                    현금유출로 처리
+                  </span>
+                </label>
               </div>
-            )}
-          </div>
-
-          {/* 상승률 */}
-          <div className={styles.field}>
-            <label className={styles.label}>연평균 가치 상승률 (%)</label>
-            <input
-              type="text"
-              value={formData.growthRate}
-              onChange={(e) => {
-                const value = e.target.value;
-                // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
-                if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
-                  setFormData({ ...formData, growthRate: value });
+              <input
+                type="text"
+                value={formData.currentValue}
+                onChange={(e) =>
+                  setFormData({ ...formData, currentValue: e.target.value })
                 }
-              }}
-              className={`${styles.input} ${
-                errors.growthRate ? styles.error : ""
-              }`}
-              placeholder="2.4"
-            />
-            {errors.growthRate && (
-              <span className={styles.errorText}>{errors.growthRate}</span>
-            )}
+                onKeyPress={handleKeyPress}
+                className={`${styles.input} ${
+                  errors.currentValue ? styles.error : ""
+                }`}
+                placeholder="예: 50000"
+              />
+              {formData.currentValue &&
+                !isNaN(parseInt(formData.currentValue)) && (
+                  <div className={styles.amountPreview}>
+                    {formatAmountForChart(parseInt(formData.currentValue))}
+                  </div>
+                )}
+              {errors.currentValue && (
+                <span className={styles.errorText}>{errors.currentValue}</span>
+              )}
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>연평균 가치 상승률 (%) *</label>
+              <input
+                type="text"
+                value={formData.growthRate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
+                  if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                    setFormData({ ...formData, growthRate: value });
+                  }
+                }}
+                className={`${styles.input} ${
+                  errors.growthRate ? styles.error : ""
+                }`}
+                placeholder="2.4"
+              />
+              {errors.growthRate && (
+                <span className={styles.errorText}>{errors.growthRate}</span>
+              )}
+            </div>
           </div>
 
           {/* 보유 기간 */}
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label}>보유 시작 *</label>
-              <div className={styles.yearInputs}>
-                <input
-                  type="text"
-                  value={formData.startYear}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startYear: e.target.value })
-                  }
-                  onKeyPress={handleKeyPress}
-                  className={`${styles.input} ${
-                    errors.startYear ? styles.error : ""
-                  }`}
-                  placeholder="보유 시작"
-                />
-                <select
-                  value={formData.startMonth}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      startMonth: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className={styles.select}
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                    <option key={m} value={m}>
-                      {m}월
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <label className={styles.label}>보유 시작년도 *</label>
+              <input
+                type="text"
+                value={formData.startYear}
+                onChange={(e) =>
+                  setFormData({ ...formData, startYear: e.target.value })
+                }
+                onKeyPress={handleKeyPress}
+                className={`${styles.input} ${
+                  errors.startYear ? styles.error : ""
+                }`}
+                placeholder="보유 시작"
+              />
               {formData.startYear && profileData?.birthYear && (
                 <div className={styles.agePreview}>
                   {calculateKoreanAge(
@@ -710,37 +698,41 @@ const RealEstateModal = ({
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label}>보유 종료 *</label>
-              <div className={styles.yearInputs}>
-                <input
-                  type="text"
-                  value={formData.endYear}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endYear: e.target.value })
-                  }
-                  onKeyPress={handleKeyPress}
-                  className={`${styles.input} ${
-                    errors.endYear ? styles.error : ""
-                  }`}
-                  placeholder="보유 종료"
-                />
-                <select
-                  value={formData.endMonth}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      endMonth: parseInt(e.target.value) || 12,
-                    })
-                  }
-                  className={styles.select}
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                    <option key={m} value={m}>
-                      {m}월
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <label className={styles.label}>시작 월 *</label>
+              <select
+                value={formData.startMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    startMonth: parseInt(e.target.value) || 1,
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <label className={styles.label}>보유 종료년도 *</label>
+              <input
+                type="text"
+                value={formData.endYear}
+                onChange={(e) =>
+                  setFormData({ ...formData, endYear: e.target.value })
+                }
+                onKeyPress={handleKeyPress}
+                className={`${styles.input} ${
+                  errors.endYear ? styles.error : ""
+                }`}
+                placeholder="보유 종료"
+              />
               {formData.endYear && profileData?.birthYear && (
                 <div className={styles.agePreview}>
                   {calculateKoreanAge(profileData.birthYear, formData.endYear)}
@@ -750,6 +742,26 @@ const RealEstateModal = ({
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>종료 월 *</label>
+              <select
+                value={formData.endMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    endMonth: parseInt(e.target.value) || 12,
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -828,40 +840,22 @@ const RealEstateModal = ({
 
               <div className={styles.row}>
                 <div className={styles.field}>
-                  <label className={styles.label}>임대 소득 시작</label>
-                  <div className={styles.yearInputs}>
-                    <input
-                      type="text"
-                      value={formData.rentalIncomeStartYear}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          rentalIncomeStartYear: e.target.value,
-                        })
-                      }
-                      onKeyPress={handleKeyPress}
-                      className={`${styles.input} ${
-                        errors.rentalIncomeStartYear ? styles.error : ""
-                      }`}
-                      placeholder="예: 2025"
-                    />
-                    <select
-                      value={formData.rentalIncomeStartMonth}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          rentalIncomeStartMonth: parseInt(e.target.value) || 1,
-                        })
-                      }
-                      className={styles.select}
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                        <option key={m} value={m}>
-                          {m}월
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <label className={styles.label}>임대 소득 시작년도</label>
+                  <input
+                    type="text"
+                    value={formData.rentalIncomeStartYear}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        rentalIncomeStartYear: e.target.value,
+                      })
+                    }
+                    onKeyPress={handleKeyPress}
+                    className={`${styles.input} ${
+                      errors.rentalIncomeStartYear ? styles.error : ""
+                    }`}
+                    placeholder="예: 2025"
+                  />
                   {formData.rentalIncomeStartYear &&
                     profileData &&
                     profileData.birthYear && (
@@ -881,40 +875,44 @@ const RealEstateModal = ({
                 </div>
 
                 <div className={styles.field}>
-                  <label className={styles.label}>임대 소득 종료</label>
-                  <div className={styles.yearInputs}>
-                    <input
-                      type="text"
-                      value={formData.rentalIncomeEndYear}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          rentalIncomeEndYear: e.target.value,
-                        })
-                      }
-                      onKeyPress={handleKeyPress}
-                      className={`${styles.input} ${
-                        errors.rentalIncomeEndYear ? styles.error : ""
-                      }`}
-                      placeholder="예: 2083"
-                    />
-                    <select
-                      value={formData.rentalIncomeEndMonth}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          rentalIncomeEndMonth: parseInt(e.target.value) || 12,
-                        })
-                      }
-                      className={styles.select}
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                        <option key={m} value={m}>
-                          {m}월
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <label className={styles.label}>시작 월</label>
+                  <select
+                    value={formData.rentalIncomeStartMonth}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        rentalIncomeStartMonth: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    className={styles.select}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                      <option key={m} value={m}>
+                        {m}월
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.row}>
+                <div className={styles.field}>
+                  <label className={styles.label}>임대 소득 종료년도</label>
+                  <input
+                    type="text"
+                    value={formData.rentalIncomeEndYear}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        rentalIncomeEndYear: e.target.value,
+                      })
+                    }
+                    onKeyPress={handleKeyPress}
+                    className={`${styles.input} ${
+                      errors.rentalIncomeEndYear ? styles.error : ""
+                    }`}
+                    placeholder="예: 2083"
+                  />
                   {formData.rentalIncomeEndYear &&
                     profileData &&
                     profileData.birthYear && (
@@ -931,6 +929,26 @@ const RealEstateModal = ({
                       {errors.rentalIncomeEndYear}
                     </span>
                   )}
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label}>종료 월</label>
+                  <select
+                    value={formData.rentalIncomeEndMonth}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        rentalIncomeEndMonth: parseInt(e.target.value) || 12,
+                      })
+                    }
+                    className={styles.select}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                      <option key={m} value={m}>
+                        {m}월
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </>
@@ -991,40 +1009,22 @@ const RealEstateModal = ({
 
               <div className={styles.row}>
                 <div className={styles.field}>
-                  <label className={styles.label}>주택연금 수령 시작</label>
-                  <div className={styles.yearInputs}>
-                    <input
-                      type="text"
-                      value={formData.pensionStartYear}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          pensionStartYear: e.target.value,
-                        })
-                      }
-                      onKeyPress={handleKeyPress}
-                      className={`${styles.input} ${
-                        errors.pensionStartYear ? styles.error : ""
-                      }`}
-                      placeholder="예: 2035"
-                    />
-                    <select
-                      value={formData.pensionStartMonth}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          pensionStartMonth: parseInt(e.target.value) || 1,
-                        })
-                      }
-                      className={styles.select}
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                        <option key={m} value={m}>
-                          {m}월
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <label className={styles.label}>주택연금 수령 시작년도</label>
+                  <input
+                    type="text"
+                    value={formData.pensionStartYear}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pensionStartYear: e.target.value,
+                      })
+                    }
+                    onKeyPress={handleKeyPress}
+                    className={`${styles.input} ${
+                      errors.pensionStartYear ? styles.error : ""
+                    }`}
+                    placeholder="예: 2035"
+                  />
                   {formData.pensionStartYear && profileData?.birthYear && (
                     <div className={styles.agePreview}>
                       {calculateKoreanAge(
@@ -1042,40 +1042,44 @@ const RealEstateModal = ({
                 </div>
 
                 <div className={styles.field}>
-                  <label className={styles.label}>주택연금 수령 종료</label>
-                  <div className={styles.yearInputs}>
-                    <input
-                      type="text"
-                      value={formData.pensionEndYear}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          pensionEndYear: e.target.value,
-                        })
-                      }
-                      onKeyPress={handleKeyPress}
-                      className={`${styles.input} ${
-                        errors.pensionEndYear ? styles.error : ""
-                      }`}
-                      placeholder="예: 2055"
-                    />
-                    <select
-                      value={formData.pensionEndMonth}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          pensionEndMonth: parseInt(e.target.value) || 12,
-                        })
-                      }
-                      className={styles.select}
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                        <option key={m} value={m}>
-                          {m}월
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <label className={styles.label}>시작 월</label>
+                  <select
+                    value={formData.pensionStartMonth}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pensionStartMonth: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    className={styles.select}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                      <option key={m} value={m}>
+                        {m}월
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.row}>
+                <div className={styles.field}>
+                  <label className={styles.label}>주택연금 수령 종료년도</label>
+                  <input
+                    type="text"
+                    value={formData.pensionEndYear}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pensionEndYear: e.target.value,
+                      })
+                    }
+                    onKeyPress={handleKeyPress}
+                    className={`${styles.input} ${
+                      errors.pensionEndYear ? styles.error : ""
+                    }`}
+                    placeholder="예: 2055"
+                  />
                   {formData.pensionEndYear && profileData?.birthYear && (
                     <div className={styles.agePreview}>
                       {calculateKoreanAge(
@@ -1090,6 +1094,26 @@ const RealEstateModal = ({
                       {errors.pensionEndYear}
                     </span>
                   )}
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label}>종료 월</label>
+                  <select
+                    value={formData.pensionEndMonth}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pensionEndMonth: parseInt(e.target.value) || 12,
+                      })
+                    }
+                    className={styles.select}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                      <option key={m} value={m}>
+                        {m}월
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </>
@@ -1166,21 +1190,24 @@ const RealEstateModal = ({
               </div>
             </div>
           )}
-
-          {/* 버튼들 */}
-          <div className={styles.buttonGroup}>
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={handleClose}
-            >
-              취소
-            </button>
-            <button type="submit" className={styles.saveButton}>
-              {editData ? "수정" : "추가"}
-            </button>
-          </div>
         </form>
+
+        <div className={styles.modalFooter}>
+          <button
+            type="button"
+            className={styles.cancelButton}
+            onClick={handleClose}
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            form="realEstateForm"
+            className={styles.saveButton}
+          >
+            {editData ? "수정" : "추가"}
+          </button>
+        </div>
       </div>
     </div>
   );

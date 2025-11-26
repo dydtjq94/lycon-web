@@ -1803,7 +1803,6 @@ function SimulationCompareModal({
       주택연금: "pension",
       부동산: "realEstate",
       임대소득: "realEstate",
-      임대소득: "realEstate",
       "임대 소득": "realEstate",
       realestate: "realEstate",
       자산: "assets",

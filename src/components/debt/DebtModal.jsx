@@ -98,7 +98,9 @@ function DebtModal({
           setSimulationStatusMap(statusMap);
 
           // 현재 활성 시뮬레이션을 기본 선택
-          const defaultSelected = activeSimulationId ? [activeSimulationId] : [];
+          const defaultSelected = activeSimulationId
+            ? [activeSimulationId]
+            : [];
           setSelectedSimulationIds(defaultSelected);
 
           const elapsedTime = Date.now() - startTime;
@@ -173,9 +175,11 @@ function DebtModal({
           startMonth: parseInt(editData.startMonth, 10) || 1,
           endYear: parseInt(editData.endYear, 10) || getRetirementYear(),
           endMonth: parseInt(editData.endMonth, 10) || 12,
-          interestRate: editData.interestRate !== undefined && editData.interestRate !== null
-            ? (editData.interestRate * 100).toFixed(2)
-            : "3.5",
+          interestRate:
+            editData.interestRate !== undefined &&
+            editData.interestRate !== null
+              ? (editData.interestRate * 100).toFixed(2)
+              : "3.5",
           gracePeriod: parsedGracePeriod,
           memo: editData.memo || "",
           addCashToFlow: !!editData.addCashToFlow,
@@ -183,7 +187,8 @@ function DebtModal({
       } else if (initialData) {
         // 복사 모드: 복사된 데이터로 초기화 (id 제외)
         const parsedGracePeriod =
-          initialData.gracePeriod !== undefined && initialData.gracePeriod !== null
+          initialData.gracePeriod !== undefined &&
+          initialData.gracePeriod !== null
             ? parseInt(initialData.gracePeriod, 10)
             : 5;
 
@@ -196,9 +201,11 @@ function DebtModal({
           startMonth: parseInt(initialData.startMonth, 10) || 1,
           endYear: parseInt(initialData.endYear, 10) || getRetirementYear(),
           endMonth: parseInt(initialData.endMonth, 10) || 12,
-          interestRate: initialData.interestRate !== undefined && initialData.interestRate !== null
-            ? (initialData.interestRate * 100).toFixed(2)
-            : "3.5",
+          interestRate:
+            initialData.interestRate !== undefined &&
+            initialData.interestRate !== null
+              ? (initialData.interestRate * 100).toFixed(2)
+              : "3.5",
           gracePeriod: parsedGracePeriod,
           memo: initialData.memo || "",
           addCashToFlow: !!initialData.addCashToFlow,
@@ -265,7 +272,8 @@ function DebtModal({
       parseInt(formData.startYear, 10) === parseInt(formData.endYear, 10) &&
       formData.startMonth > formData.endMonth
     ) {
-      newErrors.endYear = "같은 해라면 종료 월이 시작 월보다 크거나 같아야 합니다.";
+      newErrors.endYear =
+        "같은 해라면 종료 월이 시작 월보다 크거나 같아야 합니다.";
     }
 
     const interestRateNum = parseFloat(formData.interestRate);
@@ -362,7 +370,7 @@ function DebtModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form id="debtForm" onSubmit={handleSubmit} className={styles.form}>
           {/* 부채 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
@@ -677,7 +685,8 @@ function DebtModal({
                 ) : (
                   simulations.map((sim) => {
                     const status = simulationStatusMap[sim.id] || "create";
-                    const statusText = status === "update" ? "(수정)" : "(추가)";
+                    const statusText =
+                      status === "update" ? "(수정)" : "(추가)";
                     return (
                       <label key={sim.id} className={styles.fixedCheckboxLabel}>
                         <input
@@ -699,7 +708,8 @@ function DebtModal({
                           {sim.title || (sim.isDefault ? "현재" : "시뮬레이션")}{" "}
                           <span
                             style={{
-                              color: status === "update" ? "#2196F3" : "#4CAF50",
+                              color:
+                                status === "update" ? "#2196F3" : "#4CAF50",
                             }}
                           >
                             {statusText}
@@ -712,20 +722,20 @@ function DebtModal({
               </div>
             </div>
           )}
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={handleClose}
-            >
-              취소
-            </button>
-            <button type="submit" className={styles.saveButton}>
-              {editData ? "수정" : "추가"}
-            </button>
-          </div>
         </form>
+
+        <div className={styles.modalFooter}>
+          <button
+            type="button"
+            className={styles.cancelButton}
+            onClick={handleClose}
+          >
+            취소
+          </button>
+          <button type="submit" form="debtForm" className={styles.saveButton}>
+            {editData ? "수정" : "추가"}
+          </button>
+        </div>
       </div>
     </div>
   );

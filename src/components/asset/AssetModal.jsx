@@ -204,7 +204,7 @@ function AssetModal({
         // 새 데이터인 경우 기본값 설정
         const currentYear = new Date().getFullYear();
         const deathYear = profileData
-          ? profileData.birthYear + 90 - 1
+          ? profileData.birthYear + 90
           : currentYear + 50;
 
         setFormData({
@@ -385,68 +385,7 @@ function AssetModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.field}>
-            <label className={styles.label}>항목명 *</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              className={`${styles.input} ${errors.title ? styles.error : ""}`}
-              placeholder="예: 주식, 채권, 금, 예금 등"
-            />
-            {errors.title && (
-              <span className={styles.errorText}>{errors.title}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>자산 가치 (만원) *</label>
-            <input
-              type="text"
-              value={formData.currentValue}
-              onChange={(e) =>
-                setFormData({ ...formData, currentValue: e.target.value })
-              }
-              onKeyPress={handleKeyPress}
-              className={`${styles.input} ${
-                errors.currentValue ? styles.error : ""
-              }`}
-              placeholder="예: 1000"
-            />
-            {formData.currentValue &&
-              !isNaN(parseInt(formData.currentValue)) && (
-                <div className={styles.amountPreview}>
-                  {formatAmountForChart(parseInt(formData.currentValue))}
-                </div>
-              )}
-            {errors.currentValue && (
-              <span className={styles.errorText}>{errors.currentValue}</span>
-            )}
-          </div>
-          <div className={styles.field}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={formData.isPurchase}
-                onChange={(e) =>
-                  setFormData({ ...formData, isPurchase: e.target.checked })
-                }
-                className={styles.checkbox}
-              />
-              <span className={styles.checkboxText}>현금유출로 처리</span>
-            </label>
-            {formData.isPurchase && (
-              <div className={styles.purchaseNotice}>
-                💡 {formData.startYear}년에{" "}
-                {formatAmountForChart(parseInt(formData.currentValue) || 0)}의
-                현금이 차감됩니다.
-              </div>
-            )}
-          </div>
-
+        <form id="assetForm" onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
             <label className={styles.label}>자산 타입 *</label>
             <div className={styles.radioGroup}>
@@ -478,25 +417,83 @@ function AssetModal({
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>연평균 가치 상승률 (%) *</label>
+            <label className={styles.label}>항목명 *</label>
             <input
               type="text"
-              value={formData.growthRate}
-              onChange={(e) => {
-                const value = e.target.value;
-                // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
-                if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
-                  setFormData({ ...formData, growthRate: value });
-                }
-              }}
-              className={`${styles.input} ${
-                errors.growthRate ? styles.error : ""
-              }`}
-              placeholder="예: 2.86"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              className={`${styles.input} ${errors.title ? styles.error : ""}`}
+              placeholder="예: 주식, 채권, 금, 예금 등"
             />
-            {errors.growthRate && (
-              <span className={styles.errorText}>{errors.growthRate}</span>
+            {errors.title && (
+              <span className={styles.errorText}>{errors.title}</span>
             )}
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <div className={styles.endYearWrapper}>
+                <label className={styles.label}>자산 가치 (만원) *</label>
+                <label className={styles.fixedCheckboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isPurchase}
+                    onChange={(e) =>
+                      setFormData({ ...formData, isPurchase: e.target.checked })
+                    }
+                    className={styles.fixedCheckbox}
+                  />
+                  <span className={styles.fixedCheckboxText}>
+                    현금유출로 처리
+                  </span>
+                </label>
+              </div>
+              <input
+                type="text"
+                value={formData.currentValue}
+                onChange={(e) =>
+                  setFormData({ ...formData, currentValue: e.target.value })
+                }
+                onKeyPress={handleKeyPress}
+                className={`${styles.input} ${
+                  errors.currentValue ? styles.error : ""
+                }`}
+                placeholder="예: 1000"
+              />
+              {formData.currentValue &&
+                !isNaN(parseInt(formData.currentValue)) && (
+                  <div className={styles.amountPreview}>
+                    {formatAmountForChart(parseInt(formData.currentValue))}
+                  </div>
+                )}
+              {errors.currentValue && (
+                <span className={styles.errorText}>{errors.currentValue}</span>
+              )}
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>연평균 가치 상승률 (%) *</label>
+              <input
+                type="text"
+                value={formData.growthRate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
+                  if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                    setFormData({ ...formData, growthRate: value });
+                  }
+                }}
+                className={`${styles.input} ${
+                  errors.growthRate ? styles.error : ""
+                }`}
+                placeholder="예: 2.86"
+              />
+              {errors.growthRate && (
+                <span className={styles.errorText}>{errors.growthRate}</span>
+              )}
+            </div>
           </div>
 
           {formData.assetType === "income" && (
@@ -527,37 +524,19 @@ function AssetModal({
 
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label}>보유 시작 *</label>
-              <div className={styles.yearInputs}>
-                <input
-                  type="text"
-                  value={formData.startYear}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startYear: e.target.value })
-                  }
-                  onKeyPress={handleKeyPress}
-                  className={`${styles.input} ${
-                    errors.startYear ? styles.error : ""
-                  }`}
-                  placeholder="보유 시작"
-                />
-                <select
-                  value={formData.startMonth}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      startMonth: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className={styles.select}
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                    <option key={m} value={m}>
-                      {m}월
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <label className={styles.label}>보유 시작년도 *</label>
+              <input
+                type="text"
+                value={formData.startYear}
+                onChange={(e) =>
+                  setFormData({ ...formData, startYear: e.target.value })
+                }
+                onKeyPress={handleKeyPress}
+                className={`${styles.input} ${
+                  errors.startYear ? styles.error : ""
+                }`}
+                placeholder="보유 시작"
+              />
               {formData.startYear && profileData?.birthYear && (
                 <div className={styles.agePreview}>
                   {calculateKoreanAge(
@@ -573,37 +552,41 @@ function AssetModal({
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label}>보유 종료 *</label>
-              <div className={styles.yearInputs}>
-                <input
-                  type="text"
-                  value={formData.endYear}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endYear: e.target.value })
-                  }
-                  onKeyPress={handleKeyPress}
-                  className={`${styles.input} ${
-                    errors.endYear ? styles.error : ""
-                  }`}
-                  placeholder="보유 종료"
-                />
-                <select
-                  value={formData.endMonth}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      endMonth: parseInt(e.target.value) || 12,
-                    })
-                  }
-                  className={styles.select}
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                    <option key={m} value={m}>
-                      {m}월
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <label className={styles.label}>시작 월 *</label>
+              <select
+                value={formData.startMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    startMonth: parseInt(e.target.value) || 1,
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <label className={styles.label}>보유 종료년도 *</label>
+              <input
+                type="text"
+                value={formData.endYear}
+                onChange={(e) =>
+                  setFormData({ ...formData, endYear: e.target.value })
+                }
+                onKeyPress={handleKeyPress}
+                className={`${styles.input} ${
+                  errors.endYear ? styles.error : ""
+                }`}
+                placeholder="보유 종료"
+              />
               {formData.endYear && profileData?.birthYear && (
                 <div className={styles.agePreview}>
                   {calculateKoreanAge(profileData.birthYear, formData.endYear)}
@@ -613,6 +596,26 @@ function AssetModal({
               {errors.endYear && (
                 <span className={styles.errorText}>{errors.endYear}</span>
               )}
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>종료 월 *</label>
+              <select
+                value={formData.endMonth}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    endMonth: parseInt(e.target.value) || 12,
+                  })
+                }
+                className={styles.select}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -712,20 +715,20 @@ function AssetModal({
               </div>
             </div>
           )}
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              onClick={handleClose}
-              className={styles.cancelButton}
-            >
-              취소
-            </button>
-            <button type="submit" className={styles.saveButton}>
-              {editData ? "수정" : "추가"}
-            </button>
-          </div>
         </form>
+
+        <div className={styles.modalFooter}>
+          <button
+            type="button"
+            onClick={handleClose}
+            className={styles.cancelButton}
+          >
+            취소
+          </button>
+          <button type="submit" form="assetForm" className={styles.saveButton}>
+            {editData ? "수정" : "추가"}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -84,7 +84,7 @@ function PensionModal({
   const { age65Year, age90Year } = getDefaultYears();
 
   const [formData, setFormData] = useState({
-    type: "", // national, retirement, personal, severance
+    type: "national", // national, retirement, personal, severance
     title: "",
     monthlyAmount: "", // 월 수령 금액
     startYear: age65Year,
@@ -398,7 +398,7 @@ function PensionModal({
         // 새 데이터일 때 초기화
         const { age65Year, age90Year } = getDefaultYears();
         setFormData({
-          type: "",
+          type: "national",
           title: "",
           monthlyAmount: "",
           startYear: age65Year,
@@ -775,54 +775,50 @@ function PensionModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form id="pensionForm" onSubmit={handleSubmit} className={styles.form}>
           {/* 연금 타입 선택 */}
           <div className={styles.field}>
-            <label className={styles.label}>연금 타입 선택</label>
-            <div className={styles.checkboxGroup}>
-              <label className={styles.checkboxLabel}>
+            <label className={styles.label}>연금 타입 선택 *</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
                 <input
-                  type="checkbox"
+                  type="radio"
+                  name="pensionType"
+                  value="national"
                   checked={formData.type === "national"}
-                  onChange={(e) =>
-                    handleTypeChange(e.target.checked ? "national" : "")
-                  }
-                  className={styles.checkbox}
+                  onChange={(e) => handleTypeChange(e.target.value)}
                 />
-                <span className={styles.checkboxText}>국민연금</span>
+                <span className={styles.radioText}>국민연금</span>
               </label>
-              <label className={styles.checkboxLabel}>
+              <label className={styles.radioLabel}>
                 <input
-                  type="checkbox"
+                  type="radio"
+                  name="pensionType"
+                  value="retirement"
                   checked={formData.type === "retirement"}
-                  onChange={(e) =>
-                    handleTypeChange(e.target.checked ? "retirement" : "")
-                  }
-                  className={styles.checkbox}
+                  onChange={(e) => handleTypeChange(e.target.value)}
                 />
-                <span className={styles.checkboxText}>퇴직연금</span>
+                <span className={styles.radioText}>퇴직연금</span>
               </label>
-              <label className={styles.checkboxLabel}>
+              <label className={styles.radioLabel}>
                 <input
-                  type="checkbox"
+                  type="radio"
+                  name="pensionType"
+                  value="personal"
                   checked={formData.type === "personal"}
-                  onChange={(e) =>
-                    handleTypeChange(e.target.checked ? "personal" : "")
-                  }
-                  className={styles.checkbox}
+                  onChange={(e) => handleTypeChange(e.target.value)}
                 />
-                <span className={styles.checkboxText}>개인연금</span>
+                <span className={styles.radioText}>개인연금</span>
               </label>
-              <label className={styles.checkboxLabel}>
+              <label className={styles.radioLabel}>
                 <input
-                  type="checkbox"
+                  type="radio"
+                  name="pensionType"
+                  value="severance"
                   checked={formData.type === "severance"}
-                  onChange={(e) =>
-                    handleTypeChange(e.target.checked ? "severance" : "")
-                  }
-                  className={styles.checkbox}
+                  onChange={(e) => handleTypeChange(e.target.value)}
                 />
-                <span className={styles.checkboxText}>퇴직금/DB</span>
+                <span className={styles.radioText}>퇴직금/DB</span>
               </label>
             </div>
             {errors.type && (
@@ -835,7 +831,7 @@ function PensionModal({
             <>
               {/* 연금 항목명 */}
               <div className={styles.field}>
-                <label className={styles.label}>항목명</label>
+                <label className={styles.label}>항목명 *</label>
                 <input
                   type="text"
                   value={formData.title}
@@ -857,7 +853,7 @@ function PensionModal({
                 <>
                   <div className={styles.field}>
                     <label className={styles.label}>
-                      월 예상 수령 금액 (만원)
+                      월 예상 수령 금액 (만원) *
                     </label>
                     <input
                       type="text"
@@ -891,7 +887,7 @@ function PensionModal({
 
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.label}>수령 시작년도</label>
+                      <label className={styles.label}>수령 시작년도 *</label>
                       <input
                         type="text"
                         value={formData.startYear}
@@ -942,7 +938,7 @@ function PensionModal({
 
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.label}>수령 종료년도</label>
+                      <label className={styles.label}>수령 종료년도 *</label>
                       <input
                         type="text"
                         value={formData.endYear}
@@ -999,7 +995,7 @@ function PensionModal({
                   </div>
 
                   <div className={`${styles.field} ${styles.fieldWithMargin}`}>
-                    <label className={styles.label}>물가상승률 (%)</label>
+                    <label className={styles.label}>물가상승률 (%) *</label>
                     <input
                       type="text"
                       value={formData.inflationRate}
@@ -1033,7 +1029,7 @@ function PensionModal({
                   <div className={styles.row}>
                     <div className={styles.field}>
                       <label className={styles.label}>
-                        평균 임금 (월, 만원)
+                        평균 임금 (월, 만원) *
                       </label>
                       <input
                         type="text"
@@ -1066,7 +1062,7 @@ function PensionModal({
                     </div>
 
                     <div className={styles.field}>
-                      <label className={styles.label}>재직 기간 (년)</label>
+                      <label className={styles.label}>재직 기간 (년) *</label>
                       <input
                         type="text"
                         value={formData.yearsOfService}
@@ -1093,7 +1089,7 @@ function PensionModal({
                   {/* 자동 계산된 보유액 표시 (읽기 전용) */}
                   <div className={styles.field}>
                     <label className={styles.label}>
-                      예상 퇴직금 (자동 계산, 만원)
+                      예상 퇴직금 (자동 계산, 만원) *
                     </label>
                     <input
                       type="text"
@@ -1154,7 +1150,7 @@ function PensionModal({
                   {!formData.noAdditionalContribution && (
                     <div className={styles.field}>
                       <label className={styles.label}>
-                        추가 적립 금액 (만원)
+                        추가 적립 금액 (만원) *
                       </label>
                       <div className={styles.row}>
                         <input
@@ -1207,7 +1203,9 @@ function PensionModal({
                     <>
                       <div className={styles.row}>
                         <div className={styles.field}>
-                          <label className={styles.label}>적립 시작년도</label>
+                          <label className={styles.label}>
+                            적립 시작년도 *
+                          </label>
                           <input
                             type="text"
                             value={formData.contributionStartYear}
@@ -1263,7 +1261,9 @@ function PensionModal({
 
                       <div className={styles.row}>
                         <div className={styles.field}>
-                          <label className={styles.label}>적립 종료년도</label>
+                          <label className={styles.label}>
+                            적립 종료년도 *
+                          </label>
                           <input
                             type="text"
                             value={formData.contributionEndYear}
@@ -1326,7 +1326,7 @@ function PensionModal({
 
                   {/* 투자 수익률 */}
                   <div className={`${styles.field} ${styles.fieldWithMargin}`}>
-                    <label className={styles.label}>연평균 수익률 (%)</label>
+                    <label className={styles.label}>연평균 수익률 (%) *</label>
                     <input
                       type="text"
                       value={formData.returnRate}
@@ -1356,7 +1356,7 @@ function PensionModal({
                   {/* 수령년도 (시작, 종료) */}
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.label}>수령 시작년도</label>
+                      <label className={styles.label}>수령 시작년도 *</label>
                       <input
                         type="text"
                         value={formData.paymentStartYear}
@@ -1414,7 +1414,7 @@ function PensionModal({
 
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.label}>수령 기간(년)</label>
+                      <label className={styles.label}>수령 기간(년) *</label>
                       <input
                         type="text"
                         value={formData.paymentYears}
@@ -1446,7 +1446,9 @@ function PensionModal({
                 <>
                   {/* 시작 보유액 */}
                   <div className={styles.field}>
-                    <label className={styles.label}>기 보유 금액 (만원)</label>
+                    <label className={styles.label}>
+                      기 보유 금액 (만원) *
+                    </label>
                     <input
                       type="text"
                       value={formData.currentAmount}
@@ -1479,7 +1481,7 @@ function PensionModal({
 
                   {/* 적립 금액 */}
                   <div className={styles.field}>
-                    <label className={styles.label}>적립 금액 (만원)</label>
+                    <label className={styles.label}>적립 금액 (만원) *</label>
                     <div className={styles.row}>
                       <input
                         type="text"
@@ -1528,7 +1530,7 @@ function PensionModal({
                   {/* 적립 시작년도 / 시작월 */}
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.label}>적립 시작년도</label>
+                      <label className={styles.label}>적립 시작년도 *</label>
                       <input
                         type="text"
                         value={formData.contributionStartYear}
@@ -1556,7 +1558,7 @@ function PensionModal({
                         )}
                     </div>
                     <div className={styles.field}>
-                      <label className={styles.label}>적립 시작 월</label>
+                      <label className={styles.label}>적립 시작 월 *</label>
                       <select
                         value={formData.contributionStartMonth}
                         onChange={(e) =>
@@ -1581,7 +1583,7 @@ function PensionModal({
                   <div className={styles.row}>
                     <div className={styles.field}>
                       <div className={styles.endYearWrapper}>
-                        <label className={styles.label}>적립 종료년도</label>
+                        <label className={styles.label}>적립 종료년도 *</label>
                         <label className={styles.fixedCheckboxLabel}>
                           <input
                             type="checkbox"
@@ -1647,7 +1649,7 @@ function PensionModal({
                       )}
                     </div>
                     <div className={styles.field}>
-                      <label className={styles.label}>적립 종료 월</label>
+                      <label className={styles.label}>적립 종료 월 *</label>
                       <select
                         value={formData.contributionEndMonth}
                         onChange={(e) =>
@@ -1671,7 +1673,7 @@ function PensionModal({
                   {/* 수령 시작년도 / 시작월 */}
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.label}>수령 시작년도</label>
+                      <label className={styles.label}>수령 시작년도 *</label>
                       <input
                         type="text"
                         value={formData.paymentStartYear}
@@ -1728,7 +1730,9 @@ function PensionModal({
                   {/* 연평균 수익률 / 수령 기간 */}
                   <div className={`${styles.row} ${styles.rowWithMargin}`}>
                     <div className={styles.field}>
-                      <label className={styles.label}>연평균 수익률 (%)</label>
+                      <label className={styles.label}>
+                        연평균 수익률 (%) *
+                      </label>
                       <input
                         type="text"
                         value={formData.returnRate}
@@ -1754,7 +1758,7 @@ function PensionModal({
                       )}
                     </div>
                     <div className={styles.field}>
-                      <label className={styles.label}>수령 기간(년)</label>
+                      <label className={styles.label}>수령 기간(년) *</label>
                       <input
                         type="text"
                         value={formData.paymentYears}
@@ -1860,23 +1864,26 @@ function PensionModal({
                   </div>
                 </div>
               )}
-
-              {/* 버튼 */}
-              <div className={styles.buttonGroup}>
-                <button
-                  type="button"
-                  className={styles.cancelButton}
-                  onClick={handleClose}
-                >
-                  취소
-                </button>
-                <button type="submit" className={styles.saveButton}>
-                  {editData ? "수정" : "추가"}
-                </button>
-              </div>
             </>
           )}
         </form>
+
+        <div className={styles.modalFooter}>
+          <button
+            type="button"
+            className={styles.cancelButton}
+            onClick={handleClose}
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            form="pensionForm"
+            className={styles.saveButton}
+          >
+            {editData ? "수정" : "추가"}
+          </button>
+        </div>
       </div>
     </div>
   );
