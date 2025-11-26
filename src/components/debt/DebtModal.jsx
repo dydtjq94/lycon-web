@@ -371,6 +371,88 @@ function DebtModal({
         </div>
 
         <form id="debtForm" onSubmit={handleSubmit} className={styles.form}>
+          {/* 상환 방식 */}
+          <div className={styles.field}>
+            <label className={styles.label}>상환 방식 *</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="debtType"
+                  value="bullet"
+                  checked={formData.debtType === "bullet"}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      debtType: e.target.value,
+                    });
+                  }}
+                />
+                <span className={styles.radioText}>만기일시상환</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="debtType"
+                  value="equal"
+                  checked={formData.debtType === "equal"}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      debtType: e.target.value,
+                    });
+                  }}
+                />
+                <span className={styles.radioText}>원리금균등상환</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="debtType"
+                  value="principal"
+                  checked={formData.debtType === "principal"}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      debtType: e.target.value,
+                    });
+                  }}
+                />
+                <span className={styles.radioText}>원금균등상환</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="debtType"
+                  value="grace"
+                  checked={formData.debtType === "grace"}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      debtType: e.target.value,
+                      gracePeriod: 5, // 거치식 상환 선택 시 기본 거치기간 5년
+                    });
+                  }}
+                />
+                <span className={styles.radioText}>거치식상환</span>
+              </label>
+            </div>
+            <div className={styles.helpText}>
+              {formData.debtType === "bullet" ? (
+                <span>매달 이자만 납부하고 만기일에 원금을 한꺼번에 상환</span>
+              ) : formData.debtType === "equal" ? (
+                <span>매달 원금과 이자를 합친 동일한 금액을 상환</span>
+              ) : formData.debtType === "principal" ? (
+                <span>
+                  매달 같은 금액의 원금을 상환하며, 남은 원금에 대한 이자가 점점
+                  줄어듦
+                </span>
+              ) : (
+                <span>일정 기간 동안 이자만 내다가, 이후 본격 상환 시작</span>
+              )}
+            </div>
+          </div>
+
           {/* 부채 항목명 */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
@@ -389,47 +471,6 @@ function DebtModal({
             {errors.title && (
               <span className={styles.errorText}>{errors.title}</span>
             )}
-          </div>
-
-          {/* 상환 방식 */}
-          <div className={styles.field}>
-            <label htmlFor="debtType" className={styles.label}>
-              상환 방식 *
-            </label>
-            <select
-              id="debtType"
-              value={formData.debtType}
-              onChange={(e) => {
-                const newDebtType = e.target.value;
-                setFormData({
-                  ...formData,
-                  debtType: newDebtType,
-                  // 거치식 상환을 선택했을 때 기본 거치기간을 5년으로 설정
-                  gracePeriod:
-                    newDebtType === "grace" ? 5 : formData.gracePeriod,
-                });
-              }}
-              className={styles.select}
-            >
-              <option value="bullet">만기일시상환</option>
-              <option value="equal">원리금균등상환</option>
-              <option value="principal">원금균등상환</option>
-              <option value="grace">거치식상환</option>
-            </select>
-            <div className={styles.helpText}>
-              {formData.debtType === "bullet" ? (
-                <span>매달 이자만 납부하고 만기일에 원금을 한꺼번에 상환</span>
-              ) : formData.debtType === "equal" ? (
-                <span>매달 원금과 이자를 합친 동일한 금액을 상환</span>
-              ) : formData.debtType === "principal" ? (
-                <span>
-                  매달 같은 금액의 원금을 상환하며, 남은 원금에 대한 이자가 점점
-                  줄어듦
-                </span>
-              ) : (
-                <span>일정 기간 동안 이자만 내다가, 이후 본격 상환 시작</span>
-              )}
-            </div>
           </div>
 
           {/* 대출 금액과 이자율 */}

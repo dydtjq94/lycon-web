@@ -237,6 +237,50 @@
   line-height: 1.6;
 }
 
+/* 라디오 버튼 그룹 스타일 (2x2 그리드) */
+.radioGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+}
+
+.radioLabel:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.radioLabel input[type="radio"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.radioLabel input[type="radio"]:checked + .radioText {
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.radioText {
+  font-weight: 500;
+  user-select: none;
+}
+
 /* 시뮬레이션 체크박스 레이블 */
 .fixedCheckboxLabel {
   display: flex;
