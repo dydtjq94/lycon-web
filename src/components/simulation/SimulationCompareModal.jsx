@@ -1505,13 +1505,22 @@ function SimulationCompareModal({
         return sum;
       }, 0);
 
-      const assetsTotal = (simData.assets || []).reduce(
-        (sum, asset) => sum + toNumber(asset?.currentValue),
-        0
-      );
+      const assetsTotal = (simData.assets || []).reduce((sum, asset) => {
+        const startYear = ensureVisibleYear(asset?.startYear);
+        if (startYear <= currentYear) {
+          return sum + toNumber(asset?.currentValue);
+        }
+        return sum;
+      }, 0);
 
       const realEstatesTotal = (simData.realEstates || []).reduce(
-        (sum, realEstate) => sum + toNumber(realEstate?.currentValue),
+        (sum, realEstate) => {
+          const startYear = ensureVisibleYear(realEstate?.startYear);
+          if (startYear <= currentYear) {
+            return sum + toNumber(realEstate?.currentValue);
+          }
+          return sum;
+        },
         0
       );
 
@@ -1523,10 +1532,13 @@ function SimulationCompareModal({
         return sum;
       }, 0);
 
-      const debtsTotal = (simData.debts || []).reduce(
-        (sum, debt) => sum + toNumber(debt?.debtAmount),
-        0
-      );
+      const debtsTotal = (simData.debts || []).reduce((sum, debt) => {
+        const startYear = ensureVisibleYear(debt?.startYear);
+        if (startYear <= currentYear) {
+          return sum + toNumber(debt?.debtAmount);
+        }
+        return sum;
+      }, 0);
 
       const currentCash = toNumber(profileData.currentCash);
 
