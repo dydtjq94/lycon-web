@@ -1738,7 +1738,7 @@ function PensionModal({
                         value={formData.returnRate}
                         onChange={(e) => {
                           const value = e.target.value;
-                          if (value === "" || /^-?\\d*\\.?\\d*$/.test(value)) {
+                          if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
                             setFormData({
                               ...formData,
                               returnRate: value,

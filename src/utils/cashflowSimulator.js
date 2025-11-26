@@ -277,7 +277,7 @@ export function calculateCashflowSimulation(
       interestRate: saving.interestRate || 0,
       monthlyInterestRate: convertAnnualToMonthlyRate(saving.interestRate || 0),
       incomeRate: saving.incomeRate || 0,
-      monthlyIncomeRate: (saving.incomeRate || 0) / 12,
+      monthlyIncomeRate: convertAnnualToMonthlyRate(saving.incomeRate || 0),
       savingType: saving.savingType || "standard",
       capitalGainsTaxRate: saving.capitalGainsTaxRate || 0,
       treatAsInitialPurchase: !!saving.treatAsInitialPurchase,
@@ -2697,10 +2697,10 @@ export function calculateAssetSimulation(
             (year === saving.startYear && firstMonthInYear > sStartMonth)
           ) {
             // 다음 달부터 수익률 적용 (월 단위 복리)
-            const monthsElapsed =
-              (year - saving.startYear) * 12 + (firstMonthInYear - sStartMonth);
-            saving.amount =
-              saving.amount * Math.pow(1 + monthlyInterestRate, monthsInYear);
+            // 각 월마다 복리 적용 (연 단위가 아닌 월 단위로)
+            for (let m = firstMonthInYear; m <= lastMonthInYear; m++) {
+              saving.amount = saving.amount * (1 + monthlyInterestRate);
+            }
           }
         } else {
           // 월간/연간 저축: 해당 년도에 포함된 각 월마다 적립 및 수익률 적용
