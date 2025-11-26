@@ -1,7 +1,19 @@
 {
-  "version": "0.34.25",
+  "version": "0.34.26",
   "today": "2025-11-26",
   "history": [
+    {
+      "version": "0.34.26",
+      "date": "2025-11-26",
+      "changes": [
+        "AI 분석 데이터 추출 개선: 모든 clean 함수에서 title/name 필드 모두 지원하도록 수정",
+        "AI 분석 데이터에 월(Month) 정보 추가: 소득/지출/저축/연금/부동산/자산/부채의 startMonth, endMonth 필드 포함",
+        "AI 분석 데이터 필드명 표준화: annualAppreciationRate → growthRate, annualInterestRate → interestRate로 통일",
+        "AI 분석 데이터 누락 필드 추가: isPurchase, hasRentalIncome, convertToPension, treatAsInflow 등 최신 필드 포함",
+        "자산 시뮬레이션 totalAmount 계산 버그 수정: year와 age 필드를 합산에서 제외하여 실제 자산/부채 금액만 계산",
+        "부채 시뮬레이션 totalAmount 계산 버그 수정: year와 age 필드를 합산에서 제외"
+      ]
+    },
     {
       "version": "0.34.25",
       "date": "2025-11-26",

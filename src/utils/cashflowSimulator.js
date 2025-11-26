@@ -3349,9 +3349,13 @@ export function calculateAssetSimulation(
       }
     });
 
-    // 총 자산 계산
-    const totalAmount = Object.values(assetItem).reduce((sum, value) => {
-      return typeof value === "number" ? sum + value : sum;
+    // 총 자산 계산 (year, age 필드 제외)
+    const totalAmount = Object.entries(assetItem).reduce((sum, [key, value]) => {
+      // year, age 필드는 제외하고 숫자 필드만 합산
+      if (key !== "year" && key !== "age" && typeof value === "number") {
+        return sum + value;
+      }
+      return sum;
     }, 0);
 
     assetItem.totalAmount = totalAmount;
@@ -3747,9 +3751,13 @@ export function calculateDebtSimulation(profileData, debts = []) {
       }
     });
 
-    // 총 부채 계산
-    const totalAmount = Object.values(debtItem).reduce((sum, value) => {
-      return typeof value === "number" ? sum + value : sum;
+    // 총 부채 계산 (year, age 필드 제외)
+    const totalAmount = Object.entries(debtItem).reduce((sum, [key, value]) => {
+      // year, age 필드는 제외하고 숫자 필드만 합산
+      if (key !== "year" && key !== "age" && typeof value === "number") {
+        return sum + value;
+      }
+      return sum;
     }, 0);
 
     debtItem.totalAmount = totalAmount;
@@ -3767,61 +3775,71 @@ export function calculateDebtSimulation(profileData, debts = []) {
 // 소득 데이터 정제
 function cleanIncomeData(incomes) {
   return incomes.map((income) => ({
-    name: income.name,
+    name: income.title || income.name,
     amount: income.amount,
     frequency: income.frequency,
     startYear: income.startYear,
+    startMonth: income.startMonth,
     endYear: income.endYear,
-    yearlyGrowthRate: income.yearlyGrowthRate,
-    fixedToRetirement: income.fixedToRetirement,
+    endMonth: income.endMonth,
+    yearlyGrowthRate: income.yearlyGrowthRate || income.growthRate,
+    fixedToRetirement: income.isFixedToRetirementYear || income.fixedToRetirement,
   }));
 }
 
 // 지출 데이터 정제
 function cleanExpenseData(expenses) {
   return expenses.map((expense) => ({
-    name: expense.name,
+    name: expense.title || expense.name,
     amount: expense.amount,
     frequency: expense.frequency,
     startYear: expense.startYear,
+    startMonth: expense.startMonth,
     endYear: expense.endYear,
-    yearlyGrowthRate: expense.yearlyGrowthRate,
-    fixedToRetirement: expense.fixedToRetirement,
+    endMonth: expense.endMonth,
+    yearlyGrowthRate: expense.yearlyGrowthRate || expense.growthRate,
+    fixedToRetirement: expense.isFixedToRetirementYear || expense.fixedToRetirement,
   }));
 }
 
 // 저축/투자 데이터 정제
 function cleanSavingData(savings) {
   return savings.map((saving) => ({
-    name: saving.name,
+    name: saving.title || saving.name,
     amount: saving.amount,
     frequency: saving.frequency,
     currentAmount: saving.currentAmount,
     startYear: saving.startYear,
+    startMonth: saving.startMonth,
     endYear: saving.endYear,
+    endMonth: saving.endMonth,
     interestRate: saving.interestRate,
     yearlyGrowthRate: saving.yearlyGrowthRate,
     capitalGainsTaxRate: saving.capitalGainsTaxRate,
-    treatAsPurchase: saving.treatAsPurchase,
+    treatAsPurchase: saving.treatAsInitialPurchase || saving.treatAsPurchase,
     savingType: saving.savingType,
     incomeRate: saving.incomeRate,
-    fixedToRetirement: saving.fixedToRetirement,
+    fixedToRetirement: saving.isFixedToRetirementYear || saving.fixedToRetirement,
   }));
 }
 
 // 연금 데이터 정제
 function cleanPensionData(pensions) {
   return pensions.map((pension) => ({
-    name: pension.name,
+    name: pension.title || pension.name,
     type: pension.type,
     currentAmount: pension.currentAmount,
     contributionAmount: pension.contributionAmount,
     frequency: pension.frequency,
     interestRate: pension.interestRate,
     contributionStartYear: pension.contributionStartYear,
+    contributionStartMonth: pension.contributionStartMonth,
     contributionEndYear: pension.contributionEndYear,
+    contributionEndMonth: pension.contributionEndMonth,
     paymentStartYear: pension.paymentStartYear,
+    paymentStartMonth: pension.paymentStartMonth,
     paymentYears: pension.paymentYears,
+    paymentEndMonth: pension.paymentEndMonth,
     monthlyPayment: pension.monthlyPayment,
     averageMonthlyWage: pension.averageMonthlyWage,
     yearsOfService: pension.yearsOfService,
@@ -3833,48 +3851,63 @@ function cleanPensionData(pensions) {
 // 부동산 데이터 정제
 function cleanRealEstateData(realEstates) {
   return realEstates.map((realEstate) => ({
-    name: realEstate.name,
+    name: realEstate.title || realEstate.name,
     currentValue: realEstate.currentValue,
-    annualAppreciationRate: realEstate.annualAppreciationRate,
+    growthRate: realEstate.growthRate || realEstate.annualAppreciationRate,
     startYear: realEstate.startYear,
+    startMonth: realEstate.startMonth,
     endYear: realEstate.endYear,
+    endMonth: realEstate.endMonth,
+    isPurchase: realEstate.isPurchase,
     monthlyRentalIncome: realEstate.monthlyRentalIncome,
+    hasRentalIncome: realEstate.hasRentalIncome,
     rentalIncomeStartYear: realEstate.rentalIncomeStartYear,
+    rentalIncomeStartMonth: realEstate.rentalIncomeStartMonth,
     rentalIncomeEndYear: realEstate.rentalIncomeEndYear,
-    reverseMonthlyPayment: realEstate.reverseMonthlyPayment,
-    reverseMortgageStartYear: realEstate.reverseMortgageStartYear,
-    reverseMortgageEndYear: realEstate.reverseMortgageEndYear,
+    rentalIncomeEndMonth: realEstate.rentalIncomeEndMonth,
+    convertToPension: realEstate.convertToPension,
+    monthlyPensionAmount: realEstate.monthlyPensionAmount,
+    pensionStartYear: realEstate.pensionStartYear,
+    pensionStartMonth: realEstate.pensionStartMonth,
+    pensionEndYear: realEstate.pensionEndYear,
+    pensionEndMonth: realEstate.pensionEndMonth,
     isResidential: realEstate.isResidential,
-    purchasePrice: realEstate.purchasePrice,
-    purchaseDate: realEstate.purchaseDate,
-    acquisitionBeforeThisYear: realEstate.acquisitionBeforeThisYear,
+    hasAcquisitionInfo: realEstate.hasAcquisitionInfo,
+    acquisitionPrice: realEstate.acquisitionPrice,
+    acquisitionYear: realEstate.acquisitionYear,
   }));
 }
 
 // 자산 데이터 정제
 function cleanAssetData(assets) {
   return assets.map((asset) => ({
-    name: asset.name,
+    name: asset.title || asset.name,
     currentValue: asset.currentValue,
-    annualAppreciationRate: asset.annualAppreciationRate,
+    growthRate: asset.growthRate || asset.annualAppreciationRate,
     startYear: asset.startYear,
+    startMonth: asset.startMonth,
     endYear: asset.endYear,
+    endMonth: asset.endMonth,
     assetType: asset.assetType,
     incomeRate: asset.incomeRate,
     capitalGainsTaxRate: asset.capitalGainsTaxRate,
+    isPurchase: asset.isPurchase,
   }));
 }
 
 // 부채 데이터 정제
 function cleanDebtData(debts) {
   return debts.map((debt) => ({
-    name: debt.name,
+    name: debt.title || debt.name,
     debtAmount: debt.debtAmount,
-    annualInterestRate: debt.annualInterestRate,
+    interestRate: debt.interestRate || debt.annualInterestRate,
     startYear: debt.startYear,
+    startMonth: debt.startMonth,
     endYear: debt.endYear,
+    endMonth: debt.endMonth,
     repaymentType: debt.repaymentType,
     graceYears: debt.graceYears,
+    treatAsInflow: debt.treatAsInflow,
   }));
 }
 
