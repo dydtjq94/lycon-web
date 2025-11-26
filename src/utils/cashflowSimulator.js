@@ -281,7 +281,7 @@ export function calculateCashflowSimulation(
       savingType: saving.savingType || "standard",
       capitalGainsTaxRate: saving.capitalGainsTaxRate || 0,
       treatAsInitialPurchase: !!saving.treatAsInitialPurchase,
-      balance: Number(saving.currentAmount) || 0,
+      balance: saving.treatAsInitialPurchase ? 0 : (Number(saving.currentAmount) || 0),
       monthsElapsed: 0,
       started: false,
       matured: false,
@@ -1164,9 +1164,10 @@ export function calculateCashflowSimulation(
 
         // 이미 시작된 경우 월간 이자 먼저 적용 (시작 월에는 이자 없음)
         if (state.started && state.balance !== 0) {
+          const monthlyRate = state.monthlyInterestRate || 0;
           state.balance =
             Math.round(
-              state.balance * (1 + state.monthlyInterestRate || 0) * 1000000
+              state.balance * (1 + monthlyRate) * 1000000
             ) / 1000000;
         }
 
@@ -2690,8 +2691,8 @@ export function calculateAssetSimulation(
         if (saving.frequency === "one_time") {
           // 일회성 저축 (정기예금 등)
           if (year === saving.startYear && firstMonthInYear === sStartMonth) {
-            // 시작 월: 현재 보유액 + 원금 (수익률 적용 X)
-            saving.amount = saving.amount + saving.originalAmount;
+            // 시작 월: 이미 currentAmount가 설정되어 있으므로 추가로 더하지 않음
+            // (수익률 적용 X, 시작 월에는 수익률 없음)
           } else if (
             year > saving.startYear ||
             (year === saving.startYear && firstMonthInYear > sStartMonth)
