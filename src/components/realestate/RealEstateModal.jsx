@@ -1136,15 +1136,7 @@ const RealEstateModal = ({
           {/* 적용 시뮬레이션 선택 (하단 영역) */}
           {simulations && simulations.length > 0 && (
             <div className={styles.field}>
-              <label className={styles.label}>
-                적용 시뮬레이션
-                {editData && (
-                  <span className={styles.hintText}>
-                    {" "}
-                    (수정: 같은 ID 항목 업데이트, 추가: 새로 생성)
-                  </span>
-                )}
-              </label>
+              <label className={styles.label}>적용 시뮬레이션</label>
               <div>
                 {isSimSelectionLoading ? (
                   <span className={styles.hintText}>
