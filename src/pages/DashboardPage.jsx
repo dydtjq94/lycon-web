@@ -3256,6 +3256,14 @@ ${JSON.stringify(analysisData, null, 2)}`;
               <span className={styles.buttonText}>사전 상담</span>
             </button>
           )} */}
+          <button
+            className={styles.reportButton}
+            onClick={() => navigate(`/consult/report/${profileId}`)}
+            title="상담 보고서 보기"
+          >
+            <i className="fas fa-file-alt"></i>
+            <span className={styles.buttonText}>상담 보고서</span>
+          </button>
           <button className={styles.iconButton} onClick={openDataStorePanel}>
             <span className={styles.buttonText}>재무 라이브러리</span>
           </button>

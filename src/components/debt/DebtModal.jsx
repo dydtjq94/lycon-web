@@ -560,7 +560,7 @@ function DebtModal({
                 value={formData.startYear}
                 onChange={(e) => {
                   const value = e.target.value;
-                  if (value === "" || /^\\d{0,4}$/.test(value)) {
+                  if (value === "" || /^\d{0,4}$/.test(value)) {
                     setFormData({ ...formData, startYear: value });
                   }
                 }}
@@ -614,7 +614,7 @@ function DebtModal({
                 value={formData.endYear}
                 onChange={(e) => {
                   const value = e.target.value;
-                  if (value === "" || /^\\d{0,4}$/.test(value)) {
+                  if (value === "" || /^\d{0,4}$/.test(value)) {
                     setFormData({ ...formData, endYear: value });
                   }
                 }}

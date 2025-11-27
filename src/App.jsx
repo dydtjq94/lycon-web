@@ -9,6 +9,8 @@ import ProfileListPage from "./pages/ProfileListPage";
 import ProfileCreatePage from "./pages/ProfileCreatePage";
 import DashboardPage from "./pages/DashboardPage";
 import PreConsultPage from "./pages/PreConsultPage";
+import ReportSelectionPage from "./pages/ReportSelectionPage";
+import ReportPage from "./pages/ReportPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import VersionDisplay from "./components/common/VersionDisplay";
 import "./App.css";
@@ -25,6 +27,8 @@ import "./App.css";
  * /consult/create - 새 프로필 생성 - 관리자 로그인 필요
  * /consult/preconsult/:id - 사전 상담 페이지 - 관리자 로그인 필요
  * /consult/dashboard/:id - 프로필별 대시보드 - 로그인 불필요 (view-only 모드 가능)
+ * /consult/report/:id - 보고서 타입 선택 페이지 - 로그인 불필요
+ * /consult/report/:id/view - 프로필별 상담 보고서 - 로그인 불필요 (view-only 모드 가능)
  */
 function App() {
   return (
@@ -78,6 +82,18 @@ function App() {
             <Route
               path="/consult/dashboard/:profileId"
               element={<DashboardPage />}
+            />
+
+            {/* 보고서 타입 선택 페이지 - 로그인 불필요 */}
+            <Route
+              path="/consult/report/:profileId"
+              element={<ReportSelectionPage />}
+            />
+
+            {/* 프로필별 상담 보고서 페이지 - 로그인 불필요 (view-only 모드로 접근 가능) */}
+            <Route
+              path="/consult/report/:profileId/view"
+              element={<ReportPage />}
             />
           </Routes>
 

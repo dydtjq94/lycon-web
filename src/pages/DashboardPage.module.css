@@ -204,6 +204,41 @@
   background-color: transparent;
 }
 
+/* 보고서 버튼 - 골드 강조 스타일 */
+.reportButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #d4af37;
+  border-radius: 6px;
+  background-color: #d4af37;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.reportButton i {
+  font-size: 1rem;
+}
+
+.reportButton:hover {
+  background-color: #c19d2f;
+  border-color: #c19d2f;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.reportButton:focus,
+.reportButton:active {
+  outline: none;
+}
+
 /* 프로필 수정 폼 */
 .editForm {
   background: #f9fafb;
