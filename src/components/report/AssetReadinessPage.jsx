@@ -269,7 +269,24 @@ function AssetReadinessPage({ profile, simulationData }) {
       retirementNetAssets > 0
     ) {
       hasAnalyzed.current = true; // 실행 플래그 설정
-      handleAIAnalysis();
+      // AI 분석 대신 기본 인사이트 바로 설정 (CORS 문제로 인해)
+      const status = achievementRate >= 100 ? "excellent" : achievementRate >= 70 ? "good" : "warning";
+      setAiInsights({
+        mainInsight: {
+          status: status,
+          title: achievementRate >= 100 ? "목표 달성 예상" : achievementRate >= 70 ? "목표에 근접" : "목표 달성 어려움",
+          description: `현재 ${currentAge}세이며, ${retirementAge}세 은퇴 예정입니다. 목표 자산 대비 ${achievementRate.toFixed(0)}% 달성 예상입니다.`,
+        },
+        secondaryInsight: {
+          title: "자산 구성",
+          description: `현재 자산 구성은 ${assetBreakdown.length > 0 ? assetBreakdown[0].name : "다양한 자산"}으로 이루어져 있습니다.`,
+        },
+        recommendationInsight: {
+          title: "권장사항",
+          description: achievementRate < 70 ? "목표 달성을 위해 저축 및 투자 계획을 재검토해야 합니다." : achievementRate < 100 ? "목표에 근접하고 있으나, 추가 노력이 필요합니다." : "목표를 달성할 것으로 예상됩니다.",
+        },
+      });
+      // handleAIAnalysis(); // API 기능 비활성화
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simulationData, assets.length, currentTotalAssets, retirementNetAssets]);
@@ -302,6 +319,23 @@ function AssetReadinessPage({ profile, simulationData }) {
       setAiInsights(result);
     } catch (error) {
       console.error("AI 분석 실패:", error);
+      // 기본 인사이트 설정 (AI 호출 실패 시)
+      const status = achievementRate >= 100 ? "excellent" : achievementRate >= 70 ? "good" : "warning";
+      setAiInsights({
+        mainInsight: {
+          status: status,
+          title: achievementRate >= 100 ? "목표 달성 예상" : achievementRate >= 70 ? "목표에 근접" : "목표 달성 어려움",
+          description: `현재 ${currentAge}세이며, ${retirementAge}세 은퇴 예정입니다. 목표 자산 대비 ${achievementRate.toFixed(0)}% 달성 예상입니다.`,
+        },
+        secondaryInsight: {
+          title: "자산 구성",
+          description: `현재 자산 구성은 ${assetBreakdown.length > 0 ? assetBreakdown[0].name : "다양한 자산"}으로 이루어져 있습니다.`,
+        },
+        recommendationInsight: {
+          title: "권장사항",
+          description: achievementRate < 70 ? "목표 달성을 위해 저축 및 투자 계획을 재검토해야 합니다." : achievementRate < 100 ? "목표에 근접하고 있으나, 추가 노력이 필요합니다." : "목표를 달성할 것으로 예상됩니다.",
+        },
+      });
     } finally {
       setIsAnalyzing(false);
     }

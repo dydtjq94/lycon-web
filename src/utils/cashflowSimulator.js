@@ -4029,12 +4029,10 @@ export function extractAIAnalysisData(
       targetAssets: profileData.targetAssets,
     },
 
-    // 시뮬레이션 데이터 (최대 20년간, 0과 빈 배열 제거)
+    // 시뮬레이션 데이터 (전체 기간, 0과 빈 배열 제거)
     simulation: {
-      cashflow: cleanSimulationData(cashflowData.slice(0, 20)),
-      assets: cleanSimulationData(
-        Array.isArray(assetData) ? assetData.slice(0, 20) : []
-      ),
+      cashflow: cleanSimulationData(cashflowData),
+      assets: cleanSimulationData(Array.isArray(assetData) ? assetData : []),
     },
 
     // 원시 데이터 (핵심 필드만 포함, 메타데이터 제외)

@@ -257,7 +257,12 @@ function AssetOverviewPage({ profile, simulationData }) {
       !isAnalyzing
     ) {
       hasAnalyzed.current = true; // 실행 플래그 설정
-      handleAIAnalysis();
+      // AI 분석 대신 기본 인사이트 바로 설정 (CORS 문제로 인해)
+      setAiInsights({
+        mainInsight: `총자산 ${(totalAssets / 10000).toFixed(1)}억원 중 부채 비율은 ${debtRatio.toFixed(1)}%입니다. ${debtRatio > 50 ? "부채 관리가 필요합니다." : "재무 건전성이 양호합니다."}`,
+        liquidityInsight: `비상자금은 ${emergencyFundMonths.toFixed(1)}개월분입니다. ${emergencyFundMonths < 3 ? "최소 3개월 이상 확보를 권장합니다." : emergencyFundMonths < 6 ? "6개월분 확보를 권장합니다." : "충분한 유동성을 보유하고 있습니다."}`,
+      });
+      // handleAIAnalysis(); // CORS 문제로 주석 처리
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simulationData, totalAssets]);
@@ -285,6 +290,11 @@ function AssetOverviewPage({ profile, simulationData }) {
       setAiInsights(result);
     } catch (error) {
       console.error("AI 분석 실패:", error);
+      // 기본 인사이트 설정 (AI 호출 실패 시)
+      setAiInsights({
+        mainInsight: `총자산 ${(totalAssets / 10000).toFixed(1)}억원 중 부채 비율은 ${debtRatio.toFixed(1)}%입니다. ${debtRatio > 50 ? "부채 관리가 필요합니다." : "재무 건전성이 양호합니다."}`,
+        liquidityInsight: `비상자금은 ${emergencyFundMonths.toFixed(1)}개월분입니다. ${emergencyFundMonths < 3 ? "최소 3개월 이상 확보를 권장합니다." : emergencyFundMonths < 6 ? "6개월분 확보를 권장합니다." : "충분한 유동성을 보유하고 있습니다."}`,
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -431,7 +441,7 @@ function AssetOverviewPage({ profile, simulationData }) {
                 <p className={styles.valueUnit}>개월분 보유</p>
               </div>
               <p className={styles.liquidityNote}>
-                보유 현금: {(assetsByCategory.현금 / 10000).toFixed(1)}억원 / 유동자산: {(liquidAssets / 10000).toFixed(1)}억원
+                보유 현금: {assetsByCategory.현금.toFixed(1)}만원 / 유동자산: {liquidAssets.toFixed(1)}만원
               </p>
             </div>
             <div className={styles.liquidityRight}>
@@ -459,7 +469,7 @@ function AssetOverviewPage({ profile, simulationData }) {
                   {aiInsights?.liquidityInsight ||
                     (isAnalyzing && aiInsights
                       ? aiInsights.liquidityInsight
-                      : `현금흐름이 ${netCashflow >= 0 ? "양호" : "마이너스"} 상태(월 ${(netCashflow / 10000).toFixed(0)}만원)입니다.`)}
+                      : `현금흐름이 ${netCashflow >= 0 ? "양호" : "마이너스"} 상태(월 ${netCashflow.toFixed(1)}만원)입니다.`)}
                 </p>
               </div>
             </div>
@@ -471,7 +481,7 @@ function AssetOverviewPage({ profile, simulationData }) {
               <h3 className={styles.cardTitle}>
                 <i className="fas fa-file-invoice-dollar"></i> 부채 건전성 진단
               </h3>
-              <span className={styles.unit}>단위: 억원 / 만원</span>
+              <span className={styles.unit}>단위: 만원</span>
             </div>
 
             <div className={styles.debtContent}>
@@ -513,10 +523,10 @@ function AssetOverviewPage({ profile, simulationData }) {
                     <div className={styles.itemIcon} style={{ backgroundColor: "rgba(59, 130, 246, 0.2)" }}>
                       <i className="fas fa-wallet" style={{ color: "#3B82F6" }}></i>
                     </div>
-                    <span>연 소득 (Total)</span>
+                    <span>연 소득</span>
                   </div>
-                  <p className={styles.itemValue}>{(annualIncome / 10000).toFixed(1)}</p>
-                  <p className={styles.itemNote}>근로+임대+기타 (억원)</p>
+                  <p className={styles.itemValue}>{annualIncome.toFixed(1)}</p>
+                  <p className={styles.itemNote}>근로+임대+기타 (만원)</p>
                 </div>
 
                 {/* Total Debt */}
@@ -527,9 +537,9 @@ function AssetOverviewPage({ profile, simulationData }) {
                     </div>
                     <span>총 부채 규모</span>
                   </div>
-                  <p className={styles.itemValue}>{(totalDebt / 10000).toFixed(1)}</p>
+                  <p className={styles.itemValue}>{totalDebt.toFixed(1)}</p>
                   <p className={styles.itemNote}>
-                    {debtList.length > 0 ? debtList[0].name : "부채 없음"}
+                    {debtList.length > 0 ? `${debtList[0].name} (만원)` : "부채 없음"}
                   </p>
                 </div>
 
@@ -539,11 +549,11 @@ function AssetOverviewPage({ profile, simulationData }) {
                     <div className={styles.itemIcon} style={{ backgroundColor: "rgba(239, 68, 68, 0.2)" }}>
                       <i className="fas fa-receipt" style={{ color: "#EF4444" }}></i>
                     </div>
-                    <span>연 이자비용 (만원)</span>
+                    <span>연 이자비용</span>
                   </div>
                   <p className={styles.itemValue}>{annualInterestManwon.toFixed(1)}</p>
                   <p className={styles.itemNote}>
-                    월 약 {monthlyInterestManwon.toFixed(1)}
+                    월 약 {monthlyInterestManwon.toFixed(1)} (만원)
                   </p>
                 </div>
 

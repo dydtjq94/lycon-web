@@ -17,6 +17,8 @@ import AssetReadinessPage from "../components/report/AssetReadinessPage";
 import CashflowReadinessPage from "../components/report/CashflowReadinessPage";
 import Section2OverviewPage from "../components/report/Section2OverviewPage";
 import AssetOverviewPage from "../components/report/AssetOverviewPage";
+import CashflowAnalysisPage from "../components/report/CashflowAnalysisPage";
+import DebtManagementPage from "../components/report/DebtManagementPage";
 import styles from "./ReportPage.module.css";
 
 /**
@@ -35,8 +37,8 @@ function ReportPage() {
   const [reportType, setReportType] = useState("basic"); // 기본값: basic
   const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 번호
 
-  // 전체 페이지 수 (표지 + 목차 + 섹션1 개요 + 목표 확인 + 자산 준비율 + 현금흐름 준비율 + 섹션2 개요)
-  const totalPages = 8;
+  // 전체 페이지 수 (표지 + 목차 + 섹션1 개요 + 목표 확인 + 자산 준비율 + 현금흐름 준비율 + 섹션2 개요 + 자산 현황 + 현금흐름 분석 + 부채 관리)
+  const totalPages = 10;
 
   useEffect(() => {
     // URL 쿼리 파라미터에서 보고서 타입 읽기
@@ -329,6 +331,14 @@ function ReportPage() {
       case 8:
         return (
           <AssetOverviewPage profile={profile} simulationData={simulationData} />
+        );
+      case 9:
+        return (
+          <CashflowAnalysisPage profile={profile} simulationData={simulationData} />
+        );
+      case 10:
+        return (
+          <DebtManagementPage profile={profile} simulationData={simulationData} />
         );
       default:
         return <CoverPage profile={profile} reportType={reportType} />;
