@@ -140,12 +140,13 @@ function AssetReadinessPage({ profile, simulationData }) {
       ? (Math.pow(retirementNetAssets / currentNetAssets, 1 / yearsToRetirement) - 1) * 100
       : 0;
 
-  // 차트 데이터 생성 (현재 나이부터 은퇴까지) - 순자산 기준
+  // 차트 데이터 생성 - 현재부터 은퇴 시점까지
   const chartYears = [];
   const chartAssets = [];
   const chartTarget = [];
 
-  for (let i = 0; i <= Math.min(yearsToRetirement, 5); i++) {
+  // 현재부터 은퇴 시점까지만 표시
+  for (let i = 0; i <= retirementYearIndex && i < assets.length; i++) {
     const age = currentAge + i;
     const year = new Date().getFullYear() + i;
     chartYears.push(`${age}세(${year - 2000}년)`);
@@ -153,6 +154,19 @@ function AssetReadinessPage({ profile, simulationData }) {
     chartAssets.push(netAssetAmount ? (netAssetAmount / 10000).toFixed(1) : 0);
     chartTarget.push(targetAssets ? (targetAssets / 10000).toFixed(1) : 0);
   }
+
+  // y축 범위 계산 (데이터에 맞게 자동 조정)
+  const allValues = [...chartAssets, ...chartTarget].map(v => parseFloat(v));
+  const minValue = Math.min(...allValues);
+  const maxValue = Math.max(...allValues);
+
+  // 목표값이 별도로 있는지 확인
+  const targetValue = targetAssets / 10000;
+  const actualMaxValue = Math.max(maxValue, targetValue);
+
+  // 최소값의 90%, 최대값의 110%로 설정
+  const yAxisMin = Math.floor(minValue * 0.9);
+  const yAxisMax = Math.ceil(actualMaxValue * 1.1);
 
   // ECharts 옵션
   const getChartOption = () => ({
@@ -179,14 +193,24 @@ function AssetReadinessPage({ profile, simulationData }) {
     },
     yAxis: {
       type: "value",
-      name: "(단위: 억원)",
+      name: "(단위: 만원)",
       nameTextStyle: { color: "#6B7280", padding: [0, 30, 0, 0] },
+      scale: false,
+      min: function(value) {
+        return yAxisMin;
+      },
+      max: function(value) {
+        return yAxisMax;
+      },
       splitLine: { lineStyle: { color: "#1F2937", type: "dashed" } },
-      axisLabel: { color: "#9CA3AF" },
+      axisLabel: {
+        color: "#9CA3AF",
+        formatter: (value) => value.toLocaleString()
+      },
     },
     series: [
       {
-        name: `목표 자산 (${(targetAssets / 10000).toFixed(0)}억)`,
+        name: `목표 자산 (${(targetAssets / 10000).toFixed(1)}만원)`,
         type: "line",
         data: chartTarget,
         smooth: false,
@@ -237,7 +261,7 @@ function AssetReadinessPage({ profile, simulationData }) {
         markPoint: {
           data: [
             {
-              value: `${(retirementNetAssets / 10000).toFixed(1)}억`,
+              value: `${(retirementNetAssets / 10000).toFixed(1)}만원`,
               coord: [chartYears.length - 1, chartAssets[chartAssets.length - 1]],
               itemStyle: {
                 color: achievementRate >= 100 ? "#10B981" : achievementRate >= 80 ? "#F59E0B" : "#EF4444",

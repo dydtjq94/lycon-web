@@ -1,0 +1,395 @@
+/* 슬라이드 컨테이너 */
+.slideContainer {
+  width: 100vw;
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  color: white;
+  background-color: #0b1828;
+  font-family: "Pretendard", sans-serif;
+  padding-bottom: 48px;
+}
+
+/* 헤더 */
+.header {
+  padding: 40px 48px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.headerBadges {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.stepBadge {
+  background-color: #1f2937;
+  color: #d1d5db;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.sectionBadge {
+  color: #d4af37;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.headerTitle {
+  font-family: "Pretendard", sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.headerDescription {
+  text-align: right;
+  color: #9ca3af;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 300;
+}
+
+.headerDescription p {
+  margin: 0;
+}
+
+/* Divider */
+.divider {
+  margin: 0 48px 24px;
+  height: 1px;
+  background-color: #1f2937;
+}
+
+/* Main Content */
+.mainContent {
+  flex: 1;
+  padding: 0 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* KPI Cards Grid */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+/* KPI Card */
+.kpiCard {
+  background-color: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.kpiCard:hover {
+  transform: translateY(-5px);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.kpiCardAccent {
+  border-left: 4px solid;
+}
+
+.kpiIcon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  opacity: 0.1;
+  font-size: 40px;
+  color: white;
+}
+
+.kpiLabel {
+  font-size: 10px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.kpiValue {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.kpiNumber {
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.kpiUnit {
+  font-size: 18px;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+.kpiNote {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.kpiNote strong {
+  color: white;
+}
+
+/* Bottom Row */
+.bottomRow {
+  display: flex;
+  gap: 24px;
+  height: 320px;
+}
+
+/* Chart Card */
+.chartCard {
+  flex: 0 0 66.666%;
+  background-color: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.chartTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #d1d5db;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.chartLegend {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.chartContainer {
+  flex: 1;
+  min-height: 176px;
+}
+
+.guideBox {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.guideHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #374151;
+}
+
+.guideTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #d1d5db;
+  margin: 0;
+}
+
+.guideGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  font-size: 11px;
+}
+
+.guideItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 8px;
+  border-right: 1px solid #374151;
+}
+
+.guideItem:last-child {
+  border-right: none;
+}
+
+.guideItemLabel {
+  font-weight: 500;
+}
+
+.guideItemValue {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.guideItemNumber {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.guideItemNote {
+  font-size: 9px;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+/* Analysis Card */
+.analysisCard {
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.analysisAccent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  opacity: 0.5;
+  border-radius: 12px 12px 0 0;
+}
+
+.analysisTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analysisPoints {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.analysisPoint {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.analysisIconBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  border: 1px solid;
+}
+
+.analysisPointTitle {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.analysisPointText {
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.analysisPointText strong {
+  color: white;
+  font-weight: 600;
+}
+
+.gapAnalysisBox {
+  background-color: rgba(239, 68, 68, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #7f1d1d;
+  margin-top: 16px;
+}
+
+.gapAnalysisLabel {
+  font-size: 10px;
+  color: #fca5a5;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.gapAnalysisValue {
+  font-size: 14px;
+  color: white;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gapAnalysisAmount {
+  color: #fca5a5;
+  font-weight: 700;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #9ca3af;
+  gap: 16px;
+}
+
+.loading i {
+  font-size: 48px;
+}

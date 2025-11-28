@@ -19,6 +19,22 @@ import Section2OverviewPage from "../components/report/Section2OverviewPage";
 import AssetOverviewPage from "../components/report/AssetOverviewPage";
 import CashflowAnalysisPage from "../components/report/CashflowAnalysisPage";
 import DebtManagementPage from "../components/report/DebtManagementPage";
+import Section3OverviewPage from "../components/report/Section3OverviewPage";
+import IncomeStructurePage from "../components/report/IncomeStructurePage";
+import ExpensePatternPage from "../components/report/ExpensePatternPage";
+import SavingsCapacityPage from "../components/report/SavingsCapacityPage";
+import ActionPlanPage from "../components/report/ActionPlanPage";
+import RetirementRiskPage from "../components/report/RetirementRiskPage";
+import SummaryPage from "../components/report/SummaryPage";
+import Section4OverviewPage from "../components/report/Section4OverviewPage";
+import CashflowGapPage from "../components/report/CashflowGapPage";
+import DeficitBreakdownPage from "../components/report/DeficitBreakdownPage";
+import DeficitSolutionPage from "../components/report/DeficitSolutionPage";
+import RetirementAssetStrategyPage from "../components/report/RetirementAssetStrategyPage";
+import PortfolioHoldingsPage from "../components/report/PortfolioHoldingsPage";
+import InvestmentSuitabilityPage from "../components/report/InvestmentSuitabilityPage";
+import RiskReturnAnalysisPage from "../components/report/RiskReturnAnalysisPage";
+import PortfolioExamplesPage from "../components/report/PortfolioExamplesPage";
 import styles from "./ReportPage.module.css";
 
 /**
@@ -36,9 +52,10 @@ function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [reportType, setReportType] = useState("basic"); // 기본값: basic
   const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 번호
+  const [showHeader, setShowHeader] = useState(false); // 헤더 표시 여부
 
-  // 전체 페이지 수 (표지 + 목차 + 섹션1 개요 + 목표 확인 + 자산 준비율 + 현금흐름 준비율 + 섹션2 개요 + 자산 현황 + 현금흐름 분석 + 부채 관리)
-  const totalPages = 10;
+  // 전체 페이지 수
+  const totalPages = 26;
 
   useEffect(() => {
     // URL 쿼리 파라미터에서 보고서 타입 읽기
@@ -340,6 +357,66 @@ function ReportPage() {
         return (
           <DebtManagementPage profile={profile} simulationData={simulationData} />
         );
+      case 11:
+        return <Section3OverviewPage />;
+      case 12:
+        return (
+          <IncomeStructurePage profile={profile} simulationData={simulationData} />
+        );
+      case 13:
+        return (
+          <ExpensePatternPage profile={profile} simulationData={simulationData} />
+        );
+      case 14:
+        return (
+          <SavingsCapacityPage profile={profile} simulationData={simulationData} />
+        );
+      case 15:
+        return (
+          <ActionPlanPage profile={profile} simulationData={simulationData} />
+        );
+      case 16:
+        return (
+          <RetirementRiskPage profile={profile} simulationData={simulationData} />
+        );
+      case 17:
+        return (
+          <SummaryPage profile={profile} simulationData={simulationData} />
+        );
+      case 18:
+        return <Section4OverviewPage />;
+      case 19:
+        return (
+          <CashflowGapPage profile={profile} simulationData={simulationData} />
+        );
+      case 20:
+        return (
+          <DeficitBreakdownPage profile={profile} simulationData={simulationData} />
+        );
+      case 21:
+        return (
+          <DeficitSolutionPage profile={profile} simulationData={simulationData} />
+        );
+      case 22:
+        return (
+          <RetirementAssetStrategyPage profile={profile} simulationData={simulationData} />
+        );
+      case 23:
+        return (
+          <PortfolioHoldingsPage profile={profile} simulationData={simulationData} />
+        );
+      case 24:
+        return (
+          <InvestmentSuitabilityPage profile={profile} simulationData={simulationData} />
+        );
+      case 25:
+        return (
+          <RiskReturnAnalysisPage profile={profile} simulationData={simulationData} />
+        );
+      case 26:
+        return (
+          <PortfolioExamplesPage profile={profile} simulationData={simulationData} />
+        );
       default:
         return <CoverPage profile={profile} reportType={reportType} />;
     }
@@ -347,6 +424,30 @@ function ReportPage() {
 
   return (
     <div className={styles.reportContainer}>
+      {/* 상단 호버 트리거 영역 */}
+      <div
+        className={styles.hoverTrigger}
+        onMouseEnter={() => setShowHeader(true)}
+      ></div>
+
+      {/* 상단 헤더 - 호버시 나타남 */}
+      <div
+        className={`${styles.topHeader} ${showHeader ? styles.topHeaderVisible : ""}`}
+        onMouseLeave={() => setShowHeader(false)}
+      >
+        <button className={styles.backButton} onClick={() => navigate(`/consult/report/${profileId}`)}>
+          <i className="fas fa-arrow-left"></i>
+        </button>
+        <div className={styles.headerInfo}>
+          <span className={styles.headerProfileName}>{profile?.name}님의 은퇴 설계 보고서</span>
+          <span className={styles.headerReportType}>
+            {reportType === "basic" && "Basic"}
+            {reportType === "standard" && "Standard"}
+            {reportType === "premium" && "Premium"}
+          </span>
+        </div>
+      </div>
+
       {/* 현재 페이지만 표시 */}
       {renderCurrentPage()}
 

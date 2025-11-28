@@ -8,7 +8,7 @@
   position: relative;
   color: white;
   background-color: #0b1828;
-  font-family: "Pretendard", "Inter", sans-serif;
+  font-family: "Pretendard", sans-serif;
   padding-bottom: 48px; /* 페이지 네비게이션 공간 확보 */
 }
 

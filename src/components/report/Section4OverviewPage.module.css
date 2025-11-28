@@ -9,10 +9,9 @@
   background-color: #0b1828;
   font-family: "Pretendard", sans-serif;
   overflow: hidden;
-  padding-bottom: 48px; /* 페이지 네비게이션 공간 확보 */
 }
 
-/* 배경 요소 */
+/* Background Elements */
 .backgroundOverlay {
   position: absolute;
   top: 0;
@@ -60,26 +59,26 @@
 
 .topAccentFill {
   height: 100%;
-  width: 33.33%;
+  width: 33.333%;
   background-color: #eab308;
 }
 
-.titleArea {
+.titleContainer {
   position: relative;
   margin-top: 40px;
 }
 
 .sectionNumber {
-  position: absolute;
-  top: -96px;
-  left: -16px;
+  font-family: "Noto Serif KR", serif;
   font-size: 144px;
   font-weight: 700;
   color: #1f2937;
   opacity: 0.2;
-  font-family: "Pretendard";
+  position: absolute;
+  top: -96px;
+  left: -16px;
+  margin: 0;
   user-select: none;
-  pointer-events: none;
 }
 
 .sectionLabel {
@@ -87,24 +86,25 @@
   font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
   font-size: 14px;
 }
 
-.sectionTitle {
+.mainTitle {
+  font-family: "Pretendard", sans-serif;
   font-size: 48px;
   font-weight: 700;
   line-height: 1.2;
-  font-family: "Pretendard";
-  margin-bottom: 24px;
+  margin: 0 0 24px 0;
 }
 
-.sectionDescription {
+.description {
   color: #9ca3af;
   font-size: 18px;
   font-weight: 300;
   line-height: 1.6;
-  max-width: 400px;
+  max-width: 448px;
+  margin: 0;
 }
 
 /* Right Section */
@@ -122,26 +122,36 @@
 .cardsContainer {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 /* Card */
 .card {
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
-  padding: 32px;
-  border-left: 4px solid #374151;
+  padding: 24px;
+  border-left: 4px solid;
   border-radius: 0 8px 8px 0;
   position: relative;
   transition: all 0.3s ease;
 }
 
 .card:hover {
-  border-left-color: #d4af37;
+  border-color: #d4af37;
 }
 
-.cardHighlight {
-  border-left-color: #d4af37;
+.cardPurpose {
+  border-color: #d4af37;
+}
+
+.cardStrategies,
+.cardOutput {
+  border-color: #4b5563;
+}
+
+.card:hover .cardStrategies,
+.card:hover .cardOutput {
+  border-color: #d4af37;
 }
 
 .cardIcon {
@@ -161,30 +171,20 @@
 .cardTitle {
   font-size: 20px;
   font-weight: 700;
-  margin-bottom: 12px;
-  color: #f3f4f6;
+  margin: 0 0 12px 0;
+  color: #fef3c7;
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.cardHighlight .cardTitle {
-  color: #fef3c7;
-}
-
 .cardBadge {
-  font-size: 11px;
-  background-color: #1f2937;
-  color: #9ca3af;
+  font-size: 10px;
   padding: 4px 8px;
   border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.cardHighlight .cardBadge {
-  background-color: #713f12;
-  color: #fbbf24;
+  letter-spacing: 0.1em;
+  font-weight: 700;
 }
 
 .cardContent {
@@ -193,71 +193,70 @@
   gap: 8px;
 }
 
-.cardDescription {
-  color: #d1d5db;
-  font-weight: 300;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
+/* Check Items */
 .checkItem {
   color: #d1d5db;
   font-weight: 300;
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 14px;
   margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .checkItem i {
-  color: #d97706;
-  font-size: 11px;
+  font-size: 10px;
   margin-top: 6px;
+  color: #eab308;
   flex-shrink: 0;
 }
 
 .checkItem strong {
-  color: white;
   font-weight: 600;
 }
 
-/* Key Question Grid */
-.keyQuestionGrid {
+/* Strategy Items */
+.strategyItems {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 12px;
 }
 
-.keyQuestionItem {
-  flex: 1;
+.strategyItem {
   background-color: rgba(31, 41, 55, 0.5);
-  padding: 12px 16px;
-  border-radius: 6px;
+  padding: 8px 12px;
+  border-radius: 4px;
   border: 1px solid #374151;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
+  gap: 12px;
 }
 
-.keyQuestionLabel {
-  display: block;
+.strategyNumber {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 11px;
-  color: #6b7280;
-  margin-bottom: 4px;
+  color: #d4af37;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
-.keyQuestionValue {
+.strategyText {
   font-size: 14px;
   color: white;
-  font-weight: 500;
 }
 
 /* Output Grid */
 .outputGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-top: 8px;
 }
@@ -267,19 +266,19 @@
   padding: 8px;
 }
 
-.outputItem:nth-child(2) {
+.outputItemBorder {
   border-left: 1px solid #374151;
 }
 
 .outputIcon {
   color: #eab308;
   margin-bottom: 4px;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .outputLabel {
-  font-size: 14px;
+  font-size: 13px;
   color: #d1d5db;
   margin: 0;
+  line-height: 1.4;
 }
-

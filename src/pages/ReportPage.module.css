@@ -60,6 +60,86 @@
   background-color: #c19d2f;
 }
 
+/* 상단 호버 트리거 영역 */
+.hoverTrigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  z-index: 999;
+  pointer-events: auto;
+}
+
+/* 상단 헤더 */
+.topHeader {
+  position: fixed;
+  top: -80px;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: linear-gradient(to bottom, rgba(11, 24, 40, 0.98), rgba(11, 24, 40, 0.95));
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  transition: top 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.topHeaderVisible {
+  top: 0;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #d4af37;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  color: #f5c542;
+  transform: translateX(-2px);
+}
+
+.headerInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.headerProfileName {
+  font-family: "Pretendard", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.headerReportType {
+  padding: 4px 12px;
+  background-color: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 4px;
+  color: #d4af37;
+  font-family: "Pretendard", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* 페이지 네비게이션 - Footer 통합 스타일 */
 .pageNavigation {
   position: fixed;
