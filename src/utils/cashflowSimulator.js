@@ -263,6 +263,8 @@ export function calculateCashflowSimulation(
     const sEndMonth = saving.endMonth || 12;
 
     const stateKey = saving.id || `saving-${index}`;
+    // 기보유 금액 계산 (treatAsInitialPurchase면 시작월에 추가, 아니면 바로 balance에 포함)
+    const initialBalance = saving.treatAsInitialPurchase ? 0 : (Number(saving.currentAmount) || 0);
     savingStates[stateKey] = {
       startYear: sStartYear,
       startMonth: sStartMonth,
@@ -281,7 +283,10 @@ export function calculateCashflowSimulation(
       savingType: saving.savingType || "standard",
       capitalGainsTaxRate: saving.capitalGainsTaxRate || 0,
       treatAsInitialPurchase: !!saving.treatAsInitialPurchase,
-      balance: saving.treatAsInitialPurchase ? 0 : (Number(saving.currentAmount) || 0),
+      balance: initialBalance,
+      // 원금 추적: 양도세 계산 시 수익(이익)에만 과세하기 위함
+      // ⚠️ 기보유 금액은 원금에 포함하지 않음 (이미 과거에 투자한 금액이므로)
+      totalPrincipal: 0,
       monthsElapsed: 0,
       started: false,
       matured: false,
@@ -1198,6 +1203,7 @@ export function calculateCashflowSimulation(
               `saving-purchase-${saving.id || saving.title}`
             );
             state.balance += currentAmount;
+            // ⚠️ 기보유 금액은 원금에 포함하지 않음 (이미 과거에 투자한 금액이므로)
           }
           state.initialPurchaseApplied = true;
         }
@@ -1215,6 +1221,7 @@ export function calculateCashflowSimulation(
           if (adjustedContribution > 0) {
             totalSavings += adjustedContribution;
             state.balance += adjustedContribution;
+            state.totalPrincipal += adjustedContribution; // 원금 추적
             state.monthsElapsed += 1;
 
             if (!contributionTotals[stateKey]) {
@@ -1257,26 +1264,31 @@ export function calculateCashflowSimulation(
             };
           }
 
-          // 양도세 (만기 시점)
+          // 양도세 (만기 시점) - 수익(이익)에만 과세
           const taxRate = state.capitalGainsTaxRate || 0;
           if (taxRate > 0 && maturityAmount > 0) {
-            const capitalGainsTax = maturityAmount * taxRate;
+            // 수익 = 만기금액 - 총 원금 (기보유 + 적립 + 잉여현금 투자)
+            const capitalGain = Math.max(0, maturityAmount - (state.totalPrincipal || 0));
+            const capitalGainsTax = capitalGain * taxRate;
             const taxRatePercent = taxRate * 100;
             const taxRateFormatted =
               taxRatePercent % 1 !== 0
                 ? taxRatePercent.toFixed(1)
                 : Math.floor(taxRatePercent);
-            totalCapitalGainsTax += capitalGainsTax;
-            capitalGainsTaxes.push({
-              title: `${saving.title} | 양도세 ${taxRateFormatted}%`,
-              amount: capitalGainsTax,
-            });
-            addNegative(
-              `${saving.title} | 양도세 ${taxRateFormatted}%`,
-              capitalGainsTax,
-              "양도세",
-              `saving-tax-${saving.id || saving.title}`
-            );
+
+            if (capitalGainsTax > 0) {
+              totalCapitalGainsTax += capitalGainsTax;
+              capitalGainsTaxes.push({
+                title: `${saving.title} | 양도세 ${taxRateFormatted}%`,
+                amount: capitalGainsTax,
+              });
+              addNegative(
+                `${saving.title} | 양도세 ${taxRateFormatted}%`,
+                capitalGainsTax,
+                "양도세",
+                `saving-tax-${saving.id || saving.title}`
+              );
+            }
           }
 
           state.balance = 0;
@@ -2189,6 +2201,9 @@ export function calculateCashflowSimulation(
               if (savingStates[stateKey] && savingStates[stateKey].started && !savingStates[stateKey].matured) {
                 savingStates[stateKey].balance =
                   Math.round((savingStates[stateKey].balance + investAmount) * 100) / 100;
+                // 원금 추적: 잉여 현금 투자도 원금에 포함
+                savingStates[stateKey].totalPrincipal =
+                  Math.round((savingStates[stateKey].totalPrincipal + investAmount) * 100) / 100;
               }
             } else if (allocation.targetType === "pension") {
               // 연금 상품에 대한 투자 금액 기록 (년-월 키 형식)
