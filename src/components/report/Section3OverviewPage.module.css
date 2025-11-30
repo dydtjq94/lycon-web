@@ -130,24 +130,15 @@
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   padding: 32px;
-  border-left: 4px solid;
-  border-radius: 0 8px 8px 0;
+  border-radius: 8px;
   position: relative;
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  border-color: #d4af37;
-  background-color: rgba(255, 255, 255, 0.06);
 }
 
 .cardPurpose {
-  border-color: #d4af37;
 }
 
 .cardScope,
 .cardOutput {
-  border-color: #4b5563;
 }
 
 .cardIcon {

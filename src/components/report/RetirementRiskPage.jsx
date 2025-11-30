@@ -385,7 +385,7 @@ function RetirementRiskPage({ profile, simulationData }) {
             <div className={styles.riskCardHeader}>
               <div className={styles.riskIconBox}>
                 <i
-                  className="fas fa-chart-line-down"
+                  className="fas fa-arrow-trend-down"
                   style={{ color: savingsRate < 0 ? "#FBBF24" : "#60A5FA" }}
                 ></i>
               </div>

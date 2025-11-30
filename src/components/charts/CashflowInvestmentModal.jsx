@@ -45,19 +45,23 @@ function CashflowInvestmentModal({
   }, [isOpen]);
 
   useEffect(() => {
-    // 선택된 년도 초기화 (현재 년도만)
-    setSelectedYears([year]);
-
     // 현재 년도의 인덱스 찾기
     const currentYearIdx = positiveYears.findIndex(
       (item) => item.year === year
     );
+
+    // 범위 인덱스 설정 (현재 년도만 선택)
+    // ⚠️ 중요: 범위 인덱스만 설정하면 두 번째 useEffect에서 selectedYears가 자동 계산됨
     if (currentYearIdx !== -1) {
       setRangeStartIdx(currentYearIdx);
       setRangeEndIdx(currentYearIdx);
+      // 범위 useEffect가 트리거되기 전에 직접 selectedYears 설정 (경쟁 조건 방지)
+      setSelectedYears([year]);
     } else {
       setRangeStartIdx(0);
       setRangeEndIdx(0);
+      // 인덱스를 찾지 못한 경우에도 현재 년도만 선택
+      setSelectedYears([year]);
     }
 
     // 기존 규칙이 있으면 로드
@@ -166,6 +170,7 @@ function CashflowInvestmentModal({
   };
 
   // 범위 변경 시 선택된 년도 업데이트
+  // ⚠️ positiveYears 의존성 제거: positiveYears 변경 시 첫 번째 useEffect에서 처리
   useEffect(() => {
     if (positiveYears.length === 0) return;
 
@@ -175,7 +180,8 @@ function CashflowInvestmentModal({
       .map((item) => item.year);
 
     setSelectedYears(yearsInRange);
-  }, [rangeStartIdx, rangeEndIdx, positiveYears]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rangeStartIdx, rangeEndIdx]);
 
   // 저장
   const handleSave = () => {

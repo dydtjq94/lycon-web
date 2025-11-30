@@ -9,7 +9,6 @@
   color: white;
   background-color: #0b1828;
   font-family: "Pretendard", sans-serif;
-  padding-bottom: 48px;
 }
 
 /* 헤더 */
@@ -73,7 +72,7 @@
 /* Main Content */
 .mainContent {
   flex: 1;
-  padding: 0 48px;
+  padding: 0 48px 80px;
   display: flex;
   gap: 24px;
   overflow: hidden;
@@ -141,7 +140,7 @@
   background-color: rgba(31, 41, 55, 0.4);
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #374151;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .summaryLeft {
@@ -155,7 +154,7 @@
   height: 40px;
   border-radius: 50%;
   background-color: rgba(127, 29, 29, 0.5);
-  border: 1px solid #7f1d1d;
+  border: 1px solid rgba(127, 29, 29, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -208,7 +207,7 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 16px;
+  padding: 20px;
   height: 192px;
   display: flex;
   flex-direction: column;
@@ -221,8 +220,6 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin: 0 0 12px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #374151;
 }
 
 .breakdownContent {
@@ -235,11 +232,16 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  padding: 0 8px;
+}
+
+.breakdownSection:first-child {
+  padding-left: 0;
 }
 
 .breakdownSection:last-child {
-  border-left: 1px solid #374151;
-  padding-left: 16px;
+  padding-left: 24px;
+  padding-right: 0;
 }
 
 .breakdownHeader {
@@ -285,7 +287,7 @@
 .breakdownTable td {
   padding: 8px 0;
   font-size: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border: none;
   color: #d1d5db;
 }
 
@@ -310,7 +312,6 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  border-left: 4px solid #ef4444;
   padding: 20px;
   position: relative;
   overflow: hidden;
@@ -372,7 +373,7 @@
 }
 
 .worstYearDetails {
-  background-color: rgba(31, 41, 55, 0.6);
+  background-color: rgba(31, 41, 55, 0.4);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 12px;
@@ -416,7 +417,6 @@
   align-items: center;
   font-size: 11px;
   color: #9ca3af;
-  border-top: 1px solid #374151;
   padding-top: 8px;
   margin-top: 4px;
 }
@@ -503,19 +503,19 @@
 
 .insightGood {
   background-color: rgba(16, 185, 129, 0.2);
-  border: 1px solid #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
   color: #10b981;
 }
 
 .insightWarn {
   background-color: rgba(245, 158, 11, 0.2);
-  border: 1px solid #92400e;
+  border: 1px solid rgba(245, 158, 11, 0.3);
   color: #fbbf24;
 }
 
 .insightInfo {
   background-color: rgba(59, 130, 246, 0.2);
-  border: 1px solid #1e40af;
+  border: 1px solid rgba(59, 130, 246, 0.3);
   color: #60a5fa;
 }
 

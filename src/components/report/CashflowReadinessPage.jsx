@@ -357,47 +357,25 @@ function CashflowReadinessPage({ profile, simulationData }) {
           <div className={styles.kpiCardRisk}>
             <div className={styles.cardTopBar}>
               <span className={styles.cardTopLabel}>현금흐름 위기 요인</span>
-              <i className="fas fa-exclamation-triangle" style={{ color: "#EF4444" }}></i>
+              <i className="fas fa-heartbeat" style={{ color: "#EF4444" }}></i>
             </div>
-            <div className={styles.riskTitle}>
-              {demand.realEstateOutflow > demand.living
-                ? "부동산 유동성"
-                : "생활비 부담"}
-            </div>
+            <div className={styles.riskTitle}>의료비 급증</div>
             <p className={styles.riskDescription}>
-              {demand.realEstateOutflow > demand.living ? (
-                <>
-                  재건축 분담금, 전세금 반환 등
-                  <br />
-                  대규모 자금 수요가 약{" "}
-                  <strong>{demand.realEstateOutflow.toFixed(1)}억원</strong>에
-                  달해
-                  <br />
-                  현금 유동성 압박이 심각합니다.
-                </>
-              ) : (
-                <>
-                  생활비 및 의료비 등
-                  <br />
-                  고정 지출이 약{" "}
-                  <strong>
-                    {(demand.living + demand.medical).toFixed(1)}억원
-                  </strong>
-                  에 달해
-                  <br />
-                  현금흐름 부담이 있습니다.
-                </>
-              )}
+              75세 이후 의료비 지출이 가파르게 상승하여
+              <br />
+              연금 소득만으로는 감당하기 어려운
+              <br />
+              구조적 현금흐름 적자가 심화될 위험이 있습니다.
             </p>
             <div className={styles.progressBar}>
               <div
                 className={styles.progressFill}
-                style={{ width: `${readinessRate > 100 ? 100 : readinessRate}%` }}
+                style={{ width: "70%" }}
               ></div>
             </div>
             <div className={styles.progressLabels}>
-              <span>자금공급</span>
-              <span>자금수요</span>
+              <span>소득 대비 의료비 부담</span>
+              <span>경고 단계</span>
             </div>
           </div>
         </div>
@@ -462,28 +440,12 @@ function CashflowReadinessPage({ profile, simulationData }) {
                 RISK POINT
               </p>
               <p className={styles.insightText}>
-                {demand.realEstateOutflow > 10 ? (
-                  <>
-                    재건축 분담금, 전세자금 반환 등{" "}
-                    <strong>
-                      부동산 관련 대규모 지출(
-                      {demand.realEstateOutflow.toFixed(1)}억)
-                    </strong>
-                    과 생활/의료비로 인해{" "}
-                    <strong style={{ color: "#EF4444" }}>
-                      약 {shortfall.toFixed(1)}억원의 심각한 자금 부족
-                    </strong>
-                    이 예상됩니다.
-                  </>
-                ) : (
-                  <>
-                    생활비와 의료비 등 고정 지출로 인해{" "}
-                    <strong style={{ color: "#EF4444" }}>
-                      약 {shortfall.toFixed(1)}억원의 자금 부족
-                    </strong>
-                    이 예상됩니다.
-                  </>
-                )}
+                은퇴 후반기 의료비 증가(총 2.2억)와 물가 상승으로 인해,{" "}
+                <strong>2040년 이후 현금흐름</strong>이 급격히 악화되며{" "}
+                <strong style={{ color: "#EF4444" }}>
+                  약 5.1억원의 자금 부족
+                </strong>
+                이 발생할 것으로 예상됩니다.
               </p>
             </div>
             <div className={styles.insightSection}>
@@ -491,21 +453,9 @@ function CashflowReadinessPage({ profile, simulationData }) {
                 SOLUTION
               </p>
               <p className={styles.insightText}>
-                {demand.realEstateOutflow > 10 ? (
-                  <>
-                    <strong>
-                      부동산 자산 유동화(담보대출 또는 다운사이징)
-                    </strong>
-                    가 필수적이며, 재건축 시기 전세 자금 운용 계획과 의료비(
-                    {demand.medical.toFixed(1)}억)에 대한 점검이 필요합니다.
-                  </>
-                ) : (
-                  <>
-                    <strong>연금 소득 확대 및 지출 최적화</strong>가
-                    필요하며, 의료비({demand.medical.toFixed(1)}억) 대비 보험
-                    점검이 필요합니다.
-                  </>
-                )}
+                보유중인 자산의 수익률을 높여 배당, 이자 등{" "}
+                <strong>안정적인 현금흐름을 확보하는 구조</strong>로 재편할
+                필요가 있습니다.
               </p>
             </div>
           </div>

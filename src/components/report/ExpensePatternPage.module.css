@@ -9,7 +9,6 @@
   color: white;
   background-color: #0b1828;
   font-family: "Pretendard", sans-serif;
-  padding-bottom: 48px;
 }
 
 /* 헤더 */
@@ -73,9 +72,9 @@
 /* Main Content */
 .mainContent {
   flex: 1;
-  padding: 0 48px;
+  padding: 0 48px 80px;
   display: flex;
-  gap: 24px;
+  gap: 20px;
   overflow: hidden;
 }
 
@@ -92,6 +91,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 /* Card */
@@ -104,15 +104,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: all 0.3s ease;
-}
-
-/* Fixed Cost Ratio Card */
-.fixedCostCard {
   flex: 1;
-  border-top: 4px solid #10b981;
-  display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -133,6 +125,7 @@
   top: 16px;
   right: 16px;
   font-size: 20px;
+  color: #10b981;
 }
 
 .circularProgress {
@@ -189,6 +182,10 @@
   color: white;
 }
 
+.variableAmount {
+  color: #9ca3af;
+}
+
 .statusBadge {
   display: inline-block;
   font-size: 11px;
@@ -200,10 +197,11 @@
   color: #10b981;
 }
 
-/* Total Expense Card */
-.totalExpenseCard {
-  flex: 1;
-  border-top: 4px solid #f59e0b;
+/* Total Expense Card - 두 번째 카드 */
+.card:last-child {
+  justify-content: flex-start;
+  align-items: stretch;
+  text-align: left;
 }
 
 .cardHeader {
@@ -222,6 +220,7 @@
 
 .cardHeaderIcon {
   font-size: 20px;
+  color: #f59e0b;
 }
 
 .totalAmount {
@@ -289,6 +288,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  background-color: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px;
+  min-height: 0;
 }
 
 .chartHeader {
@@ -296,6 +301,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .chartTitle {
@@ -306,6 +312,10 @@
   align-items: center;
   gap: 8px;
   margin: 0;
+}
+
+.chartTitle i {
+  color: #3b82f6;
 }
 
 .chartLegend {
@@ -337,29 +347,31 @@
   padding: 16px;
   background-color: rgba(31, 41, 55, 0.5);
   border-radius: 8px;
-  border: 1px solid #374151;
   display: flex;
-  gap: 16px;
+  gap: 24px;
+  flex-shrink: 0;
 }
 
 .insightColumn {
   flex: 1;
-  padding-right: 16px;
-  border-right: 1px solid #374151;
 }
 
-.insightColumn:last-child {
-  border-right: none;
-  padding-right: 0;
-  padding-left: 8px;
-}
-
-.insightLabel {
+.insightLabelObs {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 4px;
+  color: #f59e0b;
+}
+
+.insightLabelAction {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+  color: #10b981;
 }
 
 .insightText {

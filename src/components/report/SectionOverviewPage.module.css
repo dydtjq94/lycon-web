@@ -8,7 +8,6 @@
   color: white;
   background-color: #0b1828;
   font-family: "Pretendard";
-  padding-bottom: 48px; /* 페이지 네비게이션 공간 확보 */
 }
 
 /* 배경 요소 */
@@ -127,36 +126,19 @@
 /* 카드 공통 */
 .card {
   padding: 32px;
-  border-left: 4px solid;
-  border-radius: 0 8px 8px 0;
+  border-radius: 8px;
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   position: relative;
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .cardPurpose {
-  border-left-color: #d4af37;
 }
 
 .cardMethod {
-  border-left-color: #4b5563;
-}
-
-.cardMethod:hover {
-  border-left-color: #d4af37;
 }
 
 .cardOutput {
-  border-left-color: #4b5563;
-}
-
-.cardOutput:hover {
-  border-left-color: #d4af37;
 }
 
 .cardIcon {
@@ -166,11 +148,6 @@
   font-size: 36px;
   color: #374151;
   opacity: 0.2;
-  transition: opacity 0.3s ease;
-}
-
-.card:hover .cardIcon {
-  opacity: 0.4;
 }
 
 .cardTitle {

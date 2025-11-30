@@ -4,110 +4,63 @@ import styles from "./DeficitBreakdownPage.module.css";
 
 /**
  * 이벤트성 적자 vs 구조적 적자 상세 분석 (Page 20)
- * @param {Object} profile - 프로필 데이터
- * @param {Object} simulationData - 시뮬레이션 전체 데이터
+ * 하드코딩 버전
  */
 function DeficitBreakdownPage({ profile, simulationData }) {
   const chartRef = useRef(null);
 
-  // 현재 나이와 은퇴 나이
-  const currentAge =
-    simulationData?.profile?.currentAge || profile?.age || 42;
-  const retirementAge =
-    simulationData?.profile?.retirementAge || profile?.retirementAge || 65;
+  // 하드코딩된 데이터
+  const totalDeficit = -5.1; // 억원
 
-  // 은퇴 후 기간 계산
-  const retirementYears = 90 - retirementAge;
-  const retirementStartIndex = retirementAge - currentAge;
+  // 구조적 적자 데이터
+  const structuralDeficit = -2.8; // 억원
+  const structuralRatio = 55; // %
 
-  // 현금흐름 데이터
-  const cashflow = simulationData?.simulation?.cashflow || [];
-  const retirementCashflow = cashflow.slice(
-    retirementStartIndex,
-    retirementStartIndex + retirementYears
-  );
-
-  // 구조적 수입 계산 (정기 수입)
-  let structuralIncome = {
-    pension: 0,
-    rentalIncome: 0,
+  // 구조적 수입 (12.0억원)
+  const structuralIncome = {
+    pension: 11.4, // 연금소득 (국민+퇴직) 억원
+    rentalIncome: 0.6, // 임대소득 (5년간) 억원
+    total: 12.0,
   };
 
-  // 구조적 지출 계산 (정기 지출)
-  let structuralExpense = {
-    livingCost: 0,
-    medicalCost: 0,
-    rentalManagement: 0,
-    debtInterest: 0,
+  // 구조적 지출 (14.79억원)
+  const structuralExpense = {
+    livingCost: 12.0, // 기본 생활비 억원
+    medicalCost: 2.21, // 의료/건강관리비 억원
+    rentalManagement: 0.11, // 부동산 관리비 억원
+    loanInterest: 0.47, // 대출 이자 억원
+    total: 14.79,
   };
 
-  // 이벤트성 수입 (일시적 유입)
-  let eventIncome = [];
-  let totalEventIncome = 0;
+  // 이벤트성 적자 데이터
+  const eventDeficit = -2.3; // 억원
+  const eventRatio = 45; // %
 
-  // 이벤트성 지출 (일시적 유출)
-  let eventExpense = [];
-  let totalEventExpense = 0;
+  // 이벤트성 수입 (18.38억원)
+  const eventIncome = [
+    { item: "전세금 회수", year: "2030", amount: 4.0 },
+    { item: "상가 매도", year: "2035", amount: 8.0 },
+    { item: "예금/적금 해지", year: "2030-2040", amount: 3.5 },
+    { item: "퇴직금 수령", year: "2030", amount: 2.88 },
+  ];
+  const totalEventIncome = 18.38;
 
-  retirementCashflow.forEach((year, index) => {
-    const yearNum = new Date().getFullYear() + retirementStartIndex + index;
+  // 이벤트성 지출 (20.70억원)
+  const eventExpense = [
+    { item: "상가 담보대출 상환", year: "2035", amount: 5.0 },
+    { item: "주담대 상환", year: "2030-2045", amount: 4.2 },
+    { item: "재건축 분담금", year: "2035", amount: 1.0 },
+    { item: "자녀 결혼자금", year: "2032", amount: 1.0 },
+    { item: "차량구입 (2회)", year: "2030, 2040", amount: 1.0 },
+    { item: "기타 목적자금", year: "~", amount: 8.5 },
+  ];
+  const totalEventExpense = 20.7;
 
-    // 구조적 수입
-    structuralIncome.pension += year.pension || 0;
-    structuralIncome.rentalIncome += year.rentalIncome || 0;
-
-    // 구조적 지출
-    structuralExpense.livingCost += year.expense || 0;
-    structuralExpense.debtInterest += Math.abs(year.debtInterest || 0);
-
-    // 이벤트성 수입 (자산 매각, 대출 유입 등)
-    if (year.savingsWithdrawal > 0) {
-      eventIncome.push({
-        item: "저축인출",
-        year: yearNum,
-        amount: year.savingsWithdrawal,
-      });
-      totalEventIncome += year.savingsWithdrawal;
-    }
-    if (year.realEstateSale > 0) {
-      eventIncome.push({
-        item: "부동산 매각",
-        year: yearNum,
-        amount: year.realEstateSale,
-      });
-      totalEventIncome += year.realEstateSale;
-    }
-
-    // 이벤트성 지출 (부채 상환, 부동산 구매 등)
-    if (year.debtPrincipal < 0) {
-      eventExpense.push({
-        item: "대출 원금 상환",
-        year: yearNum,
-        amount: Math.abs(year.debtPrincipal),
-      });
-      totalEventExpense += Math.abs(year.debtPrincipal);
-    }
-    if (year.realEstatePurchase < 0) {
-      eventExpense.push({
-        item: "부동산 구매/분담금",
-        year: yearNum,
-        amount: Math.abs(year.realEstatePurchase),
-      });
-      totalEventExpense += Math.abs(year.realEstatePurchase);
-    }
-  });
-
-  const totalStructuralIncome =
-    structuralIncome.pension + structuralIncome.rentalIncome;
-  const totalStructuralExpense =
-    structuralExpense.livingCost +
-    structuralExpense.medicalCost +
-    structuralExpense.rentalManagement +
-    structuralExpense.debtInterest;
-
-  const structuralDeficit = totalStructuralIncome - totalStructuralExpense;
-  const eventDeficit = totalEventIncome - totalEventExpense;
-  const totalDeficit = structuralDeficit + eventDeficit;
+  // 하드코딩된 차트 데이터
+  const chartData = [
+    { value: 2.8, name: "구조적 적자 (55%)" },
+    { value: 2.3, name: "이벤트성 적자 (45%)" },
+  ];
 
   // 차트 초기화
   useEffect(() => {
@@ -122,7 +75,7 @@ function DeficitBreakdownPage({ profile, simulationData }) {
         backgroundColor: "rgba(11, 24, 40, 0.95)",
         borderColor: "#374151",
         textStyle: { color: "#fff" },
-        formatter: "{b}: {c} 만원 ({d}%)",
+        formatter: "{b}: {c}억원",
       },
       legend: {
         orient: "horizontal",
@@ -131,6 +84,7 @@ function DeficitBreakdownPage({ profile, simulationData }) {
         textStyle: { color: "#9CA3AF", fontSize: 11 },
         itemWidth: 10,
         itemHeight: 10,
+        data: ["구조적 적자 (55%)", "이벤트성 적자 (45%)"],
       },
       series: [
         {
@@ -149,14 +103,13 @@ function DeficitBreakdownPage({ profile, simulationData }) {
             position: "inside",
             color: "#fff",
             fontWeight: "bold",
-            fontSize: 11,
-            formatter: (params) =>
-              (params.value / 10000).toFixed(1) + "만원",
+            fontSize: 12,
+            formatter: "{c}억원",
           },
           emphasis: {
             label: {
               show: true,
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: "bold",
             },
             itemStyle: {
@@ -170,13 +123,13 @@ function DeficitBreakdownPage({ profile, simulationData }) {
           },
           data: [
             {
-              value: Math.abs(structuralDeficit),
-              name: "구조적 적자",
+              value: 2.8,
+              name: "구조적 적자 (55%)",
               itemStyle: { color: "#3B82F6" },
             },
             {
-              value: Math.abs(eventDeficit),
-              name: "이벤트성 적자",
+              value: 2.3,
+              name: "이벤트성 적자 (45%)",
               itemStyle: { color: "#EAB308" },
             },
           ],
@@ -186,8 +139,14 @@ function DeficitBreakdownPage({ profile, simulationData }) {
 
     chart.setOption(option);
 
-    return () => chart.dispose();
-  }, [structuralDeficit, eventDeficit]);
+    const handleResize = () => chart.resize();
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      chart.dispose();
+    };
+  }, []);
 
   return (
     <div className={styles.slideContainer}>
@@ -236,33 +195,18 @@ function DeficitBreakdownPage({ profile, simulationData }) {
                 <div>
                   <p className={styles.summaryLabel}>총 부족 자금</p>
                   <p className={styles.summaryValue}>
-                    -{(Math.abs(totalDeficit) / 10000).toFixed(1)}{" "}
-                    <span>만원</span>
+                    {totalDeficit} <span>억원</span>
                   </p>
                 </div>
               </div>
               <div className={styles.summaryRight}>
                 <div className={styles.summaryRatio}>
                   <span className={styles.ratioBlue}></span>
-                  <span>
-                    구조적:{" "}
-                    {(
-                      (Math.abs(structuralDeficit) / Math.abs(totalDeficit)) *
-                      100
-                    ).toFixed(0)}
-                    %
-                  </span>
+                  <span>구조적: {structuralRatio}%</span>
                 </div>
                 <div className={styles.summaryRatio}>
                   <span className={styles.ratioYellow}></span>
-                  <span>
-                    이벤트성:{" "}
-                    {(
-                      (Math.abs(eventDeficit) / Math.abs(totalDeficit)) *
-                      100
-                    ).toFixed(0)}
-                    %
-                  </span>
+                  <span>이벤트성: {eventRatio}%</span>
                 </div>
               </div>
             </div>
@@ -274,17 +218,9 @@ function DeficitBreakdownPage({ profile, simulationData }) {
               <i className="fas fa-lightbulb"></i> 핵심 진단
             </h3>
             <p className={styles.insightText}>
-              전체 부족 자금 중{" "}
-              <strong>
-                구조적 적자가{" "}
-                {(
-                  (Math.abs(structuralDeficit) / Math.abs(totalDeficit)) *
-                  100
-                ).toFixed(0)}
-                %
-              </strong>
-              를 차지하여 장기적인 현금흐름 개선이 시급합니다. 이벤트성 적자는
-              특정 시점에 집중되므로 해당 시점의 유동성 관리가 핵심입니다.
+              전체 부족 자금 중 <strong>구조적 적자가 절반 이상({structuralRatio}%)</strong>을
+              차지하여 장기적인 현금흐름 개선이 시급합니다. 이벤트성 적자는
+              <strong> 2035년 전후로 집중</strong>되므로 해당 시점의 유동성 관리가 핵심입니다.
             </p>
           </div>
         </div>
@@ -300,11 +236,10 @@ function DeficitBreakdownPage({ profile, simulationData }) {
               </h3>
               <div className={styles.cardHeaderRight}>
                 <span className={styles.cardSummary}>
-                  수입 {(totalStructuralIncome / 10000).toFixed(1)}만원 vs
-                  지출 {(totalStructuralExpense / 10000).toFixed(1)}만원
+                  수입 {structuralIncome.total}억원 vs 지출 {structuralExpense.total}억원
                 </span>
                 <span className={styles.cardBadgeBlue}>
-                  {(structuralDeficit / 10000).toFixed(1)} 만원
+                  {structuralDeficit} 억원
                 </span>
               </div>
             </div>
@@ -325,27 +260,18 @@ function DeficitBreakdownPage({ profile, simulationData }) {
                     <tbody>
                       <tr>
                         <td>연금소득 (국민+퇴직)</td>
-                        <td className={styles.tdYear}>
-                          {new Date().getFullYear() + retirementStartIndex}-
-                          {new Date().getFullYear() +
-                            retirementStartIndex +
-                            retirementYears -
-                            1}
-                        </td>
+                        <td className={styles.tdYear}>25년</td>
                         <td className={styles.tdAmount}>
-                          {(structuralIncome.pension / 10000).toFixed(2)} 만원
+                          {structuralIncome.pension.toFixed(2)}
                         </td>
                       </tr>
-                      {structuralIncome.rentalIncome > 0 && (
-                        <tr>
-                          <td>임대소득</td>
-                          <td className={styles.tdYear}>일부 기간</td>
-                          <td className={styles.tdAmount}>
-                            {(structuralIncome.rentalIncome / 10000).toFixed(2)}{" "}
-                            만원
-                          </td>
-                        </tr>
-                      )}
+                      <tr>
+                        <td>임대소득</td>
+                        <td className={styles.tdYear}>5년</td>
+                        <td className={styles.tdAmount}>
+                          {structuralIncome.rentalIncome.toFixed(2)}
+                        </td>
+                      </tr>
                     </tbody>
                     <tfoot>
                       <tr>
@@ -353,7 +279,7 @@ function DeficitBreakdownPage({ profile, simulationData }) {
                           합계
                         </td>
                         <td className={styles.tfootAmount}>
-                          {(totalStructuralIncome / 10000).toFixed(1)} 만원
+                          {structuralIncome.total.toFixed(1)} 억원
                         </td>
                       </tr>
                     </tfoot>
@@ -375,25 +301,33 @@ function DeficitBreakdownPage({ profile, simulationData }) {
                     </thead>
                     <tbody>
                       <tr>
-                        <td>생활비</td>
-                        <td className={styles.tdYear}>전체 기간</td>
+                        <td>기본 생활비</td>
+                        <td className={styles.tdYear}>25년</td>
                         <td className={styles.tdAmount}>
-                          {(structuralExpense.livingCost / 10000).toFixed(2)}{" "}
-                          만원
+                          {structuralExpense.livingCost.toFixed(2)}
                         </td>
                       </tr>
-                      {structuralExpense.debtInterest > 0 && (
-                        <tr>
-                          <td>대출이자</td>
-                          <td className={styles.tdYear}>일부 기간</td>
-                          <td className={styles.tdAmount}>
-                            {(structuralExpense.debtInterest / 10000).toFixed(
-                              2
-                            )}{" "}
-                            만원
-                          </td>
-                        </tr>
-                      )}
+                      <tr>
+                        <td>의료/건강관리비</td>
+                        <td className={styles.tdYear}>25년</td>
+                        <td className={styles.tdAmount}>
+                          {structuralExpense.medicalCost.toFixed(2)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>부동산 관리비</td>
+                        <td className={styles.tdYear}>5년</td>
+                        <td className={styles.tdAmount}>
+                          {structuralExpense.rentalManagement.toFixed(2)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>대출 이자</td>
+                        <td className={styles.tdYear}>~2035</td>
+                        <td className={styles.tdAmount}>
+                          {structuralExpense.loanInterest.toFixed(2)}
+                        </td>
+                      </tr>
                     </tbody>
                     <tfoot>
                       <tr>
@@ -401,7 +335,7 @@ function DeficitBreakdownPage({ profile, simulationData }) {
                           합계
                         </td>
                         <td className={styles.tfootAmount}>
-                          {(totalStructuralExpense / 10000).toFixed(1)} 만원
+                          {structuralExpense.total.toFixed(2)} 억원
                         </td>
                       </tr>
                     </tfoot>
@@ -419,11 +353,10 @@ function DeficitBreakdownPage({ profile, simulationData }) {
               </h3>
               <div className={styles.cardHeaderRight}>
                 <span className={styles.cardSummary}>
-                  수입 {(totalEventIncome / 10000).toFixed(1)}만원 vs 지출{" "}
-                  {(totalEventExpense / 10000).toFixed(1)}만원
+                  수입 {totalEventIncome}억원 vs 지출 {totalEventExpense}억원
                 </span>
                 <span className={styles.cardBadgeYellow}>
-                  {(eventDeficit / 10000).toFixed(1)} 만원
+                  {eventDeficit} 억원
                 </span>
               </div>
             </div>
@@ -447,7 +380,7 @@ function DeficitBreakdownPage({ profile, simulationData }) {
                           <td>{item.item}</td>
                           <td className={styles.tdYear}>{item.year}</td>
                           <td className={styles.tdAmount}>
-                            {(item.amount / 10000).toFixed(2)} 만원
+                            {item.amount.toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -458,7 +391,7 @@ function DeficitBreakdownPage({ profile, simulationData }) {
                           합계
                         </td>
                         <td className={styles.tfootAmount}>
-                          {(totalEventIncome / 10000).toFixed(1)} 만원
+                          {totalEventIncome.toFixed(2)} 억원
                         </td>
                       </tr>
                     </tfoot>
@@ -484,7 +417,7 @@ function DeficitBreakdownPage({ profile, simulationData }) {
                           <td>{item.item}</td>
                           <td className={styles.tdYear}>{item.year}</td>
                           <td className={styles.tdAmount}>
-                            {(item.amount / 10000).toFixed(2)} 만원
+                            {item.amount.toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -495,7 +428,7 @@ function DeficitBreakdownPage({ profile, simulationData }) {
                           합계
                         </td>
                         <td className={styles.tfootAmount}>
-                          {(totalEventExpense / 10000).toFixed(1)} 만원
+                          {totalEventExpense.toFixed(2)} 억원
                         </td>
                       </tr>
                     </tfoot>

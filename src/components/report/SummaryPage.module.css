@@ -9,13 +9,11 @@
   color: white;
   background-color: #0b1828;
   font-family: "Pretendard", sans-serif;
-  padding-bottom: 48px;
-  overflow: hidden;
 }
 
 /* 헤더 */
 .header {
-  padding: 32px 48px 8px;
+  padding: 40px 48px 16px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -25,39 +23,38 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .stepBadge {
   background-color: #1f2937;
   color: #d1d5db;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 4px 8px;
   border-radius: 4px;
 }
 
 .sectionBadge {
   color: #d4af37;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .headerTitle {
   font-family: "Pretendard", sans-serif;
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 700;
   margin: 0;
-  letter-spacing: -0.025em;
 }
 
 .headerDescription {
   text-align: right;
   color: #9ca3af;
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 1.5;
   font-weight: 300;
 }
 
@@ -67,7 +64,7 @@
 
 /* Divider */
 .divider {
-  margin: 0 48px 16px;
+  margin: 0 48px 24px;
   height: 1px;
   background-color: #1f2937;
 }
@@ -75,11 +72,11 @@
 /* Main Content */
 .mainContent {
   flex: 1;
-  padding: 0 48px 32px;
+  padding: 0 48px 80px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  justify-content: flex-start;
+  overflow: hidden;
 }
 
 /* Insights Grid */
@@ -101,17 +98,9 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.insightCard:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(212, 175, 55, 0.3);
-  transform: translateY(-2px);
 }
 
 .insightCardAccent {
-  border-top: 4px solid;
 }
 
 .numberWatermark {
@@ -193,7 +182,7 @@
 
 /* Next Steps Section */
 .nextStepsSection {
-  flex: 0 0 66.666%;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
@@ -220,10 +209,6 @@
   position: relative;
 }
 
-.nextStepsCard:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(212, 175, 55, 0.3);
-}
 
 .stepItem {
   display: flex;

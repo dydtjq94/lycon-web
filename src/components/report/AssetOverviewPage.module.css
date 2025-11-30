@@ -9,7 +9,6 @@
   color: white;
   background-color: #0b1828;
   font-family: "Pretendard", sans-serif;
-  padding-bottom: 48px;
 }
 
 /* 헤더 */
@@ -73,7 +72,7 @@
 /* Main Content */
 .mainContent {
   flex: 1;
-  padding: 0 48px;
+  padding: 0 48px 80px;
   display: flex;
   gap: 20px;
   overflow: hidden;
@@ -217,13 +216,18 @@
   border-radius: 8px;
   padding: 16px;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.insightHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .insightIcon {
   flex-shrink: 0;
-  margin-top: 2px;
 }
 
 .insightIcon i {
@@ -235,7 +239,7 @@
   font-size: 12px;
   font-weight: 700;
   color: #f59e0b;
-  margin-bottom: 4px;
+  margin: 0;
 }
 
 .insightText {

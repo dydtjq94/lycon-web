@@ -2182,6 +2182,14 @@ export function calculateCashflowSimulation(
                     investAmount) *
                     100
                 ) / 100;
+
+              // ⚠️ 중요: savingStates의 balance에도 투자 금액 추가
+              // 이렇게 해야 다음 연도부터 복리가 적용되고, 만기 시 수령 금액에 포함됨
+              const stateKey = allocation.targetId;
+              if (savingStates[stateKey] && savingStates[stateKey].started && !savingStates[stateKey].matured) {
+                savingStates[stateKey].balance =
+                  Math.round((savingStates[stateKey].balance + investAmount) * 100) / 100;
+              }
             } else if (allocation.targetType === "pension") {
               // 연금 상품에 대한 투자 금액 기록 (년-월 키 형식)
               // 연금은 savingInvestments 대신 별도 추적이 필요하지만,

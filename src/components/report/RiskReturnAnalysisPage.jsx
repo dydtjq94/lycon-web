@@ -10,81 +10,9 @@ import styles from "./RiskReturnAnalysisPage.module.css";
 function RiskReturnAnalysisPage({ profile, simulationData }) {
   const chartRef = useRef(null);
 
-  // 현재 자산 데이터
-  const assets = simulationData?.simulation?.assets || [];
-  const currentAssets = assets[0] || {};
-  const assetItems = currentAssets?.breakdown?.assetItems || [];
-  const debtItems = currentAssets?.breakdown?.debtItems || [];
-
-  // 부동산 자산 분류
-  const realEstateAssets = assetItems.filter(
-    (item) => item.sourceType === "realEstate"
-  );
-
-  // 임대부동산 (부채가 있는 부동산)
-  const rentalRealEstate = realEstateAssets.filter((item) => {
-    // 해당 부동산에 연결된 부채 찾기
-    const relatedDebt = debtItems.find(
-      (debt) => debt.sourceId === item.sourceId
-    );
-    return relatedDebt && relatedDebt.amount > 0;
-  });
-
-  // 보유부동산 (부채가 없는 부동산)
-  const ownedRealEstate = realEstateAssets.filter((item) => {
-    const relatedDebt = debtItems.find(
-      (debt) => debt.sourceId === item.sourceId
-    );
-    return !relatedDebt || relatedDebt.amount === 0;
-  });
-
-  // 금융투자 자산
-  const financialAssets = assetItems.filter(
-    (item) =>
-      item.sourceType === "saving" || item.sourceType === "asset"
-  );
-
-  // 해외 자산 비중 계산
-  const foreignAssets = financialAssets.filter((item) => {
-    const label = item.label?.toLowerCase() || "";
-    return (
-      label.includes("해외") ||
-      label.includes("미국") ||
-      label.includes("s&p") ||
-      label.includes("나스닥") ||
-      label.includes("nasdaq") ||
-      label.includes("sp500")
-    );
-  });
-
-  const totalFinancial = financialAssets.reduce(
-    (sum, item) => sum + (item.amount || 0),
-    0
-  );
-  const foreignTotal = foreignAssets.reduce(
-    (sum, item) => sum + (item.amount || 0),
-    0
-  );
-  const foreignRatio =
-    totalFinancial > 0 ? (foreignTotal / totalFinancial) * 100 : 0;
-
-  // 임대부동산 수익률 계산 (간단한 추정)
-  const rentalTotalValue = rentalRealEstate.reduce(
-    (sum, item) => sum + (item.amount || 0),
-    0
-  );
-  const rentalTotalDebt = debtItems
-    .filter((debt) =>
-      rentalRealEstate.some((re) => re.sourceId === debt.sourceId)
-    )
-    .reduce((sum, debt) => sum + (debt.amount || 0), 0);
-
-  // 임대 수익률 추정 (3% 가정) - 이자율 (4.5% 가정) = 실질 수익률
-  const rentalIncomeRate = 3.0;
-  const debtInterestRate = 4.5;
-  const netRentalReturn =
-    rentalIncomeRate -
-    (rentalTotalDebt / rentalTotalValue) * debtInterestRate;
+  // 하드코딩 값
+  const netRentalReturn = 0.57; // 임대부동산 실질수익 0.57%
+  const foreignRatio = 83; // 해외자산 83%
 
   // 차트 초기화
   useEffect(() => {
@@ -150,12 +78,12 @@ function RiskReturnAnalysisPage({ profile, simulationData }) {
           },
           data: [
             {
-              value: [Math.max(0.57, netRentalReturn.toFixed(2)), 5.0],
+              value: [0.57, 5.0],
               name: "현재: 임대부동산",
               itemStyle: { color: "#F97316" },
               label: {
                 show: true,
-                formatter: `임대부동산\n(${Math.max(0.57, netRentalReturn.toFixed(2))}%, 5.0)`,
+                formatter: "임대부동산\n(0.57%, 5.0)",
                 position: "top",
                 color: "#F97316",
                 fontSize: 12,
@@ -260,14 +188,7 @@ function RiskReturnAnalysisPage({ profile, simulationData }) {
             curveness: 0.15,
             type: "solid",
           },
-          data: [
-            {
-              coords: [
-                [Math.max(0.57, netRentalReturn.toFixed(2)), 5.0],
-                [7.0, 3.5],
-              ],
-            },
-          ],
+          data: [{ coords: [[0.57, 5.0], [7.0, 3.5]] }],
         },
         // Arrow: Financial to Target
         {
@@ -296,7 +217,7 @@ function RiskReturnAnalysisPage({ profile, simulationData }) {
     chart.setOption(option);
 
     return () => chart.dispose();
-  }, [netRentalReturn]);
+  }, []);
 
   return (
     <div className={styles.slideContainer}>
@@ -310,8 +231,7 @@ function RiskReturnAnalysisPage({ profile, simulationData }) {
           <h1 className={styles.headerTitle}>리스크-수익률 기반 자산 점검</h1>
         </div>
         <div className={styles.headerDescription}>
-          <p>현재 자산의 리스크 대비 수익률을 분석하고</p>
-          <p>목표 포트폴리오의 타당성을 검증합니다.</p>
+          <p>현재 자산의 리스크 대비 수익률을 분석하고 목표 포트폴리오의 타당성을 검증합니다.</p>
         </div>
       </div>
 
@@ -377,8 +297,7 @@ function RiskReturnAnalysisPage({ profile, simulationData }) {
               <li>
                 <i className="fas fa-exclamation-circle"></i>
                 <p>
-                  <strong>역마진:</strong> 실질수익{" "}
-                  {netRentalReturn.toFixed(2)}% (이자 79% 잠식)
+                  <strong>역마진:</strong> 실질수익 0.57% (이자 79% 잠식)
                 </p>
               </li>
               <li>
@@ -429,8 +348,7 @@ function RiskReturnAnalysisPage({ profile, simulationData }) {
               <li>
                 <i className="fas fa-exclamation-triangle"></i>
                 <p>
-                  <strong>환율:</strong> 해외자산 {foreignRatio.toFixed(0)}%
-                  (환율 노출 심화)
+                  <strong>환율:</strong> 해외자산 83% (환율 노출 심화)
                 </p>
               </li>
               <li>

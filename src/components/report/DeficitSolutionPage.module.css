@@ -9,12 +9,11 @@
   color: white;
   background-color: #0b1828;
   font-family: "Pretendard", sans-serif;
-  padding-bottom: 48px;
 }
 
 /* 헤더 */
 .header {
-  padding: 32px 48px 12px;
+  padding: 40px 48px 16px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -24,7 +23,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .stepBadge {
@@ -65,7 +64,7 @@
 
 /* Divider */
 .divider {
-  margin: 0 48px 12px;
+  margin: 0 48px 24px;
   height: 1px;
   background-color: #1f2937;
 }
@@ -73,7 +72,7 @@
 /* Main Content */
 .mainContent {
   flex: 1;
-  padding: 0 48px 8px;
+  padding: 0 48px 80px;
   display: flex;
   gap: 20px;
   overflow: hidden;
@@ -92,7 +91,6 @@
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-top: 4px solid #eab308;
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -143,7 +141,6 @@
   flex-direction: column;
   gap: 16px;
   flex: 1;
-  justify-content: center;
 }
 
 .strategyCard {
@@ -154,9 +151,6 @@
   transition: background-color 0.2s;
 }
 
-.strategyCard:hover {
-  background-color: rgba(31, 41, 55, 0.6);
-}
 
 .strategyTitle {
   font-size: 14px;
@@ -207,7 +201,6 @@
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-top: 4px solid #3b82f6;
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -337,8 +330,6 @@
   font-weight: 700;
   color: white;
   margin: 0 0 6px 0;
-  border-left: 4px solid #6366f1;
-  padding-left: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -354,8 +345,6 @@
   font-weight: 700;
   color: white;
   margin: 0 0 6px 0;
-  border-left: 4px solid #10b981;
-  padding-left: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -394,7 +383,6 @@
   flex-direction: column;
   gap: 10px;
   flex: 1;
-  justify-content: center;
 }
 
 .optionCard {
@@ -405,9 +393,6 @@
   transition: background-color 0.2s;
 }
 
-.optionCard:hover {
-  background-color: rgba(99, 102, 241, 0.2);
-}
 
 .optionHeader {
   display: flex;
@@ -462,7 +447,6 @@
   flex-direction: column;
   gap: 8px;
   flex: 1;
-  justify-content: center;
 }
 
 .swrCard {
@@ -476,9 +460,6 @@
   transition: background-color 0.2s;
 }
 
-.swrCard:hover {
-  background-color: rgba(16, 185, 129, 0.2);
-}
 
 .swrLeft {
   display: flex;

@@ -375,44 +375,6 @@ function SummaryPage({ profile, simulationData }) {
             </div>
           </div>
 
-          {/* Contact */}
-          <div className={styles.contactSection}>
-            <h3 className={styles.sectionLabel}>Contact</h3>
-            <div className={styles.contactCard}>
-              <div className={styles.contactBackgroundIcon}>
-                <i className="fas fa-handshake"></i>
-              </div>
-              <p className={styles.contactIntro}>성공적인 은퇴를 함께 준비하겠습니다.</p>
-              <div className={styles.contactProfile}>
-                <div className={styles.contactAvatar}>
-                  <i className="fas fa-user"></i>
-                </div>
-                <div>
-                  <p className={styles.contactName}>
-                    {profile?.name || "고객"}님{" "}
-                    <span style={{ fontSize: "10px", fontWeight: 400, color: "#9ca3af" }}>
-                      고객님
-                    </span>
-                  </p>
-                  <p className={styles.contactRole}>은퇴 준비 파트너 손균우</p>
-                </div>
-              </div>
-              <div className={styles.contactDetails}>
-                <div className={styles.contactItem}>
-                  <div className={styles.contactIcon}>
-                    <i className="fas fa-phone"></i>
-                  </div>
-                  <span>010-6657-6155</span>
-                </div>
-                <div className={styles.contactItem}>
-                  <div className={styles.contactIcon}>
-                    <i className="fas fa-envelope"></i>
-                  </div>
-                  <span>lein@lycon.kr</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -13,7 +13,7 @@
 
 /* 헤더 */
 .header {
-  padding: 32px 48px 8px;
+  padding: 40px 48px 16px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -64,7 +64,7 @@
 
 /* Divider */
 .divider {
-  margin: 0 48px 16px;
+  margin: 0 48px 24px;
   height: 1px;
   background-color: #1f2937;
 }
@@ -72,7 +72,7 @@
 /* Main Content */
 .mainContent {
   flex: 1;
-  padding: 0 48px 48px;
+  padding: 0 48px 80px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -93,10 +93,6 @@
   transition: all 0.3s ease;
 }
 
-.chartCard:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(212, 175, 55, 0.3);
-}
 
 .chartHeader {
   display: flex;
@@ -168,27 +164,18 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  transition: transform 0.3s ease;
-}
-
-.rationaleCard:hover {
-  transform: translateY(-2px);
 }
 
 .cardOrange {
-  border-top: 4px solid #f97316;
 }
 
 .cardBlue {
-  border-top: 4px solid #3b82f6;
 }
 
 .cardYellow {
-  border-top: 4px solid #eab308;
 }
 
 .cardGreen {
-  border-top: 4px solid #10b981;
 }
 
 .rationaleHeader {

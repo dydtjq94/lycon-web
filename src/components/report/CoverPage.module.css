@@ -7,10 +7,9 @@
   flex-direction: column;
   position: relative;
   color: white;
-  background-color: #0b1828; /* Deep Navy */
+  background-color: #0b1828;
   overflow: hidden;
   font-family: "Pretendard";
-  padding-bottom: 48px; /* 페이지 네비게이션 공간 확보 */
 }
 
 /* 골드 텍스트 */
@@ -110,7 +109,6 @@
 /* 타이틀 섹션 */
 .titleSection {
   margin-bottom: 48px;
-  border-left: 4px solid #d4af37;
   padding-left: 32px;
   padding-top: 8px;
   padding-bottom: 8px;

@@ -8,13 +8,12 @@
   position: relative;
   color: white;
   background-color: #0b1828;
-  font-family: "Pretendard";
-  padding-bottom: 48px; /* 페이지 네비게이션 공간 확보 */
+  font-family: "Pretendard", sans-serif;
 }
 
 /* 헤더 */
 .header {
-  padding: 32px 48px 12px;
+  padding: 40px 48px 16px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -36,19 +35,19 @@
   border-radius: 4px;
 }
 
-.checklistBadge {
+.sectionBadge {
   color: #d4af37;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 500;
 }
 
 .headerTitle {
+  font-family: "Pretendard", sans-serif;
   font-size: 30px;
   font-weight: 700;
   margin: 0;
-  font-family: "Inter", "Pretendard";
 }
 
 .headerDescription {
@@ -56,6 +55,7 @@
   color: #9ca3af;
   font-size: 14px;
   line-height: 1.5;
+  font-weight: 300;
 }
 
 .headerDescription p {
@@ -72,7 +72,8 @@
 /* 메인 콘텐츠 */
 .mainContent {
   flex: 1;
-  padding: 0 48px;
+  padding: 0 48px 80px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -82,7 +83,8 @@
 .kpiGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 24px;
+  height: 128px;
 }
 
 .kpiCard {
@@ -90,20 +92,15 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 16px;
+  padding: 20px;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
 }
 
-.kpiCard:hover {
-  transform: translateY(-5px);
-  border-color: rgba(212, 175, 55, 0.3);
-  background-color: rgba(255, 255, 255, 0.05);
+.kpiCardHighlight {
 }
 
-
-.kpiIcon {
+.kpiIconBg {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -117,18 +114,18 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .kpiValue {
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 700;
   color: white;
-  margin: 4px 0;
+  margin: 8px 0;
 }
 
 .kpiUnit {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 400;
   color: #9ca3af;
 }
@@ -137,35 +134,48 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin: 4px 0;
+  margin: 8px 0;
 }
 
 .kpiFooter {
-  margin-top: 4px;
-  font-size: 11px;
+  margin-top: 8px;
+  font-size: 12px;
   color: #9ca3af;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+.kpiFooter i {
+  color: #10b981;
+  font-size: 12px;
+}
+
 .kpiStatus {
-  margin-top: 4px;
-  font-size: 11px;
+  margin-top: 8px;
+  font-size: 12px;
   font-weight: 600;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kpiStatus i {
+  font-size: 12px;
 }
 
 /* 하단 행 */
 .bottomRow {
   display: flex;
   gap: 24px;
-  height: 320px;
-  margin-bottom: 32px;
+  flex: 1;
+  min-height: 0;
 }
 
 /* 차트 컨테이너 */
 .chartContainer {
-  width: 66.666%;
+  width: 70%;
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -173,6 +183,7 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .chartHeader {
@@ -189,10 +200,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
 }
 
 .chartTitle i {
   color: #d4af37;
+  font-size: 14px;
+  margin-right: 4px;
 }
 
 .chartLegend {
@@ -213,9 +227,14 @@
   border-radius: 50%;
 }
 
+.chartWrapper {
+  flex: 1;
+  width: 100%;
+}
+
 /* 분석 컨테이너 */
 .analysisContainer {
-  width: 33.333%;
+  width: 30%;
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -225,6 +244,8 @@
   flex-direction: column;
   justify-content: space-between;
   position: relative;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .analysisTopBar {
@@ -241,6 +262,10 @@
 
 .analysisContent {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .analysisTitle {
@@ -250,16 +275,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .analysisTitle i {
   color: #f59e0b;
+  font-size: 18px;
 }
 
 .insightsList {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1;
+  justify-content: space-evenly;
+  overflow-y: auto;
 }
 
 .insightItem {
@@ -268,32 +298,65 @@
   align-items: flex-start;
 }
 
-.insightIcon {
+.insightIconGreen {
   width: 24px;
   height: 24px;
   border-radius: 50%;
+  background-color: rgba(16, 185, 129, 0.2);
+  border: 1px solid #10b981;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   margin-top: 2px;
-  border: 1px solid;
 }
 
-.insightIcon i {
+.insightIconGreen i {
+  color: #10b981;
   font-size: 12px;
 }
 
-.insightTitle {
+.insightIconYellow {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: rgba(245, 158, 11, 0.2);
+  border: 1px solid #f59e0b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.insightIconYellow i {
+  color: #f59e0b;
+  font-size: 12px;
+}
+
+.insightContent {
+  flex: 1;
+}
+
+.insightTitleGreen {
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 4px;
+  color: #10b981;
+}
+
+.insightTitleYellow {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #f59e0b;
 }
 
 .insightText {
   font-size: 12px;
   color: #9ca3af;
   line-height: 1.6;
+  margin: 0;
 }
 
 /* 액션 박스 */
@@ -302,7 +365,7 @@
   padding: 12px;
   border-radius: 6px;
   border: 1px solid #374151;
-  margin-top: 16px;
+  flex-shrink: 0;
 }
 
 .actionLabel {
@@ -310,7 +373,7 @@
   color: #6b7280;
   text-transform: uppercase;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin: 0 0 4px 0;
 }
 
 .actionText {
@@ -320,22 +383,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin: 0;
 }
 
-.actionArrow {
+.actionHighlight {
   color: #f59e0b;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.actionArrow i {
+.actionHighlight i {
   margin-left: 4px;
-}
-
-/* Footer */
-
-/* CSS 변수 */
-:root {
-  --green: #10b981;
-  --yellow: #f59e0b;
-  --red: #ef4444;
 }

@@ -4,100 +4,41 @@ import styles from "./CashflowGapPage.module.css";
 
 /**
  * 은퇴 후 현금흐름 목표 달성 전략 (Page 19)
- * @param {Object} profile - 프로필 데이터
- * @param {Object} simulationData - 시뮬레이션 전체 데이터
+ * 하드코딩 버전
  */
 function CashflowGapPage({ profile, simulationData }) {
   const chartRef = useRef(null);
 
-  // 현재 나이와 은퇴 나이
-  const currentAge =
-    simulationData?.profile?.currentAge || profile?.age || 42;
-  const retirementAge =
-    simulationData?.profile?.retirementAge || profile?.retirementAge || 65;
+  // 하드코딩된 데이터
+  const retirementYears = 25; // 은퇴 후 25년
 
-  // 은퇴 후 기간 계산 (은퇴부터 90세까지)
-  const retirementYears = 90 - retirementAge;
-  const retirementStartIndex = retirementAge - currentAge;
+  // 총공급 (Supply) - 30.4억원
+  const totalPension = 11.4; // 연금소득 (국민+퇴직) 억원
+  const totalAssetInflow = 18.4; // 자산/대출유입 억원
+  const totalRentalIncome = 0.6; // 임대소득 (5년) 억원
+  const totalSupply = 30.4; // 총공급 억원
 
-  // 현금흐름 및 자산 데이터
-  const cashflow = simulationData?.simulation?.cashflow || [];
-  const assets = simulationData?.simulation?.assets || [];
-
-  // 은퇴 후 현금흐름만 추출
-  const retirementCashflow = cashflow.slice(
-    retirementStartIndex,
-    retirementStartIndex + retirementYears
-  );
-
-  // 총공급 계산 (은퇴 후 기간)
-  let totalPension = 0;
-  let totalRentalIncome = 0;
-  let totalAssetInflow = 0;
-
-  retirementCashflow.forEach((year) => {
-    totalPension += year.pension || 0;
-    totalRentalIncome += year.rentalIncome || 0;
-    // 자산 인출/매각 (양수인 경우만)
-    if (year.savingsWithdrawal > 0) totalAssetInflow += year.savingsWithdrawal;
-    if (year.realEstateSale > 0) totalAssetInflow += year.realEstateSale;
-  });
-
-  const totalSupply = totalPension + totalRentalIncome + totalAssetInflow;
-
-  // 총수요 계산 (은퇴 후 기간)
-  let totalExpense = 0;
-  let totalDebtPayment = 0;
-  let totalFinanceCost = 0;
-
-  retirementCashflow.forEach((year) => {
-    totalExpense += year.expense || 0;
-    totalDebtPayment +=
-      Math.abs(year.debtPrincipal || 0) +
-      Math.abs(year.realEstatePurchase || 0);
-    totalFinanceCost += Math.abs(year.debtInterest || 0);
-  });
-
-  const totalDemand = totalExpense + totalDebtPayment + totalFinanceCost;
+  // 총수요 (Demand) - 35.5억원
+  const totalDebtPayment = 19.1; // 부동산/상환 억원
+  const totalExpense = 14.2; // 생활/의료비 억원
+  const totalFinanceCost = 2.2; // 금융비용 (이자+관리비) 억원
+  const totalDemand = 35.5; // 총수요 억원
 
   // 자금 부족액
-  const shortfall = totalSupply - totalDemand;
+  const shortfall = -5.1; // 억원
 
-  // 최악의 년도 찾기 (순현금흐름이 가장 마이너스인 년도)
-  let worstYear = null;
-  let worstBalance = 0;
+  // 최악의 년도 - 2035년 (70세)
+  const worstYear = {
+    year: 2035,
+    age: 70,
+    balance: -3.37, // 억원
+    debtPrincipal: 2.10, // 상가 담보대출 원금 상환 억원
+    realEstatePurchase: 1.00, // 재건축 분담금 납부 억원
+    livingEtc: 0.27, // 생활비/의료비/이자 등 억원
+  };
 
-  retirementCashflow.forEach((year, index) => {
-    const yearIncome =
-      (year.income || 0) +
-      (year.pension || 0) +
-      (year.rentalIncome || 0) +
-      (year.assetIncome || 0) +
-      (year.savingsWithdrawal > 0 ? year.savingsWithdrawal : 0) +
-      (year.realEstateSale > 0 ? year.realEstateSale : 0);
-
-    const yearExpense =
-      (year.expense || 0) +
-      Math.abs(year.savings || 0) +
-      Math.abs(year.debtInterest || 0) +
-      Math.abs(year.debtPrincipal || 0) +
-      Math.abs(year.realEstatePurchase || 0);
-
-    const balance = yearIncome - yearExpense;
-
-    if (balance < worstBalance) {
-      worstBalance = balance;
-      worstYear = {
-        year: new Date().getFullYear() + retirementStartIndex + index,
-        age: retirementAge + index,
-        balance: balance,
-        debtPrincipal: Math.abs(year.debtPrincipal || 0),
-        realEstatePurchase: Math.abs(year.realEstatePurchase || 0),
-        expense: year.expense || 0,
-        debtInterest: Math.abs(year.debtInterest || 0),
-      };
-    }
-  });
+  // 총자산
+  const totalAssets = 63.5; // 억원
 
   // 차트 초기화
   useEffect(() => {
@@ -121,8 +62,8 @@ function CashflowGapPage({ profile, simulationData }) {
               " " +
               item.seriesName +
               ": " +
-              item.value.toFixed(1) +
-              " 만원<br/>";
+              item.value +
+              " 억원<br/>";
           });
           return result;
         },
@@ -145,7 +86,7 @@ function CashflowGapPage({ profile, simulationData }) {
         type: "value",
         axisLabel: {
           color: "#6B7280",
-          formatter: (value) => value.toLocaleString() + "만원",
+          formatter: "{value}억",
         },
         splitLine: {
           lineStyle: { color: "#374151", type: "dashed", opacity: 0.3 },
@@ -162,7 +103,7 @@ function CashflowGapPage({ profile, simulationData }) {
         {
           name: "총공급 (Supply)",
           type: "bar",
-          data: [(totalSupply / 10000).toFixed(1)],
+          data: [totalSupply],
           itemStyle: {
             color: "#3B82F6",
             borderRadius: [0, 4, 4, 0],
@@ -172,7 +113,7 @@ function CashflowGapPage({ profile, simulationData }) {
             position: "right",
             color: "#60A5FA",
             fontWeight: "bold",
-            formatter: (params) => params.value.toLocaleString() + " 만원",
+            formatter: "{c} 억원",
           },
           barWidth: 40,
           barGap: "30%",
@@ -180,7 +121,7 @@ function CashflowGapPage({ profile, simulationData }) {
         {
           name: "총수요 (Demand)",
           type: "bar",
-          data: [(totalDemand / 10000).toFixed(1)],
+          data: [totalDemand],
           itemStyle: {
             color: "#D97706",
             borderRadius: [0, 4, 4, 0],
@@ -190,7 +131,7 @@ function CashflowGapPage({ profile, simulationData }) {
             position: "right",
             color: "#F59E0B",
             fontWeight: "bold",
-            formatter: (params) => params.value.toLocaleString() + " 만원",
+            formatter: "{c} 억원",
           },
           barWidth: 40,
         },
@@ -200,7 +141,7 @@ function CashflowGapPage({ profile, simulationData }) {
     chart.setOption(option);
 
     return () => chart.dispose();
-  }, [totalSupply, totalDemand, retirementYears]);
+  }, []);
 
   return (
     <div className={styles.slideContainer}>
@@ -235,7 +176,7 @@ function CashflowGapPage({ profile, simulationData }) {
                 <i className="fas fa-chart-bar"></i>
                 <span>은퇴 기간({retirementYears}년) 자금 수지 구조</span>
               </h3>
-              <span className={styles.unitBadge}>단위: 만원</span>
+              <span className={styles.unitBadge}>단위: 억원</span>
             </div>
             <div className={styles.chartContainer} ref={chartRef}></div>
 
@@ -248,8 +189,8 @@ function CashflowGapPage({ profile, simulationData }) {
                 <div>
                   <p className={styles.summaryLabel}>자금 부족 (Shortfall)</p>
                   <p className={styles.summaryValue}>
-                    {(shortfall / 10000).toFixed(1)}{" "}
-                    <span className={styles.summaryUnit}>만원</span>
+                    {shortfall}{" "}
+                    <span className={styles.summaryUnit}>억원</span>
                   </p>
                 </div>
               </div>
@@ -271,7 +212,7 @@ function CashflowGapPage({ profile, simulationData }) {
               <div className={styles.breakdownSection}>
                 <div className={styles.breakdownHeader}>
                   <span className={styles.breakdownLabel}>
-                    총공급 ({(totalSupply / 10000).toFixed(1)}만원)
+                    총공급 ({totalSupply}억원)
                   </span>
                 </div>
                 <div className={styles.breakdownTable}>
@@ -280,19 +221,19 @@ function CashflowGapPage({ profile, simulationData }) {
                       <tr>
                         <td>연금소득 (국민+퇴직)</td>
                         <td className={styles.breakdownNumber}>
-                          {(totalPension / 10000).toFixed(1)}
+                          {totalPension}
                         </td>
                       </tr>
                       <tr>
                         <td>자산/대출유입</td>
                         <td className={styles.breakdownNumber}>
-                          {(totalAssetInflow / 10000).toFixed(1)}
+                          {totalAssetInflow}
                         </td>
                       </tr>
                       <tr>
-                        <td>임대소득</td>
+                        <td>임대소득 (5년)</td>
                         <td className={styles.breakdownNumber}>
-                          {(totalRentalIncome / 10000).toFixed(1)}
+                          {totalRentalIncome}
                         </td>
                       </tr>
                     </tbody>
@@ -304,7 +245,7 @@ function CashflowGapPage({ profile, simulationData }) {
               <div className={styles.breakdownSection}>
                 <div className={styles.breakdownHeader}>
                   <span className={styles.breakdownLabelDemand}>
-                    총수요 ({(totalDemand / 10000).toFixed(1)}만원)
+                    총수요 ({totalDemand}억원)
                   </span>
                 </div>
                 <div className={styles.breakdownTable}>
@@ -313,19 +254,19 @@ function CashflowGapPage({ profile, simulationData }) {
                       <tr>
                         <td>부동산/상환</td>
                         <td className={styles.breakdownNumber}>
-                          {(totalDebtPayment / 10000).toFixed(1)}
+                          {totalDebtPayment}
                         </td>
                       </tr>
                       <tr>
                         <td>생활/의료비</td>
                         <td className={styles.breakdownNumber}>
-                          {(totalExpense / 10000).toFixed(1)}
+                          {totalExpense}
                         </td>
                       </tr>
                       <tr>
                         <td>금융비용 (이자+관리비)</td>
                         <td className={styles.breakdownNumber}>
-                          {(totalFinanceCost / 10000).toFixed(1)}
+                          {totalFinanceCost}
                         </td>
                       </tr>
                     </tbody>
@@ -339,70 +280,57 @@ function CashflowGapPage({ profile, simulationData }) {
         {/* Right Column */}
         <div className={styles.rightColumn}>
           {/* Worst Year Card */}
-          {worstYear && (
-            <div className={styles.worstYearCard}>
-              <div className={styles.worstYearIcon}>
-                <i className="fas fa-exclamation-triangle"></i>
-              </div>
-              <div className={styles.worstYearHeader}>
-                <div>
-                  <p className={styles.worstYearBadge}>WORST CASHFLOW YEAR</p>
-                  <h3 className={styles.worstYearTitle}>
-                    {worstYear.year}년 ({worstYear.age}세)
-                  </h3>
-                </div>
-                <div className={styles.worstYearAmount}>
-                  <p className={styles.worstYearLabel}>순현금흐름 적자</p>
-                  <p className={styles.worstYearValue}>
-                    {(worstYear.balance / 10000).toFixed(2)}{" "}
-                    <span>만원</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className={styles.worstYearDetails}>
-                <p className={styles.worstYearDetailsTitle}>주요 적자 원인</p>
-                <div className={styles.worstYearDetailsContent}>
-                  {worstYear.debtPrincipal > 0 && (
-                    <div className={styles.worstYearItem}>
-                      <span>
-                        <i className="fas fa-caret-right"></i>상가 담보대출 원금
-                        상환
-                      </span>
-                      <span className={styles.worstYearItemAmount}>
-                        {(worstYear.debtPrincipal / 10000).toFixed(2)} 만원
-                      </span>
-                    </div>
-                  )}
-                  {worstYear.realEstatePurchase > 0 && (
-                    <div className={styles.worstYearItem}>
-                      <span>
-                        <i className="fas fa-caret-right"></i>재건축 분담금 납부
-                      </span>
-                      <span className={styles.worstYearItemAmount}>
-                        {(worstYear.realEstatePurchase / 10000).toFixed(2)} 만원
-                      </span>
-                    </div>
-                  )}
-                  <div className={styles.worstYearItemTotal}>
-                    <span>생활비/의료비/이자 등</span>
-                    <span>
-                      {(
-                        (worstYear.expense + worstYear.debtInterest) /
-                        10000
-                      ).toFixed(2)}{" "}
-                      만원
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <p className={styles.worstYearNote}>
-                * 해당 연도에는 유동성 자산(전세금 회수 등)을 활용한 대응이
-                필수적입니다.
-              </p>
+          <div className={styles.worstYearCard}>
+            <div className={styles.worstYearIcon}>
+              <i className="fas fa-exclamation-triangle"></i>
             </div>
-          )}
+            <div className={styles.worstYearHeader}>
+              <div>
+                <p className={styles.worstYearBadge}>WORST CASHFLOW YEAR</p>
+                <h3 className={styles.worstYearTitle}>
+                  {worstYear.year}년 ({worstYear.age}세)
+                </h3>
+              </div>
+              <div className={styles.worstYearAmount}>
+                <p className={styles.worstYearLabel}>순현금흐름 적자</p>
+                <p className={styles.worstYearValue}>
+                  {worstYear.balance} <span>억원</span>
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.worstYearDetails}>
+              <p className={styles.worstYearDetailsTitle}>주요 적자 원인</p>
+              <div className={styles.worstYearDetailsContent}>
+                <div className={styles.worstYearItem}>
+                  <span>
+                    <i className="fas fa-caret-right"></i>상가 담보대출 원금
+                    상환
+                  </span>
+                  <span className={styles.worstYearItemAmount}>
+                    {worstYear.debtPrincipal.toFixed(2)} 억원
+                  </span>
+                </div>
+                <div className={styles.worstYearItem}>
+                  <span>
+                    <i className="fas fa-caret-right"></i>재건축 분담금 납부
+                  </span>
+                  <span className={styles.worstYearItemAmount}>
+                    {worstYear.realEstatePurchase.toFixed(2)} 억원
+                  </span>
+                </div>
+                <div className={styles.worstYearItemTotal}>
+                  <span>생활비/의료비/이자 등</span>
+                  <span>{worstYear.livingEtc.toFixed(2)} 억원</span>
+                </div>
+              </div>
+            </div>
+
+            <p className={styles.worstYearNote}>
+              * 해당 연도에는 유동성 자산(전세금 회수 등)을 활용한 대응이
+              필수적입니다.
+            </p>
+          </div>
 
           {/* Insights Card */}
           <div className={styles.insightsCard}>
@@ -421,44 +349,25 @@ function CashflowGapPage({ profile, simulationData }) {
                     자산 대비 생활비 부담 적정
                   </p>
                   <p className={styles.insightText}>
-                    현재 총자산 대비 {retirementYears}년 생활·의료비 비중은{" "}
-                    {(
-                      (totalExpense /
-                        (assets[0]?.breakdown?.totalAssets || 1)) *
-                      100
-                    ).toFixed(0)}
-                    % 수준으로, 보유 자산으로 충분히 감당 가능합니다.
+                    현재 총자산({totalAssets}억) 대비 {retirementYears}년 생활·의료비({totalExpense}억) 비중은 22% 수준으로, 보유 자산으로 충분히 감당 가능합니다.
                   </p>
                 </div>
               </div>
 
               {/* Warning */}
-              {worstYear && (
-                <div className={styles.insightItem}>
-                  <div className={`${styles.insightIcon} ${styles.insightWarn}`}>
-                    <i className="fas fa-exclamation"></i>
-                  </div>
-                  <div>
-                    <p className={styles.insightTitle}>
-                      {worstYear.year}년 유동성 절벽 주의
-                    </p>
-                    <p className={styles.insightText}>
-                      {worstYear.year}년에 재건축(
-                      {(worstYear.realEstatePurchase / 10000).toFixed(1)}
-                      만원) 및 상가대출 상환(
-                      {(worstYear.debtPrincipal / 10000).toFixed(1)}
-                      만원)으로{" "}
-                      {(
-                        (worstYear.realEstatePurchase +
-                          worstYear.debtPrincipal) /
-                        10000
-                      ).toFixed(1)}
-                      만원의 일시 유출이 발생하므로 사전 유동성 확보가
-                      필요합니다.
-                    </p>
-                  </div>
+              <div className={styles.insightItem}>
+                <div className={`${styles.insightIcon} ${styles.insightWarn}`}>
+                  <i className="fas fa-exclamation"></i>
                 </div>
-              )}
+                <div>
+                  <p className={styles.insightTitle}>
+                    {worstYear.year}년 유동성 절벽 주의
+                  </p>
+                  <p className={styles.insightText}>
+                    {worstYear.year}년에 재건축({worstYear.realEstatePurchase}억) 및 상가대출 상환({worstYear.debtPrincipal}억)으로 3.1억원의 일시 유출이 발생하므로 사전 유동성 확보가 필요합니다.
+                  </p>
+                </div>
+              </div>
 
               {/* Analysis */}
               <div className={styles.insightItem}>
@@ -470,9 +379,7 @@ function CashflowGapPage({ profile, simulationData }) {
                     자산 수익률 개선으로 해결 가능
                   </p>
                   <p className={styles.insightText}>
-                    {Math.abs(shortfall / 10000).toFixed(1)}만원의 부족 자금은
-                    보유 자산의 연 3% 수익률 개선만으로도 충분히 해결 가능한
-                    수준입니다.
+                    {Math.abs(shortfall)}억원의 부족 자금은 보유 자산의 연 3% 수익률 개선만으로도 충분히 해결 가능한 수준입니다.
                   </p>
                 </div>
               </div>

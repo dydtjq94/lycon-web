@@ -9,7 +9,6 @@
   color: white;
   background-color: #0b1828;
   font-family: "Pretendard", sans-serif;
-  padding-bottom: 48px;
 }
 
 /* 헤더 */
@@ -18,7 +17,6 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  height: 120px;
 }
 
 .headerBadges {
@@ -30,7 +28,7 @@
 
 .stepBadge {
   background-color: #1f2937;
-  color: white;
+  color: #d1d5db;
   font-size: 12px;
   font-weight: 700;
   padding: 4px 8px;
@@ -40,7 +38,7 @@
 .sectionBadge {
   color: #d4af37;
   font-size: 14px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 500;
 }
@@ -66,17 +64,17 @@
 
 /* Divider */
 .divider {
-  margin: 0 48px 16px;
+  margin: 0 48px 24px;
   height: 1px;
   background-color: #1f2937;
 }
 
 /* Main Content */
 .mainContent {
-  padding: 0 48px 56px;
+  flex: 1;
+  padding: 0 48px 80px;
   display: flex;
   gap: 24px;
-  height: 550px;
   overflow: hidden;
 }
 
@@ -94,7 +92,6 @@
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-top: 4px solid #10b981;
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -174,7 +171,6 @@
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-top: 4px solid #10b981;
   border-radius: 12px;
   padding: 16px;
   display: flex;

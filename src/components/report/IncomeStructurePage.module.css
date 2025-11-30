@@ -9,7 +9,6 @@
   color: white;
   background-color: #0b1828;
   font-family: "Pretendard", sans-serif;
-  padding-bottom: 48px;
 }
 
 /* 헤더 */
@@ -65,7 +64,7 @@
 
 /* Divider */
 .divider {
-  margin: 0 48px 32px;
+  margin: 0 48px 24px;
   height: 1px;
   background-color: #1f2937;
 }
@@ -73,105 +72,103 @@
 /* Main Content */
 .mainContent {
   flex: 1;
-  padding: 0 48px;
+  padding: 0 48px 80px;
   display: flex;
-  gap: 24px;
+  gap: 20px;
   overflow: hidden;
 }
 
 /* Left Column */
 .leftColumn {
-  flex: 1;
+  width: 41.666%;
   display: flex;
   flex-direction: column;
-  gap: 24px;
 }
 
-/* Right Column */
-.rightColumn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* Card */
-.card {
+.incomeCard {
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  position: relative;
-  transition: all 0.3s ease;
-}
-
-.cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
 }
 
 .cardTitle {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #e5e7eb;
-  margin: 0;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.cardBadge {
-  background-color: #1f2937;
-  color: #d4af37;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+.cardTitle i {
+  color: #d97706;
 }
 
 /* Chart Container */
 .chartContainer {
-  flex: 1;
-  min-height: 200px;
-  margin-bottom: 16px;
+  height: 210px;
+  width: 100%;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
-/* Table */
+/* Income Table */
+.tableContainer {
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
 .incomeTable {
   width: 100%;
+  font-size: 13px;
+  text-align: left;
   border-collapse: collapse;
-  margin-bottom: 16px;
 }
 
-.incomeTable th,
-.incomeTable td {
-  text-align: left;
-  padding: 8px 12px;
-  border-bottom: 1px solid #374151;
-  font-size: 13px;
+.incomeTable thead {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  background-color: rgba(31, 41, 55, 0.8);
 }
 
 .incomeTable th {
-  color: #9ca3af;
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  font-weight: 500;
 }
 
-.incomeTable td {
+.incomeTable th:nth-child(2),
+.incomeTable th:nth-child(3) {
+  text-align: right;
+}
+
+.incomeTable tbody {
   color: #d1d5db;
 }
 
-.incomeTable tr:last-child td {
-  border-bottom: none;
+.incomeTable tbody tr {
+  border-top: 1px solid #1f2937;
+  transition: background-color 0.2s;
 }
 
-.sourceLabel {
+.incomeTable tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.incomeTable td {
+  padding: 7px 10px;
+}
+
+.incomeTable td:first-child {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -184,114 +181,226 @@
   flex-shrink: 0;
 }
 
-.amountValue {
+.amountCell,
+.percentCell {
+  text-align: right;
   font-family: "Inter", monospace;
-  font-weight: 600;
+}
+
+.incomeTable tfoot {
+  background-color: rgba(31, 41, 55, 0.5);
+  font-weight: 700;
   color: white;
 }
 
-.percentValue {
-  color: #9ca3af;
-  font-size: 12px;
+.incomeTable tfoot td {
+  padding: 7px 10px;
+}
+
+.incomeTable tfoot td:nth-child(2),
+.incomeTable tfoot td:nth-child(3) {
+  text-align: right;
 }
 
 /* Insight Box */
 .insightBox {
-  background-color: rgba(212, 175, 55, 0.1);
-  border-left: 3px solid #d4af37;
-  padding: 12px 16px;
-  border-radius: 4px;
+  flex-shrink: 0;
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.insightLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #60a5fa;
+  margin: 0;
+  text-transform: uppercase;
 }
 
 .insightText {
-  color: #fef3c7;
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.insightText i {
-  color: #d4af37;
-  margin-right: 8px;
-}
-
-/* Event Cards Grid */
-.eventCardsGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.eventCard {
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: all 0.3s ease;
-}
-
-.eventCard:hover {
-  border-color: rgba(212, 175, 55, 0.4);
-  background-color: rgba(255, 255, 255, 0.06);
-}
-
-.eventHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.eventIcon {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.eventTitle {
-  font-size: 14px;
-  font-weight: 700;
-  color: #e5e7eb;
-  margin: 0;
-}
-
-.eventYear {
-  font-size: 12px;
-  color: #9ca3af;
-  margin: 0;
-}
-
-.eventDescription {
   font-size: 12px;
   color: #d1d5db;
   line-height: 1.4;
   margin: 0;
 }
 
-.eventImpact {
+.insightText strong {
+  color: white;
+  font-weight: 600;
+}
+
+/* Right Column */
+.rightColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Path Card */
+.pathCard {
+  flex-shrink: 0;
+  background-color: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pathHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.pathTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #374151;
 }
 
-.impactLabel {
+.pathTitle i {
+  color: #d97706;
+}
+
+.pathBadge {
   font-size: 11px;
-  color: #6b7280;
+  color: #9ca3af;
+  background-color: #1f2937;
+  padding: 4px 12px;
+  border-radius: 12px;
 }
 
-.impactValue {
-  font-family: "Inter", monospace;
+.lineChartContainer {
+  width: 100%;
+  height: 200px;
+}
+
+/* Events Card */
+.eventsCard {
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.eventsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.eventsTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eventsTitle i {
+  color: #d97706;
+}
+
+.eventsPeriod {
+  font-size: 11px;
+  color: #9ca3af;
+  background-color: #1f2937;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+/* Events List */
+.eventsList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.eventItem {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  background-color: rgba(31, 41, 55, 0.4);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.eventLeft {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.eventYear {
+  font-size: 13px;
+  font-weight: 700;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background-color: #1f2937;
+  border: 1px solid;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eventContent {
+  flex: 1;
+}
+
+.eventName {
   font-size: 13px;
   font-weight: 600;
-  margin-left: auto;
+  color: white;
+  margin: 0 0 4px 0;
+}
+
+.eventDesc {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.eventBadge {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 /* Loading */

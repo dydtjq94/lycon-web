@@ -10,45 +10,13 @@ import styles from "./PortfolioHoldingsPage.module.css";
 function PortfolioHoldingsPage({ profile, simulationData }) {
   const chartRef = useRef(null);
 
-  // 현재 자산 데이터
-  const assets = simulationData?.simulation?.assets || [];
-  const currentAssets = assets[0] || {};
-  const assetItems = currentAssets?.breakdown?.assetItems || [];
+  // 하드코딩 값
+  const domesticTotal = 6800; // 국내 주식 및 ETF: 6,800만원
+  const foreignTotal = 33200; // 해외 주식 및 ETF: 33,200만원
+  const totalInvestment = 40000; // 평가금액 합계: 40,000만원
 
-  // 투자자산 분류 (저축/투자 항목만)
-  const investmentAssets = assetItems.filter(
-    (item) =>
-      item.sourceType === "saving" || item.sourceType === "asset"
-  );
-
-  // 국내/해외 분류 (간단한 추정 - 실제로는 더 상세한 데이터 필요)
-  let domesticTotal = 0;
-  let foreignTotal = 0;
-
-  investmentAssets.forEach((item) => {
-    // 간단한 추정: label에 "해외", "미국", "S&P", "나스닥" 등이 포함되면 해외로 분류
-    const label = item.label?.toLowerCase() || "";
-    if (
-      label.includes("해외") ||
-      label.includes("미국") ||
-      label.includes("s&p") ||
-      label.includes("나스닥") ||
-      label.includes("nasdaq") ||
-      label.includes("sp500")
-    ) {
-      foreignTotal += item.amount || 0;
-    } else {
-      domesticTotal += item.amount || 0;
-    }
-  });
-
-  const totalInvestment = domesticTotal + foreignTotal;
-
-  // 비중 계산
-  const domesticRatio =
-    totalInvestment > 0 ? (domesticTotal / totalInvestment) * 100 : 0;
-  const foreignRatio =
-    totalInvestment > 0 ? (foreignTotal / totalInvestment) * 100 : 0;
+  const domesticRatio = 17.0; // 국내 비중: 17.0%
+  const foreignRatio = 83.0; // 해외 비중: 83.0%
 
   // 차트 초기화
   useEffect(() => {
@@ -63,8 +31,7 @@ function PortfolioHoldingsPage({ profile, simulationData }) {
         backgroundColor: "rgba(11, 24, 40, 0.95)",
         borderColor: "#4B5563",
         textStyle: { color: "#fff", fontSize: 12 },
-        formatter: (params) =>
-          `${params.name}: ${(params.value / 10000).toFixed(1)}만원 (${params.percent}%)`,
+        formatter: "{b}: {c}만원 ({d}%)",
       },
       legend: {
         orient: "horizontal",
@@ -109,12 +76,12 @@ function PortfolioHoldingsPage({ profile, simulationData }) {
           },
           data: [
             {
-              value: domesticTotal,
+              value: 6800,
               name: "국내 주식 및 ETF",
               itemStyle: { color: "#3B82F6" },
             },
             {
-              value: foreignTotal,
+              value: 33200,
               name: "해외 주식 및 ETF",
               itemStyle: { color: "#10B981" },
             },
@@ -126,7 +93,7 @@ function PortfolioHoldingsPage({ profile, simulationData }) {
     chart.setOption(option);
 
     return () => chart.dispose();
-  }, [domesticTotal, foreignTotal]);
+  }, []);
 
   return (
     <div className={styles.slideContainer}>
@@ -178,32 +145,22 @@ function PortfolioHoldingsPage({ profile, simulationData }) {
                         국내 주식 및 ETF
                       </span>
                     </td>
-                    <td className={styles.tdAmount}>
-                      {(domesticTotal / 10000).toFixed(0).toLocaleString()}
-                    </td>
-                    <td className={styles.tdRatioBlue}>
-                      {domesticRatio.toFixed(1)}%
-                    </td>
+                    <td className={styles.tdAmount}>6,800</td>
+                    <td className={styles.tdRatioBlue}>17.0%</td>
                   </tr>
                   <tr>
                     <td>
                       <span className={styles.dotGreen}></span>
                       <span>해외 주식 및 ETF</span>
                     </td>
-                    <td className={styles.tdAmount}>
-                      {(foreignTotal / 10000).toFixed(0).toLocaleString()}
-                    </td>
-                    <td className={styles.tdRatio}>
-                      {foreignRatio.toFixed(1)}%
-                    </td>
+                    <td className={styles.tdAmount}>33,200</td>
+                    <td className={styles.tdRatio}>83.0%</td>
                   </tr>
                 </tbody>
                 <tfoot>
                   <tr>
                     <td className={styles.tfootLabel}>평가금액 합계</td>
-                    <td className={styles.tfootAmount}>
-                      {(totalInvestment / 10000).toFixed(0).toLocaleString()}
-                    </td>
+                    <td className={styles.tfootAmount}>40,000</td>
                     <td className={styles.tfootRatio}>100%</td>
                   </tr>
                 </tfoot>
@@ -231,49 +188,19 @@ function PortfolioHoldingsPage({ profile, simulationData }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {investmentAssets.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className={styles.emptyState}>
-                        <div className={styles.emptyStateContent}>
-                          <i className="fas fa-spinner fa-spin"></i>
-                          <p className={styles.emptyStateText}>
-                            데이터 수집 중...
-                          </p>
-                          <p className={styles.emptyStateSubtext}>
-                            종목별 상세 데이터를 준비하고 있습니다.
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    investmentAssets.slice(0, 10).map((item, index) => (
-                      <tr key={index}>
-                        <td>{item.label || "알 수 없음"}</td>
-                        <td>
-                          <span className={styles.assetType}>
-                            {item.sourceType === "saving"
-                              ? "저축/투자"
-                              : "자산"}
-                          </span>
-                        </td>
-                        <td className={styles.tdAmount}>
-                          {((item.amount || 0) / 10000)
-                            .toFixed(0)
-                            .toLocaleString()}
-                        </td>
-                        <td className={styles.tdRatio}>
-                          {totalInvestment > 0
-                            ? (
-                                ((item.amount || 0) / totalInvestment) *
-                                100
-                              ).toFixed(1)
-                            : 0}
-                          %
-                        </td>
-                        <td className={styles.tdReturn}>-</td>
-                      </tr>
-                    ))
-                  )}
+                  <tr>
+                    <td colSpan="5" className={styles.emptyState}>
+                      <div className={styles.emptyStateContent}>
+                        <i className="fas fa-spinner fa-spin"></i>
+                        <p className={styles.emptyStateText}>
+                          데이터 수집 중...
+                        </p>
+                        <p className={styles.emptyStateSubtext}>
+                          종목별 상세 데이터를 준비하고 있습니다.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>

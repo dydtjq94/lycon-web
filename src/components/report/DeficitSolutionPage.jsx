@@ -7,49 +7,19 @@ import styles from "./DeficitSolutionPage.module.css";
  * @param {Object} simulationData - 시뮬레이션 전체 데이터
  */
 function DeficitSolutionPage({ profile, simulationData }) {
-  // 현재 나이와 은퇴 나이
-  const currentAge =
-    simulationData?.profile?.currentAge || profile?.age || 42;
-  const retirementAge =
-    simulationData?.profile?.retirementAge || profile?.retirementAge || 65;
+  // 하드코딩 값
+  const retirementYears = 25; // 은퇴 기간 25년
+  const annualStructuralDeficit = 1100; // 연간 1,100만원 부족
+  const monthlyStructuralDeficit = 92; // 월 약 92만원 부족
 
-  // 은퇴 후 기간 계산
-  const retirementYears = 90 - retirementAge;
-  const retirementStartIndex = retirementAge - currentAge;
+  // 배당/이자 소득으로 해결 시 필요 자산 (하드코딩)
+  const requiredAsset35 = 3.14; // 3.5% 수익률 → 3.14억원
+  const requiredAsset40 = 2.75; // 4.0% 수익률 → 2.75억원
 
-  // 현금흐름 데이터
-  const cashflow = simulationData?.simulation?.cashflow || [];
-  const retirementCashflow = cashflow.slice(
-    retirementStartIndex,
-    retirementStartIndex + retirementYears
-  );
-
-  // 구조적 수입/지출 계산
-  let totalStructuralIncome = 0;
-  let totalStructuralExpense = 0;
-
-  retirementCashflow.forEach((year) => {
-    // 구조적 수입
-    totalStructuralIncome += year.pension || 0;
-    totalStructuralIncome += year.rentalIncome || 0;
-
-    // 구조적 지출
-    totalStructuralExpense += year.expense || 0;
-    totalStructuralExpense += Math.abs(year.debtInterest || 0);
-  });
-
-  const structuralDeficit = totalStructuralIncome - totalStructuralExpense;
-  const annualStructuralDeficit = structuralDeficit / retirementYears;
-  const monthlyStructuralDeficit = annualStructuralDeficit / 12;
-
-  // 배당/이자 소득으로 해결 시 필요 자산
-  const requiredAsset35 = Math.abs(annualStructuralDeficit) / 0.035; // 3.5% 수익률
-  const requiredAsset40 = Math.abs(annualStructuralDeficit) / 0.04; // 4.0% 수익률
-
-  // SWR 기반 필요 자산
-  const requiredAssetSWR30 = Math.abs(annualStructuralDeficit) / 0.03; // 3.0% SWR
-  const requiredAssetSWR35 = Math.abs(annualStructuralDeficit) / 0.035; // 3.5% SWR
-  const requiredAssetSWR40 = Math.abs(annualStructuralDeficit) / 0.04; // 4.0% SWR
+  // SWR 기반 필요 자산 (하드코딩)
+  const requiredAssetSWR30 = 3.67; // 3.0% SWR → 3.67억원
+  const requiredAssetSWR35 = 3.14; // 3.5% SWR → 3.14억원
+  const requiredAssetSWR40 = 2.75; // 4.0% SWR → 2.75억원
 
   return (
     <div className={styles.slideContainer}>
@@ -57,7 +27,7 @@ function DeficitSolutionPage({ profile, simulationData }) {
       <div className={styles.header}>
         <div>
           <div className={styles.headerBadges}>
-            <span className={styles.stepBadge}>STEP 2-3</span>
+            <span className={styles.stepBadge}>STEP 1-3</span>
             <span className={styles.sectionBadge}>
               Deficit Solutions &amp; Strategies
             </span>
@@ -155,12 +125,11 @@ function DeficitSolutionPage({ profile, simulationData }) {
                 </div>
                 <div className={styles.analysisRight}>
                   <p className={styles.analysisValue}>
-                    {(Math.abs(annualStructuralDeficit) / 10000).toFixed(0)}{" "}
+                    {annualStructuralDeficit.toLocaleString()}{" "}
                     <span>만원/년</span>
                   </p>
                   <p className={styles.analysisNote}>
-                    (월 약 {(Math.abs(monthlyStructuralDeficit) / 10000).toFixed(0)}
-                    만원 부족)
+                    (월 약 {monthlyStructuralDeficit}만원 부족)
                   </p>
                 </div>
               </div>
@@ -192,7 +161,7 @@ function DeficitSolutionPage({ profile, simulationData }) {
                       <div className={styles.optionFooter}>
                         <span className={styles.optionLabel}>필요 금융자산</span>
                         <span className={styles.optionValue}>
-                          {(requiredAsset35 / 100000000).toFixed(2)}{" "}
+                          {requiredAsset35.toFixed(2)}{" "}
                           <span>억원</span>
                         </span>
                       </div>
@@ -208,7 +177,7 @@ function DeficitSolutionPage({ profile, simulationData }) {
                       <div className={styles.optionFooter}>
                         <span className={styles.optionLabel}>필요 금융자산</span>
                         <span className={styles.optionValue}>
-                          {(requiredAsset40 / 100000000).toFixed(2)}{" "}
+                          {requiredAsset40.toFixed(2)}{" "}
                           <span>억원</span>
                         </span>
                       </div>
@@ -238,7 +207,7 @@ function DeficitSolutionPage({ profile, simulationData }) {
                       </div>
                       <div className={styles.swrRight}>
                         <span className={styles.swrValue}>
-                          {(requiredAssetSWR30 / 100000000).toFixed(2)}{" "}
+                          {requiredAssetSWR30.toFixed(2)}{" "}
                           <span>억원</span>
                         </span>
                       </div>
@@ -251,7 +220,7 @@ function DeficitSolutionPage({ profile, simulationData }) {
                       </div>
                       <div className={styles.swrRight}>
                         <span className={styles.swrValue}>
-                          {(requiredAssetSWR35 / 100000000).toFixed(2)}{" "}
+                          {requiredAssetSWR35.toFixed(2)}{" "}
                           <span>억원</span>
                         </span>
                       </div>
@@ -266,7 +235,7 @@ function DeficitSolutionPage({ profile, simulationData }) {
                       </div>
                       <div className={styles.swrRight}>
                         <span className={styles.swrValue}>
-                          {(requiredAssetSWR40 / 100000000).toFixed(2)}{" "}
+                          {requiredAssetSWR40.toFixed(2)}{" "}
                           <span>억원</span>
                         </span>
                       </div>

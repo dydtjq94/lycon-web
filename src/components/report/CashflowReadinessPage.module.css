@@ -9,7 +9,6 @@
   color: white;
   background-color: #0b1828;
   font-family: "Pretendard", sans-serif;
-  padding-bottom: 48px; /* 페이지 네비게이션 공간 확보 */
 }
 
 /* 헤더 */
@@ -29,7 +28,7 @@
 
 .stepBadge {
   background-color: #1f2937;
-  color: white;
+  color: #d1d5db;
   font-size: 12px;
   font-weight: 700;
   padding: 4px 8px;
@@ -45,6 +44,7 @@
 }
 
 .headerTitle {
+  font-family: "Pretendard", sans-serif;
   font-size: 30px;
   font-weight: 700;
   margin: 0;
@@ -74,7 +74,7 @@
   flex: 1;
   display: flex;
   gap: 24px;
-  padding: 0 48px 48px;
+  padding: 0 48px 80px;
   overflow: hidden;
 }
 
@@ -92,7 +92,6 @@
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-top: 4px solid #eab308;
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -167,7 +166,6 @@
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-top: 4px solid #ef4444;
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -327,7 +325,6 @@
 }
 
 .insightSection:first-child {
-  border-right: 1px solid #374151;
   padding-right: 16px;
 }
 

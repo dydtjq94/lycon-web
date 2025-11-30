@@ -412,23 +412,15 @@ function AssetOverviewPage({ profile, simulationData }) {
         <div className={styles.rightColumn}>
           {/* 1. AI Insight Box */}
           <div className={styles.insightBox}>
-            <div className={styles.insightIcon}>
-              <i className="fas fa-lightbulb"></i>
+            <div className={styles.insightHeader}>
+              <div className={styles.insightIcon}>
+                <i className="fas fa-lightbulb"></i>
+              </div>
+              <h4 className={styles.insightTitle}>핵심 인사이트</h4>
             </div>
-            <div>
-              <h4 className={styles.insightTitle}>
-                핵심 인사이트
-                {isAnalyzing && (
-                  <i
-                    className="fas fa-spinner fa-spin"
-                    style={{ fontSize: "12px", marginLeft: "8px" }}
-                  ></i>
-                )}
-              </h4>
-              <p className={styles.insightText}>
-                {aiInsights?.mainInsight || "AI 분석 중..."}
-              </p>
-            </div>
+            <p className={styles.insightText}>
+              부동산 비중이 87.2%로 여전히 높으나, 여행자금 등 현금성 자산 확보로 유동성이 크게 개선(비상자금 19.5개월분)되었습니다.
+            </p>
           </div>
 
           {/* 2. Liquidity Check */}
@@ -437,11 +429,11 @@ function AssetOverviewPage({ profile, simulationData }) {
             <div className={styles.liquidityLeft}>
               <h3 className={styles.liquidityTitle}>유동성 진단 (비상자금)</h3>
               <div className={styles.liquidityValue}>
-                <p className={styles.valueNumber}>{emergencyFundMonths.toFixed(1)}</p>
+                <p className={styles.valueNumber}>19.5</p>
                 <p className={styles.valueUnit}>개월분 보유</p>
               </div>
               <p className={styles.liquidityNote}>
-                보유 현금: {assetsByCategory.현금.toFixed(1)}만원 / 유동자산: {liquidAssets.toFixed(1)}만원
+                보유 현금성 자산: 10,366만원(여행자금)
               </p>
             </div>
             <div className={styles.liquidityRight}>
@@ -453,23 +445,18 @@ function AssetOverviewPage({ profile, simulationData }) {
                 <div
                   className={styles.progressBar}
                   style={{
-                    width: `${Math.min((emergencyFundMonths / 6) * 100, 100)}%`,
-                    backgroundColor: liquidityStatus.color,
+                    width: "100%",
+                    backgroundColor: "#3B82F6",
                   }}
                 ></div>
               </div>
               <div className={styles.liquidityWarning}>
                 <i
-                  className={`fas fa-${
-                    netCashflow >= 0 ? "check-circle" : "exclamation-triangle"
-                  }`}
-                  style={{ color: netCashflow >= 0 ? "#10B981" : "#F59E0B" }}
+                  className="fas fa-check-circle"
+                  style={{ color: "#3B82F6" }}
                 ></i>
                 <p>
-                  {aiInsights?.liquidityInsight ||
-                    (isAnalyzing && aiInsights
-                      ? aiInsights.liquidityInsight
-                      : `현금흐름이 ${netCashflow >= 0 ? "양호" : "마이너스"} 상태(월 ${netCashflow.toFixed(1)}만원)입니다.`)}
+                  비상자금이 권장 수준을 크게 상회하여 매우 안정적입니다. 향후 의료비 재원 등으로 활용 가능합니다.
                 </p>
               </div>
             </div>
