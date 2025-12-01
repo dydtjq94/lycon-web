@@ -898,17 +898,18 @@ function RechartsAssetChart({
       // entry가 없으면 아무것도 렌더링하지 않음
       if (!entry) return null;
 
-      // 저축/투자 값이 양수인 경우에만 아이콘 표시
-      if (value <= 0) return null;
-
       const year = entry.year;
-      const hasWithdrawable = hasWithdrawableAssetsForYear(year);
-
-      // 인출 가능한 자산이 없으면 아이콘 표시 안함
-      if (!hasWithdrawable) return null;
 
       // 해당 연도에 인출 규칙이 있는지 확인
       const hasWithdrawal = currentSimulation?.assetWithdrawalRules?.[year]?.withdrawals?.length > 0;
+
+      // 저축/투자 값이 0 이하이고 인출 규칙도 없으면 아이콘 표시 안함
+      if (value <= 0 && !hasWithdrawal) return null;
+
+      const hasWithdrawable = hasWithdrawableAssetsForYear(year);
+
+      // 인출 가능한 자산이 없고 인출 규칙도 없으면 아이콘 표시 안함
+      if (!hasWithdrawable && !hasWithdrawal) return null;
 
       const baseColor = hasWithdrawal ? "#f59e0b" : "#9ca3af"; // 앰버색 or 회색
       const hoverColor = hasWithdrawal ? "#d97706" : "#374151"; // 진한 앰버색 or 진한 회색
