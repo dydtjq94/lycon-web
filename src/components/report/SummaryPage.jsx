@@ -5,7 +5,7 @@ import styles from "./SummaryPage.module.css";
  * 종합 진단 결과 요약 (Page 17)
  * 하드코딩된 데이터로 표시
  */
-function SummaryPage({ profile, simulationData }) {
+function SummaryPage() {
   return (
     <div className={styles.slideContainer}>
       {/* Header */}

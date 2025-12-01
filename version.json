@@ -1,7 +1,15 @@
 {
-  "version": "0.34.35",
+  "version": "0.34.36",
   "today": "2025-12-01",
   "history": [
+    {
+      "version": "0.34.36",
+      "date": "2025-12-01",
+      "changes": [
+        "SummaryPage(17페이지) 종합 진단 결과 요약 하드코딩으로 변경",
+        "simulationData undefined 오류 수정"
+      ]
+    },
     {
       "version": "0.34.35",
       "date": "2025-12-01",
