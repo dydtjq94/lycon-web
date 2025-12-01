@@ -2163,8 +2163,10 @@ export function calculateCashflowSimulation(
       totalCapitalGainsTax;
 
     // 잉여 현금 투자 규칙 처리 (현금흐름이 양수인 경우)
-    // ⚠️ 중요: 잉여 현금 투자는 지출이 아니라 자산 이동이므로 현금 흐름에 영향 없음
-    // 자산 시뮬레이션에서만 처리 (1869-1908번 줄)
+    // 잉여 현금 투자는 현금에서 자산으로 이동하므로 현금흐름에서 차감되어야 함
+
+    let totalSurplusInvestment = 0;
+    const surplusInvestments = []; // 투자 상세 정보
 
     if (netCashflow > 0 && profileData.cashflowInvestmentRules) {
       const investmentRule = profileData.cashflowInvestmentRules[year];
@@ -2173,6 +2175,8 @@ export function calculateCashflowSimulation(
         // 각 배분 항목에 대해 투자 금액 계산 및 누적
         investmentRule.allocations.forEach((allocation) => {
           if (allocation.ratio <= 0) return;
+          // 현금은 투자가 아니므로 제외
+          if (allocation.targetType === "cash") return;
 
           const investAmount =
             Math.round(netCashflow * (allocation.ratio / 100) * 100) / 100;
@@ -2204,11 +2208,19 @@ export function calculateCashflowSimulation(
                 // 원금 추적: 잉여 현금 투자도 원금에 포함
                 savingStates[stateKey].totalPrincipal =
                   Math.round((savingStates[stateKey].totalPrincipal + investAmount) * 100) / 100;
+
+                // 투자 상세 정보 저장
+                const saving = savings.find(s => s.id === allocation.targetId);
+                surplusInvestments.push({
+                  targetType: "saving",
+                  targetId: allocation.targetId,
+                  title: saving?.title || "저축/투자",
+                  amount: investAmount,
+                });
+                totalSurplusInvestment += investAmount;
               }
             } else if (allocation.targetType === "pension") {
               // 연금 상품에 대한 투자 금액 기록 (년-월 키 형식)
-              // 연금은 savingInvestments 대신 별도 추적이 필요하지만,
-              // 현재는 저축과 동일하게 처리 (추후 개선 가능)
               const investKey = `${year}-12`;
               if (!savingInvestments[allocation.targetId]) {
                 savingInvestments[allocation.targetId] = {};
@@ -2222,13 +2234,36 @@ export function calculateCashflowSimulation(
                     investAmount) *
                     100
                 ) / 100;
+
+              // 투자 상세 정보 저장
+              const pension = pensions.find(p => p.id === allocation.targetId);
+              surplusInvestments.push({
+                targetType: "pension",
+                targetId: allocation.targetId,
+                title: pension?.title || "연금",
+                amount: investAmount,
+              });
+              totalSurplusInvestment += investAmount;
             }
           }
+        });
+
+        // 잉여 현금 투자를 지출 항목에 추가 (현금흐름에서 차감)
+        surplusInvestments.forEach((investment, idx) => {
+          addNegative(
+            `${investment.title} | 잉여 현금 적립`,
+            investment.amount,
+            "잉여투자",
+            `surplus-investment-${idx}`
+          );
         });
       }
     }
 
-    // ⚠️ 투자 금액은 savingContributions에 포함하지 않음 (지출이 아니므로)
+    // 잉여 현금 투자를 반영한 최종 현금흐름 계산
+    netCashflow = netCashflow - totalSurplusInvestment;
+
+    // ⚠️ 투자 금액은 savingContributions에 포함하지 않음 (별도 항목으로 표시)
     const allSavingContributions = [...savingContributions];
 
     // 자산 인출 처리 (저축/투자에서 현금으로 인출)
@@ -2320,6 +2355,8 @@ export function calculateCashflowSimulation(
       realEstateSales: realEstateSales,
       assetWithdrawal: totalAssetWithdrawal, // 자산 인출 총액
       assetWithdrawals: assetWithdrawals, // 자산 인출 상세 정보
+      surplusInvestment: totalSurplusInvestment, // 잉여 현금 투자 총액
+      surplusInvestments: surplusInvestments, // 잉여 현금 투자 상세 정보
       breakdown: {
         positives: positiveBreakdown,
         negatives: negativeBreakdown,
@@ -2818,77 +2855,38 @@ export function calculateAssetSimulation(
       }
     });
 
-    // 잉여 현금 자동 투자 처리 (고급 버전: 여러 자산에 비율로 분배)
-    // 저축 계산 이후 실행 - 연말 기준으로 이번 해 수익률 적용 X
+    // 잉여 현금 투자 처리: cashflowData에서 투자 정보 가져오기
+    // 현금흐름 시뮬레이션에서 이미 계산된 투자 금액을 사용
     const investmentInfo = {}; // 투자 정보 저장 (자산별)
-    if (netCashflow > 0 && profileData.cashflowInvestmentRules) {
-      const investmentRule = profileData.cashflowInvestmentRules[year];
+    const yearCashflowData = cashflowData.find((cf) => cf.year === year);
 
-      if (investmentRule && investmentRule.allocations) {
-        // 각 배분 항목에 대해 투자 실행
-        investmentRule.allocations.forEach((allocation) => {
-          if (allocation.ratio <= 0) return;
-
-          const investAmount =
-            Math.round(netCashflow * (allocation.ratio / 100) * 100) / 100;
-
-          if (investAmount > 0) {
-            if (allocation.targetType === "saving" && allocation.targetId) {
-              // 저축 상품에 투자
-              const targetSaving = savingsById[allocation.targetId];
-
-              if (targetSaving && targetSaving.isActive) {
-                // 저축 자산에 투자 금액 추가 (연말 투자이므로 이번 해 수익률 적용 안 됨)
-                targetSaving.amount =
-                  Math.round((targetSaving.amount + investAmount) * 100) / 100;
-
-                // 이번 해 투자 금액 누적 (현금흐름 시뮬레이션에서 이미 계산하므로 여기서는 표시용만)
-                targetSaving.totalInvested =
-                  Math.round(
-                    (targetSaving.totalInvested + investAmount) * 100
-                  ) / 100;
-
-                // 현금에서 투자 금액 차감
-                currentCash =
-                  Math.round((currentCash - investAmount) * 100) / 100;
-
-                // 투자 정보 저장 (자산 차트에서 표시용 - 이번 해 투자 금액만)
-                investmentInfo[targetSaving.title] = investAmount;
-              }
-            } else if (
-              allocation.targetType === "pension" &&
-              allocation.targetId
-            ) {
-              // 연금 상품에 투자 (퇴직연금, 개인연금)
-              const targetPension = pensionsById[allocation.targetId];
-
-              if (targetPension && targetPension.isActive) {
-                // 연금 자산에 투자 금액 추가 (추가 납입)
-                targetPension.amount =
-                  Math.round((targetPension.amount + investAmount) * 100) / 100;
-
-                // 이번 해 투자 금액 누적
-                if (!targetPension.totalInvested) {
-                  targetPension.totalInvested = 0;
-                }
-                targetPension.totalInvested =
-                  Math.round(
-                    (targetPension.totalInvested + investAmount) * 100
-                  ) / 100;
-
-                // 현금에서 투자 금액 차감
-                currentCash =
-                  Math.round((currentCash - investAmount) * 100) / 100;
-
-                // 투자 정보 저장 (자산 차트에서 표시용 - 이번 해 투자 금액만)
-                investmentInfo[targetPension.title] = investAmount;
-              }
-            } else if (allocation.targetType === "cash") {
-              // 현금 유지: 아무것도 안 함 (이미 currentCash에 포함됨)
-            }
+    if (yearCashflowData && yearCashflowData.surplusInvestments) {
+      yearCashflowData.surplusInvestments.forEach((investment) => {
+        if (investment.targetType === "saving" && investment.targetId) {
+          const targetSaving = savingsById[investment.targetId];
+          if (targetSaving && targetSaving.isActive) {
+            // 저축 자산에 투자 금액 추가
+            targetSaving.amount =
+              Math.round((targetSaving.amount + investment.amount) * 100) / 100;
+            targetSaving.totalInvested =
+              Math.round((targetSaving.totalInvested + investment.amount) * 100) / 100;
+            investmentInfo[targetSaving.title] = investment.amount;
           }
-        });
-      }
+        } else if (investment.targetType === "pension" && investment.targetId) {
+          const targetPension = pensionsById[investment.targetId];
+          if (targetPension && targetPension.isActive) {
+            // 연금 자산에 투자 금액 추가
+            targetPension.amount =
+              Math.round((targetPension.amount + investment.amount) * 100) / 100;
+            if (!targetPension.totalInvested) {
+              targetPension.totalInvested = 0;
+            }
+            targetPension.totalInvested =
+              Math.round((targetPension.totalInvested + investment.amount) * 100) / 100;
+            investmentInfo[targetPension.title] = investment.amount;
+          }
+        }
+      });
     }
 
     // 자산 인출 규칙 처리 (저축/투자, 연금에서 현금으로 인출)
@@ -2914,6 +2912,13 @@ export function calculateAssetSimulation(
               targetSaving.amount =
                 Math.round((targetSaving.amount - actualWithdrawal) * 100) / 100;
 
+              // 인출 누적액 저장
+              if (!targetSaving.totalWithdrawn) {
+                targetSaving.totalWithdrawn = 0;
+              }
+              targetSaving.totalWithdrawn =
+                Math.round((targetSaving.totalWithdrawn + actualWithdrawal) * 100) / 100;
+
               // 현금에 인출 금액 추가
               currentCash =
                 Math.round((currentCash + actualWithdrawal) * 100) / 100;
@@ -2931,6 +2936,13 @@ export function calculateAssetSimulation(
               // 연금 자산에서 인출 금액 차감
               targetPension.amount =
                 Math.round((targetPension.amount - withdrawal.amount) * 100) / 100;
+
+              // 인출 누적액 저장
+              if (!targetPension.totalWithdrawn) {
+                targetPension.totalWithdrawn = 0;
+              }
+              targetPension.totalWithdrawn =
+                Math.round((targetPension.totalWithdrawn + withdrawal.amount) * 100) / 100;
 
               // 현금에 인출 금액 추가
               currentCash =

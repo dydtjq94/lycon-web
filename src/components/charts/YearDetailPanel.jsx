@@ -695,12 +695,12 @@ function YearDetailPanel({
                               {item.label}
                               {investmentAmount > 0 && (
                                 <span className={styles.investmentBadge}>
-                                  + {formatAmountForChart(investmentAmount)}
+                                  잉여 현금 +{formatAmountForChart(investmentAmount)}
                                 </span>
                               )}
                               {withdrawalAmount > 0 && (
                                 <span className={styles.withdrawalBadge}>
-                                  - {formatAmountForChart(withdrawalAmount)}
+                                  현금 인출 -{formatAmountForChart(withdrawalAmount)}
                                 </span>
                               )}
                             </span>

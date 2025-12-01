@@ -821,6 +821,8 @@ function RechartsCashflowChart({
                 "저축 만료": { color: "#3b82f6", name: "저축/투자" },
                 자산인출: { color: "#3b82f6", name: "저축/투자" },
                 "자산 인출": { color: "#3b82f6", name: "저축/투자" },
+                잉여투자: { color: "#3b82f6", name: "저축/투자" },
+                "잉여 투자": { color: "#3b82f6", name: "저축/투자" },
                 국민연금: { color: "#fbbf24", name: "연금" },
                 퇴직연금: { color: "#fbbf24", name: "연금" },
                 개인연금: { color: "#fbbf24", name: "연금" },
@@ -1251,6 +1253,8 @@ function RechartsCashflowChart({
     "저축 만료": { color: "#3b82f6", order: 3, name: "저축" },
     자산인출: { color: "#3b82f6", order: 3, name: "저축" },
     "자산 인출": { color: "#3b82f6", order: 3, name: "저축" },
+    잉여투자: { color: "#3b82f6", order: 3, name: "저축" },
+    "잉여 투자": { color: "#3b82f6", order: 3, name: "저축" },
     국민연금: { color: "#fbbf24", order: 4, name: "연금" },
     퇴직연금: { color: "#fbbf24", order: 4, name: "연금" },
     개인연금: { color: "#fbbf24", order: 4, name: "연금" },
@@ -1435,19 +1439,39 @@ function RechartsCashflowChart({
   // 투자 설정 아이콘 클릭 핸들러
   const handleInvestmentSettingClick = useCallback(
     (entry) => {
-      if (!entry || entry.amount <= 0) return;
-
-      // 양수 현금흐름이 있는 모든 년도 목록 계산
-      const positiveYears = chartData
-        .filter((item) => item.amount > 0)
-        .map((item) => ({
-          year: item.year,
-          amount: item.amount,
-        }));
+      if (!entry) return;
 
       // 현재 설정된 투자 규칙 가져오기
       const currentRule =
         currentSimulation?.cashflowInvestmentRules?.[entry.year] || null;
+
+      // 투자 설정이 있는 경우에는 amount가 0 이하여도 모달 열기 허용
+      const hasInvestment = currentRule?.allocations?.some(
+        (allocation) =>
+          (allocation.targetType === "saving" ||
+            allocation.targetType === "pension") &&
+          allocation.ratio > 0
+      );
+
+      if (entry.amount <= 0 && !hasInvestment) return;
+
+      // 양수 현금흐름이 있거나 투자 설정이 있는 년도 목록 계산
+      const positiveYears = chartData
+        .filter((item) => {
+          if (item.amount > 0) return true;
+          // 투자 설정이 있는 년도도 포함
+          const rule = currentSimulation?.cashflowInvestmentRules?.[item.year];
+          return rule?.allocations?.some(
+            (allocation) =>
+              (allocation.targetType === "saving" ||
+                allocation.targetType === "pension") &&
+              allocation.ratio > 0
+          );
+        })
+        .map((item) => ({
+          year: item.year,
+          amount: item.amount,
+        }));
 
       setInvestmentModalData({
         year: entry.year,
@@ -1478,26 +1502,29 @@ function RechartsCashflowChart({
         return null;
       }
 
-      // 양수인 경우에만 설정 아이콘 표시
-      if (value > 0) {
-        // 투자 규칙 확인 (현금 100%가 아닌 경우 파란색)
-        const investmentRule =
-          currentSimulation?.cashflowInvestmentRules?.[entry.year];
-        const hasInvestment = investmentRule?.allocations?.some(
-          (allocation) =>
-            (allocation.targetType === "saving" ||
-              allocation.targetType === "pension") &&
-            allocation.ratio > 0
-        );
+      // 투자 규칙 확인 (현금 100%가 아닌 경우 파란색)
+      const investmentRule =
+        currentSimulation?.cashflowInvestmentRules?.[entry.year];
+      const hasInvestment = investmentRule?.allocations?.some(
+        (allocation) =>
+          (allocation.targetType === "saving" ||
+            allocation.targetType === "pension") &&
+          allocation.ratio > 0
+      );
 
+      // 양수인 경우 또는 투자 설정이 있는 경우 아이콘 표시
+      if (value > 0 || hasInvestment) {
         const baseColor = hasInvestment ? "#3b82f6" : "#9ca3af"; // 파란색 or 회색
         const hoverColor = hasInvestment ? "#2563eb" : "#374151"; // 진한 파란색 or 진한 회색
+
+        // 0원일 때 아이콘 위치 계산 (바 높이가 0이므로 기준선 위에 표시)
+        const iconY = value > 0 ? y - 20 : y - 16;
 
         return (
           <g>
             <foreignObject
               x={x + width / 2 - 8}
-              y={y - 20}
+              y={iconY}
               width={16}
               height={16}
               style={{ pointerEvents: "auto" }}
