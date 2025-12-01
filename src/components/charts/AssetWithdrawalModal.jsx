@@ -17,13 +17,6 @@ function AssetWithdrawalModal({
   onSave,
   onYearChange,
 }) {
-  // 선택된 년도들 (기본: 현재 년도만)
-  const [selectedYears, setSelectedYears] = useState([year]);
-
-  // 범위 슬라이더용 상태 (인덱스 기반)
-  const [rangeStartIdx, setRangeStartIdx] = useState(0);
-  const [rangeEndIdx, setRangeEndIdx] = useState(0);
-
   // 인출 금액 (각 자산별)
   const [withdrawals, setWithdrawals] = useState({});
 
@@ -41,21 +34,6 @@ function AssetWithdrawalModal({
   }, [isOpen]);
 
   useEffect(() => {
-    // 현재 년도의 인덱스 찾기
-    const currentYearIdx = withdrawableYears.findIndex(
-      (item) => item.year === year
-    );
-
-    if (currentYearIdx !== -1) {
-      setRangeStartIdx(currentYearIdx);
-      setRangeEndIdx(currentYearIdx);
-      setSelectedYears([year]);
-    } else {
-      setRangeStartIdx(0);
-      setRangeEndIdx(0);
-      setSelectedYears([year]);
-    }
-
     // 기존 규칙이 있으면 로드
     if (currentRule && currentRule.withdrawals && currentRule.withdrawals.length > 0) {
       const newWithdrawals = {};
@@ -66,7 +44,7 @@ function AssetWithdrawalModal({
     } else {
       setWithdrawals({});
     }
-  }, [currentRule, isOpen, year, withdrawableYears]);
+  }, [currentRule, isOpen, year]);
 
   // ESC 키로 모달 닫기 및 방향키로 연도 이동
   useEffect(() => {
@@ -103,25 +81,21 @@ function AssetWithdrawalModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose, year, withdrawableYears, onYearChange]);
 
-  // 범위 변경 시 선택된 년도 업데이트 (훅은 조기 반환 전에 호출되어야 함)
-  useEffect(() => {
-    if (withdrawableYears.length === 0) return;
-
-    const yearsInRange = withdrawableYears
-      .slice(rangeStartIdx, rangeEndIdx + 1)
-      .map((item) => item.year);
-
-    setSelectedYears(yearsInRange);
-  }, [rangeStartIdx, rangeEndIdx, withdrawableYears]);
-
   if (!isOpen) return null;
 
   // 해당 연도의 자산 잔액 가져오기
   const yearData = detailedData.find((d) => d.year === year);
   const breakdown = yearData?.breakdown || {};
 
-  // 활성 저축 상품 필터링 (잔액이 있는 저축만, label/title로 비교)
+  // 기존 인출 규칙에 있는 자산 ID 목록
+  const existingWithdrawalIds = currentRule?.withdrawals?.map(w => w.sourceId) || [];
+
+  // 활성 저축 상품 필터링 (잔액이 있거나 기존 인출 규칙이 있는 저축)
   const activeSavings = savings.filter((saving) => {
+    // 기존 인출 규칙이 있으면 항상 표시
+    if (existingWithdrawalIds.includes(saving.id)) {
+      return true;
+    }
     // 잔액 확인 (label로 비교)
     const assetItem = breakdown.assetItems?.find(
       (item) => item.label === saving.title && item.sourceType === "saving"
@@ -163,13 +137,14 @@ function AssetWithdrawalModal({
 
   // 저장
   const handleSave = () => {
-    // 잔액 초과 검사
+    // 잔액 초과 검사 (잔액이 있는 자산만)
     for (const [id, amount] of Object.entries(withdrawals)) {
       if (amount > 0) {
-        const saving = activeSavings.find((s) => s.id === id);
+        const saving = savings.find((s) => s.id === id);
         if (saving) {
           const balance = getAssetBalance(saving.title);
-          if (amount > balance) {
+          // 잔액이 있는 경우에만 초과 검사
+          if (balance > 0 && amount > balance) {
             alert(`${saving.title}의 잔액(${formatAmount(balance)})을 초과할 수 없습니다.`);
             return;
           }
@@ -177,27 +152,30 @@ function AssetWithdrawalModal({
       }
     }
 
-    // withdrawals 배열 생성
+    // withdrawals 배열 생성 (인출 금액이 있는 모든 자산)
     const withdrawalList = [];
 
-    activeSavings.forEach((saving) => {
-      const amount = withdrawals[saving.id] || 0;
+    for (const [id, amount] of Object.entries(withdrawals)) {
       if (amount > 0) {
-        withdrawalList.push({
-          sourceType: "saving",
-          sourceId: saving.id,
-          sourceTitle: saving.title,
-          amount: amount,
-        });
+        const saving = savings.find((s) => s.id === id);
+        if (saving) {
+          withdrawalList.push({
+            sourceType: "saving",
+            sourceId: saving.id,
+            sourceTitle: saving.title,
+            amount: amount,
+          });
+        }
       }
-    });
+    }
 
     // 인출 데이터가 없으면 규칙 삭제 (null 전달)
     const rule = withdrawalList.length === 0
       ? null
       : { withdrawals: withdrawalList };
 
-    onSave(selectedYears, rule);
+    // 현재 년도에만 적용
+    onSave([year], rule);
     onClose();
   };
 
@@ -227,95 +205,13 @@ function AssetWithdrawalModal({
             </p>
           </div>
 
-          {/* 적용 범위 선택 - 범위 슬라이더 */}
-          {withdrawableYears.length > 1 && (
-            <div className={styles.rangeSliderSection}>
-              <div className={styles.sectionLabel}>적용 범위 선택</div>
-
-              <div className={styles.sliderContainer}>
-                <div className={styles.dualSlider}>
-                  <div className={styles.sliderTrack}>
-                    <div
-                      className={styles.sliderRange}
-                      style={{
-                        left:
-                          rangeStartIdx === 0
-                            ? "0px"
-                            : `calc(${
-                                (rangeStartIdx / (withdrawableYears.length - 1)) *
-                                100
-                              }% - 12px)`,
-                        right:
-                          rangeEndIdx === withdrawableYears.length - 1
-                            ? "0px"
-                            : `calc(${
-                                100 -
-                                (rangeEndIdx / (withdrawableYears.length - 1)) * 100
-                              }% - 12px)`,
-                      }}
-                    />
-                  </div>
-
-                  <input
-                    type="range"
-                    min={0}
-                    max={withdrawableYears.length - 1}
-                    value={rangeStartIdx}
-                    onChange={(e) => {
-                      const newStartIdx = parseInt(e.target.value);
-                      if (newStartIdx <= rangeEndIdx) {
-                        setRangeStartIdx(newStartIdx);
-                      }
-                    }}
-                    className={`${styles.sliderInput} ${styles.sliderInputStart}`}
-                  />
-
-                  <input
-                    type="range"
-                    min={0}
-                    max={withdrawableYears.length - 1}
-                    value={rangeEndIdx}
-                    onChange={(e) => {
-                      const newEndIdx = parseInt(e.target.value);
-                      if (newEndIdx >= rangeStartIdx) {
-                        setRangeEndIdx(newEndIdx);
-                      }
-                    }}
-                    className={`${styles.sliderInput} ${styles.sliderInputEnd}`}
-                  />
-                </div>
-
-                <div className={styles.minMaxLabels}>
-                  <span>{withdrawableYears[0]?.year}</span>
-                  <span>{withdrawableYears[withdrawableYears.length - 1]?.year}</span>
-                </div>
-              </div>
-
-              <div className={styles.rangeInfo}>
-                {rangeStartIdx === rangeEndIdx ? (
-                  <span className={styles.rangeYears}>
-                    {withdrawableYears[rangeStartIdx]?.year}년
-                  </span>
-                ) : (
-                  <span className={styles.rangeYears}>
-                    {withdrawableYears[rangeStartIdx]?.year}년 ~{" "}
-                    {withdrawableYears[rangeEndIdx]?.year}년
-                  </span>
-                )}
-                <span className={styles.selectedCount}>
-                  {selectedYears.length}개 년도
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* 인출 대상 목록 */}
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
-              <label className={styles.sectionLabel}>인출 대상</label>
+              <label className={styles.sectionLabel}>총 인출 금액</label>
               {totalWithdrawal > 0 && (
                 <span className={styles.totalWithdrawal}>
-                  총 {formatAmount(totalWithdrawal)}
+                  {formatAmount(totalWithdrawal)}
                 </span>
               )}
             </div>

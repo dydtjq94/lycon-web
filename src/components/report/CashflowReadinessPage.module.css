@@ -92,6 +92,7 @@
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top-width: 4px;
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -166,6 +167,7 @@
   background-color: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top-width: 4px;
   border-radius: 8px;
   padding: 20px;
   display: flex;

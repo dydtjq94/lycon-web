@@ -424,27 +424,27 @@ function ReportPage() {
 
   return (
     <div className={styles.reportContainer}>
-      {/* 상단 호버 영역 (트리거 + 헤더 통합) */}
+      {/* 상단 호버 트리거 영역 */}
       <div
-        className={styles.headerWrapper}
+        className={styles.hoverTrigger}
         onMouseEnter={() => setShowHeader(true)}
+      ></div>
+
+      {/* 상단 헤더 - 호버시 나타남 */}
+      <div
+        className={`${styles.topHeader} ${showHeader ? styles.topHeaderVisible : ""}`}
         onMouseLeave={() => setShowHeader(false)}
       >
-        {/* 상단 헤더 - 호버시 나타남 */}
-        <div
-          className={`${styles.topHeader} ${showHeader ? styles.topHeaderVisible : ""}`}
-        >
-          <button className={styles.backButton} onClick={() => navigate(`/consult/report/${profileId}`)}>
-            <i className="fas fa-arrow-left"></i>
-          </button>
-          <div className={styles.headerInfo}>
-            <span className={styles.headerProfileName}>{profile?.name}님의 은퇴 설계 보고서</span>
-            <span className={styles.headerReportType}>
-              {reportType === "basic" && "Basic"}
-              {reportType === "standard" && "Standard"}
-              {reportType === "premium" && "Premium"}
-            </span>
-          </div>
+        <button className={styles.backButton} onClick={() => navigate(`/consult/report/${profileId}`)}>
+          <i className="fas fa-arrow-left"></i>
+        </button>
+        <div className={styles.headerInfo}>
+          <span className={styles.headerProfileName}>{profile?.name}님의 은퇴 설계 보고서</span>
+          <span className={styles.headerReportType}>
+            {reportType === "basic" && "Basic"}
+            {reportType === "standard" && "Standard"}
+            {reportType === "premium" && "Premium"}
+          </span>
         </div>
       </div>
 
