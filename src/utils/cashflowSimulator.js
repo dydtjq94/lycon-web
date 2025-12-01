@@ -2919,9 +2919,7 @@ export function calculateAssetSimulation(
               targetSaving.totalWithdrawn =
                 Math.round((targetSaving.totalWithdrawn + actualWithdrawal) * 100) / 100;
 
-              // 현금에 인출 금액 추가
-              currentCash =
-                Math.round((currentCash + actualWithdrawal) * 100) / 100;
+              // 현금 추가는 현금흐름 시뮬레이션에서 처리 (중복 방지)
 
               // 인출 정보 저장 (표시용)
               withdrawalInfo[targetSaving.title] = actualWithdrawal;
@@ -2944,9 +2942,7 @@ export function calculateAssetSimulation(
               targetPension.totalWithdrawn =
                 Math.round((targetPension.totalWithdrawn + withdrawal.amount) * 100) / 100;
 
-              // 현금에 인출 금액 추가
-              currentCash =
-                Math.round((currentCash + withdrawal.amount) * 100) / 100;
+              // 현금 추가는 현금흐름 시뮬레이션에서 처리 (중복 방지)
 
               // 인출 정보 저장 (표시용)
               withdrawalInfo[targetPension.title] = withdrawal.amount;
