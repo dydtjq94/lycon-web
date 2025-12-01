@@ -18,6 +18,16 @@ function LandingPage() {
 
   return (
     <div className={styles.landingContainer}>
+      {/* Header */}
+      <header className={styles.header}>
+        <button
+          className={styles.dashboardButton}
+          onClick={() => navigate("/consult")}
+        >
+          대시보드
+        </button>
+      </header>
+
       {/* Hero Section */}
       <div className={styles.heroSection}>
         <h1 className={styles.mainTitle}>Lycon Planning</h1>
