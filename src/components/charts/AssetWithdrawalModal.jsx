@@ -129,12 +129,12 @@ function AssetWithdrawalModal({
     return assetItem && assetItem.amount > 0;
   });
 
-  // 자산별 현재 잔액 가져오기 (label/title로 비교)
+  // 자산별 현재 잔액 가져오기 (label/title로 비교, 정수로 반환)
   const getAssetBalance = (title) => {
     const assetItem = breakdown.assetItems?.find(
       (item) => item.label === title && item.sourceType === "saving"
     );
-    return assetItem?.amount || 0;
+    return Math.round(assetItem?.amount || 0);
   };
 
   // 총 인출 금액 계산
@@ -163,12 +163,6 @@ function AssetWithdrawalModal({
 
   // 저장
   const handleSave = () => {
-    // 인출 정보가 없으면 경고
-    if (totalWithdrawal === 0) {
-      alert("인출 금액을 입력해주세요.");
-      return;
-    }
-
     // 잔액 초과 검사
     for (const [id, amount] of Object.entries(withdrawals)) {
       if (amount > 0) {
@@ -392,7 +386,6 @@ function AssetWithdrawalModal({
             <button
               className={styles.saveButton}
               onClick={handleSave}
-              disabled={totalWithdrawal === 0}
             >
               저장
             </button>

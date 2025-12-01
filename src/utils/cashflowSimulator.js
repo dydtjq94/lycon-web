@@ -2231,11 +2231,65 @@ export function calculateCashflowSimulation(
     // ⚠️ 투자 금액은 savingContributions에 포함하지 않음 (지출이 아니므로)
     const allSavingContributions = [...savingContributions];
 
+    // 자산 인출 처리 (저축/투자에서 현금으로 인출)
+    let totalAssetWithdrawal = 0;
+    const assetWithdrawals = []; // 인출 상세 정보
+
+    if (profileData.assetWithdrawalRules) {
+      const withdrawalRule = profileData.assetWithdrawalRules[year];
+
+      if (withdrawalRule && withdrawalRule.withdrawals) {
+        withdrawalRule.withdrawals.forEach((withdrawal) => {
+          if (withdrawal.amount <= 0) return;
+
+          if (withdrawal.sourceType === "saving" && withdrawal.sourceId) {
+            // 저축에서 인출 - savingStates에서 해당 저축 찾기
+            const stateKey = withdrawal.sourceId;
+            const savingState = savingStates[stateKey];
+
+            if (savingState && savingState.balance > 0) {
+              // 실제 인출 가능 금액 (잔액 초과 방지)
+              const actualWithdrawal = Math.min(withdrawal.amount, savingState.balance);
+
+              // 저축 잔액에서 차감
+              savingState.balance =
+                Math.round((savingState.balance - actualWithdrawal) * 100) / 100;
+
+              // 인출 금액 누적
+              totalAssetWithdrawal += actualWithdrawal;
+
+              // 인출 상세 정보 저장
+              assetWithdrawals.push({
+                title: `${withdrawal.sourceTitle || "저축/투자"} | 인출`,
+                amount: actualWithdrawal,
+              });
+
+              // 순현금흐름에 인출 금액 추가
+              netCashflow =
+                Math.round((netCashflow + actualWithdrawal) * 100) / 100;
+            }
+          }
+        });
+      }
+    }
+
+    // 인출 금액을 breakdown에 추가 (양수/수입으로)
+    if (totalAssetWithdrawal > 0) {
+      assetWithdrawals.forEach((withdrawal, idx) => {
+        addPositive(
+          withdrawal.title,
+          withdrawal.amount,
+          "자산인출",
+          `asset-withdrawal-${idx}`
+        );
+      });
+    }
+
     cashflowData.push({
       year,
       age,
       amount: netCashflow,
-      income: totalIncome + totalSavingIncome, // 저축 수익을 총 수입에 포함
+      income: totalIncome + totalSavingIncome + totalAssetWithdrawal, // 인출 금액을 수입에 포함
       expense: totalExpense,
       savings: totalSavings,
       pension: totalPension,
@@ -2264,6 +2318,8 @@ export function calculateCashflowSimulation(
       debtInjections: debtInjections,
       assetSales: assetSales,
       realEstateSales: realEstateSales,
+      assetWithdrawal: totalAssetWithdrawal, // 자산 인출 총액
+      assetWithdrawals: assetWithdrawals, // 자산 인출 상세 정보
       breakdown: {
         positives: positiveBreakdown,
         negatives: negativeBreakdown,
@@ -2850,17 +2906,20 @@ export function calculateAssetSimulation(
             // 저축에서 인출
             const targetSaving = savingsById[withdrawal.sourceId];
 
-            if (targetSaving && targetSaving.isActive && targetSaving.amount >= withdrawal.amount) {
+            if (targetSaving && targetSaving.amount > 0) {
+              // 실제 인출 가능 금액 (잔액 초과 방지)
+              const actualWithdrawal = Math.min(withdrawal.amount, targetSaving.amount);
+
               // 저축 자산에서 인출 금액 차감
               targetSaving.amount =
-                Math.round((targetSaving.amount - withdrawal.amount) * 100) / 100;
+                Math.round((targetSaving.amount - actualWithdrawal) * 100) / 100;
 
               // 현금에 인출 금액 추가
               currentCash =
-                Math.round((currentCash + withdrawal.amount) * 100) / 100;
+                Math.round((currentCash + actualWithdrawal) * 100) / 100;
 
               // 인출 정보 저장 (표시용)
-              withdrawalInfo[targetSaving.title] = withdrawal.amount;
+              withdrawalInfo[targetSaving.title] = actualWithdrawal;
             }
           } else if (withdrawal.sourceType === "pension" && withdrawal.sourceId) {
             // 연금에서 인출 (퇴직연금/개인연금, 수령 시작 전만)
