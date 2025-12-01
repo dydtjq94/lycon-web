@@ -272,6 +272,118 @@ export const profileService = {
     }
   },
 
+  // 프로필 복제 (모든 하위 데이터 포함)
+  async duplicateProfile(profileId) {
+    try {
+      // 1. 원본 프로필 조회
+      const originalProfile = await this.getProfile(profileId);
+      if (!originalProfile) {
+        throw new Error("복제할 프로필을 찾을 수 없습니다.");
+      }
+
+      // 2. 새 프로필 생성 (이름에 "(복사본)" 추가)
+      const { id, createdAt, updatedAt, ...profileData } = originalProfile;
+      const newProfileData = {
+        ...profileData,
+        name: `${profileData.name} (복사본)`,
+      };
+      const newProfile = await this.createProfile(newProfileData);
+      const newProfileId = newProfile.id;
+
+      // 3. 원본 프로필의 모든 시뮬레이션 복제
+      const simulationsRef = collection(db, "profiles", profileId, "simulations");
+      const simulationsSnapshot = await getDocs(query(simulationsRef, orderBy("order", "asc")));
+
+      for (const simDoc of simulationsSnapshot.docs) {
+        const simData = simDoc.data();
+        const originalSimId = simDoc.id;
+
+        // 새 시뮬레이션 생성
+        const newSimRef = await addDoc(
+          collection(db, "profiles", newProfileId, "simulations"),
+          {
+            ...simData,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+        );
+        const newSimId = newSimRef.id;
+
+        // 4. 각 시뮬레이션의 하위 컬렉션 복제
+        const subcollections = [
+          "incomes",
+          "expenses",
+          "savings",
+          "pensions",
+          "realEstates",
+          "assets",
+          "debts",
+        ];
+
+        for (const subcollectionName of subcollections) {
+          const subcollectionRef = collection(
+            db,
+            "profiles",
+            profileId,
+            "simulations",
+            originalSimId,
+            subcollectionName
+          );
+          const subcollectionSnapshot = await getDocs(subcollectionRef);
+
+          if (!subcollectionSnapshot.empty) {
+            const batch = writeBatch(db);
+            subcollectionSnapshot.docs.forEach((docSnap) => {
+              const data = docSnap.data();
+              const newDocRef = doc(
+                db,
+                "profiles",
+                newProfileId,
+                "simulations",
+                newSimId,
+                subcollectionName,
+                docSnap.id
+              );
+              batch.set(newDocRef, {
+                ...data,
+                updatedAt: new Date().toISOString(),
+              });
+            });
+            await batch.commit();
+          }
+        }
+      }
+
+      // 5. 체크리스트 복제
+      const checklistsRef = collection(db, "profiles", profileId, "checklists");
+      const checklistsSnapshot = await getDocs(checklistsRef);
+
+      if (!checklistsSnapshot.empty) {
+        const batch = writeBatch(db);
+        checklistsSnapshot.docs.forEach((docSnap) => {
+          const data = docSnap.data();
+          const newDocRef = doc(
+            db,
+            "profiles",
+            newProfileId,
+            "checklists",
+            docSnap.id
+          );
+          batch.set(newDocRef, {
+            ...data,
+            updatedAt: new Date().toISOString(),
+          });
+        });
+        await batch.commit();
+      }
+
+      return newProfile;
+    } catch (error) {
+      console.error("프로필 복제 오류:", error);
+      throw new Error("프로필 복제 중 오류가 발생했습니다: " + error.message);
+    }
+  },
+
   // 하위 컬렉션의 모든 문서 삭제 헬퍼 함수
   async deleteSubcollection(profileId, subcollectionName) {
     try {

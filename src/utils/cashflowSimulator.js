@@ -1267,7 +1267,7 @@ export function calculateCashflowSimulation(
           // 양도세 (만기 시점) - 수익(이익)에만 과세
           const taxRate = state.capitalGainsTaxRate || 0;
           if (taxRate > 0 && maturityAmount > 0) {
-            // 수익 = 만기금액 - 총 원금 (기보유 + 적립 + 잉여현금 투자)
+            // 수익 = 만기금액 - 총 원금 (적립 + 잉여현금 투자, 기보유 금액 제외)
             const capitalGain = Math.max(0, maturityAmount - (state.totalPrincipal || 0));
             const capitalGainsTax = capitalGain * taxRate;
             const taxRatePercent = taxRate * 100;

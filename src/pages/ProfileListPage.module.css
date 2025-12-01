@@ -425,3 +425,89 @@
     font-size: 0.875rem;
   }
 }
+
+/* 컨텍스트 메뉴 */
+.contextMenu {
+  position: fixed;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 140px;
+  overflow: hidden;
+}
+
+.contextMenuItem {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.contextMenuItem:hover {
+  background: #f3f4f6;
+}
+
+.contextMenuItem:first-child {
+  border-radius: 7px 7px 0 0;
+}
+
+.contextMenuItem:last-child {
+  border-radius: 0 0 7px 7px;
+}
+
+.contextMenuItem:not(:last-child) {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 복제 중 오버레이 */
+.duplicatingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.duplicatingContent {
+  background: white;
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.duplicatingContent p {
+  margin: 1rem 0 0 0;
+  font-size: 1rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #111827;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -12,8 +12,12 @@ function GoalVerificationPage({ profile, financialData, simulationData }) {
   const currentAge = simulationData?.profile?.currentAge || profile?.age || 60;
   const retirementAge =
     simulationData?.profile?.retirementAge || profile?.retirementAge || 65;
-  const targetAssets =
-    simulationData?.profile?.targetAssets || profile?.targetAssets || 700000000;
+
+  // targetAssets는 프로필에서 만원 단위로 저장됨
+  // simulationData에서는 원 단위일 수 있으므로 둘 다 확인
+  const rawTargetAssets = simulationData?.profile?.targetAssets ?? profile?.targetAssets ?? 0;
+  // 프로필의 targetAssets는 만원 단위이므로 억원으로 변환: 만원 / 10000 = 억원
+  const targetAssetsInBillion = rawTargetAssets / 10000;
 
   // 은퇴 연도 계산
   const currentYear = new Date().getFullYear();
@@ -61,7 +65,7 @@ function GoalVerificationPage({ profile, financialData, simulationData }) {
                 <span>
                   <strong>목표 자산:</strong> 은퇴 시점 순자산{" "}
                   <span className={styles.goldText}>
-                    {(targetAssets / 100000000).toFixed(0)}억원
+                    {targetAssetsInBillion.toFixed(0)}억원
                   </span>{" "}
                   달성
                 </span>
@@ -76,7 +80,7 @@ function GoalVerificationPage({ profile, financialData, simulationData }) {
               <div className={styles.noteBox}>
                 <p>
                   Note: {profile?.name || "고객"}님 요청에 따라 목표 자산을{" "}
-                  {(targetAssets / 100000000).toFixed(0)}억원으로 설정하여
+                  {targetAssetsInBillion.toFixed(0)}억원으로 설정하여
                   시뮬레이션 진행
                 </p>
               </div>

@@ -21,6 +21,8 @@ function ProfileListPage() {
   const [error, setError] = useState(null);
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false); // 휴지통 모달
   const [activeTab, setActiveTab] = useState("sample"); // 기본 탭: 샘플
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, profileId: null, profileName: null }); // 컨텍스트 메뉴
+  const [duplicating, setDuplicating] = useState(false); // 복제 중 상태
 
   // 프로필 목록 로드
   useEffect(() => {
@@ -137,6 +139,52 @@ function ProfileListPage() {
       alert("프로필 삭제 중 오류가 발생했습니다.");
     }
   };
+
+  // 프로필 복제
+  const handleDuplicateProfile = async (profileId, profileName) => {
+    setContextMenu({ visible: false, x: 0, y: 0, profileId: null, profileName: null });
+
+    if (!confirm(`"${profileName}" 프로필을 복제하시겠습니까?\n\n모든 시뮬레이션과 데이터가 복사됩니다.`)) {
+      return;
+    }
+
+    try {
+      setDuplicating(true);
+      const newProfile = await profileService.duplicateProfile(profileId);
+      trackEvent("프로필 복제", { originalProfileId: profileId, newProfileId: newProfile.id, profileName });
+      await loadProfiles(); // 목록 새로고침
+      alert(`"${profileName}" 프로필이 복제되었습니다.`);
+    } catch (error) {
+      console.error("프로필 복제 오류:", error);
+      alert("프로필 복제 중 오류가 발생했습니다.");
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
+  // 컨텍스트 메뉴 열기
+  const handleContextMenu = (e, profileId, profileName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      profileId,
+      profileName,
+    });
+  };
+
+  // 컨텍스트 메뉴 닫기 (클릭 시)
+  useEffect(() => {
+    const handleClick = () => {
+      if (contextMenu.visible) {
+        setContextMenu({ visible: false, x: 0, y: 0, profileId: null, profileName: null });
+      }
+    };
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [contextMenu.visible]);
 
   // 만 나이 계산 (calculateKoreanAge 함수 사용)
 
@@ -265,6 +313,7 @@ function ProfileListPage() {
             key={profile.id}
             className={styles.profileItem}
             onClick={() => navigate(`/consult/dashboard/${profile.id}`)}
+            onContextMenu={(e) => handleContextMenu(e, profile.id, profile.name)}
           >
             <div className={styles.profileInfo}>
               <h3 className={styles.profileName}>{profile.name}님</h3>
@@ -332,6 +381,41 @@ function ProfileListPage() {
         onClose={() => setIsTrashModalOpen(false)}
         onUpdate={loadProfiles}
       />
+
+      {/* 컨텍스트 메뉴 */}
+      {contextMenu.visible && (
+        <div
+          className={styles.contextMenu}
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className={styles.contextMenuItem}
+            onClick={() => handleDuplicateProfile(contextMenu.profileId, contextMenu.profileName)}
+          >
+            복제하기
+          </button>
+          <button
+            className={styles.contextMenuItem}
+            onClick={() => {
+              setContextMenu({ visible: false, x: 0, y: 0, profileId: null, profileName: null });
+              handleDeleteProfile(contextMenu.profileId, contextMenu.profileName);
+            }}
+          >
+            삭제하기
+          </button>
+        </div>
+      )}
+
+      {/* 복제 중 오버레이 */}
+      {duplicating && (
+        <div className={styles.duplicatingOverlay}>
+          <div className={styles.duplicatingContent}>
+            <div className={styles.spinner}></div>
+            <p>프로필 복제 중...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
