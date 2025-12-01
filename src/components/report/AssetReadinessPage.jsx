@@ -18,8 +18,15 @@ function AssetReadinessPage({ profile, simulationData }) {
   const cagr = 3.3; // %
 
   // 차트 데이터
-  const years = ['60세(25년)', '61세(26년)', '62세(27년)', '63세(28년)', '64세(29년)', '65세(30년)'];
-  const currentTrend = [63.52, 65.72, 68.00, 69.37, 71.83, 74.62];
+  const years = [
+    "60세(25년)",
+    "61세(26년)",
+    "62세(27년)",
+    "63세(28년)",
+    "64세(29년)",
+    "65세(30년)",
+  ];
+  const currentTrend = [63.52, 65.72, 68.0, 69.37, 71.83, 74.62];
   const targetTrend = [70, 70, 70, 70, 70, 70];
 
   // ECharts 옵션
@@ -145,12 +152,10 @@ function AssetReadinessPage({ profile, simulationData }) {
               <i className="fas fa-piggy-bank"></i>
             </div>
             <p className={styles.kpiLabel}>예상 은퇴자산 (65세)</p>
-            <p className={styles.kpiValue}>
-              {projectedAssets} <span className={styles.kpiUnit}>억원</span>
-            </p>
-            <div className={styles.kpiFooter}>
-              <i className="fas fa-arrow-up"></i>
-              <span>목표(70억) 초과 예상</span>
+            <div className={styles.kpiValueRow}>
+              <p className={styles.kpiValue}>
+                {projectedAssets} <span className={styles.kpiUnit}>억원</span>
+              </p>
             </div>
           </div>
 
@@ -179,10 +184,10 @@ function AssetReadinessPage({ profile, simulationData }) {
             <p className={styles.kpiLabel}>현재 총자산 (60세)</p>
             <div className={styles.kpiValueRow}>
               <p className={styles.kpiValue}>
-                {currentTotalAssets} <span className={styles.kpiUnit}>억원</span>
+                {currentTotalAssets}{" "}
+                <span className={styles.kpiUnit}>억원</span>
               </p>
             </div>
-            <p className={styles.kpiFooter}>부동산 비중 {realEstateRatio}%</p>
           </div>
 
           {/* KPI 4: Asset Growth Rate */}
@@ -197,7 +202,6 @@ function AssetReadinessPage({ profile, simulationData }) {
               </p>
               <span className={styles.kpiUnit}>%</span>
             </div>
-            <p className={styles.kpiFooter}>안정적 성장세 유지 중</p>
           </div>
         </div>
 
@@ -207,21 +211,31 @@ function AssetReadinessPage({ profile, simulationData }) {
           <div className={styles.chartContainer}>
             <div className={styles.chartHeader}>
               <h3 className={styles.chartTitle}>
-                <i className="fas fa-chart-area"></i>자산 성장 시뮬레이션 (60세~65세)
+                <i className="fas fa-chart-area"></i>자산 성장 시뮬레이션
+                (60세~65세)
               </h3>
               <div className={styles.chartLegend}>
                 <div className={styles.legendItem}>
-                  <span className={styles.legendDot} style={{ backgroundColor: "#6B7280" }}></span>
+                  <span
+                    className={styles.legendDot}
+                    style={{ backgroundColor: "#6B7280" }}
+                  ></span>
                   <span>예상 경로</span>
                 </div>
                 <div className={styles.legendItem}>
-                  <span className={styles.legendDot} style={{ backgroundColor: "#D4AF37" }}></span>
+                  <span
+                    className={styles.legendDot}
+                    style={{ backgroundColor: "#D4AF37" }}
+                  ></span>
                   <span>목표 자산(70억)</span>
                 </div>
               </div>
             </div>
             <div className={styles.chartWrapper}>
-              <ReactECharts option={getChartOption()} style={{ height: "100%", width: "100%" }} />
+              <ReactECharts
+                option={getChartOption()}
+                style={{ height: "100%", width: "100%" }}
+              />
             </div>
           </div>
 
@@ -240,10 +254,12 @@ function AssetReadinessPage({ profile, simulationData }) {
                     <i className="fas fa-check"></i>
                   </div>
                   <div className={styles.insightContent}>
-                    <p className={styles.insightTitleGreen}>목표 초과 달성 (Excellent)</p>
+                    <p className={styles.insightTitleGreen}>
+                      목표 초과 달성 (Excellent)
+                    </p>
                     <p className={styles.insightText}>
-                      현재 자산 규모와 성장세를 고려할 때, 은퇴 시점(65세)에 목표 자산
-                      70억원을 초과한 약 74.6억원이 예상됩니다.
+                      현재 자산 규모와 성장세를 고려할 때, 은퇴 시점(65세)에
+                      목표 자산 70억원을 초과한 약 74.6억원이 예상됩니다.
                     </p>
                   </div>
                 </div>
@@ -254,10 +270,12 @@ function AssetReadinessPage({ profile, simulationData }) {
                     <i className="fas fa-exclamation"></i>
                   </div>
                   <div className={styles.insightContent}>
-                    <p className={styles.insightTitleYellow}>현금흐름/유동성 리스크</p>
+                    <p className={styles.insightTitleYellow}>
+                      현금흐름/유동성 리스크
+                    </p>
                     <p className={styles.insightText}>
-                      자산은 충분하나 현금흐름이 적자(-208만원)이며, 부동산 비중(90.7%)이
-                      과도하여 유동성 확보가 시급합니다.
+                      자산은 충분하나 현금흐름이 적자(-208만원)이며, 부동산
+                      비중(90.7%)이 과도하여 유동성 확보가 시급합니다.
                     </p>
                   </div>
                 </div>

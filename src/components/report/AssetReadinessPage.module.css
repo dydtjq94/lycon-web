@@ -137,20 +137,6 @@
   margin: 8px 0;
 }
 
-.kpiFooter {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #9ca3af;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.kpiFooter i {
-  color: #10b981;
-  font-size: 12px;
-}
-
 .kpiStatus {
   margin-top: 8px;
   font-size: 12px;
