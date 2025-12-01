@@ -1,7 +1,45 @@
 {
-  "version": "0.34.30",
-  "today": "2025-11-30",
+  "version": "0.34.34",
+  "today": "2025-12-01",
   "history": [
+    {
+      "version": "0.34.34",
+      "date": "2025-12-01",
+      "changes": [
+        "자산 인출 기능 단순화: 연금 인출 제거, 저축/투자만 인출 가능",
+        "저축/투자 잔액이 있는 연도에만 인출 아이콘(◉) 표시"
+      ]
+    },
+    {
+      "version": "0.34.33",
+      "date": "2025-12-01",
+      "changes": [
+        "자산 인출 UI 개선: YearDetailPanel 버튼 제거, 차트 바 위에 아이콘(◉)으로 변경",
+        "저축/투자 또는 연금이 있는 연도에만 인출 아이콘 표시",
+        "인출 설정이 있으면 앰버색, 없으면 회색으로 아이콘 표시"
+      ]
+    },
+    {
+      "version": "0.34.32",
+      "date": "2025-12-01",
+      "changes": [
+        "자산 인출 기능 버그 수정: sourceId 대신 label(title)로 자산 매칭하도록 변경",
+        "YearDetailPanel 인출 가능 자산 판별 로직 수정",
+        "AssetWithdrawalModal 저축/연금 필터링 및 잔액 조회 로직 수정",
+        "RechartsAssetChart withdrawableYears 필터링 로직 수정",
+        "AssetWithdrawalModal 훅 순서 오류 수정: useEffect를 조기 반환 전으로 이동"
+      ]
+    },
+    {
+      "version": "0.34.31",
+      "date": "2025-12-01",
+      "changes": [
+        "자산 시뮬레이션 현금 인출 기능 추가: 저축/투자 및 연금(수령 전)에서 현금 인출 설정",
+        "AssetWithdrawalModal 컴포넌트 추가: 인출 금액 설정, 범위 슬라이더로 여러 년도 일괄 적용",
+        "YearDetailPanel 인출 버튼 및 인출 내역 표시 추가",
+        "현금흐름 시뮬레이션에 인출된 금액 반영"
+      ]
+    },
     {
       "version": "0.34.30",
       "date": "2025-11-28",

@@ -449,6 +449,20 @@
   white-space: nowrap;
 }
 
+/* 자산 인출 배지 */
+.withdrawalBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 4px;
+  background-color: #fef3c7;
+  color: #92400e;
+  font-size: 0.65rem;
+  font-weight: 500;
+  border-radius: 3px;
+  border: 1px solid #fcd34d;
+  white-space: nowrap;
+}
+
 /* 색상 점 (자산/부채용 - 원형) */
 .distributionDot {
   width: 8px; /* 10px → 8px */
@@ -490,6 +504,87 @@
   color: #9ca3af;
   font-size: 0.95rem;
   text-align: center;
+}
+
+/* 자산 인출 섹션 */
+.withdrawalSection {
+  width: 100%;
+  padding: 0.75rem 0;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.withdrawalButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #92400e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.withdrawalButton:hover {
+  background: #fde68a;
+  border-color: #f59e0b;
+}
+
+.withdrawalButton.hasWithdrawal {
+  background: #fed7aa;
+  border-color: #f97316;
+  color: #c2410c;
+}
+
+.withdrawalIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #f59e0b;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.hasWithdrawal .withdrawalIcon {
+  background: #ea580c;
+}
+
+.withdrawalDetails {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #fffbeb;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.withdrawalDetailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  padding: 0.25rem 0;
+}
+
+.withdrawalSource {
+  color: #92400e;
+  font-weight: 500;
+}
+
+.withdrawalAmount {
+  color: #dc2626;
+  font-weight: 600;
 }
 
 /* 반응형 - 모바일 */

@@ -23,6 +23,7 @@ import {
 import { formatAmountForChart } from "../../utils/format";
 import ChartZoomModal from "./ChartZoomModal";
 import YearDetailPanel from "./YearDetailPanel";
+import AssetWithdrawalModal from "./AssetWithdrawalModal";
 import ChartRangeControl from "./ChartRangeControl";
 import styles from "./RechartsAssetChart.module.css";
 
@@ -85,11 +86,15 @@ function RechartsAssetChart({
   expenses = [],
   xAxisRange: externalXAxisRange, // 외부에서 전달받는 X축 범위
   onXAxisRangeChange, // X축 범위 변경 콜백
+  currentSimulation = null, // 현재 시뮬레이션 데이터 (인출 규칙 포함)
+  onUpdateWithdrawalRule, // 인출 규칙 업데이트 콜백
 }) {
   const [distributionEntry, setDistributionEntry] = useState(null);
   const [isDistributionOpen, setIsDistributionOpen] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false); // 년도 상세 패널
   const [hoveredData, setHoveredData] = useState(null); // 클릭으로 선택된 연도 데이터
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false); // 인출 모달
+  const [withdrawalModalYear, setWithdrawalModalYear] = useState(null); // 인출 모달 연도
   const hasData = Array.isArray(data) && data.length > 0;
   const chartContainerRef = useRef(null); // 차트 컨테이너 참조
 
@@ -861,6 +866,98 @@ function RechartsAssetChart({
     setIsPanelOpen(true); // 패널 열기
   };
 
+  // 인출 아이콘 클릭 핸들러
+  const handleWithdrawalIconClick = useCallback(
+    (year) => {
+      setWithdrawalModalYear(year);
+      setIsWithdrawalModalOpen(true);
+    },
+    []
+  );
+
+  // 해당 연도에 인출 가능한 자산이 있는지 확인 (저축/투자만)
+  const hasWithdrawableAssetsForYear = useCallback(
+    (year) => {
+      const yearData = detailedData.find((d) => d.year === year);
+      if (!yearData?.breakdown?.assetItems) return false;
+
+      // 저축/투자 잔액이 양수인 항목이 있는지 확인
+      return yearData.breakdown.assetItems.some(
+        (item) => item.sourceType === "saving" && item.amount > 0
+      );
+    },
+    [detailedData]
+  );
+
+  // 인출 아이콘 렌더링 (저축/투자 Bar 위에 표시)
+  const renderWithdrawalIcon = useCallback(
+    (props) => {
+      const { x, y, width, value, index } = props;
+      const entry = chartData[index];
+
+      // entry가 없으면 아무것도 렌더링하지 않음
+      if (!entry) return null;
+
+      // 저축/투자 값이 양수인 경우에만 아이콘 표시
+      if (value <= 0) return null;
+
+      const year = entry.year;
+      const hasWithdrawable = hasWithdrawableAssetsForYear(year);
+
+      // 인출 가능한 자산이 없으면 아이콘 표시 안함
+      if (!hasWithdrawable) return null;
+
+      // 해당 연도에 인출 규칙이 있는지 확인
+      const hasWithdrawal = currentSimulation?.assetWithdrawalRules?.[year]?.withdrawals?.length > 0;
+
+      const baseColor = hasWithdrawal ? "#f59e0b" : "#9ca3af"; // 앰버색 or 회색
+      const hoverColor = hasWithdrawal ? "#d97706" : "#374151"; // 진한 앰버색 or 진한 회색
+
+      return (
+        <g>
+          <foreignObject
+            x={x + width / 2 - 8}
+            y={y - 20}
+            width={16}
+            height={16}
+            style={{ pointerEvents: "auto" }}
+          >
+            <div
+              style={{
+                width: "16px",
+                height: "16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: baseColor,
+                fontSize: "14px",
+                opacity: hasWithdrawal ? 0.9 : 0.6,
+                transition: "opacity 0.2s, color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = "1";
+                e.currentTarget.style.color = hoverColor;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = hasWithdrawal ? "0.9" : "0.6";
+                e.currentTarget.style.color = baseColor;
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleWithdrawalIconClick(year);
+              }}
+              title="현금 인출 설정"
+            >
+              ◉
+            </div>
+          </foreignObject>
+        </g>
+      );
+    },
+    [chartData, hasWithdrawableAssetsForYear, currentSimulation, handleWithdrawalIconClick]
+  );
+
   // 차트 클릭 핸들러 (연도 선택하여 패널 열기)
   const handleChartClick = (data) => {
     // activeLabel로 년도 찾기 (빈 공간 클릭 시)
@@ -1463,6 +1560,7 @@ function RechartsAssetChart({
           animationDuration={400}
           animationBegin={0}
           isAnimationActive={true}
+          label={renderWithdrawalIcon}
         />
         <Bar
           key="음수현금"
@@ -1881,6 +1979,42 @@ function RechartsAssetChart({
         onYearChange={(newYearData) => {
           // 방향키로 연도 변경 시 호출됨
           setDistributionEntry(newYearData);
+        }}
+      />
+
+      {/* 자산 인출 모달 */}
+      <AssetWithdrawalModal
+        isOpen={isWithdrawalModalOpen}
+        onClose={() => {
+          setIsWithdrawalModalOpen(false);
+          setWithdrawalModalYear(null);
+        }}
+        year={withdrawalModalYear}
+        savings={savings}
+        detailedData={detailedData}
+        currentRule={
+          withdrawalModalYear && currentSimulation?.assetWithdrawalRules
+            ? currentSimulation.assetWithdrawalRules[withdrawalModalYear]
+            : null
+        }
+        withdrawableYears={detailedData
+          .filter((d) => {
+            // 저축/투자 잔액이 있는 연도만 필터링
+            const breakdown = d.breakdown;
+            if (!breakdown || !breakdown.assetItems) return false;
+
+            return breakdown.assetItems.some(
+              (item) => item.sourceType === "saving" && item.amount > 0
+            );
+          })
+          .map((d) => ({ year: d.year }))}
+        onSave={(years, rule) => {
+          if (onUpdateWithdrawalRule) {
+            onUpdateWithdrawalRule(years, rule);
+          }
+        }}
+        onYearChange={(newYear) => {
+          setWithdrawalModalYear(newYear);
         }}
       />
     </>

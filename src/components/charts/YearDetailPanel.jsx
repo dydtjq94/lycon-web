@@ -585,6 +585,7 @@ function YearDetailPanel({
     (item) => item.year === yearData?.year
   );
   const investmentInfo = yearDetailData?.investmentInfo || {};
+  const withdrawalDetailInfo = yearDetailData?.withdrawalInfo || {};
 
   return (
     <>
@@ -677,6 +678,8 @@ function YearDetailPanel({
 
                       // 해당 자산에 대한 잉여 현금 투자 정보 확인
                       const investmentAmount = investmentInfo[item.label] || 0;
+                      // 해당 자산에 대한 인출 정보 확인
+                      const withdrawalAmount = withdrawalDetailInfo[item.label] || 0;
 
                       return (
                         <div
@@ -693,6 +696,11 @@ function YearDetailPanel({
                               {investmentAmount > 0 && (
                                 <span className={styles.investmentBadge}>
                                   + {formatAmountForChart(investmentAmount)}
+                                </span>
+                              )}
+                              {withdrawalAmount > 0 && (
+                                <span className={styles.withdrawalBadge}>
+                                  - {formatAmountForChart(withdrawalAmount)}
                                 </span>
                               )}
                             </span>

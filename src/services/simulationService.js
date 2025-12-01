@@ -421,6 +421,47 @@ export const simulationService = {
   },
 
   /**
+   * 시뮬레이션의 자산 인출 규칙 업데이트
+   * @param {string} profileId - 프로필 ID
+   * @param {string} simulationId - 시뮬레이션 ID
+   * @param {object} withdrawalRules - 인출 규칙 객체 {year: {withdrawals: [...]}}
+   */
+  async updateWithdrawalRules(profileId, simulationId, withdrawalRules) {
+    try {
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId
+      );
+      await updateDoc(docRef, {
+        assetWithdrawalRules: withdrawalRules,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("인출 규칙 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 시뮬레이션의 자산 인출 규칙 조회
+   * @param {string} profileId - 프로필 ID
+   * @param {string} simulationId - 시뮬레이션 ID
+   * @returns {Promise<object>} - 인출 규칙 객체
+   */
+  async getWithdrawalRules(profileId, simulationId) {
+    try {
+      const simulation = await this.getSimulation(profileId, simulationId);
+      return simulation.assetWithdrawalRules || {};
+    } catch (error) {
+      console.error("인출 규칙 조회 오류:", error);
+      return {};
+    }
+  },
+
+  /**
    * 시뮬레이션의 은퇴년도 업데이트
    * @param {string} profileId - 프로필 ID
    * @param {string} simulationId - 시뮬레이션 ID

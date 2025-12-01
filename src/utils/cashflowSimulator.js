@@ -2835,6 +2835,56 @@ export function calculateAssetSimulation(
       }
     }
 
+    // 자산 인출 규칙 처리 (저축/투자, 연금에서 현금으로 인출)
+    // 인출 정보 저장 (YearDetailPanel에서 표시용)
+    const withdrawalInfo = {};
+
+    if (profileData.assetWithdrawalRules) {
+      const withdrawalRule = profileData.assetWithdrawalRules[year];
+
+      if (withdrawalRule && withdrawalRule.withdrawals) {
+        withdrawalRule.withdrawals.forEach((withdrawal) => {
+          if (withdrawal.amount <= 0) return;
+
+          if (withdrawal.sourceType === "saving" && withdrawal.sourceId) {
+            // 저축에서 인출
+            const targetSaving = savingsById[withdrawal.sourceId];
+
+            if (targetSaving && targetSaving.isActive && targetSaving.amount >= withdrawal.amount) {
+              // 저축 자산에서 인출 금액 차감
+              targetSaving.amount =
+                Math.round((targetSaving.amount - withdrawal.amount) * 100) / 100;
+
+              // 현금에 인출 금액 추가
+              currentCash =
+                Math.round((currentCash + withdrawal.amount) * 100) / 100;
+
+              // 인출 정보 저장 (표시용)
+              withdrawalInfo[targetSaving.title] = withdrawal.amount;
+            }
+          } else if (withdrawal.sourceType === "pension" && withdrawal.sourceId) {
+            // 연금에서 인출 (퇴직연금/개인연금, 수령 시작 전만)
+            const targetPension = pensionsById[withdrawal.sourceId];
+
+            if (targetPension && targetPension.isActive &&
+                year < targetPension.paymentStartYear &&
+                targetPension.amount >= withdrawal.amount) {
+              // 연금 자산에서 인출 금액 차감
+              targetPension.amount =
+                Math.round((targetPension.amount - withdrawal.amount) * 100) / 100;
+
+              // 현금에 인출 금액 추가
+              currentCash =
+                Math.round((currentCash + withdrawal.amount) * 100) / 100;
+
+              // 인출 정보 저장 (표시용)
+              withdrawalInfo[targetPension.title] = withdrawal.amount;
+            }
+          }
+        });
+      }
+    }
+
     // 연금 계산 (퇴직연금/개인연금)
     Object.keys(pensionsByTitle).forEach((title) => {
       const pension = pensionsByTitle[title];
@@ -3649,6 +3699,7 @@ export function calculateAssetSimulation(
         netAssets: totalAssets - totalDebt,
       },
       investmentInfo: investmentInfo, // 잉여 현금 투자 정보 (자산명: 투자금액)
+      withdrawalInfo: withdrawalInfo, // 자산 인출 정보 (자산명: 인출금액)
     });
   }
 

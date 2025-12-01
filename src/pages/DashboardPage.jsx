@@ -182,11 +182,12 @@ function DashboardPage() {
       const sortedAssets = sortByCreatedAt(assetsData);
       const sortedDebts = sortByCreatedAt(debtData);
 
-      // 해당 시뮬레이션의 투자 규칙 가져오기
+      // 해당 시뮬레이션의 투자 규칙 및 인출 규칙 가져오기
       const simulation = simulations.find((sim) => sim.id === simulationId);
       const profileDataWithSimulation = {
         ...profileData,
         cashflowInvestmentRules: simulation?.cashflowInvestmentRules || {},
+        assetWithdrawalRules: simulation?.assetWithdrawalRules || {},
       };
 
       const cashflow = calculateCashflowSimulation(
@@ -787,6 +788,7 @@ function DashboardPage() {
     const profileDataWithSimulation = {
       ...profileData,
       cashflowInvestmentRules: currentSimulation?.cashflowInvestmentRules || {},
+      assetWithdrawalRules: currentSimulation?.assetWithdrawalRules || {},
       // 시뮬레이션별 은퇴년도가 설정되어 있으면 프로필 기본값 대신 사용
       retirementYear: currentSimulation?.retirementYear || retirementYear,
     };
@@ -1041,6 +1043,60 @@ function DashboardPage() {
     } catch (error) {
       console.error("투자 규칙 저장 오류:", error);
       alert("투자 규칙 저장 중 오류가 발생했습니다.");
+    }
+  };
+
+  // 자산 인출 규칙 업데이트 핸들러 (시뮬레이션별, 단일 또는 여러 년도 지원)
+  const handleUpdateWithdrawalRule = async (years, rule) => {
+    if (!checkEditPermission("인출 규칙 설정")) return;
+    if (!activeSimulationId) {
+      alert("활성화된 시뮬레이션이 없습니다.");
+      return;
+    }
+
+    try {
+      // 현재 시뮬레이션의 인출 규칙 가져오기
+      const currentRules = await simulationService.getWithdrawalRules(
+        profileId,
+        activeSimulationId
+      );
+
+      // 업데이트할 규칙 준비
+      const updatedRules = { ...currentRules };
+
+      // 배열인 경우 모든 년도에 적용, 아니면 단일 년도에만 적용
+      // null이면 해당 년도의 규칙 삭제
+      if (Array.isArray(years)) {
+        years.forEach((year) => {
+          if (rule === null) {
+            delete updatedRules[year];
+          } else {
+            updatedRules[year] = rule;
+          }
+        });
+      } else {
+        if (rule === null) {
+          delete updatedRules[years];
+        } else {
+          updatedRules[years] = rule;
+        }
+      }
+
+      // 시뮬레이션 업데이트 (한 번만 호출)
+      await simulationService.updateWithdrawalRules(
+        profileId,
+        activeSimulationId,
+        updatedRules
+      );
+
+      // 시뮬레이션 목록 다시 로드 (인출 규칙 반영)
+      const updatedSimulations = await simulationService.getSimulations(
+        profileId
+      );
+      setSimulations(updatedSimulations);
+    } catch (error) {
+      console.error("인출 규칙 저장 오류:", error);
+      alert("인출 규칙 저장 중 오류가 발생했습니다.");
     }
   };
 
@@ -3565,6 +3621,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
                     expenses={expenses}
                     xAxisRange={chartXAxisRange}
                     onXAxisRangeChange={setChartXAxisRange}
+                    currentSimulation={currentSimulation}
+                    onUpdateWithdrawalRule={handleUpdateWithdrawalRule}
                   />
                 </div>
               )}
