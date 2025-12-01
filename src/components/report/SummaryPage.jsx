@@ -3,75 +3,9 @@ import styles from "./SummaryPage.module.css";
 
 /**
  * 종합 진단 결과 요약 (Page 17)
- * @param {Object} profile - 프로필 데이터
- * @param {Object} simulationData - 시뮬레이션 전체 데이터
+ * 하드코딩된 데이터로 표시
  */
 function SummaryPage({ profile, simulationData }) {
-  // 현금흐름 및 자산 데이터
-  const cashflow = simulationData?.simulation?.cashflow || [];
-  const assets = simulationData?.simulation?.assets || [];
-  const currentYearCashflow = cashflow[0] || {};
-
-  // 총 소득/지출 계산
-  const totalIncome =
-    (currentYearCashflow.income || 0) +
-    (currentYearCashflow.pension || 0) +
-    (currentYearCashflow.rentalIncome || 0) +
-    (currentYearCashflow.assetIncome || 0);
-
-  const totalExpense =
-    (currentYearCashflow.expense || 0) +
-    (currentYearCashflow.savings || 0) +
-    Math.abs(currentYearCashflow.debtInterest || 0) +
-    Math.abs(currentYearCashflow.debtPrincipal || 0);
-
-  const annualBalance = totalIncome - totalExpense;
-  const monthlyBalance = annualBalance / 12;
-
-  // 현재 및 은퇴 시점 자산
-  const currentAsset = assets.length > 0 ? assets[0] : {};
-  const currentTotalAssets = currentAsset.totalAssets || 0;
-
-  // 은퇴 시점 자산 찾기
-  const currentAge = profile?.age || 60;
-  const retirementAge = profile?.retirementAge || 65;
-  const retirementIndex = retirementAge - currentAge;
-  const retirementAsset =
-    assets.length > retirementIndex ? assets[retirementIndex] : currentAsset;
-  const retirementTotalAssets = retirementAsset.totalAssets || currentTotalAssets;
-
-  // 목표 자산 (은퇴 목표)
-  const targetAssets = profile?.retirementGoal || retirementTotalAssets * 0.97;
-
-  // 목표 달성률
-  const achievementRate =
-    targetAssets > 0 ? (retirementTotalAssets / targetAssets) * 100 : 100;
-
-  // 대규모 유출 이벤트 찾기
-  const currentYear = new Date().getFullYear();
-  const largeCashOutflows = cashflow
-    .map((year, index) => ({
-      year: currentYear + index,
-      age: currentAge + index,
-      realEstateSale: year.realEstateSale || 0,
-      debtPrincipal: Math.abs(year.debtPrincipal || 0),
-      total: (year.realEstateSale || 0) + Math.abs(year.debtPrincipal || 0),
-    }))
-    .filter((item) => item.total > totalIncome * 2);
-
-  const criticalYear = largeCashOutflows.length > 0 ? largeCashOutflows[0] : null;
-
-  if (!simulationData || !cashflow || cashflow.length === 0) {
-    return (
-      <div className={styles.slideContainer}>
-        <div className={styles.loading}>
-          <i className="fas fa-spinner fa-spin"></i>
-          <p>데이터를 불러오는 중...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.slideContainer}>
       {/* Header */}
@@ -96,72 +30,53 @@ function SummaryPage({ profile, simulationData }) {
       <div className={styles.mainContent}>
         {/* Top 3 Insights */}
         <div className={styles.insightsGrid}>
-          {/* Insight 1: 은퇴 자산 목표 */}
+          {/* Insight 1: 은퇴 자산 목표 초과 달성 (Green) */}
           <div
             className={`${styles.insightCard} ${styles.insightCardAccent}`}
-            style={{ borderTopColor: achievementRate >= 100 ? "#10B981" : "#F59E0B" }}
+            style={{ borderTopColor: "#10B981" }}
           >
             <div className={styles.numberWatermark}>1</div>
             <div className={styles.insightContent}>
               <div
                 className={styles.insightIconBox}
                 style={{
-                  backgroundColor:
-                    achievementRate >= 100
-                      ? "rgba(16, 185, 129, 0.2)"
-                      : "rgba(245, 158, 11, 0.2)",
-                  borderColor: achievementRate >= 100 ? "#059669" : "#D97706",
-                  color: achievementRate >= 100 ? "#10B981" : "#F59E0B",
+                  backgroundColor: "rgba(16, 185, 129, 0.2)",
+                  borderColor: "#059669",
+                  color: "#10B981",
                 }}
               >
                 <i className="fas fa-trophy" style={{ fontSize: "18px" }}></i>
               </div>
-              <h3 className={styles.insightTitle}>
-                은퇴 자산 목표 {achievementRate >= 100 ? "초과 달성" : "달성 진행 중"}
-              </h3>
+              <h3 className={styles.insightTitle}>은퇴 자산 목표 초과 달성</h3>
               <div className={styles.insightTextBox}>
                 <p className={styles.insightText}>
-                  은퇴 시점 예상 자산 약 {(retirementTotalAssets / 10000).toFixed(1)}억원으로
-                  목표 대비{" "}
-                  <strong
-                    style={{
-                      color: achievementRate >= 100 ? "#34D399" : "#FBBF24",
-                    }}
-                  >
-                    {achievementRate.toFixed(1)}%
-                  </strong>{" "}
-                  {achievementRate >= 100 ? "달성이 예상됩니다" : "진행 중입니다"}.
+                  은퇴 시점 예상 자산 약 74.6억원으로 목표 대비{" "}
+                  <strong style={{ color: "#34D399" }}>106.6%</strong> 달성이 예상됩니다.
                 </p>
                 <div className={styles.insightFooter}>
                   <i
-                    className={`fas ${achievementRate >= 100 ? "fa-check" : "fa-arrow-up"}`}
-                    style={{
-                      color: achievementRate >= 100 ? "#10B981" : "#F59E0B",
-                    }}
+                    className="fas fa-check"
+                    style={{ color: "#10B981" }}
                   ></i>
-                  {achievementRate >= 100
-                    ? "자산 성장률 유지 및 관리 필요"
-                    : "추가 저축 및 투자 전략 실행 필요"}
+                  자산 성장률 유지 및 관리 필요
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Insight 2: 유동성 리스크 */}
+          {/* Insight 2: 2035년 유동성 리스크 경고 (Red) */}
           <div
             className={`${styles.insightCard} ${styles.insightCardAccent}`}
-            style={{ borderTopColor: criticalYear ? "#EF4444" : "#3B82F6" }}
+            style={{ borderTopColor: "#EF4444" }}
           >
             <div className={styles.numberWatermark}>2</div>
             <div className={styles.insightContent}>
               <div
                 className={styles.insightIconBox}
                 style={{
-                  backgroundColor: criticalYear
-                    ? "rgba(239, 68, 68, 0.2)"
-                    : "rgba(59, 130, 246, 0.2)",
-                  borderColor: criticalYear ? "#DC2626" : "#2563EB",
-                  color: criticalYear ? "#EF4444" : "#3B82F6",
+                  backgroundColor: "rgba(239, 68, 68, 0.2)",
+                  borderColor: "#DC2626",
+                  color: "#EF4444",
                 }}
               >
                 <i
@@ -169,94 +84,54 @@ function SummaryPage({ profile, simulationData }) {
                   style={{ fontSize: "18px" }}
                 ></i>
               </div>
-              <h3 className={styles.insightTitle}>
-                {criticalYear
-                  ? `${criticalYear.year}년 유동성 리스크 경고`
-                  : "유동성 관리 양호"}
-              </h3>
+              <h3 className={styles.insightTitle}>2035년 유동성 리스크 경고</h3>
               <div className={styles.insightTextBox}>
                 <p className={styles.insightText}>
-                  {criticalYear ? (
-                    <>
-                      재건축 분담금 및 부채 상환으로 약{" "}
-                      <strong style={{ color: "#FCA5A5" }}>
-                        {(criticalYear.total / 10000).toFixed(1)}억원
-                      </strong>
-                      의 대규모 현금 유출이 발생합니다.
-                    </>
-                  ) : (
-                    <>
-                      향후 10년간 대규모 현금 유출 이벤트가 없어 유동성 관리가 안정적입니다.
-                    </>
-                  )}
+                  재건축 분담금 및 부채 상환으로 약{" "}
+                  <strong style={{ color: "#FCA5A5" }}>3.1억원</strong>의 대규모 현금 유출이
+                  발생합니다.
                 </p>
                 <div className={styles.insightFooter}>
                   <i
-                    className={`fas ${criticalYear ? "fa-arrow-right" : "fa-check"}`}
-                    style={{ color: criticalYear ? "#EF4444" : "#3B82F6" }}
+                    className="fas fa-arrow-right"
+                    style={{ color: "#EF4444" }}
                   ></i>
-                  {criticalYear
-                    ? "사전 현금성 자산 확보 필수"
-                    : "정기 모니터링 지속"}
+                  사전 현금성 자산 확보 필수
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Insight 3: 현금흐름 적자 */}
+          {/* Insight 3: 현재 적자 구조 개선 시급 (Yellow) */}
           <div
             className={`${styles.insightCard} ${styles.insightCardAccent}`}
-            style={{
-              borderTopColor: monthlyBalance < 0 ? "#F59E0B" : "#10B981",
-            }}
+            style={{ borderTopColor: "#F59E0B" }}
           >
             <div className={styles.numberWatermark}>3</div>
             <div className={styles.insightContent}>
               <div
                 className={styles.insightIconBox}
                 style={{
-                  backgroundColor:
-                    monthlyBalance < 0
-                      ? "rgba(245, 158, 11, 0.2)"
-                      : "rgba(16, 185, 129, 0.2)",
-                  borderColor: monthlyBalance < 0 ? "#D97706" : "#059669",
-                  color: monthlyBalance < 0 ? "#F59E0B" : "#10B981",
+                  backgroundColor: "rgba(245, 158, 11, 0.2)",
+                  borderColor: "#D97706",
+                  color: "#F59E0B",
                 }}
               >
                 <i className="fas fa-coins" style={{ fontSize: "18px" }}></i>
               </div>
-              <h3 className={styles.insightTitle}>
-                현재 {monthlyBalance >= 0 ? "흑자" : "적자"} 구조{" "}
-                {monthlyBalance < 0 ? "개선 시급" : "양호"}
-              </h3>
+              <h3 className={styles.insightTitle}>현재 적자 구조 개선 시급</h3>
               <div className={styles.insightTextBox}>
                 <p className={styles.insightText}>
-                  월 소득 대비 지출{" "}
-                  {monthlyBalance < 0 ? (
-                    <>
-                      과다로{" "}
-                      <strong style={{ color: "#FBBF24" }}>구조적 적자</strong> 상태입니다.
-                      저축 여력 확보가 시급합니다.
-                    </>
-                  ) : (
-                    <>
-                      으로 월 <strong style={{ color: "#34D399" }}>
-                        {monthlyBalance.toFixed(1)}만원
-                      </strong>{" "}
-                      흑자가 발생하고 있습니다.
-                    </>
-                  )}
+                  월 소득 대비 지출 과다로{" "}
+                  <strong style={{ color: "#FBBF24" }}>구조적 적자</strong> 상태입니다. 저축 여력
+                  확보가 시급합니다.
                 </p>
                 <div className={styles.insightFooter}>
                   <i
-                    className={`fas ${monthlyBalance < 0 ? "fa-wrench" : "fa-check"}`}
-                    style={{
-                      color: monthlyBalance < 0 ? "#F59E0B" : "#10B981",
-                    }}
+                    className="fas fa-wrench"
+                    style={{ color: "#F59E0B" }}
                   ></i>
-                  {monthlyBalance < 0
-                    ? "고정비 구조조정 및 지출 통제"
-                    : "현재 수준 유지 및 저축률 제고"}
+                  고정비 구조조정 및 지출 통제
                 </div>
               </div>
             </div>
@@ -374,7 +249,6 @@ function SummaryPage({ profile, simulationData }) {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
