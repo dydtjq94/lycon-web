@@ -11,7 +11,7 @@
 
 .modal {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 0;
   /* width는 inline style로 동적 설정 */
   height: 90vh;
   max-height: 90vh;
@@ -20,6 +20,18 @@
   flex-direction: column;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
   transition: width 0.2s ease-out;
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header {

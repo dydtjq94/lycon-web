@@ -141,7 +141,7 @@
 
 .settingsModal {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 0;
   width: 100%;
   max-width: 640px;
   max-height: 90vh;
@@ -149,6 +149,18 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .settingsHeader {
@@ -704,9 +716,10 @@
 .duplicatingContent {
   background: white;
   padding: 2rem 3rem;
-  border-radius: 12px;
+  border-radius: 0;
   text-align: center;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.2s ease-out;
 }
 
 .duplicatingContent p {

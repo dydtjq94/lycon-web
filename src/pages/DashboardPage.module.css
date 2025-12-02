@@ -1159,7 +1159,7 @@
 
 .aiOptionModal {
   background: white;
-  border-radius: 16px;
+  border-radius: 0;
   width: min(500px, 100%);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
@@ -1169,7 +1169,7 @@
 @keyframes modalSlideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
