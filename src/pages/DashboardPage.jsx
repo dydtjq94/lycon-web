@@ -25,6 +25,7 @@ import {
   assetService,
   debtService,
   checklistService,
+  globalSettingsService,
 } from "../services/firestoreService";
 import { simulationService } from "../services/simulationService";
 import { migrateProfileData } from "../utils/dataMigration";
@@ -282,6 +283,16 @@ function DashboardPage() {
   const [initialAssetData, setInitialAssetData] = useState(null); // 복사된 자산 데이터
   const [initialRealEstateData, setInitialRealEstateData] = useState(null); // 복사된 부동산 데이터
   const [initialDebtData, setInitialDebtData] = useState(null); // 복사된 부채 데이터
+  const [globalSettings, setGlobalSettings] = useState({
+    defaultInflationRate: "1.89",
+    defaultIncomeGrowthRate: "3.3",
+    defaultInvestmentReturnRate: "2.86",
+    defaultSavingGrowthRate: "1.89",
+    defaultIncomeRate: "3",
+    defaultRealEstateGrowthRate: "2.4",
+    defaultAssetGrowthRate: "2.86",
+    defaultDebtInterestRate: "3.5",
+  }); // 전역 설정
   const [isCompareLoading, setIsCompareLoading] = useState(false);
   const [comparisonData, setComparisonData] = useState({
     defaultData: null,
@@ -434,6 +445,19 @@ function DashboardPage() {
       isMounted = false;
     };
   }, [profileId, navigate, adminId, userId]);
+
+  // 전역 설정 로드
+  useEffect(() => {
+    const loadGlobalSettings = async () => {
+      try {
+        const settings = await globalSettingsService.getSettings();
+        setGlobalSettings(settings);
+      } catch (error) {
+        console.error("전역 설정 로드 오류:", error);
+      }
+    };
+    loadGlobalSettings();
+  }, []);
 
   // 사이드바가 열릴 때 배경 스크롤 막기
   useEffect(() => {
@@ -3793,6 +3817,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         simulations={simulations}
         activeSimulationId={activeSimulationId}
         profileId={profileId}
+        defaultIncomeGrowthRate={globalSettings.defaultIncomeGrowthRate}
       />
 
       {/* 지출 모달 */}
@@ -3810,6 +3835,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         simulations={simulations}
         activeSimulationId={activeSimulationId}
         profileId={profileId}
+        defaultInflationRate={globalSettings.defaultInflationRate}
       />
 
       {/* 저축/투자 모달 */}
@@ -3827,6 +3853,9 @@ ${JSON.stringify(analysisData, null, 2)}`;
         simulations={simulations}
         activeSimulationId={activeSimulationId}
         profileId={profileId}
+        defaultInvestmentReturnRate={globalSettings.defaultInvestmentReturnRate}
+        defaultSavingGrowthRate={globalSettings.defaultSavingGrowthRate}
+        defaultIncomeRate={globalSettings.defaultIncomeRate}
       />
 
       <PensionModal
@@ -3843,6 +3872,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
         simulations={simulations}
         activeSimulationId={activeSimulationId}
         profileId={profileId}
+        defaultInflationRate={globalSettings.defaultInflationRate}
+        defaultInvestmentReturnRate={globalSettings.defaultInvestmentReturnRate}
       />
 
       <RealEstateModal
@@ -3859,6 +3890,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         simulations={simulations}
         activeSimulationId={activeSimulationId}
         profileId={profileId}
+        defaultRealEstateGrowthRate={globalSettings.defaultRealEstateGrowthRate}
       />
 
       <ProfileEditModal
@@ -3885,6 +3917,8 @@ ${JSON.stringify(analysisData, null, 2)}`;
         simulations={simulations}
         activeSimulationId={activeSimulationId}
         profileId={profileId}
+        defaultAssetGrowthRate={globalSettings.defaultAssetGrowthRate}
+        defaultIncomeRate={globalSettings.defaultIncomeRate}
       />
 
       {/* 부채 모달 */}
@@ -3902,6 +3936,7 @@ ${JSON.stringify(analysisData, null, 2)}`;
         simulations={simulations}
         activeSimulationId={activeSimulationId}
         profileId={profileId}
+        defaultDebtInterestRate={globalSettings.defaultDebtInterestRate}
       />
 
       {/* 계산기 모달 */}

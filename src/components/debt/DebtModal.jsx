@@ -17,6 +17,7 @@ function DebtModal({
   simulations = [],
   activeSimulationId = null,
   profileId = null,
+  defaultDebtInterestRate = "3.5", // 전역 설정에서 전달된 부채 이자율 기본값
 }) {
   // 은퇴년도 계산 함수 (문자열 결합 방지 및 현재 연도 기준)
   const getRetirementYear = () => {
@@ -43,7 +44,7 @@ function DebtModal({
     startMonth: 1,
     endYear: getRetirementYear(),
     endMonth: 12,
-    interestRate: "3.5", // 이자율 3.5%
+    interestRate: defaultDebtInterestRate, // 전역 설정에서 가져온 부채 이자율
     gracePeriod: 5, // 거치기간 (년) - 기본값 5년
     memo: "",
     addCashToFlow: false,
@@ -220,14 +221,14 @@ function DebtModal({
           startMonth: 1,
           endYear: getRetirementYear(),
           endMonth: 12,
-          interestRate: "3.5",
+          interestRate: defaultDebtInterestRate,
           gracePeriod: 5, // 거치식 상환의 기본값을 5년으로 설정
           memo: "",
           addCashToFlow: false,
         });
       }
     }
-  }, [isOpen, editData, initialData]);
+  }, [isOpen, editData, initialData, defaultDebtInterestRate]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
@@ -347,7 +348,7 @@ function DebtModal({
       startMonth: 1,
       endYear: new Date().getFullYear() + 5,
       endMonth: 12,
-      interestRate: "3.5",
+      interestRate: defaultDebtInterestRate,
       gracePeriod: 5,
       memo: "",
       addCashToFlow: false,

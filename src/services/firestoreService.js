@@ -2349,3 +2349,58 @@ export const financialLibraryService = {
     }
   },
 };
+
+/**
+ * 전역 설정 서비스
+ * globalSettings 컬렉션에 단일 문서 "defaults"로 관리
+ */
+export const globalSettingsService = {
+  // 기본 설정값
+  defaultSettings: {
+    defaultInflationRate: "1.89", // 물가 상승률 기본값 (지출, 국민연금)
+    defaultIncomeGrowthRate: "3.3", // 소득 상승률 기본값
+    defaultInvestmentReturnRate: "2.86", // 투자 수익률 기본값 (저축/투자, 퇴직/개인연금)
+    defaultSavingGrowthRate: "1.89", // 저축금액 증가율 기본값
+    defaultIncomeRate: "3", // 연간 수익률 (배당, 이자 등) 기본값 (수익형 저축/투자, 수익형 자산)
+    defaultRealEstateGrowthRate: "2.4", // 부동산 연평균 가치 상승률 기본값
+    defaultAssetGrowthRate: "2.86", // 자산 연평균 가치 상승률 기본값
+    defaultDebtInterestRate: "3.5", // 부채 이자율 기본값
+  },
+
+  // 전역 설정 조회
+  async getSettings() {
+    try {
+      const docRef = doc(db, "globalSettings", "defaults");
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        return { ...this.defaultSettings, ...docSnap.data() };
+      }
+
+      // 문서가 없으면 기본값 반환
+      return this.defaultSettings;
+    } catch (error) {
+      console.error("전역 설정 조회 오류:", error);
+      return this.defaultSettings;
+    }
+  },
+
+  // 전역 설정 업데이트
+  async updateSettings(settings) {
+    try {
+      const docRef = doc(db, "globalSettings", "defaults");
+      await setDoc(
+        docRef,
+        {
+          ...settings,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+      return { ...this.defaultSettings, ...settings };
+    } catch (error) {
+      console.error("전역 설정 업데이트 오류:", error);
+      throw new Error("설정 저장 중 오류가 발생했습니다: " + error.message);
+    }
+  },
+};

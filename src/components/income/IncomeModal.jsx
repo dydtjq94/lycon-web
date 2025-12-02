@@ -17,6 +17,7 @@ function IncomeModal({
   simulations = [],
   activeSimulationId = null,
   profileId = null,
+  defaultIncomeGrowthRate = "3.3", // 전역 설정에서 전달된 소득 상승률 기본값
 }) {
   // 은퇴년도 계산 (문자열 결합 방지 및 현재 연도 기준)
   const getRetirementYear = () => {
@@ -44,7 +45,7 @@ function IncomeModal({
     endYear: getRetirementYear(),
     endMonth: 12, // 종료 월 (1-12)
     memo: "2014년부터 2024년까지의 10년간 평균",
-    growthRate: "3.3", // 기본 상승률 3.3%
+    growthRate: defaultIncomeGrowthRate, // 전역 설정에서 가져온 소득 상승률
     isFixedToRetirementYear: false, // 은퇴년도 고정 여부
   });
 
@@ -224,12 +225,12 @@ function IncomeModal({
           endYear: getRetirementYear(),
           endMonth: 12,
           memo: "2014년부터 2024년까지의 10년간 평균",
-          growthRate: "3.3",
+          growthRate: defaultIncomeGrowthRate,
           isFixedToRetirementYear: false,
         });
       }
     }
-  }, [isOpen, editData, initialData]);
+  }, [isOpen, editData, initialData, defaultIncomeGrowthRate]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
@@ -333,7 +334,7 @@ function IncomeModal({
       endYear: new Date().getFullYear() + 10,
       endMonth: 12,
       memo: "2014년부터 2024년까지의 10년간 평균",
-      growthRate: "",
+      growthRate: defaultIncomeGrowthRate,
       isFixedToRetirementYear: false,
     });
     setErrors({});

@@ -17,6 +17,9 @@ function SavingModal({
   simulations = [],
   activeSimulationId = null,
   profileId = null,
+  defaultInvestmentReturnRate = "2.86", // 전역 설정에서 전달된 투자 수익률 기본값
+  defaultSavingGrowthRate = "1.89", // 전역 설정에서 전달된 저축금액 증가율 기본값
+  defaultIncomeRate = "3", // 전역 설정에서 전달된 연간 수익률 (배당, 이자 등) 기본값
 }) {
   // 은퇴년도 계산 (문자열 결합 방지 및 현재 연도 기준)
   const getRetirementYear = () => {
@@ -47,9 +50,9 @@ function SavingModal({
     endYear: getRetirementYear(),
     endMonth: 12, // 종료 월 (1-12)
     memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
-    interestRate: "2.86", // 기본 수익률 2.86%
-    yearlyGrowthRate: "1.89", // 연간 저축/투자금액 증가율 1.89%
-    incomeRate: "3", // 수익형 현금: 연간 수익률 (배당, 이자 등)
+    interestRate: defaultInvestmentReturnRate, // 전역 설정에서 가져온 투자 수익률
+    yearlyGrowthRate: defaultSavingGrowthRate, // 전역 설정에서 가져온 저축금액 증가율
+    incomeRate: defaultIncomeRate, // 전역 설정에서 가져온 연간 수익률 (배당, 이자 등)
     capitalGainsTaxRate: "", // 양도세율 (%)
     isFixedToRetirementYear: false, // 은퇴년도 고정 여부
   });
@@ -262,15 +265,15 @@ function SavingModal({
           endYear: getRetirementYear(),
           endMonth: 12,
           memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
-          interestRate: "2.86",
-          yearlyGrowthRate: "1.89",
-          incomeRate: "3",
+          interestRate: defaultInvestmentReturnRate,
+          yearlyGrowthRate: defaultSavingGrowthRate,
+          incomeRate: defaultIncomeRate,
           capitalGainsTaxRate: "",
           isFixedToRetirementYear: false,
         });
       }
     }
-  }, [isOpen, editData, initialData]);
+  }, [isOpen, editData, initialData, defaultInvestmentReturnRate, defaultSavingGrowthRate, defaultIncomeRate]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
@@ -408,9 +411,9 @@ function SavingModal({
       endYear: new Date().getFullYear() + 10,
       endMonth: 12,
       memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
-      interestRate: "2.86",
-      yearlyGrowthRate: "1.89",
-      incomeRate: "3",
+      interestRate: defaultInvestmentReturnRate,
+      yearlyGrowthRate: defaultSavingGrowthRate,
+      incomeRate: defaultIncomeRate,
       capitalGainsTaxRate: "",
       isFixedToRetirementYear: false,
     });

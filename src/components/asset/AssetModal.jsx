@@ -18,17 +18,19 @@ function AssetModal({
   simulations = [],
   activeSimulationId = null,
   profileId = null,
+  defaultAssetGrowthRate = "2.86", // 전역 설정에서 전달된 자산 가치 상승률 기본값
+  defaultIncomeRate = "3", // 전역 설정에서 전달된 연간 수익률 (배당, 이자 등) 기본값
 }) {
   const [formData, setFormData] = useState({
     title: "",
     currentValue: "",
-    growthRate: "2.86", // % 단위로 기본값 설정
+    growthRate: defaultAssetGrowthRate, // 전역 설정에서 가져온 가치 상승률
     startYear: new Date().getFullYear(),
     startMonth: 1,
     endYear: "",
     endMonth: 12,
     assetType: "general", // "general" 또는 "income"
-    incomeRate: "3", // % 단위로 기본값 설정
+    incomeRate: defaultIncomeRate, // 전역 설정에서 가져온 연간 수익률 (배당, 이자 등)
     capitalGainsTaxRate: "", // 양도세율 (%)
     memo: "2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률",
     isPurchase: false, // 구매 여부
@@ -210,20 +212,20 @@ function AssetModal({
         setFormData({
           title: "",
           currentValue: "",
-          growthRate: "2.86",
+          growthRate: defaultAssetGrowthRate,
           startYear: currentYear,
           startMonth: 1,
           endYear: deathYear,
           endMonth: 12,
           assetType: "general",
-          incomeRate: "3",
+          incomeRate: defaultIncomeRate,
           capitalGainsTaxRate: "",
           memo: "2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률",
           isPurchase: false,
         });
       }
     }
-  }, [isOpen, editData, initialData, profileData]);
+  }, [isOpen, editData, initialData, profileData, defaultAssetGrowthRate, defaultIncomeRate]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
@@ -356,13 +358,13 @@ function AssetModal({
     setFormData({
       title: "",
       currentValue: "",
-      growthRate: "",
+      growthRate: defaultAssetGrowthRate,
       startYear: new Date().getFullYear(),
       startMonth: 1,
       endYear: "",
       endMonth: 12,
       assetType: "general",
-      incomeRate: "",
+      incomeRate: defaultIncomeRate,
       capitalGainsTaxRate: "",
       memo: "",
       isPurchase: false,

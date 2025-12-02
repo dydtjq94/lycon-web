@@ -98,6 +98,226 @@
   outline: none;
 }
 
+/* 설정 버튼 */
+.settingsButton {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #d1d5db;
+  outline: none;
+  background: #ffffff;
+  color: #6b7280;
+}
+
+.settingsButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.settingsButton:focus,
+.settingsButton:active {
+  outline: none;
+}
+
+/* 기본값 설정 모달 */
+.settingsModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.settingsModal {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.settingsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.settingsHeader h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.settingsCloseButton {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  transition: color 0.2s ease;
+}
+
+.settingsCloseButton:hover {
+  color: #111827;
+}
+
+.settingsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 설정 그룹 */
+.settingsGroup {
+  padding: 0;
+}
+
+.settingsGroupTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 0.75rem 0;
+}
+
+.settingsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.settingsField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.settingsField label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.settingsField input {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #111827;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.settingsField input:focus {
+  outline: none;
+  border-color: #111827;
+}
+
+.settingsHint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.settingsActions {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+/* 설정 모달 스크롤바 스타일링 */
+.settingsContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settingsContent::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.settingsContent::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.settingsContent::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.settingsCancelButton {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #d1d5db;
+  outline: none;
+  background: #ffffff;
+  color: #6b7280;
+}
+
+.settingsCancelButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.settingsSaveButton {
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+  background: #111827;
+  color: white;
+}
+
+.settingsSaveButton:hover {
+  background: #374151;
+}
+
+.settingsSaveButton:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
 /* 탭 네비게이션 */
 .tabNav {
   display: flex;

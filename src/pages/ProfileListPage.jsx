@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { profileService } from "../services/firestoreService";
+import {
+  profileService,
+  globalSettingsService,
+} from "../services/firestoreService";
 import { simulationService } from "../services/simulationService";
 import { calculateKoreanAge } from "../utils/koreanAge";
 import { formatAmount } from "../utils/format";
@@ -21,13 +24,59 @@ function ProfileListPage() {
   const [error, setError] = useState(null);
   const [isTrashModalOpen, setIsTrashModalOpen] = useState(false); // 휴지통 모달
   const [activeTab, setActiveTab] = useState("sample"); // 기본 탭: 샘플
-  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, profileId: null, profileName: null }); // 컨텍스트 메뉴
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    profileId: null,
+    profileName: null,
+  }); // 컨텍스트 메뉴
   const [duplicating, setDuplicating] = useState(false); // 복제 중 상태
+  const [globalSettings, setGlobalSettings] = useState({
+    defaultInflationRate: "1.89",
+    defaultIncomeGrowthRate: "3.3",
+    defaultInvestmentReturnRate: "2.86",
+    defaultSavingGrowthRate: "1.89",
+    defaultIncomeRate: "3",
+    defaultRealEstateGrowthRate: "2.4",
+    defaultAssetGrowthRate: "2.86",
+    defaultDebtInterestRate: "3.5",
+  });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
 
-  // 프로필 목록 로드
+  // 프로필 목록 및 전역 설정 로드
   useEffect(() => {
     loadProfiles();
+    loadGlobalSettings();
   }, []);
+
+  // 전역 설정 로드
+  const loadGlobalSettings = async () => {
+    try {
+      const settings = await globalSettingsService.getSettings();
+      setGlobalSettings(settings);
+    } catch (error) {
+      console.error("전역 설정 로드 오류:", error);
+    }
+  };
+
+  // 전역 설정 저장
+  const handleSaveSettings = async () => {
+    try {
+      setSettingsSaving(true);
+      await globalSettingsService.updateSettings(globalSettings);
+      trackEvent("전역 설정 저장", {
+        defaultInflationRate: globalSettings.defaultInflationRate,
+      });
+      setIsSettingsOpen(false);
+    } catch (error) {
+      console.error("전역 설정 저장 오류:", error);
+      alert("설정 저장 중 오류가 발생했습니다.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   // Mixpanel: Consult 화면 진입 이벤트
   useEffect(() => {
@@ -65,8 +114,10 @@ function ProfileListPage() {
             const simulations = await simulationService.getSimulations(
               profile.id || profile.docId
             );
-            const defaultSim = simulations.find((sim) => sim.isDefault === true);
-            
+            const defaultSim = simulations.find(
+              (sim) => sim.isDefault === true
+            );
+
             // 기본 시뮬레이션의 retirementYear가 있으면 사용, 없으면 프로필 기준으로 계산
             let retirementYear;
             if (defaultSim?.retirementYear) {
@@ -77,7 +128,7 @@ function ProfileListPage() {
               const retirementAge = parseInt(profile.retirementAge);
               retirementYear = birthYear + retirementAge;
             }
-            
+
             return {
               ...profile,
               retirementYear: retirementYear,
@@ -126,7 +177,11 @@ function ProfileListPage() {
 
   // 프로필 휴지통으로 이동 (soft delete)
   const handleDeleteProfile = async (profileId, profileName) => {
-    if (!confirm(`"${profileName}" 프로필을 삭제하시겠습니까?\n\n휴지통으로 이동되며, 나중에 복구할 수 있습니다.`)) {
+    if (
+      !confirm(
+        `"${profileName}" 프로필을 삭제하시겠습니까?\n\n휴지통으로 이동되며, 나중에 복구할 수 있습니다.`
+      )
+    ) {
       return;
     }
 
@@ -142,16 +197,30 @@ function ProfileListPage() {
 
   // 프로필 복제
   const handleDuplicateProfile = async (profileId, profileName) => {
-    setContextMenu({ visible: false, x: 0, y: 0, profileId: null, profileName: null });
+    setContextMenu({
+      visible: false,
+      x: 0,
+      y: 0,
+      profileId: null,
+      profileName: null,
+    });
 
-    if (!confirm(`"${profileName}" 프로필을 복제하시겠습니까?\n\n모든 시뮬레이션과 데이터가 복사됩니다.`)) {
+    if (
+      !confirm(
+        `"${profileName}" 프로필을 복제하시겠습니까?\n\n모든 시뮬레이션과 데이터가 복사됩니다.`
+      )
+    ) {
       return;
     }
 
     try {
       setDuplicating(true);
       const newProfile = await profileService.duplicateProfile(profileId);
-      trackEvent("프로필 복제", { originalProfileId: profileId, newProfileId: newProfile.id, profileName });
+      trackEvent("프로필 복제", {
+        originalProfileId: profileId,
+        newProfileId: newProfile.id,
+        profileName,
+      });
       await loadProfiles(); // 목록 새로고침
       alert(`"${profileName}" 프로필이 복제되었습니다.`);
     } catch (error) {
@@ -179,12 +248,31 @@ function ProfileListPage() {
   useEffect(() => {
     const handleClick = () => {
       if (contextMenu.visible) {
-        setContextMenu({ visible: false, x: 0, y: 0, profileId: null, profileName: null });
+        setContextMenu({
+          visible: false,
+          x: 0,
+          y: 0,
+          profileId: null,
+          profileName: null,
+        });
       }
     };
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, [contextMenu.visible]);
+
+  // ESC 키로 설정 모달 닫기
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && isSettingsOpen) {
+        setIsSettingsOpen(false);
+      }
+    };
+    if (isSettingsOpen) {
+      document.addEventListener("keydown", handleEscape);
+    }
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isSettingsOpen]);
 
   // 만 나이 계산 (calculateKoreanAge 함수 사용)
 
@@ -239,6 +327,12 @@ function ProfileListPage() {
         <h1 className={styles.title}>Lycon Planning</h1>
         <div className={styles.headerActions}>
           <button
+            className={styles.settingsButton}
+            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+          >
+            기본값 설정
+          </button>
+          <button
             className={styles.trashButton}
             onClick={() => setIsTrashModalOpen(true)}
           >
@@ -260,6 +354,251 @@ function ProfileListPage() {
         </div>
       </div>
 
+      {/* 기본값 설정 모달 */}
+      {isSettingsOpen && (
+        <div className={styles.settingsModalOverlay}>
+          <div className={styles.settingsModal}>
+            <div className={styles.settingsHeader}>
+              <h3>기본값 설정</h3>
+              <button
+                className={styles.settingsCloseButton}
+                onClick={() => setIsSettingsOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className={styles.settingsContent}>
+              {/* 소득/지출 그룹 */}
+              <div className={styles.settingsGroup}>
+                <h4 className={styles.settingsGroupTitle}>소득 / 지출</h4>
+                <div className={styles.settingsRow}>
+                  <div className={styles.settingsField}>
+                    <label htmlFor="defaultIncomeGrowthRate">
+                      소득 상승률 (%)
+                    </label>
+                    <input
+                      type="text"
+                      id="defaultIncomeGrowthRate"
+                      value={globalSettings.defaultIncomeGrowthRate}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          setGlobalSettings({
+                            ...globalSettings,
+                            defaultIncomeGrowthRate: value,
+                          });
+                        }
+                      }}
+                      placeholder="3.3"
+                    />
+                    <span className={styles.settingsHint}>
+                      소득 추가 시 기본값
+                    </span>
+                  </div>
+                  <div className={styles.settingsField}>
+                    <label htmlFor="defaultInflationRate">
+                      물가 상승률 (%)
+                    </label>
+                    <input
+                      type="text"
+                      id="defaultInflationRate"
+                      value={globalSettings.defaultInflationRate}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          setGlobalSettings({
+                            ...globalSettings,
+                            defaultInflationRate: value,
+                          });
+                        }
+                      }}
+                      placeholder="1.89"
+                    />
+                    <span className={styles.settingsHint}>
+                      지출, 국민연금 추가 시 기본값
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 저축/투자 그룹 */}
+              <div className={styles.settingsGroup}>
+                <h4 className={styles.settingsGroupTitle}>저축 / 투자</h4>
+                <div className={styles.settingsRow}>
+                  <div className={styles.settingsField}>
+                    <label htmlFor="defaultInvestmentReturnRate">
+                      연평균 수익률 (%)
+                    </label>
+                    <input
+                      type="text"
+                      id="defaultInvestmentReturnRate"
+                      value={globalSettings.defaultInvestmentReturnRate}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          setGlobalSettings({
+                            ...globalSettings,
+                            defaultInvestmentReturnRate: value,
+                          });
+                        }
+                      }}
+                      placeholder="2.86"
+                    />
+                    <span className={styles.settingsHint}>
+                      저축/투자, 퇴직/개인연금
+                    </span>
+                  </div>
+                  <div className={styles.settingsField}>
+                    <label htmlFor="defaultSavingGrowthRate">
+                      저축금액 증가율 (%)
+                    </label>
+                    <input
+                      type="text"
+                      id="defaultSavingGrowthRate"
+                      value={globalSettings.defaultSavingGrowthRate}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          setGlobalSettings({
+                            ...globalSettings,
+                            defaultSavingGrowthRate: value,
+                          });
+                        }
+                      }}
+                      placeholder="1.89"
+                    />
+                    <span className={styles.settingsHint}>
+                      저축/투자 추가 시 기본값
+                    </span>
+                  </div>
+                  <div className={styles.settingsField}>
+                    <label htmlFor="defaultIncomeRate">
+                      연간 수익률 (배당, 이자)
+                    </label>
+                    <input
+                      type="text"
+                      id="defaultIncomeRate"
+                      value={globalSettings.defaultIncomeRate}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          setGlobalSettings({
+                            ...globalSettings,
+                            defaultIncomeRate: value,
+                          });
+                        }
+                      }}
+                      placeholder="3"
+                    />
+                    <span className={styles.settingsHint}>
+                      수익형 저축/투자, 수익형 자산
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 자산 그룹 */}
+              <div className={styles.settingsGroup}>
+                <h4 className={styles.settingsGroupTitle}>부동산 / 자산</h4>
+                <div className={styles.settingsRow}>
+                  <div className={styles.settingsField}>
+                    <label htmlFor="defaultRealEstateGrowthRate">
+                      부동산 가치 상승률 (%)
+                    </label>
+                    <input
+                      type="text"
+                      id="defaultRealEstateGrowthRate"
+                      value={globalSettings.defaultRealEstateGrowthRate}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          setGlobalSettings({
+                            ...globalSettings,
+                            defaultRealEstateGrowthRate: value,
+                          });
+                        }
+                      }}
+                      placeholder="2.4"
+                    />
+                    <span className={styles.settingsHint}>
+                      부동산 추가 시 기본값
+                    </span>
+                  </div>
+                  <div className={styles.settingsField}>
+                    <label htmlFor="defaultAssetGrowthRate">
+                      자산 가치 상승률 (%)
+                    </label>
+                    <input
+                      type="text"
+                      id="defaultAssetGrowthRate"
+                      value={globalSettings.defaultAssetGrowthRate}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          setGlobalSettings({
+                            ...globalSettings,
+                            defaultAssetGrowthRate: value,
+                          });
+                        }
+                      }}
+                      placeholder="2.86"
+                    />
+                    <span className={styles.settingsHint}>
+                      자산 추가 시 기본값
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 부채 그룹 */}
+              <div className={styles.settingsGroup}>
+                <h4 className={styles.settingsGroupTitle}>부채</h4>
+                <div className={styles.settingsRow}>
+                  <div className={styles.settingsField}>
+                    <label htmlFor="defaultDebtInterestRate">
+                      부채 이자율 (%)
+                    </label>
+                    <input
+                      type="text"
+                      id="defaultDebtInterestRate"
+                      value={globalSettings.defaultDebtInterestRate}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                          setGlobalSettings({
+                            ...globalSettings,
+                            defaultDebtInterestRate: value,
+                          });
+                        }
+                      }}
+                      placeholder="3.5"
+                    />
+                    <span className={styles.settingsHint}>
+                      부채 추가 시 기본값
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className={styles.settingsActions}>
+              <button
+                className={styles.settingsCancelButton}
+                onClick={() => setIsSettingsOpen(false)}
+              >
+                취소
+              </button>
+              <button
+                className={styles.settingsSaveButton}
+                onClick={handleSaveSettings}
+                disabled={settingsSaving}
+              >
+                {settingsSaving ? "저장 중..." : "저장"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 탭 네비게이션 */}
       <div className={styles.tabNav}>
         <button
@@ -268,7 +607,8 @@ function ProfileListPage() {
           }`}
           onClick={() => setActiveTab("sample")}
         >
-          샘플 ({profiles.filter((p) => (p.status || "sample") === "sample").length})
+          샘플 (
+          {profiles.filter((p) => (p.status || "sample") === "sample").length})
         </button>
         <button
           className={`${styles.tabButton} ${
@@ -284,7 +624,8 @@ function ProfileListPage() {
           }`}
           onClick={() => setActiveTab("beforeConsult")}
         >
-          상담 전 ({profiles.filter((p) => p.status === "beforeConsult").length})
+          상담 전 ({profiles.filter((p) => p.status === "beforeConsult").length}
+          )
         </button>
         <button
           className={`${styles.tabButton} ${
@@ -313,7 +654,9 @@ function ProfileListPage() {
             key={profile.id}
             className={styles.profileItem}
             onClick={() => navigate(`/consult/dashboard/${profile.id}`)}
-            onContextMenu={(e) => handleContextMenu(e, profile.id, profile.name)}
+            onContextMenu={(e) =>
+              handleContextMenu(e, profile.id, profile.name)
+            }
           >
             <div className={styles.profileInfo}>
               <h3 className={styles.profileName}>{profile.name}님</h3>
@@ -322,8 +665,7 @@ function ProfileListPage() {
               </span>
               <span className={styles.infoDivider}>|</span>
               <span className={styles.infoText}>
-                은퇴 {profile.retirementAge}세 (
-                {profile.retirementYear}년)
+                은퇴 {profile.retirementAge}세 ({profile.retirementYear}년)
               </span>
               <span className={styles.infoDivider}>|</span>
               <span className={styles.infoText}>
@@ -391,15 +733,29 @@ function ProfileListPage() {
         >
           <button
             className={styles.contextMenuItem}
-            onClick={() => handleDuplicateProfile(contextMenu.profileId, contextMenu.profileName)}
+            onClick={() =>
+              handleDuplicateProfile(
+                contextMenu.profileId,
+                contextMenu.profileName
+              )
+            }
           >
             복제하기
           </button>
           <button
             className={styles.contextMenuItem}
             onClick={() => {
-              setContextMenu({ visible: false, x: 0, y: 0, profileId: null, profileName: null });
-              handleDeleteProfile(contextMenu.profileId, contextMenu.profileName);
+              setContextMenu({
+                visible: false,
+                x: 0,
+                y: 0,
+                profileId: null,
+                profileName: null,
+              });
+              handleDeleteProfile(
+                contextMenu.profileId,
+                contextMenu.profileName
+              );
             }}
           >
             삭제하기

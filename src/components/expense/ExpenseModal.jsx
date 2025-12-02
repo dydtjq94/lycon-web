@@ -17,6 +17,7 @@ function ExpenseModal({
   simulations = [],
   activeSimulationId = null,
   profileId = null,
+  defaultInflationRate = "1.89", // 전역 설정에서 전달된 물가 상승률 기본값
 }) {
   // 은퇴년도 계산 (문자열 결합 방지 및 현재 연도 기준 계산)
   const getRetirementYear = () => {
@@ -44,7 +45,7 @@ function ExpenseModal({
     endYear: getRetirementYear(),
     endMonth: 12, // 종료 월 (1-12)
     memo: "2014년부터 2024년까지의 10년간 평균",
-    growthRate: "1.89", // 기본 상승률 1.89%
+    growthRate: defaultInflationRate, // 전역 설정에서 가져온 물가 상승률
     isFixedToRetirementYear: false, // 은퇴년도 고정 여부
   });
 
@@ -223,12 +224,12 @@ function ExpenseModal({
           endYear: getRetirementYear(),
           endMonth: 12,
           memo: "2014년부터 2024년까지의 10년간 평균",
-          growthRate: "1.89",
+          growthRate: defaultInflationRate,
           isFixedToRetirementYear: false,
         });
       }
     }
-  }, [isOpen, editData, initialData]);
+  }, [isOpen, editData, initialData, defaultInflationRate]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
@@ -332,7 +333,7 @@ function ExpenseModal({
       endYear: new Date().getFullYear() + 10,
       endMonth: 12,
       memo: "2014년부터 2024년까지의 10년간 평균",
-      growthRate: "1.89",
+      growthRate: defaultInflationRate,
       isFixedToRetirementYear: false,
     });
     setErrors({});

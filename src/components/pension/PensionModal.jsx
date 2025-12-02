@@ -18,6 +18,8 @@ function PensionModal({
   simulations = [],
   activeSimulationId = null,
   profileId = null,
+  defaultInflationRate = "1.89", // 전역 설정에서 전달된 물가 상승률 기본값
+  defaultInvestmentReturnRate = "2.86", // 전역 설정에서 전달된 투자 수익률 기본값
 }) {
   // 은퇴년도 계산 함수
   const getRetirementYear = () => {
@@ -91,7 +93,7 @@ function PensionModal({
     startMonth: 1, // 시작 월 (국민연금용)
     endYear: age90Year,
     endMonth: 12, // 종료 월 (국민연금용)
-    inflationRate: 1.89, // 물가상승률 (국민연금용)
+    inflationRate: parseFloat(defaultInflationRate) || 1.89, // 물가상승률 (국민연금용)
     // 퇴직연금/개인연금용 필드
     currentAmount: "", // 시작 보유액
     contributionAmount: "", // 월/년 적립 금액
@@ -100,7 +102,7 @@ function PensionModal({
     contributionStartMonth: 1, // 적립 시작 월
     contributionEndYear: new Date().getFullYear() + 10,
     contributionEndMonth: 12, // 적립 종료 월
-    returnRate: 2.86, // 투자 수익률
+    returnRate: parseFloat(defaultInvestmentReturnRate) || 2.86, // 전역 설정에서 가져온 투자 수익률
     paymentStartYear: getRetirementYear() + 1, // 수령 시작년도: 은퇴년도+1
     paymentStartMonth: 1, // 수령 시작 월
     paymentYears: 10, // 수령 기간(년) - PMT 방식
@@ -405,7 +407,7 @@ function PensionModal({
           startMonth: 1,
           endYear: age90Year,
           endMonth: 12,
-          inflationRate: 1.89,
+          inflationRate: parseFloat(defaultInflationRate) || 1.89,
           currentAmount: "",
           contributionAmount: "",
           contributionFrequency: "monthly",
@@ -413,7 +415,7 @@ function PensionModal({
           contributionStartMonth: 1,
           contributionEndYear: new Date().getFullYear() + 10,
           contributionEndMonth: 12,
-          returnRate: 2.86,
+          returnRate: parseFloat(defaultInvestmentReturnRate) || 2.86,
           paymentStartYear: getRetirementYear() + 1,
           paymentStartMonth: 1,
           paymentYears: 10,
@@ -739,7 +741,7 @@ function PensionModal({
       startMonth: 1,
       endYear: age90Year,
       endMonth: 12,
-      inflationRate: 1.89,
+      inflationRate: parseFloat(defaultInflationRate) || 1.89,
       currentAmount: "",
       contributionAmount: "",
       contributionFrequency: "monthly",
@@ -747,7 +749,7 @@ function PensionModal({
       contributionStartMonth: 1,
       contributionEndYear: new Date().getFullYear() + 10,
       contributionEndMonth: 12,
-      returnRate: 2.86,
+      returnRate: parseFloat(defaultInvestmentReturnRate) || 2.86,
       paymentStartYear: retirementYear + 1,
       paymentStartMonth: 1,
       paymentYears: 10,

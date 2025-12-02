@@ -14,6 +14,7 @@ const RealEstateModal = ({
   simulations = [],
   activeSimulationId = null,
   profileId = null,
+  defaultRealEstateGrowthRate = "2.4", // 전역 설정에서 전달된 부동산 가치 상승률 기본값
 }) => {
   const [formData, setFormData] = useState({
     title: "",
@@ -22,7 +23,7 @@ const RealEstateModal = ({
     currentValue: "",
     acquisitionPrice: "", // 취득가액 (양도세 계산용)
     acquisitionYear: "", // 취득일자 (양도세 계산용)
-    growthRate: "2.4",
+    growthRate: defaultRealEstateGrowthRate, // 전역 설정에서 가져온 가치 상승률
     startYear: new Date().getFullYear(),
     startMonth: 1,
     endYear: new Date().getFullYear() + 30, // 종료년도 추가
@@ -243,7 +244,7 @@ const RealEstateModal = ({
           currentValue: "",
           acquisitionPrice: "",
           acquisitionYear: "",
-          growthRate: "2.4",
+          growthRate: defaultRealEstateGrowthRate,
           startYear: new Date().getFullYear(),
           startMonth: 1,
           endYear: new Date().getFullYear() + 30,
@@ -267,7 +268,7 @@ const RealEstateModal = ({
       }
       setErrors({});
     }
-  }, [isOpen, editData, initialData]);
+  }, [isOpen, editData, initialData, defaultRealEstateGrowthRate]);
 
   // ESC 키로 모달 닫기 + body 스크롤 막기
   useEffect(() => {
@@ -295,7 +296,7 @@ const RealEstateModal = ({
     setFormData({
       title: "",
       currentValue: "",
-      growthRate: "2.4",
+      growthRate: defaultRealEstateGrowthRate,
       startYear: new Date().getFullYear(),
       startMonth: 1,
       endYear: new Date().getFullYear() + 30,
