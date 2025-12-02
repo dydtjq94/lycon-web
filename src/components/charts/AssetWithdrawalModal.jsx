@@ -5,6 +5,7 @@ import { formatAmount } from "../../utils/format";
 /**
  * 자산 인출 설정 모달
  * 저축/투자 자산에서 현금으로 인출하는 금액 설정
+ * 금액(만원) 또는 비율(%) 두 가지 방식으로 입력 가능
  */
 function AssetWithdrawalModal({
   isOpen,
@@ -12,13 +13,17 @@ function AssetWithdrawalModal({
   year,
   savings = [],
   detailedData = [], // 해당 연도의 자산 잔액 정보
-  currentRule = null, // { withdrawals: [{sourceType, sourceId, amount}] }
+  currentRule = null, // { withdrawals: [{sourceType, sourceId, amount, percentage}] }
   withdrawableYears = [], // 인출 가능한 년도 목록 (자산이 있는 년도)
   onSave,
   onYearChange,
 }) {
   // 인출 금액 (각 자산별)
   const [withdrawals, setWithdrawals] = useState({});
+  // 입력 모드 (각 자산별: 'amount' | 'percentage')
+  const [inputModes, setInputModes] = useState({});
+  // 퍼센트 값 (각 자산별)
+  const [percentages, setPercentages] = useState({});
 
   // 모달이 열릴 때 배경 스크롤 방지
   useEffect(() => {
@@ -37,12 +42,29 @@ function AssetWithdrawalModal({
     // 기존 규칙이 있으면 로드
     if (currentRule && currentRule.withdrawals && currentRule.withdrawals.length > 0) {
       const newWithdrawals = {};
+      const newInputModes = {};
+      const newPercentages = {};
+
       currentRule.withdrawals.forEach((withdrawal) => {
-        newWithdrawals[withdrawal.sourceId] = withdrawal.amount;
+        if (withdrawal.percentage !== undefined && withdrawal.percentage !== null) {
+          // 퍼센트 모드로 저장된 경우
+          newInputModes[withdrawal.sourceId] = "percentage";
+          newPercentages[withdrawal.sourceId] = withdrawal.percentage;
+          newWithdrawals[withdrawal.sourceId] = withdrawal.amount || 0;
+        } else {
+          // 금액 모드로 저장된 경우
+          newInputModes[withdrawal.sourceId] = "amount";
+          newWithdrawals[withdrawal.sourceId] = withdrawal.amount;
+        }
       });
+
       setWithdrawals(newWithdrawals);
+      setInputModes(newInputModes);
+      setPercentages(newPercentages);
     } else {
       setWithdrawals({});
+      setInputModes({});
+      setPercentages({});
     }
   }, [currentRule, isOpen, year]);
 
@@ -117,21 +139,66 @@ function AssetWithdrawalModal({
     0
   );
 
-  // 인출 금액 업데이트
+  // 입력 모드 변경
+  const handleModeChange = (id, mode) => {
+    setInputModes({
+      ...inputModes,
+      [id]: mode,
+    });
+  };
+
+  // 금액 입력 업데이트
   const handleWithdrawalChange = (id, value) => {
     const numValue = value === "" ? 0 : parseInt(value);
     setWithdrawals({
       ...withdrawals,
       [id]: isNaN(numValue) ? 0 : Math.max(0, numValue),
     });
+    // 금액 모드로 전환
+    setInputModes({
+      ...inputModes,
+      [id]: "amount",
+    });
   };
 
-  // 전액 인출 버튼 (title로 잔액을 찾고, id로 상태 업데이트)
+  // 퍼센트 입력 업데이트
+  const handlePercentageChange = (id, value, balance) => {
+    const numValue = value === "" ? 0 : parseFloat(value);
+    const validValue = isNaN(numValue) ? 0 : Math.min(100, Math.max(0, numValue));
+
+    setPercentages({
+      ...percentages,
+      [id]: validValue,
+    });
+
+    // 퍼센트를 금액으로 변환하여 저장
+    const calculatedAmount = Math.round((balance * validValue) / 100);
+    setWithdrawals({
+      ...withdrawals,
+      [id]: calculatedAmount,
+    });
+
+    // 퍼센트 모드로 전환
+    setInputModes({
+      ...inputModes,
+      [id]: "percentage",
+    });
+  };
+
+  // 전액 인출 버튼 (100%로 설정)
   const handleWithdrawAll = (id, title) => {
     const balance = getAssetBalance(title);
     setWithdrawals({
       ...withdrawals,
       [id]: balance,
+    });
+    setPercentages({
+      ...percentages,
+      [id]: 100,
+    });
+    setInputModes({
+      ...inputModes,
+      [id]: "percentage",
     });
   };
 
@@ -159,12 +226,20 @@ function AssetWithdrawalModal({
       if (amount > 0) {
         const saving = savings.find((s) => s.id === id);
         if (saving) {
-          withdrawalList.push({
+          const mode = inputModes[id] || "amount";
+          const withdrawalData = {
             sourceType: "saving",
             sourceId: saving.id,
             sourceTitle: saving.title,
             amount: amount,
-          });
+          };
+
+          // 퍼센트 모드인 경우 퍼센트 값도 저장
+          if (mode === "percentage" && percentages[id] !== undefined) {
+            withdrawalData.percentage = percentages[id];
+          }
+
+          withdrawalList.push(withdrawalData);
         }
       }
     }
@@ -182,6 +257,8 @@ function AssetWithdrawalModal({
   // 초기화
   const handleReset = () => {
     setWithdrawals({});
+    setInputModes({});
+    setPercentages({});
   };
 
   return (
@@ -223,6 +300,8 @@ function AssetWithdrawalModal({
                 {activeSavings.map((saving) => {
                   const balance = getAssetBalance(saving.title);
                   const withdrawalAmount = withdrawals[saving.id] || 0;
+                  const currentMode = inputModes[saving.id] || "amount";
+                  const currentPercentage = percentages[saving.id] || 0;
 
                   return (
                     <div key={saving.id} className={styles.withdrawalItem}>
@@ -234,19 +313,63 @@ function AssetWithdrawalModal({
                           </span>
                         </div>
                         <div className={styles.inputGroup}>
-                          <input
-                            type="number"
-                            min="0"
-                            max={balance}
-                            value={withdrawalAmount === 0 ? "" : withdrawalAmount}
-                            placeholder="0"
-                            onChange={(e) =>
-                              handleWithdrawalChange(saving.id, e.target.value)
-                            }
-                            onWheel={(e) => e.target.blur()}
-                            className={styles.amountInput}
-                          />
-                          <span className={styles.unit}>만원</span>
+                          {/* 모드 선택 토글 */}
+                          <div className={styles.modeToggle}>
+                            <button
+                              type="button"
+                              className={`${styles.modeButton} ${currentMode === "amount" ? styles.modeButtonActive : ""}`}
+                              onClick={() => handleModeChange(saving.id, "amount")}
+                            >
+                              만원
+                            </button>
+                            <button
+                              type="button"
+                              className={`${styles.modeButton} ${currentMode === "percentage" ? styles.modeButtonActive : ""}`}
+                              onClick={() => handleModeChange(saving.id, "percentage")}
+                            >
+                              %
+                            </button>
+                          </div>
+
+                          {/* 금액 입력 모드 */}
+                          {currentMode === "amount" && (
+                            <>
+                              <input
+                                type="number"
+                                min="0"
+                                max={balance}
+                                value={withdrawalAmount === 0 ? "" : withdrawalAmount}
+                                placeholder="0"
+                                onChange={(e) =>
+                                  handleWithdrawalChange(saving.id, e.target.value)
+                                }
+                                onWheel={(e) => e.target.blur()}
+                                className={styles.amountInput}
+                              />
+                              <span className={styles.unit}>만원</span>
+                            </>
+                          )}
+
+                          {/* 퍼센트 입력 모드 */}
+                          {currentMode === "percentage" && (
+                            <>
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="1"
+                                value={currentPercentage === 0 ? "" : currentPercentage}
+                                placeholder="0"
+                                onChange={(e) =>
+                                  handlePercentageChange(saving.id, e.target.value, balance)
+                                }
+                                onWheel={(e) => e.target.blur()}
+                                className={styles.amountInput}
+                              />
+                              <span className={styles.unit}>%</span>
+                            </>
+                          )}
+
                           <button
                             className={styles.allButton}
                             onClick={() => handleWithdrawAll(saving.id, saving.title)}
@@ -256,6 +379,12 @@ function AssetWithdrawalModal({
                           </button>
                         </div>
                       </div>
+                      {/* 퍼센트 모드일 때 금액 표시 */}
+                      {currentMode === "percentage" && withdrawalAmount > 0 && (
+                        <div className={styles.calculatedAmount}>
+                          = {formatAmount(withdrawalAmount)}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

@@ -381,6 +381,46 @@
   color: white;
 }
 
+/* 모드 토글 버튼 */
+.modeToggle {
+  display: flex;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.modeButton {
+  padding: 4px 8px;
+  border: none;
+  background: white;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modeButton:first-child {
+  border-right: 1px solid #d1d5db;
+}
+
+.modeButtonActive {
+  background: #111827;
+  color: white;
+}
+
+.modeButton:hover:not(.modeButtonActive) {
+  background: #f3f4f6;
+}
+
+/* 계산된 금액 표시 */
+.calculatedAmount {
+  font-size: 11px;
+  color: #6b7280;
+  text-align: right;
+  padding: 4px 12px 0;
+}
+
 .noAssets {
   padding: 24px;
   text-align: center;
