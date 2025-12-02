@@ -2290,16 +2290,28 @@ export function calculateCashflowSimulation(
 
       if (withdrawalRule && withdrawalRule.withdrawals) {
         withdrawalRule.withdrawals.forEach((withdrawal) => {
-          if (withdrawal.amount <= 0) return;
-
           if (withdrawal.sourceType === "saving" && withdrawal.sourceId) {
             // 저축에서 인출 - savingStates에서 해당 저축 찾기
             const stateKey = withdrawal.sourceId;
             const savingState = savingStates[stateKey];
 
             if (savingState && savingState.balance > 0) {
+              let withdrawalAmount;
+
+              // 퍼센트 모드인 경우: 현재 잔액 기준으로 계산
+              if (withdrawal.percentage !== undefined && withdrawal.percentage !== null && withdrawal.percentage > 0) {
+                withdrawalAmount = Math.round(savingState.balance * (withdrawal.percentage / 100));
+              } else if (withdrawal.amount > 0) {
+                // 금액 모드인 경우: 고정 금액 사용
+                withdrawalAmount = withdrawal.amount;
+              } else {
+                return; // 인출 금액이 없으면 스킵
+              }
+
               // 실제 인출 가능 금액 (잔액 초과 방지)
-              const actualWithdrawal = Math.min(withdrawal.amount, savingState.balance);
+              const actualWithdrawal = Math.min(withdrawalAmount, savingState.balance);
+
+              if (actualWithdrawal <= 0) return;
 
               // 저축 잔액에서 차감
               savingState.balance =

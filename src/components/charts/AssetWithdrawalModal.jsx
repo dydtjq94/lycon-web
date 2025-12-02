@@ -38,6 +38,18 @@ function AssetWithdrawalModal({
     };
   }, [isOpen]);
 
+  // 해당 연도의 자산 잔액 가져오기 (useEffect에서 사용하기 위해 먼저 계산)
+  const yearData = detailedData.find((d) => d.year === year);
+  const breakdown = yearData?.breakdown || {};
+
+  // 자산별 현재 잔액 가져오기 (label/title로 비교, 정수로 반환)
+  const getAssetBalance = (title) => {
+    const assetItem = breakdown.assetItems?.find(
+      (item) => item.label === title && item.sourceType === "saving"
+    );
+    return Math.round(assetItem?.amount || 0);
+  };
+
   useEffect(() => {
     // 기존 규칙이 있으면 로드
     if (currentRule && currentRule.withdrawals && currentRule.withdrawals.length > 0) {
@@ -47,10 +59,18 @@ function AssetWithdrawalModal({
 
       currentRule.withdrawals.forEach((withdrawal) => {
         if (withdrawal.percentage !== undefined && withdrawal.percentage !== null) {
-          // 퍼센트 모드로 저장된 경우
+          // 퍼센트 모드로 저장된 경우 - 현재 잔액 기준으로 금액 재계산
           newInputModes[withdrawal.sourceId] = "percentage";
           newPercentages[withdrawal.sourceId] = withdrawal.percentage;
-          newWithdrawals[withdrawal.sourceId] = withdrawal.amount || 0;
+
+          // 현재 잔액 가져와서 퍼센트로 금액 계산
+          const saving = savings.find((s) => s.id === withdrawal.sourceId);
+          if (saving) {
+            const balance = getAssetBalance(saving.title);
+            newWithdrawals[withdrawal.sourceId] = Math.round(balance * (withdrawal.percentage / 100));
+          } else {
+            newWithdrawals[withdrawal.sourceId] = 0;
+          }
         } else {
           // 금액 모드로 저장된 경우
           newInputModes[withdrawal.sourceId] = "amount";
@@ -66,7 +86,7 @@ function AssetWithdrawalModal({
       setInputModes({});
       setPercentages({});
     }
-  }, [currentRule, isOpen, year]);
+  }, [currentRule, isOpen, year, detailedData, savings]);
 
   // ESC 키로 모달 닫기 및 방향키로 연도 이동
   useEffect(() => {
@@ -105,10 +125,6 @@ function AssetWithdrawalModal({
 
   if (!isOpen) return null;
 
-  // 해당 연도의 자산 잔액 가져오기
-  const yearData = detailedData.find((d) => d.year === year);
-  const breakdown = yearData?.breakdown || {};
-
   // 기존 인출 규칙에 있는 자산 ID 목록
   const existingWithdrawalIds = currentRule?.withdrawals?.map(w => w.sourceId) || [];
 
@@ -125,25 +141,26 @@ function AssetWithdrawalModal({
     return assetItem && assetItem.amount > 0;
   });
 
-  // 자산별 현재 잔액 가져오기 (label/title로 비교, 정수로 반환)
-  const getAssetBalance = (title) => {
-    const assetItem = breakdown.assetItems?.find(
-      (item) => item.label === title && item.sourceType === "saving"
-    );
-    return Math.round(assetItem?.amount || 0);
-  };
-
   // 총 인출 금액 계산
   const totalWithdrawal = Object.values(withdrawals).reduce(
     (sum, amount) => sum + (amount || 0),
     0
   );
 
-  // 입력 모드 변경
+  // 입력 모드 변경 (모드 변경 시 값 초기화)
   const handleModeChange = (id, mode) => {
     setInputModes({
       ...inputModes,
       [id]: mode,
+    });
+    // 값 초기화
+    setWithdrawals({
+      ...withdrawals,
+      [id]: 0,
+    });
+    setPercentages({
+      ...percentages,
+      [id]: 0,
     });
   };
 
