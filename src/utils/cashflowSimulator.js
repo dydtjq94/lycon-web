@@ -3301,60 +3301,80 @@ export function calculateAssetSimulation(
 
       let outstanding = 0;
 
-      // 연말 기준: 첫 해는 대출만, 다음 해부터 이자 발생
-      if (year === startYear) {
-        // 첫 해: 원금만 (이자 미발생)
-        outstanding = -originalAmount;
-      } else if (year > startYear && year <= endYear) {
-        const yearsElapsed = year - startYear; // 1년부터 시작
-        const totalYears = endYear - startYear; // 총 이자 발생 기간
+      // 월별 계산을 위한 변수
+      const debtStartMonth = debt.startMonth || 1;
+      const debtEndMonth = debt.endMonth || 12;
+      const monthlyRate = interestRate / 12; // 월 이자율
+
+      // 총 상환 개월 수 계산
+      const totalMonths =
+        calculateMonthsElapsed(startYear, debtStartMonth, endYear, debtEndMonth) + 1;
+
+      // 부채 기간 내에 있는지 확인
+      if (year >= startYear && year <= endYear) {
+        // 현재 년도 말(12월)까지 경과한 개월 수 계산
+        let monthsElapsedToYearEnd = 0;
+        if (year === startYear && year === endYear) {
+          // 시작 년도와 종료 년도가 같은 경우
+          monthsElapsedToYearEnd = debtEndMonth - debtStartMonth + 1;
+        } else if (year === startYear) {
+          // 시작 년도: 시작 월부터 12월까지
+          monthsElapsedToYearEnd = 13 - debtStartMonth;
+        } else if (year === endYear) {
+          // 종료 년도: 1월부터 종료 월까지
+          monthsElapsedToYearEnd =
+            calculateMonthsElapsed(startYear, debtStartMonth, year, debtEndMonth) + 1;
+        } else {
+          // 중간 년도: 시작부터 12월까지
+          monthsElapsedToYearEnd =
+            calculateMonthsElapsed(startYear, debtStartMonth, year, 12) + 1;
+        }
 
         if (debtType === "bullet") {
-          outstanding = year < endYear ? -originalAmount : 0;
+          // 만기일시상환: 만기년도 만기월까지 원금 유지
+          if (year < endYear) {
+            outstanding = -originalAmount;
+          } else if (year === endYear) {
+            // 만기년도: 만기월 이후면 0, 아니면 원금 유지 (연말 기준이므로 0)
+            outstanding = 0;
+          }
         } else if (debtType === "equal") {
-          if (totalYears > 0 && interestRate > 0) {
-            const denominator = Math.pow(1 + interestRate, totalYears) - 1;
-            const pmt =
+          // 원리금균등상환: 월별 PMT 계산
+          if (totalMonths > 0 && monthlyRate > 0) {
+            const denominator = Math.pow(1 + monthlyRate, totalMonths) - 1;
+            const monthlyPmt =
               denominator !== 0
                 ? (originalAmount *
-                    (interestRate * Math.pow(1 + interestRate, totalYears))) /
+                    (monthlyRate * Math.pow(1 + monthlyRate, totalMonths))) /
                   denominator
                 : 0;
 
             let remainingPrincipal = originalAmount;
-            // yearsElapsed는 1부터 시작하므로 1부터 yearsElapsed까지 반복
-            for (let i = 1; i <= yearsElapsed; i++) {
-              const interestPayment = remainingPrincipal * interestRate;
-              const principalPayment = pmt - interestPayment;
-              remainingPrincipal -= principalPayment;
+            // 연말까지 경과한 개월 수만큼 상환
+            for (let i = 0; i < monthsElapsedToYearEnd; i++) {
+              const monthInterest = remainingPrincipal * monthlyRate;
+              const monthPrincipal = monthlyPmt - monthInterest;
+              remainingPrincipal = Math.max(remainingPrincipal - monthPrincipal, 0);
             }
 
-            remainingPrincipal = Math.max(remainingPrincipal, 0);
             outstanding = -remainingPrincipal;
-          } else if (totalYears > 0) {
-            const yearlyPrincipalPayment = originalAmount / totalYears;
-            const paidPrincipal = yearlyPrincipalPayment * yearsElapsed;
-            const remainingPrincipal = Math.max(
-              originalAmount - paidPrincipal,
-              0
-            );
+          } else if (totalMonths > 0) {
+            // 이자율이 0%인 경우: 원금을 균등 분할
+            const monthlyPayment = originalAmount / totalMonths;
+            const paidPrincipal = monthlyPayment * monthsElapsedToYearEnd;
+            const remainingPrincipal = Math.max(originalAmount - paidPrincipal, 0);
             outstanding = -remainingPrincipal;
           }
         } else if (debtType === "principal") {
-          if (totalYears > 0) {
-            const yearlyPrincipalPayment = originalAmount / totalYears;
-            const paidPrincipal = yearlyPrincipalPayment * yearsElapsed;
-            const remainingPrincipal = Math.max(
-              originalAmount - paidPrincipal,
-              0
-            );
+          // 원금균등상환: 월별 원금 균등 상환
+          if (totalMonths > 0) {
+            const monthlyPrincipalPayment = originalAmount / totalMonths;
+            const paidPrincipal = monthlyPrincipalPayment * monthsElapsedToYearEnd;
+            const remainingPrincipal = Math.max(originalAmount - paidPrincipal, 0);
             outstanding = -remainingPrincipal;
           }
         } else if (debtType === "grace") {
           // 거치식상환: 거치기간 동안 이자만 지불, 이후 원금 균등상환
-          const debtStartMonth = debt.startMonth || 1;
-          const debtEndMonth = debt.endMonth || 12;
-
           // 거치 종료 시점을 월 단위로 계산
           // 예: 2025년 6월 시작, 5년 거치 = 2030년 6월까지 거치
           const graceEndMonth = debtStartMonth;
@@ -3805,10 +3825,14 @@ export function calculateDebtSimulation(profileData, debts = []) {
   // 부채별 자산 (제목별로 분리)
   const debtsByTitle = {};
   debts.forEach((debt) => {
+    const startMonth = parseInt(debt.startMonth, 10) || 1;
+    const endMonth = parseInt(debt.endMonth, 10) || 12;
     debtsByTitle[debt.title] = {
       amount: debt.debtAmount, // 부채 금액
       startYear: debt.startYear,
+      startMonth: startMonth,
       endYear: debt.endYear,
+      endMonth: endMonth,
       debtType: debt.debtType, // "bullet", "equal", "principal", "grace"
       interestRate: debt.interestRate || 0, // 이미 소수로 저장됨
       originalAmount: debt.debtAmount,
@@ -3826,73 +3850,122 @@ export function calculateDebtSimulation(profileData, debts = []) {
     // 부채 상환 처리
     Object.keys(debtsByTitle).forEach((title) => {
       const debt = debtsByTitle[title];
-      const { startYear, endYear, debtType, originalAmount } = debt;
+      const { startYear, startMonth, endYear, endMonth, debtType, originalAmount } = debt;
       const interestRate = debt.interestRate || 0;
       const gracePeriod = parseInt(debt.gracePeriod, 10) || 0;
+      const monthlyRate = interestRate / 12; // 월 이자율
+
+      // 총 상환 개월 수 계산
+      const totalMonths =
+        calculateMonthsElapsed(startYear, startMonth, endYear, endMonth) + 1;
 
       let outstanding = 0;
 
       if (year >= startYear && year <= endYear) {
-        const yearsElapsed = year - startYear;
-        const totalYears = endYear - startYear + 1;
+        // 현재 년도 말(12월)까지 경과한 개월 수 계산
+        let monthsElapsedToYearEnd = 0;
+        if (year === startYear && year === endYear) {
+          // 시작 년도와 종료 년도가 같은 경우
+          monthsElapsedToYearEnd = endMonth - startMonth + 1;
+        } else if (year === startYear) {
+          // 시작 년도: 시작 월부터 12월까지
+          monthsElapsedToYearEnd = 13 - startMonth;
+        } else if (year === endYear) {
+          // 종료 년도: 시작부터 종료 월까지
+          monthsElapsedToYearEnd =
+            calculateMonthsElapsed(startYear, startMonth, year, endMonth) + 1;
+        } else {
+          // 중간 년도: 시작부터 12월까지
+          monthsElapsedToYearEnd =
+            calculateMonthsElapsed(startYear, startMonth, year, 12) + 1;
+        }
 
         if (debtType === "bullet") {
-          outstanding = year < endYear ? -originalAmount : 0;
+          // 만기일시상환: 만기년도 만기월까지 원금 유지
+          if (year < endYear) {
+            outstanding = -originalAmount;
+          } else if (year === endYear) {
+            // 만기년도: 연말 기준이므로 0
+            outstanding = 0;
+          }
         } else if (debtType === "equal") {
-          if (totalYears > 0 && interestRate > 0) {
-            const denominator = Math.pow(1 + interestRate, totalYears) - 1;
-            const pmt =
+          // 원리금균등상환: 월별 PMT 계산
+          if (totalMonths > 0 && monthlyRate > 0) {
+            const denominator = Math.pow(1 + monthlyRate, totalMonths) - 1;
+            const monthlyPmt =
               denominator !== 0
                 ? (originalAmount *
-                    (interestRate * Math.pow(1 + interestRate, totalYears))) /
+                    (monthlyRate * Math.pow(1 + monthlyRate, totalMonths))) /
                   denominator
                 : 0;
 
             let remainingPrincipal = originalAmount;
-            for (let i = 0; i <= yearsElapsed; i++) {
-              if (i > 0) {
-                const interestPayment = remainingPrincipal * interestRate;
-                const principalPayment = pmt - interestPayment;
-                remainingPrincipal -= principalPayment;
-              }
+            // 연말까지 경과한 개월 수만큼 상환
+            for (let j = 0; j < monthsElapsedToYearEnd; j++) {
+              const monthInterest = remainingPrincipal * monthlyRate;
+              const monthPrincipal = monthlyPmt - monthInterest;
+              remainingPrincipal = Math.max(remainingPrincipal - monthPrincipal, 0);
             }
 
-            remainingPrincipal = Math.max(remainingPrincipal, 0);
             outstanding = -remainingPrincipal;
-          } else if (totalYears > 0) {
-            const yearlyPrincipalPayment = originalAmount / totalYears;
-            const paidPrincipal = yearlyPrincipalPayment * (yearsElapsed + 1);
-            const remainingPrincipal = Math.max(
-              originalAmount - paidPrincipal,
-              0
-            );
+          } else if (totalMonths > 0) {
+            // 이자율이 0%인 경우: 원금을 균등 분할
+            const monthlyPayment = originalAmount / totalMonths;
+            const paidPrincipal = monthlyPayment * monthsElapsedToYearEnd;
+            const remainingPrincipal = Math.max(originalAmount - paidPrincipal, 0);
             outstanding = -remainingPrincipal;
           }
         } else if (debtType === "principal") {
-          if (totalYears > 0) {
-            const yearlyPrincipalPayment = originalAmount / totalYears;
-            const paidPrincipal = yearlyPrincipalPayment * (yearsElapsed + 1);
-            const remainingPrincipal = Math.max(
-              originalAmount - paidPrincipal,
-              0
-            );
+          // 원금균등상환: 월별 원금 균등 상환
+          if (totalMonths > 0) {
+            const monthlyPrincipalPayment = originalAmount / totalMonths;
+            const paidPrincipal = monthlyPrincipalPayment * monthsElapsedToYearEnd;
+            const remainingPrincipal = Math.max(originalAmount - paidPrincipal, 0);
             outstanding = -remainingPrincipal;
           }
         } else if (debtType === "grace") {
-          const graceEndYear = startYear + gracePeriod - 1;
-          const repaymentYears = endYear - graceEndYear;
+          // 거치식상환: 거치기간 동안 이자만 지불, 이후 원금 균등상환
+          const graceEndMonth = startMonth;
+          let graceEndYear = startYear + gracePeriod;
 
-          if (year <= graceEndYear) {
+          // 상환 시작 시점 (거치 종료 다음 달)
+          let repaymentStartYear = graceEndYear;
+          let repaymentStartMonth = graceEndMonth + 1;
+          if (repaymentStartMonth > 12) {
+            repaymentStartMonth = 1;
+            repaymentStartYear += 1;
+          }
+
+          // 상환 총 개월 수 계산
+          const repaymentTotalMonths =
+            calculateMonthsElapsed(repaymentStartYear, repaymentStartMonth, endYear, endMonth) + 1;
+
+          // 현재 년도가 거치 기간인지 확인
+          const isInGracePeriod = year < graceEndYear || year === graceEndYear;
+          const isInRepaymentPeriod =
+            year >= repaymentStartYear && year <= endYear;
+
+          if (isInGracePeriod && !isInRepaymentPeriod) {
             outstanding = -originalAmount;
-          } else if (repaymentYears > 0) {
-            const yearlyPrincipalPayment = originalAmount / repaymentYears;
-            const repaymentYearsElapsed = year - graceEndYear;
-            const paidPrincipal =
-              yearlyPrincipalPayment * Math.max(repaymentYearsElapsed, 0);
-            const remainingPrincipal = Math.max(
-              originalAmount - paidPrincipal,
-              0
-            );
+          } else if (isInRepaymentPeriod && repaymentTotalMonths > 0) {
+            const monthlyPrincipalPayment = originalAmount / repaymentTotalMonths;
+
+            // 현재 년도 말까지 경과한 상환 개월 수 계산
+            let repaymentMonthsToYearEnd = 0;
+            if (year === repaymentStartYear && year === endYear) {
+              repaymentMonthsToYearEnd = endMonth - repaymentStartMonth + 1;
+            } else if (year === repaymentStartYear) {
+              repaymentMonthsToYearEnd = 13 - repaymentStartMonth;
+            } else if (year === endYear) {
+              repaymentMonthsToYearEnd =
+                calculateMonthsElapsed(repaymentStartYear, repaymentStartMonth, year, endMonth) + 1;
+            } else {
+              repaymentMonthsToYearEnd =
+                calculateMonthsElapsed(repaymentStartYear, repaymentStartMonth, year, 12) + 1;
+            }
+
+            const paidPrincipal = monthlyPrincipalPayment * repaymentMonthsToYearEnd;
+            const remainingPrincipal = Math.max(originalAmount - paidPrincipal, 0);
             outstanding = -remainingPrincipal;
           }
         }
