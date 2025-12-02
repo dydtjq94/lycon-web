@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "version:patch": "node update-version.cjs patch",
     "version:minor": "node update-version.cjs minor",
-    "version:major": "node update-version.cjs major"
+    "version:major": "node update-version.cjs major",
+    "sync-version": "node scripts/update-firebase-version.cjs"
   },
   "dependencies": {
     "echarts": "^6.0.0",
@@ -30,6 +31,7 @@
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
     "baseline-browser-mapping": "^2.8.31",
+    "dotenv": "^17.2.3",
     "eslint": "^9.33.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",

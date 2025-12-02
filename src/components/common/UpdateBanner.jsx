@@ -54,7 +54,6 @@ function UpdateBanner() {
   return (
     <div className={styles.banner}>
       <div className={styles.content}>
-        <span className={styles.icon}>🔄</span>
         <span className={styles.message}>
           새 버전이 있습니다 (v{latestVersion})
         </span>
