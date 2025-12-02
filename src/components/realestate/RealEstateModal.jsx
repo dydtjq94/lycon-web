@@ -25,7 +25,7 @@ const RealEstateModal = ({
     acquisitionYear: "", // 취득일자 (양도세 계산용)
     growthRate: defaultRealEstateGrowthRate, // 전역 설정에서 가져온 가치 상승률
     startYear: new Date().getFullYear(),
-    startMonth: 1,
+    startMonth: new Date().getMonth() + 1, // 현재 월
     endYear: new Date().getFullYear() + 30, // 종료년도 추가
     endMonth: 12,
     holdingPeriod: "",
@@ -246,7 +246,7 @@ const RealEstateModal = ({
           acquisitionYear: "",
           growthRate: defaultRealEstateGrowthRate,
           startYear: new Date().getFullYear(),
-          startMonth: 1,
+          startMonth: new Date().getMonth() + 1, // 현재 월
           endYear: new Date().getFullYear() + 30,
           endMonth: 12,
           holdingPeriod: "",
@@ -298,7 +298,7 @@ const RealEstateModal = ({
       currentValue: "",
       growthRate: defaultRealEstateGrowthRate,
       startYear: new Date().getFullYear(),
-      startMonth: 1,
+      startMonth: new Date().getMonth() + 1, // 현재 월
       endYear: new Date().getFullYear() + 30,
       endMonth: 12,
       holdingPeriod: "",

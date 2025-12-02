@@ -26,7 +26,7 @@ function AssetModal({
     currentValue: "",
     growthRate: defaultAssetGrowthRate, // 전역 설정에서 가져온 가치 상승률
     startYear: new Date().getFullYear(),
-    startMonth: 1,
+    startMonth: new Date().getMonth() + 1, // 현재 월
     endYear: "",
     endMonth: 12,
     assetType: "general", // "general" 또는 "income"
@@ -214,7 +214,7 @@ function AssetModal({
           currentValue: "",
           growthRate: defaultAssetGrowthRate,
           startYear: currentYear,
-          startMonth: 1,
+          startMonth: new Date().getMonth() + 1, // 현재 월
           endYear: deathYear,
           endMonth: 12,
           assetType: "general",
@@ -360,7 +360,7 @@ function AssetModal({
       currentValue: "",
       growthRate: defaultAssetGrowthRate,
       startYear: new Date().getFullYear(),
-      startMonth: 1,
+      startMonth: new Date().getMonth() + 1, // 현재 월
       endYear: "",
       endMonth: 12,
       assetType: "general",

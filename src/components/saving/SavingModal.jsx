@@ -46,7 +46,7 @@ function SavingModal({
     currentAmount: "", // 현재 보유 금액
     treatAsInitialPurchase: false, // 현재 보유 금액을 구매로 처리할지 여부
     startYear: new Date().getFullYear(),
-    startMonth: 1, // 시작 월 (1-12)
+    startMonth: new Date().getMonth() + 1, // 시작 월 (1-12) - 현재 월
     endYear: getRetirementYear(),
     endMonth: 12, // 종료 월 (1-12)
     memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
@@ -261,7 +261,7 @@ function SavingModal({
           currentAmount: "",
           treatAsInitialPurchase: false,
           startYear: new Date().getFullYear(),
-          startMonth: 1,
+          startMonth: new Date().getMonth() + 1, // 현재 월
           endYear: getRetirementYear(),
           endMonth: 12,
           memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",
@@ -407,7 +407,7 @@ function SavingModal({
       currentAmount: "",
       treatAsInitialPurchase: false,
       startYear: new Date().getFullYear(),
-      startMonth: 1,
+      startMonth: new Date().getMonth() + 1, // 현재 월
       endYear: new Date().getFullYear() + 10,
       endMonth: 12,
       memo: "수익률 : 2020년부터 2024년까지의 5년간 퇴직연금의 연환산수익률\n증가율 : 연간 저축/투자금액 증가율 (%) → 1.89%",

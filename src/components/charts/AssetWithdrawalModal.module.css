@@ -20,8 +20,10 @@
   width: 100%;
   max-width: 500px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
   animation: slideUp 0.2s ease-out;
 }
 
@@ -43,6 +45,8 @@
   justify-content: space-between;
   padding: 20px;
   border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  flex-shrink: 0;
 }
 
 .modalHeader h2 {
@@ -73,6 +77,8 @@
 /* 본문 */
 .modalBody {
   padding: 20px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* 설명 박스 */
@@ -391,6 +397,8 @@
   justify-content: space-between;
   padding: 16px 20px;
   border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+  flex-shrink: 0;
   gap: 8px;
 }
 

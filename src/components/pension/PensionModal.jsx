@@ -90,7 +90,7 @@ function PensionModal({
     title: "",
     monthlyAmount: "", // 월 수령 금액
     startYear: age65Year,
-    startMonth: 1, // 시작 월 (국민연금용)
+    startMonth: new Date().getMonth() + 1, // 시작 월 (국민연금용) - 현재 월
     endYear: age90Year,
     endMonth: 12, // 종료 월 (국민연금용)
     inflationRate: parseFloat(defaultInflationRate) || 1.89, // 물가상승률 (국민연금용)
@@ -404,7 +404,7 @@ function PensionModal({
           title: "",
           monthlyAmount: "",
           startYear: age65Year,
-          startMonth: 1,
+          startMonth: new Date().getMonth() + 1, // 현재 월
           endYear: age90Year,
           endMonth: 12,
           inflationRate: parseFloat(defaultInflationRate) || 1.89,
@@ -738,7 +738,7 @@ function PensionModal({
       title: "",
       monthlyAmount: "",
       startYear: age65Year,
-      startMonth: 1,
+      startMonth: new Date().getMonth() + 1, // 현재 월
       endYear: age90Year,
       endMonth: 12,
       inflationRate: parseFloat(defaultInflationRate) || 1.89,

@@ -41,7 +41,7 @@ function DebtModal({
     debtType: "bullet", // bullet: 만기일시상환, equal: 원리금균등상환, principal: 원금균등상환, grace: 거치식상환
     debtAmount: "",
     startYear: new Date().getFullYear(),
-    startMonth: 1,
+    startMonth: new Date().getMonth() + 1, // 현재 월
     endYear: getRetirementYear(),
     endMonth: 12,
     interestRate: defaultDebtInterestRate, // 전역 설정에서 가져온 부채 이자율
@@ -218,7 +218,7 @@ function DebtModal({
           debtType: "bullet",
           debtAmount: "",
           startYear: new Date().getFullYear(),
-          startMonth: 1,
+          startMonth: new Date().getMonth() + 1, // 현재 월
           endYear: getRetirementYear(),
           endMonth: 12,
           interestRate: defaultDebtInterestRate,
@@ -345,7 +345,7 @@ function DebtModal({
       debtType: "bullet",
       debtAmount: "",
       startYear: new Date().getFullYear(),
-      startMonth: 1,
+      startMonth: new Date().getMonth() + 1, // 현재 월
       endYear: new Date().getFullYear() + 5,
       endMonth: 12,
       interestRate: defaultDebtInterestRate,

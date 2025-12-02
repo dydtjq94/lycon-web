@@ -41,7 +41,7 @@ function ExpenseModal({
     frequency: "monthly", // monthly, yearly
     amount: "",
     startYear: new Date().getFullYear(),
-    startMonth: 1, // 시작 월 (1-12)
+    startMonth: new Date().getMonth() + 1, // 시작 월 (1-12) - 현재 월
     endYear: getRetirementYear(),
     endMonth: 12, // 종료 월 (1-12)
     memo: "2014년부터 2024년까지의 10년간 평균",
@@ -220,7 +220,7 @@ function ExpenseModal({
           frequency: "monthly",
           amount: "",
           startYear: new Date().getFullYear(),
-          startMonth: 1,
+          startMonth: new Date().getMonth() + 1, // 현재 월
           endYear: getRetirementYear(),
           endMonth: 12,
           memo: "2014년부터 2024년까지의 10년간 평균",
@@ -329,7 +329,7 @@ function ExpenseModal({
       frequency: "monthly",
       amount: "",
       startYear: new Date().getFullYear(),
-      startMonth: 1,
+      startMonth: new Date().getMonth() + 1, // 현재 월
       endYear: new Date().getFullYear() + 10,
       endMonth: 12,
       memo: "2014년부터 2024년까지의 10년간 평균",

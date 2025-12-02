@@ -13,6 +13,7 @@ import ReportSelectionPage from "./pages/ReportSelectionPage";
 import ReportPage from "./pages/ReportPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import VersionDisplay from "./components/common/VersionDisplay";
+import UpdateBanner from "./components/common/UpdateBanner";
 import "./App.css";
 
 /**
@@ -99,6 +100,9 @@ function App() {
 
           {/* 버전 표시 (개발자용) */}
           <VersionDisplay />
+
+          {/* 업데이트 알림 배너 */}
+          <UpdateBanner />
         </div>
       </Router>
     </AuthProvider>

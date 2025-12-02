@@ -2404,3 +2404,37 @@ export const globalSettingsService = {
     }
   },
 };
+
+// 앱 버전 서비스
+export const versionService = {
+  // 버전 업데이트 (배포 시 호출)
+  async updateVersion(version) {
+    try {
+      const docRef = doc(db, "settings", "appVersion");
+      await setDoc(docRef, {
+        version: version,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log(`앱 버전이 ${version}으로 업데이트되었습니다.`);
+      return true;
+    } catch (error) {
+      console.error("버전 업데이트 오류:", error);
+      throw new Error("버전 업데이트 중 오류가 발생했습니다: " + error.message);
+    }
+  },
+
+  // 현재 Firebase 버전 조회
+  async getVersion() {
+    try {
+      const docRef = doc(db, "settings", "appVersion");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data().version;
+      }
+      return null;
+    } catch (error) {
+      console.error("버전 조회 오류:", error);
+      return null;
+    }
+  },
+};
