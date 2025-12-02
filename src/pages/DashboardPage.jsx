@@ -56,6 +56,7 @@ import ChecklistTemplateModal from "../components/checklist/ChecklistTemplateMod
 import { normalizeChecklistItems } from "../constants/profileChecklist";
 import FinancialDataStorePanel from "../components/datastore/FinancialDataStorePanel";
 import TemplateManageModal from "../components/datastore/TemplateManageModal";
+import RateAdjustModal from "../components/rate/RateAdjustModal";
 import { trackEvent, trackPageView } from "../libs/mixpanel";
 import styles from "./DashboardPage.module.css";
 
@@ -274,6 +275,7 @@ function DashboardPage() {
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isAIOptionModalOpen, setIsAIOptionModalOpen] = useState(false); // AI 옵션 선택 모달
+  const [isRateAdjustModalOpen, setIsRateAdjustModalOpen] = useState(false); // 상승률 일괄 조절 모달
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // 사이드바 접기/펼치기 상태
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [initialIncomeData, setInitialIncomeData] = useState(null); // 재무 라이브러리에서 선택한 소득 템플릿 데이터
@@ -3406,27 +3408,49 @@ ${JSON.stringify(analysisData, null, 2)}`;
           </button>
           <div className={styles.sidebarControlRightGroup}>
             {isAdmin && (
-              <button
-                className={styles.sidebarIconButton}
-                title="AI 분석 데이터 추출"
-                onClick={() => setIsAIOptionModalOpen(true)}
-                disabled={isGeneratingAI || !activeSimulationId}
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <>
+                <button
+                  className={styles.sidebarIconButton}
+                  title="상승률 일괄 조절"
+                  onClick={() => setIsRateAdjustModalOpen(true)}
+                  disabled={!activeSimulationId}
                 >
-                  <path d="M12 3v12" />
-                  <path d="M8 11l4 4 4-4" />
-                  <path d="M5 19h14" />
-                </svg>
-              </button>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                    <polyline points="16 7 22 7 22 13" />
+                  </svg>
+                </button>
+                <button
+                  className={styles.sidebarIconButton}
+                  title="AI 분석 데이터 추출"
+                  onClick={() => setIsAIOptionModalOpen(true)}
+                  disabled={isGeneratingAI || !activeSimulationId}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 3v12" />
+                    <path d="M8 11l4 4 4-4" />
+                    <path d="M5 19h14" />
+                  </svg>
+                </button>
+              </>
             )}
             <button
               className={styles.sidebarIconButton}
@@ -3961,6 +3985,110 @@ ${JSON.stringify(analysisData, null, 2)}`;
         currentSimulationId={activeSimulationId}
         simulations={simulations}
         onDataRefresh={handleRefreshComparisonData}
+      />
+
+      {/* 상승률 일괄 조절 모달 */}
+      <RateAdjustModal
+        isOpen={isRateAdjustModalOpen}
+        onClose={() => setIsRateAdjustModalOpen(false)}
+        incomes={incomes}
+        expenses={expenses}
+        savings={savings}
+        realEstates={realEstates}
+        assets={assets}
+        debts={debts}
+        pensions={pensions}
+        globalSettings={globalSettings}
+        onSave={async ({
+          incomes: updatedIncomes,
+          expenses: updatedExpenses,
+          savings: updatedSavings,
+          realEstates: updatedRealEstates,
+          assets: updatedAssets,
+          debts: updatedDebts,
+          pensions: updatedPensions,
+        }) => {
+          // 소득 업데이트
+          for (const item of updatedIncomes) {
+            const original = incomes.find((i) => i.id === item.id);
+            if (original && original.growthRate !== item.growthRate) {
+              await incomeService.updateIncome(profileId, activeSimulationId, item.id, { ...item });
+            }
+          }
+          // 지출 업데이트
+          for (const item of updatedExpenses) {
+            const original = expenses.find((i) => i.id === item.id);
+            if (original && original.growthRate !== item.growthRate) {
+              await expenseService.updateExpense(profileId, activeSimulationId, item.id, { ...item });
+            }
+          }
+          // 저축/투자 업데이트
+          for (const item of updatedSavings) {
+            const original = savings.find((i) => i.id === item.id);
+            if (
+              original &&
+              (original.interestRate !== item.interestRate ||
+                original.yearlyGrowthRate !== item.yearlyGrowthRate ||
+                original.incomeRate !== item.incomeRate)
+            ) {
+              await savingsService.updateSaving(profileId, activeSimulationId, item.id, { ...item });
+            }
+          }
+          // 부동산 업데이트
+          for (const item of updatedRealEstates) {
+            const original = realEstates.find((i) => i.id === item.id);
+            if (original && original.growthRate !== item.growthRate) {
+              await realEstateService.updateRealEstate(profileId, activeSimulationId, item.id, { ...item });
+            }
+          }
+          // 자산 업데이트
+          for (const item of updatedAssets) {
+            const original = assets.find((i) => i.id === item.id);
+            if (original && original.growthRate !== item.growthRate) {
+              await assetService.updateAsset(profileId, activeSimulationId, item.id, { ...item });
+            }
+          }
+          // 부채 업데이트
+          for (const item of updatedDebts) {
+            const original = debts.find((i) => i.id === item.id);
+            if (original && original.interestRate !== item.interestRate) {
+              await debtService.updateDebt(profileId, activeSimulationId, item.id, { ...item });
+            }
+          }
+          // 연금 업데이트
+          for (const item of updatedPensions) {
+            const original = pensions.find((i) => i.id === item.id);
+            if (original) {
+              // 국민연금: inflationRate 비교
+              if (item.type === "national" && original.inflationRate !== item.inflationRate) {
+                await pensionService.updatePension(profileId, activeSimulationId, item.id, { ...item });
+              }
+              // 퇴직/개인/퇴직금: returnRate 비교
+              else if (item.type !== "national" && original.returnRate !== item.returnRate) {
+                await pensionService.updatePension(profileId, activeSimulationId, item.id, { ...item });
+              }
+            }
+          }
+          // 상태 업데이트
+          setIncomes(updatedIncomes);
+          setExpenses(updatedExpenses);
+          setSavings(updatedSavings);
+          setRealEstates(updatedRealEstates);
+          setAssets(updatedAssets);
+          setDebts(updatedDebts);
+          setPensions(updatedPensions);
+          trackEvent("상승률 일괄 조절", {
+            profileId,
+            simulationId: activeSimulationId,
+            incomeCount: updatedIncomes.length,
+            expenseCount: updatedExpenses.length,
+            savingCount: updatedSavings.length,
+            realEstateCount: updatedRealEstates.length,
+            assetCount: updatedAssets.length,
+            debtCount: updatedDebts.length,
+            pensionCount: updatedPensions.length,
+          });
+        }}
       />
 
       {/* AI 옵션 선택 모달 */}
