@@ -1,5 +1,5 @@
 /**
- * 생애 자금 수급/수요 총합 계산 (현금흐름 데이터 기반)
+ * 생애 자금 공급/수요 총합 계산 (현금흐름 데이터 기반)
  *
  * cashflowData 배열은 calculateCashflowSimulation 결과와 동일한 형태를 기대합니다.
  * 각 항목은 { year, age, amount, ... } 구조이며 amount가 플러스면 자금 유입, 마이너스면 자금 유출입니다.
@@ -22,11 +22,11 @@ export function calculateLifetimeCashFlowTotals(cashflowData = []) {
     if (!item || !item.label) return;
     const amount = Number(item.amount) || 0;
     if (amount <= 0) return;
-    
+
     // 카테고리 정규화
     const category = item.category || "기타";
     const label = item.label;
-    
+
     // 각 항목을 개별적으로 표시 (통합하지 않음)
     const key = `${category}|${label}`;
     const existing = map.get(key);
@@ -65,7 +65,7 @@ export function calculateLifetimeCashFlowTotals(cashflowData = []) {
         });
       });
     }
-    
+
     // residual 계산 로직 제거 - breakdown에 모든 항목이 이미 포함되어 있음
   });
 

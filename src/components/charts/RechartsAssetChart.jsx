@@ -1078,11 +1078,6 @@ function RechartsAssetChart({
           stroke="#374151"
           strokeWidth={2}
           strokeDasharray="3 3"
-          label={{
-            value: "0",
-            position: "top",
-            style: { fill: "#374151", fontSize: "12px" },
-          }}
         />
 
         {/* 목표 자산선 */}

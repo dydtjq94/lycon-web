@@ -165,7 +165,7 @@ function SimulationCompareModal({
   // 세부 항목 토글 상태 (기본값: 접혀있음)
   const [expandedRows, setExpandedRows] = useState({});
 
-  // 생애 자금 수급/수요 탭 상태 (기본값: 전체)
+  // 생애 자금 공급/수요 탭 상태 (기본값: 전체)
   const [cashflowPeriod, setCashflowPeriod] = useState("all");
 
   // 메인 탭 상태 (기본값: 생애 자금)
@@ -1381,7 +1381,7 @@ function SimulationCompareModal({
     return map;
   }, [retirementYearBySimulation, profileData]);
 
-  // 선택된 시뮬레이션들의 생애 자금 수급/수요 계산
+  // 선택된 시뮬레이션들의 생애 자금 공급/수요 계산
   const simulationsPV = useMemo(() => {
     if (!isOpen || !profileData) return {};
 
@@ -1658,7 +1658,7 @@ function SimulationCompareModal({
     return rows;
   }, [sortedSelectedSimulationIds, simulationsPV]);
 
-  // 생애 자금 수급/수요 막대 차트 데이터
+  // 생애 자금 공급/수요 막대 차트 데이터
   const cashflowChartData = useMemo(() => {
     if (summaryRows.length === 0 || sortedSelectedSimulationIds.length === 0) {
       return [];
@@ -2113,7 +2113,9 @@ function SimulationCompareModal({
       const directionClass =
         diff > 0 ? styles.deltaPositive : styles.deltaNegative;
       const formatted =
-        diff > 0 ? `+${formatAmountForChart(diff)}` : formatAmountForChart(diff);
+        diff > 0
+          ? `+${formatAmountForChart(diff)}`
+          : formatAmountForChart(diff);
       const arrow = diff > 0 ? "↑" : "↓";
       return (
         <span className={`${styles.summaryDelta} ${directionClass}`}>
@@ -2468,7 +2470,7 @@ function SimulationCompareModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    // 생애 자금 수급/수요 탭의 토글들 (supply, demand)
+    // 생애 자금 공급/수요 탭의 토글들 (supply, demand)
     // 시점별 순자산 탭의 토글들 (start, retirement, age90)
     const initialExpandedRows = {
       supply: true,
@@ -2612,7 +2614,7 @@ function SimulationCompareModal({
                   }`}
                   onClick={() => setActiveTab("cashflow")}
                 >
-                  생애 자금 수급/수요
+                  생애 자금 공급/수요
                 </button>
                 <button
                   className={`${styles.mainTab} ${
@@ -2757,13 +2759,13 @@ function SimulationCompareModal({
                 </div>
               )}
 
-              {/* 생애 자금 수급/수요 현재가 요약 */}
+              {/* 생애 자금 공급/수요 현재가 요약 */}
               {activeTab === "cashflow" &&
                 Object.keys(simulationsPV).length > 0 && (
                   <div className={styles.summarySection}>
                     <div className={styles.sectionHeader}>
                       <h4 className={styles.summaryTitle}>
-                        생애 자금 수급/수요
+                        생애 자금 공급/수요
                       </h4>
                       <div className={styles.periodTabs}>
                         <button
@@ -2799,7 +2801,7 @@ function SimulationCompareModal({
                       </div>
                     </div>
 
-                    {/* 생애 자금 수급/수요 비교 차트 - 3개 분리 (시뮬레이션별 동일 색상) */}
+                    {/* 생애 자금 공급/수요 비교 차트 - 3개 분리 (시뮬레이션별 동일 색상) */}
                     {cashflowChartData.length > 0 && (
                       <div className={styles.cashflowChartsWrapper}>
                         {/* 자금 공급 비교 차트 */}
@@ -2840,18 +2842,29 @@ function SimulationCompareModal({
                               />
                               <Tooltip
                                 content={({ active, payload }) => {
-                                  if (!active || !payload || payload.length === 0) return null;
+                                  if (
+                                    !active ||
+                                    !payload ||
+                                    payload.length === 0
+                                  )
+                                    return null;
                                   const data = payload[0]?.payload;
                                   if (!data) return null;
-                                  const simIndex = cashflowChartData.findIndex(d => d.simId === data.simId);
-                                  const color = simulationColors[simIndex % simulationColors.length];
+                                  const simIndex = cashflowChartData.findIndex(
+                                    (d) => d.simId === data.simId
+                                  );
+                                  const color =
+                                    simulationColors[
+                                      simIndex % simulationColors.length
+                                    ];
                                   return (
                                     <div
                                       style={{
                                         backgroundColor: "#ffffff",
                                         border: "none",
                                         borderRadius: "12px",
-                                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
+                                        boxShadow:
+                                          "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
                                         padding: "14px 18px",
                                         minWidth: "180px",
                                       }}
@@ -2909,11 +2922,19 @@ function SimulationCompareModal({
                                   );
                                 }}
                               />
-                              <Bar dataKey="supply" name="자금 공급" radius={[4, 4, 0, 0]}>
+                              <Bar
+                                dataKey="supply"
+                                name="자금 공급"
+                                radius={[4, 4, 0, 0]}
+                              >
                                 {cashflowChartData.map((entry, index) => (
                                   <Cell
                                     key={`cell-supply-${index}`}
-                                    fill={simulationColors[index % simulationColors.length]}
+                                    fill={
+                                      simulationColors[
+                                        index % simulationColors.length
+                                      ]
+                                    }
                                   />
                                 ))}
                               </Bar>
@@ -2959,18 +2980,29 @@ function SimulationCompareModal({
                               />
                               <Tooltip
                                 content={({ active, payload }) => {
-                                  if (!active || !payload || payload.length === 0) return null;
+                                  if (
+                                    !active ||
+                                    !payload ||
+                                    payload.length === 0
+                                  )
+                                    return null;
                                   const data = payload[0]?.payload;
                                   if (!data) return null;
-                                  const simIndex = cashflowChartData.findIndex(d => d.simId === data.simId);
-                                  const color = simulationColors[simIndex % simulationColors.length];
+                                  const simIndex = cashflowChartData.findIndex(
+                                    (d) => d.simId === data.simId
+                                  );
+                                  const color =
+                                    simulationColors[
+                                      simIndex % simulationColors.length
+                                    ];
                                   return (
                                     <div
                                       style={{
                                         backgroundColor: "#ffffff",
                                         border: "none",
                                         borderRadius: "12px",
-                                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
+                                        boxShadow:
+                                          "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
                                         padding: "14px 18px",
                                         minWidth: "180px",
                                       }}
@@ -3028,11 +3060,19 @@ function SimulationCompareModal({
                                   );
                                 }}
                               />
-                              <Bar dataKey="demand" name="자금 수요" radius={[4, 4, 0, 0]}>
+                              <Bar
+                                dataKey="demand"
+                                name="자금 수요"
+                                radius={[4, 4, 0, 0]}
+                              >
                                 {cashflowChartData.map((entry, index) => (
                                   <Cell
                                     key={`cell-demand-${index}`}
-                                    fill={simulationColors[index % simulationColors.length]}
+                                    fill={
+                                      simulationColors[
+                                        index % simulationColors.length
+                                      ]
+                                    }
                                   />
                                 ))}
                               </Bar>
@@ -3078,18 +3118,29 @@ function SimulationCompareModal({
                               />
                               <Tooltip
                                 content={({ active, payload }) => {
-                                  if (!active || !payload || payload.length === 0) return null;
+                                  if (
+                                    !active ||
+                                    !payload ||
+                                    payload.length === 0
+                                  )
+                                    return null;
                                   const data = payload[0]?.payload;
                                   if (!data) return null;
-                                  const simIndex = cashflowChartData.findIndex(d => d.simId === data.simId);
-                                  const color = simulationColors[simIndex % simulationColors.length];
+                                  const simIndex = cashflowChartData.findIndex(
+                                    (d) => d.simId === data.simId
+                                  );
+                                  const color =
+                                    simulationColors[
+                                      simIndex % simulationColors.length
+                                    ];
                                   return (
                                     <div
                                       style={{
                                         backgroundColor: "#ffffff",
                                         border: "none",
                                         borderRadius: "12px",
-                                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
+                                        boxShadow:
+                                          "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
                                         padding: "14px 18px",
                                         minWidth: "180px",
                                       }}
@@ -3152,11 +3203,19 @@ function SimulationCompareModal({
                                 stroke="#9ca3af"
                                 strokeDasharray="2 2"
                               />
-                              <Bar dataKey="net" name="순현금흐름" radius={[4, 4, 0, 0]}>
+                              <Bar
+                                dataKey="net"
+                                name="순현금흐름"
+                                radius={[4, 4, 0, 0]}
+                              >
                                 {cashflowChartData.map((entry, index) => (
                                   <Cell
                                     key={`cell-net-${index}`}
-                                    fill={simulationColors[index % simulationColors.length]}
+                                    fill={
+                                      simulationColors[
+                                        index % simulationColors.length
+                                      ]
+                                    }
                                   />
                                 ))}
                               </Bar>
@@ -3175,10 +3234,14 @@ function SimulationCompareModal({
                               className={styles.legendSquare}
                               style={{
                                 backgroundColor:
-                                  simulationColors[index % simulationColors.length],
+                                  simulationColors[
+                                    index % simulationColors.length
+                                  ],
                               }}
                             />
-                            <span className={styles.legendLabel}>{item.name}</span>
+                            <span className={styles.legendLabel}>
+                              {item.name}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -3329,14 +3392,20 @@ function SimulationCompareModal({
                               />
                               <Tooltip
                                 content={({ active, payload, label }) => {
-                                  if (!active || !payload || payload.length === 0) return null;
+                                  if (
+                                    !active ||
+                                    !payload ||
+                                    payload.length === 0
+                                  )
+                                    return null;
                                   return (
                                     <div
                                       style={{
                                         backgroundColor: "#ffffff",
                                         border: "none",
                                         borderRadius: "12px",
-                                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
+                                        boxShadow:
+                                          "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
                                         padding: "14px 18px",
                                         minWidth: "180px",
                                       }}
@@ -3428,7 +3497,9 @@ function SimulationCompareModal({
                                     strokeDasharray="5 5"
                                     strokeWidth={2}
                                     label={{
-                                      value: `목표: ${formatAmountForChart(targetAssetGoal)}`,
+                                      value: `목표: ${formatAmountForChart(
+                                        targetAssetGoal
+                                      )}`,
                                       position: "right",
                                       fill: "#f59e0b",
                                       fontSize: 11,
@@ -3470,7 +3541,9 @@ function SimulationCompareModal({
                                   className={styles.legendLine}
                                   style={{
                                     backgroundColor:
-                                      simulationColors[index % simulationColors.length],
+                                      simulationColors[
+                                        index % simulationColors.length
+                                      ],
                                   }}
                                 />
                                 <span className={styles.legendLabel}>
