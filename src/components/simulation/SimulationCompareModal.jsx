@@ -3016,7 +3016,7 @@ function SimulationCompareModal({
                         {cashflowChartData.map((item, index) => (
                           <div key={item.simId} className={styles.legendItem}>
                             <span
-                              className={styles.legendLine}
+                              className={styles.legendSquare}
                               style={{
                                 backgroundColor:
                                   simulationColors[index % simulationColors.length],
