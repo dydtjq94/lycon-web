@@ -2916,28 +2916,48 @@ export function calculateAssetSimulation(
       });
     }
 
-    // 자산 인출 규칙 처리 (저축/투자, 연금에서 현금으로 인출)
-    // 인출 정보 저장 (YearDetailPanel에서 표시용)
+    // 자산 인출 처리: 자산 시뮬레이션의 잔액 기준으로 직접 계산
+    // 현금흐름과 자산 시뮬레이션이 각각 독립적으로 퍼센트 계산해야 정확함
     const withdrawalInfo = {};
 
+    // 인출 전 잔액 저장 (모달에서 퍼센트 계산용)
+    Object.keys(savingsById).forEach((id) => {
+      const saving = savingsById[id];
+      if (saving.isActive) {
+        saving.preWithdrawalAmount = saving.amount;
+      }
+    });
+
+    // 원본 인출 규칙에서 직접 계산 (자산 시뮬레이션의 잔액 기준)
     if (profileData.assetWithdrawalRules) {
       const withdrawalRule = profileData.assetWithdrawalRules[year];
 
       if (withdrawalRule && withdrawalRule.withdrawals) {
         withdrawalRule.withdrawals.forEach((withdrawal) => {
-          if (withdrawal.amount <= 0) return;
-
           if (withdrawal.sourceType === "saving" && withdrawal.sourceId) {
-            // 저축에서 인출
             const targetSaving = savingsById[withdrawal.sourceId];
 
-            if (targetSaving && targetSaving.amount > 0) {
-              // 실제 인출 가능 금액 (잔액 초과 방지)
-              const actualWithdrawal = Math.min(withdrawal.amount, targetSaving.amount);
+            if (targetSaving && targetSaving.isActive && targetSaving.amount > 0) {
+              let withdrawalAmount;
 
-              // 저축 자산에서 인출 금액 차감
+              // 퍼센트 모드인 경우: 현재 자산 시뮬레이션의 잔액 기준으로 계산
+              if (withdrawal.percentage !== undefined && withdrawal.percentage !== null && withdrawal.percentage > 0) {
+                withdrawalAmount = Math.round(targetSaving.amount * (withdrawal.percentage / 100));
+              } else if (withdrawal.amount > 0) {
+                // 금액 모드인 경우: 고정 금액 사용
+                withdrawalAmount = withdrawal.amount;
+              } else {
+                return; // 인출 금액이 없으면 스킵
+              }
+
+              // 실제 인출 가능 금액 (잔액 초과 방지)
+              const actualWithdrawal = Math.min(withdrawalAmount, targetSaving.amount);
+
+              if (actualWithdrawal <= 0) return;
+
+              // 저축 자산에서 인출 금액 차감 (음수 방지)
               targetSaving.amount =
-                Math.round((targetSaving.amount - actualWithdrawal) * 100) / 100;
+                Math.max(0, Math.round((targetSaving.amount - actualWithdrawal) * 100) / 100);
 
               // 인출 누적액 저장
               if (!targetSaving.totalWithdrawn) {
@@ -2946,33 +2966,8 @@ export function calculateAssetSimulation(
               targetSaving.totalWithdrawn =
                 Math.round((targetSaving.totalWithdrawn + actualWithdrawal) * 100) / 100;
 
-              // 현금 추가는 현금흐름 시뮬레이션에서 처리 (중복 방지)
-
               // 인출 정보 저장 (표시용)
               withdrawalInfo[targetSaving.title] = actualWithdrawal;
-            }
-          } else if (withdrawal.sourceType === "pension" && withdrawal.sourceId) {
-            // 연금에서 인출 (퇴직연금/개인연금, 수령 시작 전만)
-            const targetPension = pensionsById[withdrawal.sourceId];
-
-            if (targetPension && targetPension.isActive &&
-                year < targetPension.paymentStartYear &&
-                targetPension.amount >= withdrawal.amount) {
-              // 연금 자산에서 인출 금액 차감
-              targetPension.amount =
-                Math.round((targetPension.amount - withdrawal.amount) * 100) / 100;
-
-              // 인출 누적액 저장
-              if (!targetPension.totalWithdrawn) {
-                targetPension.totalWithdrawn = 0;
-              }
-              targetPension.totalWithdrawn =
-                Math.round((targetPension.totalWithdrawn + withdrawal.amount) * 100) / 100;
-
-              // 현금 추가는 현금흐름 시뮬레이션에서 처리 (중복 방지)
-
-              // 인출 정보 저장 (표시용)
-              withdrawalInfo[targetPension.title] = withdrawal.amount;
             }
           }
         });
@@ -3578,7 +3573,9 @@ export function calculateAssetSimulation(
           label: saving.title,
           amount: saving.amount,
           originalValue: saving.amount,
+          preWithdrawalAmount: saving.preWithdrawalAmount || saving.amount, // 인출 전 잔액 (퍼센트 계산용)
           sourceType: "saving", // 데이터 출처
+          sourceId: id, // 저축 ID 추가
         });
       }
     });

@@ -42,12 +42,14 @@ function AssetWithdrawalModal({
   const yearData = detailedData.find((d) => d.year === year);
   const breakdown = yearData?.breakdown || {};
 
-  // 자산별 현재 잔액 가져오기 (label/title로 비교, 정수로 반환)
+  // 자산별 인출 전 잔액 가져오기 (label/title로 비교, 정수로 반환)
+  // preWithdrawalAmount: 인출 적용 전 연말 잔액 (퍼센트 계산용)
   const getAssetBalance = (title) => {
     const assetItem = breakdown.assetItems?.find(
       (item) => item.label === title && item.sourceType === "saving"
     );
-    return Math.round(assetItem?.amount || 0);
+    // 인출 전 잔액을 사용 (없으면 현재 잔액 사용)
+    return Math.round(assetItem?.preWithdrawalAmount || assetItem?.amount || 0);
   };
 
   useEffect(() => {

@@ -26,6 +26,7 @@ import {
   debtService,
   checklistService,
   globalSettingsService,
+  aiPromptService,
 } from "../services/firestoreService";
 import { simulationService } from "../services/simulationService";
 import { migrateProfileData } from "../utils/dataMigration";
@@ -275,6 +276,8 @@ function DashboardPage() {
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isAIOptionModalOpen, setIsAIOptionModalOpen] = useState(false); // AI 옵션 선택 모달
+  const [aiPrompts, setAiPrompts] = useState({ singlePrompt: "", comparePrompt: "" }); // AI 프롬프트 설정값
+  const [isSavingPrompts, setIsSavingPrompts] = useState(false); // 프롬프트 저장 중
   const [isRateAdjustModalOpen, setIsRateAdjustModalOpen] = useState(false); // 상승률 일괄 조절 모달
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // 사이드바 접기/펼치기 상태
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
@@ -460,6 +463,34 @@ function DashboardPage() {
     };
     loadGlobalSettings();
   }, []);
+
+  // AI 프롬프트 설정 로드
+  useEffect(() => {
+    const loadAiPrompts = async () => {
+      try {
+        const prompts = await aiPromptService.getPrompts();
+        setAiPrompts(prompts);
+      } catch (error) {
+        console.error("AI 프롬프트 로드 오류:", error);
+      }
+    };
+    loadAiPrompts();
+  }, []);
+
+  // AI 프롬프트 저장 핸들러
+  const handleSaveAiPrompts = async (newPrompts) => {
+    setIsSavingPrompts(true);
+    try {
+      await aiPromptService.updatePrompts(newPrompts);
+      setAiPrompts(newPrompts); // 저장 후 state 업데이트
+      alert("AI 프롬프트가 저장되었습니다.");
+    } catch (error) {
+      console.error("AI 프롬프트 저장 오류:", error);
+      alert("AI 프롬프트 저장 중 오류가 발생했습니다.");
+    } finally {
+      setIsSavingPrompts(false);
+    }
+  };
 
   // 사이드바가 열릴 때 배경 스크롤 막기
   useEffect(() => {
@@ -2887,55 +2918,12 @@ function DashboardPage() {
           debts
         );
 
-        // 비교 프롬프트 생성
-        promptText = `당신은 20년 경력의 전문 재무 상담사입니다. 두 가지 재무 시뮬레이션을 비교 분석하여 상세한 재무 상담과 구체적인 액션 플랜을 제시해주세요.
-
-**비교 대상 시뮬레이션:**
+        // 비교 프롬프트 생성 (Firebase에서 불러온 프롬프트 사용)
+        promptText = `**비교 대상 시뮬레이션:**
 - A: ${defaultSimulation.title} (기본 시뮬레이션)
 - B: ${simulationTitle} (선택된 시뮬레이션)
 
-## 비교 분석 요청사항
-
-### 1. 두 시뮬레이션 차이점 분석
-- A와 B의 주요 차이점 3가지 요약
-- 각 시뮬레이션의 현금흐름 패턴 비교
-- 은퇴 후 현금흐름 지속 가능성 비교
-
-### 2. 자산 구조 비교
-- A와 B의 자산 구성 비교
-- 목표 자산 달성 가능성과 시점 비교
-- 각 시뮬레이션의 리스크 수준 비교
-
-### 3. 장단점 분석
-- A 시뮬레이션의 장점과 단점
-- B 시뮬레이션의 장점과 단점
-- 어떤 시뮬레이션이 더 적합한지 판단
-
-### 4. 권장 사항
-- 두 시뮬레이션 중 어느 것을 선택하는 것이 좋은지
-- 선택한 시뮬레이션에서 개선할 점
-- 구체적인 액션 플랜 (금액과 시점 포함)
-
-### 5. 시나리오별 대응
-- 각 시뮬레이션에서 최악/최선의 시나리오 비교
-- 리스크 관리 방안 비교
-
-## 출력 형식
-1. **시뮬레이션 비교 요약** (3-4줄)
-2. **주요 차이점 3가지** (우선순위별)
-3. **각 시뮬레이션 장단점**
-4. **권장 시뮬레이션 및 이유**
-5. **개선 방안 및 액션 플랜** (구체적 금액과 방법)
-6. **위험 관리 방안 비교**
-7. **예상 결과 비교** (구체적 수치로)
-
-모든 제안은 한국의 금융 환경과 세제를 고려하여 현실적이고 실행 가능한 수준으로 제시해주세요.
-
-## 💡 중요: 금액 단위 안내
-**우리는 만원 단위를 사용합니다.**
-- 1000 = 1,000만원 (1천만원)
-- 10000 = 1억원 (1억원)
-- 예: amount가 5000이면 → 5,000만원 (5천만원)
+${aiPrompts.comparePrompt}
 
 ## 재무 데이터
 
@@ -2972,113 +2960,10 @@ ${JSON.stringify(currentAnalysisData, null, 2)}`;
         // 시뮬레이션 정보 추가
         analysisData.시뮬레이션 = simulationTitle;
 
-        // AI 분석용 프롬프트와 데이터를 함께 구성
+        // AI 분석용 프롬프트와 데이터를 함께 구성 (Firebase에서 불러온 프롬프트 사용)
         promptText = `**분석 대상 시뮬레이션: ${simulationTitle}**
 
-아래 제공된 **연도별 재무데이터(소득·지출·자산·부채·이벤트·연금 등)**를 기반으로 총 60~90분 상담 구성에 맞게 자동 생성해야 하는 상담 내용입니다.
-:느낌표: 반드시 준수
-	•	확인되지 않은 사실 금지
-	•	숫자는 제공 데이터 기반 계산
-	•	설명은 짧고 명확하게
-	•	과장 금지
-	•	한국 세제·연금 규정 반영
-	•	1~1.5시간 내 소비 가능한 분량으로 구성
-	•	중요도 기반으로 핵심 포인트를 앞쪽에 배치
-⸻
-:다트: [최종 출력 요구: 1~1.5시간 상담 보고서]
-⸻
-## A. 상태 진단 프로그램 (30~45분)
-⸻
-1) 은퇴 준비 상태 진단 (15~20분)
-1.1 목표 확인 및 데이터 검증 (3분)
-	•	목표 은퇴연령
-	•	목표 자산
-	•	목표 월 현금흐름
-	•	기타 목표 이벤트(자녀/의료비/이주/자동차/기타)
-	•	입력 데이터 정확성 및 누락사항 보완
-	•	시뮬레이션 기본 가정 안내
-	•	수익률/자산 매도 여부
-	•	부채 상환 기본값
-	•	연금 수령구조 기본값
-	•	물가·임금 상승률
-1.2 은퇴 자산 준비율 진단 (5~8분)
-	•	현재 상태 유지 시 은퇴 시점 예상 자산
-	•	목표 대비 달성률(%)
-	•	저축률·성장률 적정성
-	•	필요한 수익률/저축률 제안
-	•	간단한 리스크 언급(자산 성장 속도, 부채 등)
-1.3 은퇴 현금흐름 준비율 진단 (7~9분)
-	•	예상 은퇴 후 연간/월간 현금흐름
-	•	총공급 vs 총수요 비교
-	•	목표 대비 충족률
-	•	4%룰/정적 인출 기반 자산 유지기간
-	•	취약 지점 및 개선 필요 요소
-⸻
-2) 현재 가계 재무현황 진단 (10~15분)
-2.1 자산 현황 브리핑 (5분)
-	•	전체 자산 구성
-	•	유동성·비상자금
-	•	부채 구조 및 만기 리스크
-2.2 현금흐름 브리핑 (5~10분)
-	•	소득 대비 순현금흐름
-	•	저축 가능액 및 저축률
-	•	현금 고갈 포인트(있을 경우)
-⸻
-3) 소득·지출 패턴 분석 및 관리방안 (10~15분)
-3.1 소득 구조 (3분)
-	•	근로·사업·기타 소득 구성
-	•	향후 소득 이벤트(퇴직·이직·임대 종료 등)
-	•	연령대별 소득 패턴 전망
-3.2 지출 패턴 분석 (5~7분)
-	•	고정비·변동비 비중
-	•	과다 카테고리
-	•	일회성 이벤트 분리
-	•	평균 대비 포지션
-3.3 개선 전략 (3~5분)
-	•	고정비·변동비 조정
-	•	선저축·후지출 습관
-	•	이벤트 비용 관리
-⸻
-4) 은퇴 리스크 진단 (5분)
-	•	장수 리스크
-	•	의료비 리스크
-	•	돌발비용 리스크
-	•	부채·금리 리스크
-	•	리스크별 해결 전략 2~3개씩 제시
-⸻
-## B. 목표 기반 설계 (25~35분)
-⸻
-1) 은퇴 후 현금흐름 목표 달성 전략 (10~15분)
-	•	목표 지출 vs 실제 인출 가능액
-	•	예상 부족액
-	•	부족 자금 해결 전략
-	•	지출 조정
-	•	저축률 조정
-	•	목표 조정
-	•	수익률 상향 (현실적 범위 내)
-	•	중요한 이벤트(자녀, 이주, 의료비) 반영
-⸻
-2) 은퇴 시점 목표 자산 달성 전략 (7~10분)
-	•	목표 자산 대비 격차
-	•	연간 필요 저축·투자금액
-	•	필요한 수익률 제시
-	•	“이 수준이면 충분 / 부족”의 명확한 판단
-⸻
-3) 투자(자산운용) 진단 (8~10분)
-3.1 현재 포트폴리오 스냅샷
-	•	자산군 구성
-	•	상품 분산도·리스크 요인
-3.2 적합성·리스크 구조 평가
-	•	현재 위험 대비 기대수익 성과
-	•	백테스트 기반 간단한 성과 리뷰(사팔사팔 습관 점검 가능)
-3.3 은퇴 목표 대비 적정성 판단
-3.4 간단한 포트폴리오 제안 + 즉시 액션 3~5개
-
-## 💡 중요: 금액 단위 안내
-**우리는 만원 단위를 사용합니다.**
-- 1000 = 1,000만원 (1천만원)
-- 10000 = 1억원 (1억원)
-- 예: amount가 5000이면 → 5,000만원 (5천만원)
+${aiPrompts.singlePrompt}
 
 ## 재무 데이터
 ${JSON.stringify(analysisData, null, 2)}`;
@@ -4093,76 +3978,18 @@ ${JSON.stringify(analysisData, null, 2)}`;
 
       {/* AI 옵션 선택 모달 */}
       {isAIOptionModalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.aiOptionModal}>
-            <div className={styles.aiOptionHeader}>
-              <h3 className={styles.aiOptionTitle}>AI 데이터 추출 옵션</h3>
-              <button
-                className={styles.aiOptionCloseButton}
-                onClick={() => setIsAIOptionModalOpen(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className={styles.aiOptionContent}>
-              <p className={styles.aiOptionDescription}>
-                어떤 방식으로 데이터를 추출하시겠습니까?
-              </p>
-              <div className={styles.aiOptionButtons}>
-                <button
-                  className={styles.aiOptionButton}
-                  onClick={() => handleGenerateAIAnalysis("single")}
-                  disabled={isGeneratingAI}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="12" y1="18" x2="12" y2="12" />
-                    <line x1="9" y1="15" x2="15" y2="15" />
-                  </svg>
-                  <div>
-                    <strong>해당 시뮬레이션만 추출</strong>
-                    <span>현재 시뮬레이션 데이터만 분석</span>
-                  </div>
-                </button>
-                <button
-                  className={styles.aiOptionButton}
-                  onClick={() => handleGenerateAIAnalysis("compare")}
-                  disabled={
-                    isGeneratingAI ||
-                    !simulations.some(
-                      (sim) => sim.isDefault && sim.id !== activeSimulationId
-                    )
-                  }
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <path d="M9 15h6" />
-                  </svg>
-                  <div>
-                    <strong>현재와 비교</strong>
-                    <span>기본 시뮬레이션과 비교 분석</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AIPromptModal
+          aiPrompts={aiPrompts}
+          isSavingPrompts={isSavingPrompts}
+          isGeneratingAI={isGeneratingAI}
+          onClose={() => setIsAIOptionModalOpen(false)}
+          onSave={handleSaveAiPrompts}
+          onExtractSingle={() => handleGenerateAIAnalysis("single")}
+          onExtractCompare={() => handleGenerateAIAnalysis("compare")}
+          canCompare={simulations.some(
+            (sim) => sim.isDefault && sim.id !== activeSimulationId
+          )}
+        />
       )}
 
       {/* 체크리스트 템플릿 수정 모달 (관리자 전용) */}
@@ -4281,6 +4108,117 @@ const SimulationMemoPanel = React.memo(function SimulationMemoPanel({
         onChange={handleChange}
         disabled={isDisabled}
       />
+    </div>
+  );
+});
+
+// AI 프롬프트 모달 (ref를 내부에서 관리)
+const AIPromptModal = React.memo(function AIPromptModal({
+  aiPrompts,
+  isSavingPrompts,
+  isGeneratingAI,
+  onClose,
+  onSave,
+  onExtractSingle,
+  onExtractCompare,
+  canCompare,
+}) {
+  const [singlePrompt, setSinglePrompt] = useState(aiPrompts.singlePrompt || "");
+  const [comparePrompt, setComparePrompt] = useState(aiPrompts.comparePrompt || "");
+
+  useEffect(() => {
+    setSinglePrompt(aiPrompts.singlePrompt || "");
+    setComparePrompt(aiPrompts.comparePrompt || "");
+  }, [aiPrompts.singlePrompt, aiPrompts.comparePrompt]);
+
+  const handleSave = () => {
+    onSave({ singlePrompt, comparePrompt });
+  };
+
+  return (
+    <div className={styles.modalOverlay}>
+      <div className={styles.aiOptionModal}>
+        <div className={styles.aiOptionHeader}>
+          <h3 className={styles.aiOptionTitle}>AI 데이터 추출 옵션</h3>
+          <button
+            className={styles.aiOptionCloseButton}
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
+        <div className={styles.aiOptionContent}>
+          <div className={styles.aiPromptSettingPanel}>
+            <div className={styles.aiPromptGrid}>
+              {/* 단일 분석 컬럼 */}
+              <div className={styles.aiPromptColumn}>
+                <button
+                  className={styles.aiExtractButton}
+                  onClick={onExtractSingle}
+                  disabled={isGeneratingAI}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" y1="18" x2="12" y2="12" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
+                  </svg>
+                  해당 시뮬레이션만 추출
+                </button>
+                <div className={styles.aiPromptField}>
+                  <label className={styles.aiPromptLabel}>단일 분석 프롬프트</label>
+                  <textarea
+                    className={styles.aiPromptTextarea}
+                    value={singlePrompt}
+                    onChange={(e) => setSinglePrompt(e.target.value)}
+                    placeholder="단일 시뮬레이션 분석용 프롬프트를 입력하세요..."
+                  />
+                </div>
+              </div>
+
+              {/* 비교 분석 컬럼 */}
+              <div className={styles.aiPromptColumn}>
+                <button
+                  className={styles.aiExtractButton}
+                  onClick={onExtractCompare}
+                  disabled={isGeneratingAI || !canCompare}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <path d="M9 15h6" />
+                  </svg>
+                  기본 시뮬레이션과 비교 추출
+                </button>
+                <div className={styles.aiPromptField}>
+                  <label className={styles.aiPromptLabel}>비교 분석 프롬프트</label>
+                  <textarea
+                    className={styles.aiPromptTextarea}
+                    value={comparePrompt}
+                    onChange={(e) => setComparePrompt(e.target.value)}
+                    placeholder="비교 분석용 프롬프트를 입력하세요..."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className={styles.aiOptionFooter}>
+          <button
+            className={styles.aiOptionCancelButton}
+            onClick={onClose}
+          >
+            닫기
+          </button>
+          <button
+            className={styles.aiPromptSaveButton}
+            onClick={handleSave}
+            disabled={isSavingPrompts}
+          >
+            {isSavingPrompts ? "저장 중..." : "프롬프트 저장"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 });
