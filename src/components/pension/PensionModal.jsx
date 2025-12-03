@@ -787,11 +787,21 @@ function PensionModal({
                 <input
                   type="radio"
                   name="pensionType"
+                  value="severance"
+                  checked={formData.type === "severance"}
+                  onChange={(e) => handleTypeChange(e.target.value)}
+                />
+                <span className={styles.radioText}>퇴직금/퇴직연금 (DB형)</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="pensionType"
                   value="retirement"
                   checked={formData.type === "retirement"}
                   onChange={(e) => handleTypeChange(e.target.value)}
                 />
-                <span className={styles.radioText}>퇴직연금</span>
+                <span className={styles.radioText}>퇴직연금 (DC형/IRP)</span>
               </label>
               <label className={styles.radioLabel}>
                 <input
@@ -801,17 +811,9 @@ function PensionModal({
                   checked={formData.type === "personal"}
                   onChange={(e) => handleTypeChange(e.target.value)}
                 />
-                <span className={styles.radioText}>개인연금</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="pensionType"
-                  value="severance"
-                  checked={formData.type === "severance"}
-                  onChange={(e) => handleTypeChange(e.target.value)}
-                />
-                <span className={styles.radioText}>퇴직금/DB</span>
+                <span className={styles.radioText}>
+                  개인연금 (연금저축/IRP)
+                </span>
               </label>
             </div>
             {errors.type && (

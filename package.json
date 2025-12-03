@@ -4,15 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node update-version.cjs touch",
+    "predev": "node scripts/update-version.cjs touch",
     "dev": "vite",
-    "prebuild": "node update-version.cjs touch",
+    "prebuild": "node scripts/update-version.cjs touch",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "version:patch": "node update-version.cjs patch",
-    "version:minor": "node update-version.cjs minor",
-    "version:major": "node update-version.cjs major",
+    "version:patch": "node scripts/update-version.cjs patch",
+    "version:minor": "node scripts/update-version.cjs minor",
+    "version:major": "node scripts/update-version.cjs major",
     "version:sync": "node scripts/update-firebase-version.cjs"
   },
   "dependencies": {

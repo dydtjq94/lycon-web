@@ -112,6 +112,8 @@ function DashboardPage() {
   const [selectedCategory, setSelectedCategory] = useState("income");
   const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
+  const [originalRetirementAge, setOriginalRetirementAge] = useState(null); // 프로필 원본 은퇴 나이 (기본 시뮬레이션용)
+  const [originalSpouseRetirementAge, setOriginalSpouseRetirementAge] = useState(null); // 프로필 원본 배우자 은퇴 나이 (기본 시뮬레이션용)
   const [loading, setLoading] = useState(true);
 
   // 프로필 패스워드 관련 state
@@ -383,6 +385,8 @@ function DashboardPage() {
         if (isMounted) {
           if (profile) {
             setProfileData(profile);
+            setOriginalRetirementAge(profile.retirementAge); // 원본 은퇴 나이 저장
+            setOriginalSpouseRetirementAge(profile.spouseRetirementAge); // 원본 배우자 은퇴 나이 저장
             setProfileMemo(profile.memo || "");
 
             // 프로필 패스워드 체크
@@ -642,24 +646,49 @@ function DashboardPage() {
   useEffect(() => {
     if (!activeSimulationId || !simulations.length || !profileData) return;
 
-    const currentSimulation = simulations.find(
+    const currentSim = simulations.find(
       (sim) => sim.id === activeSimulationId
     );
+    if (!currentSim) return;
 
-    if (currentSimulation && currentSimulation.retirementYear) {
-      const birthYear = parseInt(profileData.birthYear);
-      const retirementYear = parseInt(currentSimulation.retirementYear);
-      const retirementAge = retirementYear - birthYear;
+    const birthYear = parseInt(profileData.birthYear);
+    const spouseBirthYear = parseInt(profileData.spouseBirthYear);
+    let newRetirementAge;
+    let newSpouseRetirementAge;
 
-      // 현재 프로필의 retirementAge와 다른 경우만 업데이트
-      if (profileData.retirementAge !== retirementAge) {
-        setProfileData({
-          ...profileData,
-          retirementAge: retirementAge,
-        });
+    if (currentSim.isDefault) {
+      // 기본 시뮬레이션("현재")인 경우: 프로필 원본 값으로 복원
+      newRetirementAge = originalRetirementAge;
+      newSpouseRetirementAge = originalSpouseRetirementAge;
+    } else if (currentSim.retirementYear) {
+      // 다른 시뮬레이션: retirementYear가 있으면 그걸 기반으로 retirementAge 계산
+      const retirementYear = parseInt(currentSim.retirementYear);
+      newRetirementAge = retirementYear - birthYear;
+      // 배우자 은퇴년도도 시뮬레이션에 있으면 사용
+      if (currentSim.spouseRetirementYear && spouseBirthYear) {
+        newSpouseRetirementAge = parseInt(currentSim.spouseRetirementYear) - spouseBirthYear;
+      } else {
+        newSpouseRetirementAge = originalSpouseRetirementAge;
       }
+    } else {
+      // retirementYear가 없는 시뮬레이션: 원본 값 사용
+      newRetirementAge = originalRetirementAge;
+      newSpouseRetirementAge = originalSpouseRetirementAge;
     }
-  }, [activeSimulationId, simulations, profileData?.birthYear]);
+
+    // 현재 프로필의 값과 다른 경우만 업데이트
+    const needsUpdate =
+      (newRetirementAge && profileData.retirementAge !== newRetirementAge) ||
+      (newSpouseRetirementAge && profileData.spouseRetirementAge !== newSpouseRetirementAge);
+
+    if (needsUpdate) {
+      setProfileData({
+        ...profileData,
+        ...(newRetirementAge && { retirementAge: newRetirementAge }),
+        ...(newSpouseRetirementAge && { spouseRetirementAge: newSpouseRetirementAge }),
+      });
+    }
+  }, [activeSimulationId, simulations, profileData?.birthYear, profileData?.spouseBirthYear, originalRetirementAge, originalSpouseRetirementAge]);
 
   // 모든 재무 데이터를 한 번에 병렬로 로드
   useEffect(() => {
@@ -851,6 +880,8 @@ function DashboardPage() {
       assetWithdrawalRules: currentSimulation?.assetWithdrawalRules || {},
       // 시뮬레이션별 은퇴년도가 설정되어 있으면 프로필 기본값 대신 사용
       retirementYear: currentSimulation?.retirementYear || retirementYear,
+      // 시뮬레이션별 배우자 은퇴년도가 설정되어 있으면 사용
+      spouseRetirementYear: currentSimulation?.spouseRetirementYear || null,
     };
 
     // 실제 소득 데이터를 기반으로 현금흐름 시뮬레이션 계산
@@ -1015,6 +1046,16 @@ function DashboardPage() {
     }
 
     setProfileData(updatedProfile);
+    // 기본 시뮬레이션에서 수정한 경우 원본 은퇴 나이도 업데이트
+    const currentSim = simulations.find((s) => s.id === activeSimulationId);
+    if (currentSim?.isDefault) {
+      if (updatedProfile.retirementAge) {
+        setOriginalRetirementAge(updatedProfile.retirementAge);
+      }
+      if (updatedProfile.spouseRetirementAge !== undefined) {
+        setOriginalSpouseRetirementAge(updatedProfile.spouseRetirementAge);
+      }
+    }
     // 시뮬레이션 재계산은 useEffect에서 자동 처리
 
     // 프로필 업데이트 후 소득/저축/지출/연금 데이터 다시 로드 (은퇴년도 변경 시 고정된 항목 업데이트 반영)

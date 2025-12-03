@@ -453,6 +453,18 @@ function ProfileEditModal({
         profileData.retirementAge !== retirementAgeNum;
       const birthYearChanged = profileData.birthYear !== parseInt(formData.birthYear);
 
+      // 배우자 은퇴 나이 계산
+      const spouseRetirementAgeNum =
+        formData.hasSpouse && formData.spouseIsWorking
+          ? parseInt(formData.spouseRetirementAge) || 0
+          : 0;
+
+      // 배우자 은퇴년도 또는 배우자 출생년도가 변경되었는지 확인
+      const spouseRetirementAgeChanged =
+        profileData.spouseRetirementAge !== spouseRetirementAgeNum;
+      const spouseBirthYearChanged =
+        profileData.spouseBirthYear !== parseInt(formData.spouseBirthYear);
+
       // 현재 시뮬레이션이 기본 시뮬레이션(현재)인지 확인
       const currentSimulation = simulations.find(
         (sim) => sim.id === activeSimulationId
@@ -528,6 +540,30 @@ function ProfileEditModal({
         } catch (error) {
           console.error("고정된 항목 업데이트 오류:", error);
           // 항목 업데이트 실패해도 프로필 업데이트는 성공으로 처리
+        }
+      }
+
+      // 배우자 은퇴년도가 변경된 경우, 현재 시뮬레이션의 spouseRetirementYear 업데이트
+      if (
+        (spouseRetirementAgeChanged || spouseBirthYearChanged) &&
+        formData.hasSpouse &&
+        formData.spouseIsWorking &&
+        activeSimulationId
+      ) {
+        try {
+          const newSpouseRetirementYear = getRetirementYear(
+            formData.spouseBirthYear,
+            formData.spouseRetirementAge
+          );
+
+          await simulationService.updateSpouseRetirementYear(
+            profileData.id || profileData.docId,
+            activeSimulationId,
+            newSpouseRetirementYear
+          );
+        } catch (error) {
+          console.error("배우자 은퇴년도 업데이트 오류:", error);
+          // 업데이트 실패해도 프로필 업데이트는 성공으로 처리
         }
       }
 

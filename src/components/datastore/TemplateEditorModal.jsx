@@ -4,7 +4,7 @@ import styles from "./TemplateEditorModal.module.css";
 /**
  * 재무 라이브러리 템플릿 생성/편집 모달
  * 관리자가 새로운 템플릿을 추가하거나 기존 템플릿을 수정할 수 있습니다.
- * 
+ *
  * 카테고리별 동작:
  * - 소득/지출: 나이 범위 기반, 가족 구성원 타입 선택
  * - 저축/투자: 저축/투자 모달의 모든 필드 입력 (나이/가족 타입 무관)
@@ -23,7 +23,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
       amount: "",
       memo: "",
       growthRate: "0",
-      
+
       // 저축/투자 전용 필드
       savingType: "standard", // "standard" (가치성장형) 또는 "income" (수익형)
       currentAmount: "", // 현재 보유 금액
@@ -104,43 +104,67 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
             amount: editData.data?.amount || "",
             memo: editData.data?.memo || "",
             growthRate: editData.data?.growthRate?.toString() || "0",
-            
+
             // 저축/투자 필드
             savingType: editData.data?.savingType || "standard",
             currentAmount: editData.data?.currentAmount || "",
-            treatAsInitialPurchase: editData.data?.treatAsInitialPurchase || false,
+            treatAsInitialPurchase:
+              editData.data?.treatAsInitialPurchase || false,
             startYear: editData.data?.startYear || new Date().getFullYear(),
             startMonth: editData.data?.startMonth || 1,
             endYear: editData.data?.endYear || new Date().getFullYear() + 10,
             endMonth: editData.data?.endMonth || 12,
             interestRate: editData.data?.interestRate?.toString() || "2.86",
-            yearlyGrowthRate: editData.data?.yearlyGrowthRate?.toString() || "1.89",
+            yearlyGrowthRate:
+              editData.data?.yearlyGrowthRate?.toString() || "1.89",
             incomeRate: editData.data?.incomeRate?.toString() || "3",
-            capitalGainsTaxRate: editData.data?.capitalGainsTaxRate?.toString() || "",
-            isFixedToRetirementYear: editData.data?.isFixedToRetirementYear || false,
+            capitalGainsTaxRate:
+              editData.data?.capitalGainsTaxRate?.toString() || "",
+            isFixedToRetirementYear:
+              editData.data?.isFixedToRetirementYear || false,
 
             // 연금 필드 (PensionModal과 동일)
             type: editData.data?.type || "national",
             monthlyAmount: editData.data?.monthlyAmount?.toString() || "",
-            pensionStartYear: editData.data?.pensionStartYear || editData.data?.startYear || new Date().getFullYear() + 25,
-            pensionStartMonth: editData.data?.pensionStartMonth || editData.data?.startMonth || 1,
-            pensionEndYear: editData.data?.pensionEndYear || editData.data?.endYear || new Date().getFullYear() + 50,
-            pensionEndMonth: editData.data?.pensionEndMonth || editData.data?.endMonth || 12,
+            pensionStartYear:
+              editData.data?.pensionStartYear ||
+              editData.data?.startYear ||
+              new Date().getFullYear() + 25,
+            pensionStartMonth:
+              editData.data?.pensionStartMonth ||
+              editData.data?.startMonth ||
+              1,
+            pensionEndYear:
+              editData.data?.pensionEndYear ||
+              editData.data?.endYear ||
+              new Date().getFullYear() + 50,
+            pensionEndMonth:
+              editData.data?.pensionEndMonth || editData.data?.endMonth || 12,
             inflationRate: editData.data?.inflationRate?.toString() || "1.89",
-            pensionCurrentAmount: editData.data?.pensionCurrentAmount?.toString() || editData.data?.currentAmount?.toString() || "",
-            monthlyContribution: editData.data?.monthlyContribution?.toString() || "",
-            contributionFrequency: editData.data?.contributionFrequency || "monthly",
-            contributionStartYear: editData.data?.contributionStartYear || new Date().getFullYear(),
+            pensionCurrentAmount:
+              editData.data?.pensionCurrentAmount?.toString() ||
+              editData.data?.currentAmount?.toString() ||
+              "",
+            monthlyContribution:
+              editData.data?.monthlyContribution?.toString() || "",
+            contributionFrequency:
+              editData.data?.contributionFrequency || "monthly",
+            contributionStartYear:
+              editData.data?.contributionStartYear || new Date().getFullYear(),
             contributionStartMonth: editData.data?.contributionStartMonth || 1,
-            contributionEndYear: editData.data?.contributionEndYear || new Date().getFullYear() + 10,
+            contributionEndYear:
+              editData.data?.contributionEndYear ||
+              new Date().getFullYear() + 10,
             contributionEndMonth: editData.data?.contributionEndMonth || 12,
             returnRate: editData.data?.returnRate?.toString() || "2.86",
-            paymentStartYear: editData.data?.paymentStartYear || new Date().getFullYear() + 11,
+            paymentStartYear:
+              editData.data?.paymentStartYear || new Date().getFullYear() + 11,
             paymentStartMonth: editData.data?.paymentStartMonth || 1,
             paymentYears: editData.data?.paymentYears || 10,
             averageSalary: editData.data?.averageSalary?.toString() || "",
             yearsOfService: editData.data?.yearsOfService?.toString() || "",
-            noAdditionalContribution: editData.data?.noAdditionalContribution || false,
+            noAdditionalContribution:
+              editData.data?.noAdditionalContribution || false,
           },
         });
       } else {
@@ -157,7 +181,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
             amount: "",
             memo: "",
             growthRate: "0",
-            
+
             // 저축/투자 필드
             savingType: "standard",
             currentAmount: "",
@@ -272,12 +296,18 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
       const pensionType = formData.data.type;
       if (pensionType === "national") {
         // 국민연금: 월 수령액 필수
-        if (!formData.data.monthlyAmount || parseFloat(formData.data.monthlyAmount) <= 0) {
+        if (
+          !formData.data.monthlyAmount ||
+          parseFloat(formData.data.monthlyAmount) <= 0
+        ) {
           newErrors.monthlyAmount = "월 수령액을 입력해주세요.";
         }
       } else {
         // 퇴직/개인/퇴직금: 적립금 필수
-        if (!formData.data.currentAmount || parseFloat(formData.data.currentAmount) < 0) {
+        if (
+          !formData.data.currentAmount ||
+          parseFloat(formData.data.currentAmount) < 0
+        ) {
           newErrors.currentAmount = "현재 적립금을 입력해주세요.";
         }
       }
@@ -285,21 +315,21 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
 
     // 저축/투자, 연금이 아닐 때만 나이 범위 검증
     if (formData.category !== "saving" && formData.category !== "pension") {
-    if (formData.ageStart !== null && formData.ageEnd !== null) {
-      const start = parseInt(formData.ageStart);
-      const end = parseInt(formData.ageEnd);
-      if (start > end) {
-        newErrors.ageRange = "시작 나이는 종료 나이보다 작아야 합니다.";
+      if (formData.ageStart !== null && formData.ageEnd !== null) {
+        const start = parseInt(formData.ageStart);
+        const end = parseInt(formData.ageEnd);
+        if (start > end) {
+          newErrors.ageRange = "시작 나이는 종료 나이보다 작아야 합니다.";
         }
       }
     }
-    
+
     // 저축/투자일 때 년도 범위 검증
     if (formData.category === "saving") {
       if (parseInt(formData.data.startYear) > parseInt(formData.data.endYear)) {
         newErrors.yearRange = "시작년도는 종료년도보다 작아야 합니다.";
       }
-      
+
       // 수익형일 때 incomeRate 검증
       if (formData.data.savingType === "income") {
         const incomeRateNum = parseFloat(formData.data.incomeRate);
@@ -308,7 +338,8 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
           incomeRateNum < -100 ||
           incomeRateNum > 1000
         ) {
-          newErrors.incomeRate = "수익률은 -100%와 1000% 사이의 숫자여야 합니다.";
+          newErrors.incomeRate =
+            "수익률은 -100%와 1000% 사이의 숫자여야 합니다.";
         }
       }
     }
@@ -334,7 +365,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
         category: formData.category,
         autoApply: formData.autoApply,
       };
-      
+
       // 저축/투자일 때는 familyMemberType과 나이 범위 제외
       if (formData.category === "saving") {
         templateData.familyMemberType = null; // 저축/투자는 가족 구성원 타입 없음
@@ -363,7 +394,8 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
           capitalGainsTaxRate: formData.data.capitalGainsTaxRate
             ? parseFloat(formData.data.capitalGainsTaxRate)
             : 0,
-          isFixedToRetirementYear: formData.data.isFixedToRetirementYear || false,
+          isFixedToRetirementYear:
+            formData.data.isFixedToRetirementYear || false,
         };
       } else if (formData.category === "pension") {
         // 연금일 때 - 저축/투자처럼 가족관계 없이 PensionModal 모든 필드 저장
@@ -379,12 +411,18 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
 
         if (pensionType === "national") {
           // 국민연금: 월 수령액, 시작/종료년도, 물가상승률
-          templateData.data.monthlyAmount = parseFloat(formData.data.monthlyAmount) || 0;
-          templateData.data.startYear = parseInt(formData.data.pensionStartYear);
-          templateData.data.startMonth = parseInt(formData.data.pensionStartMonth) || 1;
+          templateData.data.monthlyAmount =
+            parseFloat(formData.data.monthlyAmount) || 0;
+          templateData.data.startYear = parseInt(
+            formData.data.pensionStartYear
+          );
+          templateData.data.startMonth =
+            parseInt(formData.data.pensionStartMonth) || 1;
           templateData.data.endYear = parseInt(formData.data.pensionEndYear);
-          templateData.data.endMonth = parseInt(formData.data.pensionEndMonth) || 12;
-          templateData.data.inflationRate = parseFloat(formData.data.inflationRate) || 1.89;
+          templateData.data.endMonth =
+            parseInt(formData.data.pensionEndMonth) || 12;
+          templateData.data.inflationRate =
+            parseFloat(formData.data.inflationRate) || 1.89;
         } else if (pensionType === "severance") {
           // 퇴직금/DB형
           templateData.data.averageSalary = formData.data.averageSalary
@@ -396,38 +434,65 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
           templateData.data.currentAmount = formData.data.pensionCurrentAmount
             ? parseFloat(formData.data.pensionCurrentAmount)
             : 0;
-          templateData.data.noAdditionalContribution = formData.data.noAdditionalContribution || false;
+          templateData.data.noAdditionalContribution =
+            formData.data.noAdditionalContribution || false;
           if (!formData.data.noAdditionalContribution) {
-            templateData.data.contributionAmount = formData.data.monthlyContribution
+            templateData.data.contributionAmount = formData.data
+              .monthlyContribution
               ? parseFloat(formData.data.monthlyContribution)
               : 0;
-            templateData.data.contributionFrequency = formData.data.contributionFrequency || "monthly";
-            templateData.data.contributionStartYear = parseInt(formData.data.contributionStartYear);
-            templateData.data.contributionStartMonth = parseInt(formData.data.contributionStartMonth) || 1;
-            templateData.data.contributionEndYear = parseInt(formData.data.contributionEndYear);
-            templateData.data.contributionEndMonth = parseInt(formData.data.contributionEndMonth) || 12;
+            templateData.data.contributionFrequency =
+              formData.data.contributionFrequency || "monthly";
+            templateData.data.contributionStartYear = parseInt(
+              formData.data.contributionStartYear
+            );
+            templateData.data.contributionStartMonth =
+              parseInt(formData.data.contributionStartMonth) || 1;
+            templateData.data.contributionEndYear = parseInt(
+              formData.data.contributionEndYear
+            );
+            templateData.data.contributionEndMonth =
+              parseInt(formData.data.contributionEndMonth) || 12;
           }
-          templateData.data.returnRate = parseFloat(formData.data.returnRate) || 2.86;
-          templateData.data.paymentStartYear = parseInt(formData.data.paymentStartYear);
-          templateData.data.paymentStartMonth = parseInt(formData.data.paymentStartMonth) || 1;
-          templateData.data.paymentYears = parseInt(formData.data.paymentYears) || 10;
+          templateData.data.returnRate =
+            parseFloat(formData.data.returnRate) || 2.86;
+          templateData.data.paymentStartYear = parseInt(
+            formData.data.paymentStartYear
+          );
+          templateData.data.paymentStartMonth =
+            parseInt(formData.data.paymentStartMonth) || 1;
+          templateData.data.paymentYears =
+            parseInt(formData.data.paymentYears) || 10;
         } else {
           // 퇴직연금/개인연금
           templateData.data.currentAmount = formData.data.pensionCurrentAmount
             ? parseFloat(formData.data.pensionCurrentAmount)
             : 0;
-          templateData.data.contributionAmount = formData.data.monthlyContribution
+          templateData.data.contributionAmount = formData.data
+            .monthlyContribution
             ? parseFloat(formData.data.monthlyContribution)
             : 0;
-          templateData.data.contributionFrequency = formData.data.contributionFrequency || "monthly";
-          templateData.data.contributionStartYear = parseInt(formData.data.contributionStartYear);
-          templateData.data.contributionStartMonth = parseInt(formData.data.contributionStartMonth) || 1;
-          templateData.data.contributionEndYear = parseInt(formData.data.contributionEndYear);
-          templateData.data.contributionEndMonth = parseInt(formData.data.contributionEndMonth) || 12;
-          templateData.data.returnRate = parseFloat(formData.data.returnRate) || 2.86;
-          templateData.data.paymentStartYear = parseInt(formData.data.paymentStartYear);
-          templateData.data.paymentStartMonth = parseInt(formData.data.paymentStartMonth) || 1;
-          templateData.data.paymentYears = parseInt(formData.data.paymentYears) || 10;
+          templateData.data.contributionFrequency =
+            formData.data.contributionFrequency || "monthly";
+          templateData.data.contributionStartYear = parseInt(
+            formData.data.contributionStartYear
+          );
+          templateData.data.contributionStartMonth =
+            parseInt(formData.data.contributionStartMonth) || 1;
+          templateData.data.contributionEndYear = parseInt(
+            formData.data.contributionEndYear
+          );
+          templateData.data.contributionEndMonth =
+            parseInt(formData.data.contributionEndMonth) || 12;
+          templateData.data.returnRate =
+            parseFloat(formData.data.returnRate) || 2.86;
+          templateData.data.paymentStartYear = parseInt(
+            formData.data.paymentStartYear
+          );
+          templateData.data.paymentStartMonth =
+            parseInt(formData.data.paymentStartMonth) || 1;
+          templateData.data.paymentYears =
+            parseInt(formData.data.paymentYears) || 10;
         }
       } else {
         // 소득/지출일 때는 기존 로직
@@ -542,48 +607,48 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
 
               {/* 소득/지출일 때만 가족 구성원 타입 표시 (저축/투자, 연금 제외) */}
               {!isSaving && !isPension && (
-              <div className={styles.field}>
-                <label className={styles.label}>
-                  적용 대상 <span className={styles.required}>*</span>
-                  <span className={styles.hint}>(여러 개 선택 가능)</span>
-                </label>
-                <div className={styles.familyTypeButtons}>
-                  {familyTypes.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      className={`${styles.familyTypeButton} ${
-                        formData.familyMemberType.includes(type.value)
-                          ? styles.familyTypeButtonActive
-                          : ""
-                      }`}
-                      onClick={() => {
-                        const currentTypes = formData.familyMemberType;
-                        if (currentTypes.includes(type.value)) {
-                          // 이미 선택되어 있으면 제거
-                          handleChange(
-                            "familyMemberType",
-                            currentTypes.filter((t) => t !== type.value)
-                          );
-                        } else {
-                          // 선택되어 있지 않으면 추가
-                          handleChange("familyMemberType", [
-                            ...currentTypes,
-                            type.value,
-                          ]);
-                        }
-                      }}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
+                <div className={styles.field}>
+                  <label className={styles.label}>
+                    적용 대상 <span className={styles.required}>*</span>
+                    <span className={styles.hint}>(여러 개 선택 가능)</span>
+                  </label>
+                  <div className={styles.familyTypeButtons}>
+                    {familyTypes.map((type) => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        className={`${styles.familyTypeButton} ${
+                          formData.familyMemberType.includes(type.value)
+                            ? styles.familyTypeButtonActive
+                            : ""
+                        }`}
+                        onClick={() => {
+                          const currentTypes = formData.familyMemberType;
+                          if (currentTypes.includes(type.value)) {
+                            // 이미 선택되어 있으면 제거
+                            handleChange(
+                              "familyMemberType",
+                              currentTypes.filter((t) => t !== type.value)
+                            );
+                          } else {
+                            // 선택되어 있지 않으면 추가
+                            handleChange("familyMemberType", [
+                              ...currentTypes,
+                              type.value,
+                            ]);
+                          }
+                        }}
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.familyMemberType && (
+                    <span className={styles.error}>
+                      {errors.familyMemberType}
+                    </span>
+                  )}
                 </div>
-                {errors.familyMemberType && (
-                  <span className={styles.error}>
-                    {errors.familyMemberType}
-                  </span>
-                )}
-              </div>
               )}
             </div>
 
@@ -630,7 +695,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                 {/* 주기와 금액 */}
                 <div className={styles.section}>
                   <h3 className={styles.sectionTitle}>금액 정보</h3>
-                  
+
                   <div className={styles.fieldRow}>
                     <div className={styles.field}>
                       <label className={styles.label}>
@@ -657,7 +722,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         type="number"
                         className={styles.input}
                         value={formData.data.amount}
-                        onChange={(e) => handleDataChange("amount", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange("amount", e.target.value)
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="예: 100"
                         min="0"
@@ -680,7 +747,10 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           type="checkbox"
                           checked={formData.data.treatAsInitialPurchase}
                           onChange={(e) =>
-                            handleDataChange("treatAsInitialPurchase", e.target.checked)
+                            handleDataChange(
+                              "treatAsInitialPurchase",
+                              e.target.checked
+                            )
                           }
                           className={styles.checkbox}
                         />
@@ -735,10 +805,17 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                       <select
                         className={styles.select}
                         value={formData.data.startMonth}
-                        onChange={(e) => handleDataChange("startMonth", parseInt(e.target.value))}
+                        onChange={(e) =>
+                          handleDataChange(
+                            "startMonth",
+                            parseInt(e.target.value)
+                          )
+                        }
                       >
-                        {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                          <option key={m} value={m}>{m}월</option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                          <option key={m} value={m}>
+                            {m}월
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -756,7 +833,10 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                             type="checkbox"
                             checked={formData.data.isFixedToRetirementYear}
                             onChange={(e) =>
-                              handleDataChange("isFixedToRetirementYear", e.target.checked)
+                              handleDataChange(
+                                "isFixedToRetirementYear",
+                                e.target.checked
+                              )
                             }
                             className={styles.checkbox}
                           />
@@ -787,10 +867,14 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                       <select
                         className={styles.select}
                         value={formData.data.endMonth}
-                        onChange={(e) => handleDataChange("endMonth", parseInt(e.target.value))}
+                        onChange={(e) =>
+                          handleDataChange("endMonth", parseInt(e.target.value))
+                        }
                       >
-                        {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                          <option key={m} value={m}>{m}월</option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                          <option key={m} value={m}>
+                            {m}월
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -800,7 +884,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                 {/* 수익률 */}
                 <div className={styles.section}>
                   <h3 className={styles.sectionTitle}>수익률</h3>
-                  
+
                   <div className={styles.fieldRow}>
                     <div className={styles.field}>
                       <label className={styles.label}>연평균 수익률 (%)</label>
@@ -841,7 +925,8 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                   {formData.data.savingType === "income" && (
                     <div className={styles.field}>
                       <label className={styles.label}>
-                        연간 수익률 (배당, 이자 등) (%) <span className={styles.required}>*</span>
+                        연간 수익률 (배당, 이자 등) (%){" "}
+                        <span className={styles.required}>*</span>
                       </label>
                       <input
                         type="number"
@@ -855,7 +940,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         step="0.01"
                       />
                       {errors.incomeRate && (
-                        <span className={styles.error}>{errors.incomeRate}</span>
+                        <span className={styles.error}>
+                          {errors.incomeRate}
+                        </span>
                       )}
                       <span className={styles.hint}>
                         매년 자산 가치의 일정 비율을 현금 수입으로 받습니다.
@@ -918,7 +1005,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           name="pensionType"
                           value="national"
                           checked={formData.data.type === "national"}
-                          onChange={(e) => handleDataChange("type", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange("type", e.target.value)
+                          }
                         />
                         <span className={styles.radioText}>국민연금</span>
                       </label>
@@ -926,11 +1015,29 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         <input
                           type="radio"
                           name="pensionType"
+                          value="severance"
+                          checked={formData.data.type === "severance"}
+                          onChange={(e) =>
+                            handleDataChange("type", e.target.value)
+                          }
+                        />
+                        <span className={styles.radioText}>
+                          퇴직금/퇴직연금 (DB형)
+                        </span>
+                      </label>
+                      <label className={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="pensionType"
                           value="retirement"
                           checked={formData.data.type === "retirement"}
-                          onChange={(e) => handleDataChange("type", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange("type", e.target.value)
+                          }
                         />
-                        <span className={styles.radioText}>퇴직연금 (DC형)</span>
+                        <span className={styles.radioText}>
+                          퇴직연금 (DC형/IRP)
+                        </span>
                       </label>
                       <label className={styles.radioLabel}>
                         <input
@@ -938,19 +1045,13 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           name="pensionType"
                           value="personal"
                           checked={formData.data.type === "personal"}
-                          onChange={(e) => handleDataChange("type", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange("type", e.target.value)
+                          }
                         />
-                        <span className={styles.radioText}>개인연금 (연금저축/IRP)</span>
-                      </label>
-                      <label className={styles.radioLabel}>
-                        <input
-                          type="radio"
-                          name="pensionType"
-                          value="severance"
-                          checked={formData.data.type === "severance"}
-                          onChange={(e) => handleDataChange("type", e.target.value)}
-                        />
-                        <span className={styles.radioText}>퇴직금/DB형</span>
+                        <span className={styles.radioText}>
+                          개인연금 (연금저축/IRP)
+                        </span>
                       </label>
                     </div>
                   </div>
@@ -962,20 +1063,25 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                     <h3 className={styles.sectionTitle}>국민연금 정보</h3>
                     <div className={styles.field}>
                       <label className={styles.label}>
-                        예상 월 수령액 (만원) <span className={styles.required}>*</span>
+                        예상 월 수령액 (만원){" "}
+                        <span className={styles.required}>*</span>
                       </label>
                       <input
                         type="number"
                         className={styles.input}
                         value={formData.data.monthlyAmount}
-                        onChange={(e) => handleDataChange("monthlyAmount", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange("monthlyAmount", e.target.value)
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="예: 150"
                         min="0"
                         step="1"
                       />
                       {errors.monthlyAmount && (
-                        <span className={styles.error}>{errors.monthlyAmount}</span>
+                        <span className={styles.error}>
+                          {errors.monthlyAmount}
+                        </span>
                       )}
                     </div>
 
@@ -987,7 +1093,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           type="number"
                           className={styles.input}
                           value={formData.data.pensionStartYear}
-                          onChange={(e) => handleDataChange("pensionStartYear", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange("pensionStartYear", e.target.value)
+                          }
                           onWheel={(e) => e.target.blur()}
                           placeholder="2050"
                           min="1900"
@@ -999,10 +1107,17 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         <select
                           className={styles.select}
                           value={formData.data.pensionStartMonth}
-                          onChange={(e) => handleDataChange("pensionStartMonth", parseInt(e.target.value))}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "pensionStartMonth",
+                              parseInt(e.target.value)
+                            )
+                          }
                         >
-                          {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                            <option key={m} value={m}>{m}월</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                            <option key={m} value={m}>
+                              {m}월
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -1016,7 +1131,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           type="number"
                           className={styles.input}
                           value={formData.data.pensionEndYear}
-                          onChange={(e) => handleDataChange("pensionEndYear", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange("pensionEndYear", e.target.value)
+                          }
                           onWheel={(e) => e.target.blur()}
                           placeholder="2075"
                           min="1900"
@@ -1028,10 +1145,17 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         <select
                           className={styles.select}
                           value={formData.data.pensionEndMonth}
-                          onChange={(e) => handleDataChange("pensionEndMonth", parseInt(e.target.value))}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "pensionEndMonth",
+                              parseInt(e.target.value)
+                            )
+                          }
                         >
-                          {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                            <option key={m} value={m}>{m}월</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                            <option key={m} value={m}>
+                              {m}월
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -1043,7 +1167,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         type="number"
                         className={styles.input}
                         value={formData.data.inflationRate}
-                        onChange={(e) => handleDataChange("inflationRate", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange("inflationRate", e.target.value)
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="1.89"
                         step="0.01"
@@ -1067,7 +1193,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         type="number"
                         className={styles.input}
                         value={formData.data.averageSalary}
-                        onChange={(e) => handleDataChange("averageSalary", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange("averageSalary", e.target.value)
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="예: 400"
                         min="0"
@@ -1080,14 +1208,14 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
 
                     {/* 재직 년도 */}
                     <div className={styles.field}>
-                      <label className={styles.label}>
-                        재직 년도
-                      </label>
+                      <label className={styles.label}>재직 년도</label>
                       <input
                         type="number"
                         className={styles.input}
                         value={formData.data.yearsOfService}
-                        onChange={(e) => handleDataChange("yearsOfService", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange("yearsOfService", e.target.value)
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="예: 20"
                         min="0"
@@ -1098,20 +1226,28 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                     {/* 현재 적립금 */}
                     <div className={styles.field}>
                       <label className={styles.label}>
-                        현재 적립금 (만원) <span className={styles.required}>*</span>
+                        현재 적립금 (만원){" "}
+                        <span className={styles.required}>*</span>
                       </label>
                       <input
                         type="number"
                         className={styles.input}
                         value={formData.data.pensionCurrentAmount}
-                        onChange={(e) => handleDataChange("pensionCurrentAmount", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange(
+                            "pensionCurrentAmount",
+                            e.target.value
+                          )
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="예: 5000"
                         min="0"
                         step="1"
                       />
                       {errors.currentAmount && (
-                        <span className={styles.error}>{errors.currentAmount}</span>
+                        <span className={styles.error}>
+                          {errors.currentAmount}
+                        </span>
                       )}
                       <span className={styles.hint}>
                         평균임금×재직년도로 자동 계산됩니다
@@ -1125,9 +1261,17 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         id="noAdditionalContribution"
                         className={styles.checkbox}
                         checked={formData.data.noAdditionalContribution}
-                        onChange={(e) => handleDataChange("noAdditionalContribution", e.target.checked)}
+                        onChange={(e) =>
+                          handleDataChange(
+                            "noAdditionalContribution",
+                            e.target.checked
+                          )
+                        }
                       />
-                      <label htmlFor="noAdditionalContribution" className={styles.checkboxLabel}>
+                      <label
+                        htmlFor="noAdditionalContribution"
+                        className={styles.checkboxLabel}
+                      >
                         추가 적립 안함
                       </label>
                     </div>
@@ -1138,12 +1282,19 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         {/* 적립 금액 + 주기 */}
                         <div className={styles.fieldRow}>
                           <div className={styles.field}>
-                            <label className={styles.label}>적립 금액 (만원)</label>
+                            <label className={styles.label}>
+                              적립 금액 (만원)
+                            </label>
                             <input
                               type="number"
                               className={styles.input}
                               value={formData.data.monthlyContribution}
-                              onChange={(e) => handleDataChange("monthlyContribution", e.target.value)}
+                              onChange={(e) =>
+                                handleDataChange(
+                                  "monthlyContribution",
+                                  e.target.value
+                                )
+                              }
                               onWheel={(e) => e.target.blur()}
                               placeholder="예: 50"
                               min="0"
@@ -1155,7 +1306,12 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                             <select
                               className={styles.select}
                               value={formData.data.contributionFrequency}
-                              onChange={(e) => handleDataChange("contributionFrequency", e.target.value)}
+                              onChange={(e) =>
+                                handleDataChange(
+                                  "contributionFrequency",
+                                  e.target.value
+                                )
+                              }
                             >
                               <option value="monthly">월</option>
                               <option value="yearly">년</option>
@@ -1166,12 +1322,19 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         {/* 적립 시작년도/월 */}
                         <div className={styles.fieldRow}>
                           <div className={styles.field}>
-                            <label className={styles.label}>적립 시작년도</label>
+                            <label className={styles.label}>
+                              적립 시작년도
+                            </label>
                             <input
                               type="number"
                               className={styles.input}
                               value={formData.data.contributionStartYear}
-                              onChange={(e) => handleDataChange("contributionStartYear", e.target.value)}
+                              onChange={(e) =>
+                                handleDataChange(
+                                  "contributionStartYear",
+                                  e.target.value
+                                )
+                              }
                               onWheel={(e) => e.target.blur()}
                               placeholder="2025"
                               min="1900"
@@ -1183,11 +1346,20 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                             <select
                               className={styles.select}
                               value={formData.data.contributionStartMonth}
-                              onChange={(e) => handleDataChange("contributionStartMonth", parseInt(e.target.value))}
+                              onChange={(e) =>
+                                handleDataChange(
+                                  "contributionStartMonth",
+                                  parseInt(e.target.value)
+                                )
+                              }
                             >
-                              {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                                <option key={m} value={m}>{m}월</option>
-                              ))}
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(
+                                (m) => (
+                                  <option key={m} value={m}>
+                                    {m}월
+                                  </option>
+                                )
+                              )}
                             </select>
                           </div>
                         </div>
@@ -1195,12 +1367,19 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         {/* 적립 종료년도/월 */}
                         <div className={styles.fieldRow}>
                           <div className={styles.field}>
-                            <label className={styles.label}>적립 종료년도</label>
+                            <label className={styles.label}>
+                              적립 종료년도
+                            </label>
                             <input
                               type="number"
                               className={styles.input}
                               value={formData.data.contributionEndYear}
-                              onChange={(e) => handleDataChange("contributionEndYear", e.target.value)}
+                              onChange={(e) =>
+                                handleDataChange(
+                                  "contributionEndYear",
+                                  e.target.value
+                                )
+                              }
                               onWheel={(e) => e.target.blur()}
                               placeholder="2035"
                               min="1900"
@@ -1212,11 +1391,20 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                             <select
                               className={styles.select}
                               value={formData.data.contributionEndMonth}
-                              onChange={(e) => handleDataChange("contributionEndMonth", parseInt(e.target.value))}
+                              onChange={(e) =>
+                                handleDataChange(
+                                  "contributionEndMonth",
+                                  parseInt(e.target.value)
+                                )
+                              }
                             >
-                              {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                                <option key={m} value={m}>{m}월</option>
-                              ))}
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(
+                                (m) => (
+                                  <option key={m} value={m}>
+                                    {m}월
+                                  </option>
+                                )
+                              )}
                             </select>
                           </div>
                         </div>
@@ -1230,7 +1418,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         type="number"
                         className={styles.input}
                         value={formData.data.returnRate}
-                        onChange={(e) => handleDataChange("returnRate", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange("returnRate", e.target.value)
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="2.86"
                         step="0.01"
@@ -1245,7 +1435,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           type="number"
                           className={styles.input}
                           value={formData.data.paymentStartYear}
-                          onChange={(e) => handleDataChange("paymentStartYear", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange("paymentStartYear", e.target.value)
+                          }
                           onWheel={(e) => e.target.blur()}
                           placeholder="2036"
                           min="1900"
@@ -1257,10 +1449,17 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         <select
                           className={styles.select}
                           value={formData.data.paymentStartMonth}
-                          onChange={(e) => handleDataChange("paymentStartMonth", parseInt(e.target.value))}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "paymentStartMonth",
+                              parseInt(e.target.value)
+                            )
+                          }
                         >
-                          {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                            <option key={m} value={m}>{m}월</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                            <option key={m} value={m}>
+                              {m}월
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -1273,7 +1472,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         type="number"
                         className={styles.input}
                         value={formData.data.paymentYears}
-                        onChange={(e) => handleDataChange("paymentYears", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange("paymentYears", e.target.value)
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="10"
                         min="1"
@@ -1292,20 +1493,28 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                     {/* 현재 적립금 */}
                     <div className={styles.field}>
                       <label className={styles.label}>
-                        현재 적립금 (만원) <span className={styles.required}>*</span>
+                        현재 적립금 (만원){" "}
+                        <span className={styles.required}>*</span>
                       </label>
                       <input
                         type="number"
                         className={styles.input}
                         value={formData.data.pensionCurrentAmount}
-                        onChange={(e) => handleDataChange("pensionCurrentAmount", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange(
+                            "pensionCurrentAmount",
+                            e.target.value
+                          )
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="예: 5000"
                         min="0"
                         step="1"
                       />
                       {errors.currentAmount && (
-                        <span className={styles.error}>{errors.currentAmount}</span>
+                        <span className={styles.error}>
+                          {errors.currentAmount}
+                        </span>
                       )}
                     </div>
 
@@ -1317,7 +1526,12 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           type="number"
                           className={styles.input}
                           value={formData.data.monthlyContribution}
-                          onChange={(e) => handleDataChange("monthlyContribution", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "monthlyContribution",
+                              e.target.value
+                            )
+                          }
                           onWheel={(e) => e.target.blur()}
                           placeholder="예: 50"
                           min="0"
@@ -1329,7 +1543,12 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         <select
                           className={styles.select}
                           value={formData.data.contributionFrequency}
-                          onChange={(e) => handleDataChange("contributionFrequency", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "contributionFrequency",
+                              e.target.value
+                            )
+                          }
                         >
                           <option value="monthly">월</option>
                           <option value="yearly">년</option>
@@ -1345,7 +1564,12 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           type="number"
                           className={styles.input}
                           value={formData.data.contributionStartYear}
-                          onChange={(e) => handleDataChange("contributionStartYear", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "contributionStartYear",
+                              e.target.value
+                            )
+                          }
                           onWheel={(e) => e.target.blur()}
                           placeholder="2025"
                           min="1900"
@@ -1357,10 +1581,17 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         <select
                           className={styles.select}
                           value={formData.data.contributionStartMonth}
-                          onChange={(e) => handleDataChange("contributionStartMonth", parseInt(e.target.value))}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "contributionStartMonth",
+                              parseInt(e.target.value)
+                            )
+                          }
                         >
-                          {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                            <option key={m} value={m}>{m}월</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                            <option key={m} value={m}>
+                              {m}월
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -1374,7 +1605,12 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           type="number"
                           className={styles.input}
                           value={formData.data.contributionEndYear}
-                          onChange={(e) => handleDataChange("contributionEndYear", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "contributionEndYear",
+                              e.target.value
+                            )
+                          }
                           onWheel={(e) => e.target.blur()}
                           placeholder="2035"
                           min="1900"
@@ -1386,10 +1622,17 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         <select
                           className={styles.select}
                           value={formData.data.contributionEndMonth}
-                          onChange={(e) => handleDataChange("contributionEndMonth", parseInt(e.target.value))}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "contributionEndMonth",
+                              parseInt(e.target.value)
+                            )
+                          }
                         >
-                          {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                            <option key={m} value={m}>{m}월</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                            <option key={m} value={m}>
+                              {m}월
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -1402,7 +1645,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         type="number"
                         className={styles.input}
                         value={formData.data.returnRate}
-                        onChange={(e) => handleDataChange("returnRate", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange("returnRate", e.target.value)
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="2.86"
                         step="0.01"
@@ -1417,7 +1662,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                           type="number"
                           className={styles.input}
                           value={formData.data.paymentStartYear}
-                          onChange={(e) => handleDataChange("paymentStartYear", e.target.value)}
+                          onChange={(e) =>
+                            handleDataChange("paymentStartYear", e.target.value)
+                          }
                           onWheel={(e) => e.target.blur()}
                           placeholder="2036"
                           min="1900"
@@ -1429,10 +1676,17 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         <select
                           className={styles.select}
                           value={formData.data.paymentStartMonth}
-                          onChange={(e) => handleDataChange("paymentStartMonth", parseInt(e.target.value))}
+                          onChange={(e) =>
+                            handleDataChange(
+                              "paymentStartMonth",
+                              parseInt(e.target.value)
+                            )
+                          }
                         >
-                          {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
-                            <option key={m} value={m}>{m}월</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                            <option key={m} value={m}>
+                              {m}월
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -1445,7 +1699,9 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
                         type="number"
                         className={styles.input}
                         value={formData.data.paymentYears}
-                        onChange={(e) => handleDataChange("paymentYears", e.target.value)}
+                        onChange={(e) =>
+                          handleDataChange("paymentYears", e.target.value)
+                        }
                         onWheel={(e) => e.target.blur()}
                         placeholder="10"
                         min="1"
@@ -1472,131 +1728,136 @@ function TemplateEditorModal({ isOpen, onClose, onSave, editData = null }) {
             ) : (
               <>
                 {/* 소득/지출일 때는 나이 범위와 기존 필드 표시 */}
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>나이 범위 (선택)</h3>
-              <p className={styles.sectionDescription}>
-                특정 나이 범위에만 적용되는 템플릿일 경우 입력하세요.
-                <br />
-                예: 초등학교 교육비는 7~12세
-              </p>
+                <div className={styles.section}>
+                  <h3 className={styles.sectionTitle}>나이 범위 (선택)</h3>
+                  <p className={styles.sectionDescription}>
+                    특정 나이 범위에만 적용되는 템플릿일 경우 입력하세요.
+                    <br />
+                    예: 초등학교 교육비는 7~12세
+                  </p>
 
-              <div className={styles.fieldRow}>
-                <div className={styles.field}>
-                  <label className={styles.label}>시작 나이</label>
-                  <input
-                    type="number"
-                    className={styles.input}
-                    value={formData.ageStart === null ? "" : formData.ageStart}
-                    onChange={(e) =>
-                      handleChange("ageStart", e.target.value || null)
-                    }
-                    onWheel={(e) => e.target.blur()}
-                    placeholder="예: 7"
-                    min="0"
-                    max="150"
-                  />
+                  <div className={styles.fieldRow}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>시작 나이</label>
+                      <input
+                        type="number"
+                        className={styles.input}
+                        value={
+                          formData.ageStart === null ? "" : formData.ageStart
+                        }
+                        onChange={(e) =>
+                          handleChange("ageStart", e.target.value || null)
+                        }
+                        onWheel={(e) => e.target.blur()}
+                        placeholder="예: 7"
+                        min="0"
+                        max="150"
+                      />
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>종료 나이</label>
+                      <input
+                        type="number"
+                        className={styles.input}
+                        value={formData.ageEnd === null ? "" : formData.ageEnd}
+                        onChange={(e) =>
+                          handleChange("ageEnd", e.target.value || null)
+                        }
+                        onWheel={(e) => e.target.blur()}
+                        placeholder="예: 12"
+                        min="0"
+                        max="150"
+                      />
+                    </div>
+                  </div>
+                  {errors.ageRange && (
+                    <span className={styles.error}>{errors.ageRange}</span>
+                  )}
                 </div>
 
-                <div className={styles.field}>
-                  <label className={styles.label}>종료 나이</label>
-                  <input
-                    type="number"
-                    className={styles.input}
-                    value={formData.ageEnd === null ? "" : formData.ageEnd}
-                    onChange={(e) =>
-                      handleChange("ageEnd", e.target.value || null)
-                    }
-                    onWheel={(e) => e.target.blur()}
-                    placeholder="예: 12"
-                    min="0"
-                    max="150"
-                  />
+                {/* 재무 데이터 */}
+                <div className={styles.section}>
+                  <h3 className={styles.sectionTitle}>재무 데이터</h3>
+                  <p className={styles.sectionDescription}>
+                    💡 <strong>현재 기준 가치로 입력하세요.</strong>
+                    <br />
+                    템플릿 적용 시 시작년도까지의 물가상승률/소득상승률이 자동
+                    반영됩니다.
+                    <br />
+                    (소득: 연 3.3%, 지출: 연 1.89% 복리 적용)
+                  </p>
+
+                  {/* 빈도 */}
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      빈도 <span className={styles.required}>*</span>
+                    </label>
+                    <select
+                      className={styles.select}
+                      value={formData.data.frequency}
+                      onChange={(e) =>
+                        handleDataChange("frequency", e.target.value)
+                      }
+                    >
+                      <option value="monthly">월간</option>
+                      <option value="yearly">연간</option>
+                    </select>
+                  </div>
+
+                  {/* 금액 */}
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      금액 (만원) <span className={styles.required}>*</span>
+                    </label>
+                    <input
+                      type="number"
+                      className={styles.input}
+                      value={formData.data.amount}
+                      onChange={(e) =>
+                        handleDataChange("amount", e.target.value)
+                      }
+                      onWheel={(e) => e.target.blur()}
+                      placeholder="예: 300 (300만원) 또는 10.5 (10만 5천원)"
+                      min="0"
+                      step="0.1"
+                    />
+                    {errors.amount && (
+                      <span className={styles.error}>{errors.amount}</span>
+                    )}
+                  </div>
+
+                  {/* 상승률 */}
+                  <div className={styles.field}>
+                    <label className={styles.label}>연간 상승률 (%)</label>
+                    <input
+                      type="number"
+                      className={styles.input}
+                      value={formData.data.growthRate}
+                      onChange={(e) =>
+                        handleDataChange("growthRate", e.target.value)
+                      }
+                      onWheel={(e) => e.target.blur()}
+                      placeholder="예: 1.89"
+                      step="0.01"
+                    />
+                    <span className={styles.hint}>
+                      매년 금액이 증가하는 비율 (0이면 고정)
+                    </span>
+                  </div>
+
+                  {/* 메모 */}
+                  <div className={styles.field}>
+                    <label className={styles.label}>메모</label>
+                    <textarea
+                      className={styles.textarea}
+                      value={formData.data.memo}
+                      onChange={(e) => handleDataChange("memo", e.target.value)}
+                      placeholder="예: 2014년부터 2024년까지의 10년간 평균"
+                      rows={3}
+                    />
+                  </div>
                 </div>
-              </div>
-              {errors.ageRange && (
-                <span className={styles.error}>{errors.ageRange}</span>
-              )}
-            </div>
-
-            {/* 재무 데이터 */}
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>재무 데이터</h3>
-              <p className={styles.sectionDescription}>
-                💡 <strong>현재 기준 가치로 입력하세요.</strong>
-                <br />
-                템플릿 적용 시 시작년도까지의 물가상승률/소득상승률이 자동 반영됩니다.
-                <br />
-                (소득: 연 3.3%, 지출: 연 1.89% 복리 적용)
-              </p>
-
-              {/* 빈도 */}
-              <div className={styles.field}>
-                <label className={styles.label}>
-                  빈도 <span className={styles.required}>*</span>
-                </label>
-                <select
-                  className={styles.select}
-                  value={formData.data.frequency}
-                  onChange={(e) =>
-                    handleDataChange("frequency", e.target.value)
-                  }
-                >
-                  <option value="monthly">월간</option>
-                  <option value="yearly">연간</option>
-                </select>
-              </div>
-
-              {/* 금액 */}
-              <div className={styles.field}>
-                <label className={styles.label}>
-                  금액 (만원) <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="number"
-                  className={styles.input}
-                  value={formData.data.amount}
-                  onChange={(e) => handleDataChange("amount", e.target.value)}
-                  onWheel={(e) => e.target.blur()}
-                  placeholder="예: 300 (300만원) 또는 10.5 (10만 5천원)"
-                  min="0"
-                  step="0.1"
-                />
-                {errors.amount && (
-                  <span className={styles.error}>{errors.amount}</span>
-                )}
-              </div>
-
-              {/* 상승률 */}
-              <div className={styles.field}>
-                <label className={styles.label}>연간 상승률 (%)</label>
-                <input
-                  type="number"
-                  className={styles.input}
-                  value={formData.data.growthRate}
-                  onChange={(e) =>
-                    handleDataChange("growthRate", e.target.value)
-                  }
-                  onWheel={(e) => e.target.blur()}
-                  placeholder="예: 1.89"
-                  step="0.01"
-                />
-                <span className={styles.hint}>
-                  매년 금액이 증가하는 비율 (0이면 고정)
-                </span>
-              </div>
-
-              {/* 메모 */}
-              <div className={styles.field}>
-                <label className={styles.label}>메모</label>
-                <textarea
-                  className={styles.textarea}
-                  value={formData.data.memo}
-                  onChange={(e) => handleDataChange("memo", e.target.value)}
-                  placeholder="예: 2014년부터 2024년까지의 10년간 평균"
-                  rows={3}
-                />
-              </div>
-            </div>
               </>
             )}
 

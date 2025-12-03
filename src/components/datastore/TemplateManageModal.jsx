@@ -37,9 +37,9 @@ function TemplateManageModal({ isOpen, onClose }) {
   // 연금 타입 목록
   const pensionTypes = [
     { value: "national", label: "국민연금" },
-    { value: "retirement", label: "퇴직연금" },
-    { value: "personal", label: "개인연금" },
-    { value: "severance", label: "퇴직금/DB" },
+    { value: "severance", label: "퇴직금/퇴직연금 (DB형)" },
+    { value: "retirement", label: "퇴직연금 (DC형/IRP)" },
+    { value: "personal", label: "개인연금 (연금저축/IRP)" },
   ];
 
   // 템플릿 불러오기
@@ -102,7 +102,10 @@ function TemplateManageModal({ isOpen, onClose }) {
   const filteredTemplates = useMemo(() => {
     return templates.filter((template) => {
       // 카테고리 필터
-      if (selectedCategory !== "all" && template.category !== selectedCategory) {
+      if (
+        selectedCategory !== "all" &&
+        template.category !== selectedCategory
+      ) {
         return false;
       }
       // 검색어 필터
@@ -217,7 +220,10 @@ function TemplateManageModal({ isOpen, onClose }) {
         const freq = template.data.frequency === "monthly" ? "월" : "년";
         details.push(`${template.data.amount.toLocaleString()}만원/${freq}`);
       }
-      if (template.data?.growthRate && parseFloat(template.data.growthRate) !== 0) {
+      if (
+        template.data?.growthRate &&
+        parseFloat(template.data.growthRate) !== 0
+      ) {
         details.push(`연 ${template.data.growthRate}% 증가`);
       }
     } else if (template.category === "saving") {
@@ -236,7 +242,9 @@ function TemplateManageModal({ isOpen, onClose }) {
         details.push(`${template.data.monthlyAmount.toLocaleString()}만원/월`);
       }
       if (template.data?.pensionCurrentAmount) {
-        details.push(`적립금 ${template.data.pensionCurrentAmount.toLocaleString()}만원`);
+        details.push(
+          `적립금 ${template.data.pensionCurrentAmount.toLocaleString()}만원`
+        );
       }
     }
 
@@ -341,7 +349,12 @@ function TemplateManageModal({ isOpen, onClose }) {
                         <div className={styles.templateHeader}>
                           <span
                             className={`${styles.categoryIndicator} ${
-                              styles[`indicator${template.category.charAt(0).toUpperCase() + template.category.slice(1)}`]
+                              styles[
+                                `indicator${
+                                  template.category.charAt(0).toUpperCase() +
+                                  template.category.slice(1)
+                                }`
+                              ]
                             }`}
                           />
                           <span className={styles.templateTitle}>
@@ -392,8 +405,7 @@ function TemplateManageModal({ isOpen, onClose }) {
                   ` • ${getCategoryLabel(selectedCategory)} ${
                     categoryCounts[selectedCategory] || 0
                   }개`}
-                {searchQuery &&
-                  ` • 검색 결과 ${filteredTemplates.length}개`}
+                {searchQuery && ` • 검색 결과 ${filteredTemplates.length}개`}
               </span>
             </div>
           )}

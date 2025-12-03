@@ -170,16 +170,21 @@ function RechartsCashflowChart({
     return null;
   })();
 
-  // 배우자 은퇴 년도 계산
+  // 배우자 은퇴 년도 계산 (시뮬레이션별 설정값 우선, 없으면 프로필 기반 계산)
   const spouseRetirementYear = (() => {
     if (!profileData?.hasSpouse || !profileData?.spouseIsWorking) {
       return null;
     }
-
+    // 시뮬레이션별 배우자 은퇴년도가 설정되어 있으면 우선 사용
+    if (profileData?.spouseRetirementYear) {
+      return profileData.spouseRetirementYear;
+    }
+    // 없으면 프로필 기반으로 계산
     const spouseBirthYear = parseInt(profileData.spouseBirthYear);
     const spouseRetirement = parseInt(profileData.spouseRetirementAge);
-
-    // 배우자가 은퇴하는 년도 반환
+    if (!spouseBirthYear || !spouseRetirement) {
+      return null;
+    }
     return spouseBirthYear + spouseRetirement;
   })();
 

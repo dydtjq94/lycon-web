@@ -245,10 +245,13 @@ export const simulationService = {
         memo: sourceSimulation?.memo || "",
       });
 
-      // 1-1. 은퇴년도와 투자 규칙 복사 (원본 시뮬레이션에서)
+      // 1-1. 은퇴년도, 배우자 은퇴년도, 투자 규칙 복사 (원본 시뮬레이션에서)
       const updateData = {};
       if (sourceSimulation.retirementYear !== undefined) {
         updateData.retirementYear = sourceSimulation.retirementYear;
+      }
+      if (sourceSimulation.spouseRetirementYear !== undefined) {
+        updateData.spouseRetirementYear = sourceSimulation.spouseRetirementYear;
       }
       if (sourceSimulation.cashflowInvestmentRules) {
         updateData.cashflowInvestmentRules =
@@ -482,6 +485,31 @@ export const simulationService = {
       });
     } catch (error) {
       console.error("은퇴년도 업데이트 오류:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * 시뮬레이션의 배우자 은퇴년도 업데이트
+   * @param {string} profileId - 프로필 ID
+   * @param {string} simulationId - 시뮬레이션 ID
+   * @param {number} spouseRetirementYear - 배우자 은퇴년도
+   */
+  async updateSpouseRetirementYear(profileId, simulationId, spouseRetirementYear) {
+    try {
+      const docRef = doc(
+        db,
+        "profiles",
+        profileId,
+        "simulations",
+        simulationId
+      );
+      await updateDoc(docRef, {
+        spouseRetirementYear: spouseRetirementYear,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("배우자 은퇴년도 업데이트 오류:", error);
       throw error;
     }
   },

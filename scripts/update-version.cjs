@@ -11,8 +11,8 @@ const fs = require("fs");
 const path = require("path");
 
 // 버전 파일 경로
-const versionFile = path.join(__dirname, "version.json");
-const rulesFile = path.join(__dirname, ".cursor/rules/my-rule.mdc");
+const versionFile = path.join(__dirname, "../version.json");
+const rulesFile = path.join(__dirname, "../.cursor/rules/my-rule.mdc");
 
 // 현재 버전 읽기
 const versionData = JSON.parse(fs.readFileSync(versionFile, "utf8"));
@@ -66,12 +66,12 @@ if (updateType !== "touch") {
   if (!updatedVersionData.history) {
     updatedVersionData.history = [];
   }
-  
+
   // 같은 버전이 이미 있는지 확인
   const existingIndex = updatedVersionData.history.findIndex(
     (entry) => entry.version === newVersionString
   );
-  
+
   if (existingIndex === -1) {
     // 같은 버전이 없으면 새로 추가
     const newHistoryEntry = {
@@ -82,7 +82,7 @@ if (updateType !== "touch") {
         "버전 업데이트",
       ],
     };
-    
+
     // history 배열의 맨 앞에 추가
     updatedVersionData.history.unshift(newHistoryEntry);
   } else {
