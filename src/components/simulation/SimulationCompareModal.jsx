@@ -1,4 +1,17 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
 import styles from "./SimulationCompareModal.module.css";
 import incomeStyles from "../income/IncomeList.module.css";
 import expenseStyles from "../expense/ExpenseList.module.css";
@@ -1574,15 +1587,24 @@ function SimulationCompareModal({
     return sim?.title || (sim?.isDefault ? "현재" : "시뮬레이션");
   };
 
-  // 선택된 시뮬레이션들을 원래 순서대로 정렬
+  // 선택된 시뮬레이션들을 정렬 (기본 시뮬레이션 "현재"가 먼저 오도록)
   const sortedSelectedSimulationIds = useMemo(() => {
     if (!simulations || selectedSimulationIds.length === 0)
       return selectedSimulationIds;
 
-    // simulations 배열의 순서대로 필터링
-    return simulations
-      .filter((sim) => selectedSimulationIds.includes(sim.id))
-      .map((sim) => sim.id);
+    // 기본 시뮬레이션(isDefault)을 먼저, 나머지는 simulations 배열 순서대로
+    const selectedSims = simulations.filter((sim) =>
+      selectedSimulationIds.includes(sim.id)
+    );
+
+    // isDefault가 true인 것을 먼저, 나머지는 원래 순서 유지
+    selectedSims.sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      return 0;
+    });
+
+    return selectedSims.map((sim) => sim.id);
   }, [simulations, selectedSimulationIds]);
 
   const summaryRows = useMemo(() => {
@@ -1635,6 +1657,31 @@ function SimulationCompareModal({
 
     return rows;
   }, [sortedSelectedSimulationIds, simulationsPV]);
+
+  // 생애 자금 수급/수요 막대 차트 데이터
+  const cashflowChartData = useMemo(() => {
+    if (summaryRows.length === 0 || sortedSelectedSimulationIds.length === 0) {
+      return [];
+    }
+
+    // 각 시뮬레이션별로 자금공급, 자금수요, 순현금흐름 데이터 생성
+    const data = sortedSelectedSimulationIds.map((simId, index) => {
+      const supplyRow = summaryRows.find((r) => r.key === "supply");
+      const demandRow = summaryRows.find((r) => r.key === "demand");
+      const netRow = summaryRows.find((r) => r.key === "net");
+
+      return {
+        name: getSimulationTitle(simId),
+        simId,
+        index,
+        supply: supplyRow?.values[simId] ?? 0,
+        demand: demandRow?.values[simId] ?? 0,
+        net: netRow?.values[simId] ?? 0,
+      };
+    });
+
+    return data;
+  }, [summaryRows, sortedSelectedSimulationIds, getSimulationTitle]);
 
   const renderBreakdownList = (items, prefix) => {
     if (!Array.isArray(items) || items.length === 0) {
@@ -2342,6 +2389,81 @@ function SimulationCompareModal({
     retirementAgeBySimulation,
   ]);
 
+  // 시뮬레이션별 차트 색상
+  const simulationColors = [
+    "#3b82f6", // blue
+    "#10b981", // emerald
+    "#f59e0b", // amber
+    "#ef4444", // red
+    "#8b5cf6", // violet
+    "#ec4899", // pink
+    "#06b6d4", // cyan
+    "#84cc16", // lime
+  ];
+
+  // 전체 연도별 순자산 라인 차트 데이터
+  const fullNetWorthChartData = useMemo(() => {
+    if (
+      !simulationsAssetsTimeline ||
+      sortedSelectedSimulationIds.length === 0
+    ) {
+      return [];
+    }
+
+    // 모든 시뮬레이션의 연도(나이)를 수집하여 공통 X축 생성
+    const allAges = new Set();
+    sortedSelectedSimulationIds.forEach((simId) => {
+      const timeline = simulationsAssetsTimeline[simId];
+      if (Array.isArray(timeline)) {
+        timeline.forEach((entry) => {
+          if (entry?.age !== undefined && Number.isFinite(entry.age)) {
+            allAges.add(entry.age);
+          }
+        });
+      }
+    });
+
+    if (allAges.size === 0) return [];
+
+    // 나이 순으로 정렬
+    const sortedAges = Array.from(allAges).sort((a, b) => a - b);
+
+    // 순자산 계산 함수
+    const calculateNetWorth = (entry) => {
+      if (!entry) return null;
+      if (entry.breakdown && typeof entry.breakdown.netAssets === "number") {
+        return entry.breakdown.netAssets;
+      }
+      if (
+        typeof entry.totalAmount === "number" &&
+        !Number.isNaN(entry.totalAmount)
+      ) {
+        return entry.totalAmount;
+      }
+      return null;
+    };
+
+    // 각 나이별 데이터 포인트 생성
+    return sortedAges.map((age) => {
+      const dataPoint = {
+        name: `${age}세`,
+        age,
+      };
+
+      sortedSelectedSimulationIds.forEach((simId) => {
+        const timeline = simulationsAssetsTimeline[simId];
+        if (Array.isArray(timeline)) {
+          const entry = timeline.find((e) => e?.age === age);
+          dataPoint[simId] = calculateNetWorth(entry);
+        } else {
+          dataPoint[simId] = null;
+        }
+      });
+
+      return dataPoint;
+    });
+  }, [simulationsAssetsTimeline, sortedSelectedSimulationIds]);
+
   // 모달이 열릴 때 토글을 모두 열린 상태로 초기화
   useEffect(() => {
     if (!isOpen) return;
@@ -2676,6 +2798,236 @@ function SimulationCompareModal({
                         </button>
                       </div>
                     </div>
+
+                    {/* 생애 자금 수급/수요 비교 차트 - 3개 분리 (시뮬레이션별 동일 색상) */}
+                    {cashflowChartData.length > 0 && (
+                      <div className={styles.cashflowChartsWrapper}>
+                        {/* 자금 공급 비교 차트 */}
+                        <div className={styles.cashflowChartItem}>
+                          <h5 className={styles.cashflowChartTitle}>
+                            자금 공급 비교
+                          </h5>
+                          <ResponsiveContainer width="100%" height={180}>
+                            <BarChart
+                              data={cashflowChartData}
+                              margin={{
+                                top: 10,
+                                right: 20,
+                                left: 10,
+                                bottom: 5,
+                              }}
+                              barCategoryGap="25%"
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#e5e7eb"
+                                vertical={false}
+                              />
+                              <XAxis
+                                dataKey="name"
+                                tick={{ fontSize: 11, fill: "#6b7280" }}
+                                axisLine={{ stroke: "#e5e7eb" }}
+                                tickLine={false}
+                              />
+                              <YAxis
+                                tick={{ fontSize: 10, fill: "#6b7280" }}
+                                axisLine={false}
+                                tickLine={false}
+                                tickFormatter={(value) =>
+                                  formatAmountForChart(value)
+                                }
+                                width={70}
+                              />
+                              <Tooltip
+                                formatter={(value) => [
+                                  formatAmountForChart(value),
+                                  "자금 공급",
+                                ]}
+                                contentStyle={{
+                                  backgroundColor: "#ffffff",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "8px",
+                                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                  padding: "8px 12px",
+                                  fontSize: "0.85rem",
+                                }}
+                                labelStyle={{
+                                  fontWeight: 600,
+                                  marginBottom: "4px",
+                                  color: "#374151",
+                                }}
+                              />
+                              <Bar dataKey="supply" name="자금 공급" radius={[4, 4, 0, 0]}>
+                                {cashflowChartData.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-supply-${index}`}
+                                    fill={simulationColors[index % simulationColors.length]}
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        {/* 자금 수요 비교 차트 */}
+                        <div className={styles.cashflowChartItem}>
+                          <h5 className={styles.cashflowChartTitle}>
+                            자금 수요 비교
+                          </h5>
+                          <ResponsiveContainer width="100%" height={180}>
+                            <BarChart
+                              data={cashflowChartData}
+                              margin={{
+                                top: 10,
+                                right: 20,
+                                left: 10,
+                                bottom: 5,
+                              }}
+                              barCategoryGap="25%"
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#e5e7eb"
+                                vertical={false}
+                              />
+                              <XAxis
+                                dataKey="name"
+                                tick={{ fontSize: 11, fill: "#6b7280" }}
+                                axisLine={{ stroke: "#e5e7eb" }}
+                                tickLine={false}
+                              />
+                              <YAxis
+                                tick={{ fontSize: 10, fill: "#6b7280" }}
+                                axisLine={false}
+                                tickLine={false}
+                                tickFormatter={(value) =>
+                                  formatAmountForChart(value)
+                                }
+                                width={70}
+                              />
+                              <Tooltip
+                                formatter={(value) => [
+                                  formatAmountForChart(value),
+                                  "자금 수요",
+                                ]}
+                                contentStyle={{
+                                  backgroundColor: "#ffffff",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "8px",
+                                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                  padding: "8px 12px",
+                                  fontSize: "0.85rem",
+                                }}
+                                labelStyle={{
+                                  fontWeight: 600,
+                                  marginBottom: "4px",
+                                  color: "#374151",
+                                }}
+                              />
+                              <Bar dataKey="demand" name="자금 수요" radius={[4, 4, 0, 0]}>
+                                {cashflowChartData.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-demand-${index}`}
+                                    fill={simulationColors[index % simulationColors.length]}
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        {/* 순현금흐름 비교 차트 */}
+                        <div className={styles.cashflowChartItem}>
+                          <h5 className={styles.cashflowChartTitle}>
+                            순현금흐름 비교
+                          </h5>
+                          <ResponsiveContainer width="100%" height={180}>
+                            <BarChart
+                              data={cashflowChartData}
+                              margin={{
+                                top: 10,
+                                right: 20,
+                                left: 10,
+                                bottom: 5,
+                              }}
+                              barCategoryGap="25%"
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#e5e7eb"
+                                vertical={false}
+                              />
+                              <XAxis
+                                dataKey="name"
+                                tick={{ fontSize: 11, fill: "#6b7280" }}
+                                axisLine={{ stroke: "#e5e7eb" }}
+                                tickLine={false}
+                              />
+                              <YAxis
+                                tick={{ fontSize: 10, fill: "#6b7280" }}
+                                axisLine={false}
+                                tickLine={false}
+                                tickFormatter={(value) =>
+                                  formatAmountForChart(value)
+                                }
+                                width={70}
+                              />
+                              <Tooltip
+                                formatter={(value) => [
+                                  formatAmountForChart(value),
+                                  "순현금흐름",
+                                ]}
+                                contentStyle={{
+                                  backgroundColor: "#ffffff",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "8px",
+                                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                  padding: "8px 12px",
+                                  fontSize: "0.85rem",
+                                }}
+                                labelStyle={{
+                                  fontWeight: 600,
+                                  marginBottom: "4px",
+                                  color: "#374151",
+                                }}
+                              />
+                              <ReferenceLine
+                                y={0}
+                                stroke="#9ca3af"
+                                strokeDasharray="2 2"
+                              />
+                              <Bar dataKey="net" name="순현금흐름" radius={[4, 4, 0, 0]}>
+                                {cashflowChartData.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-net-${index}`}
+                                    fill={simulationColors[index % simulationColors.length]}
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 시뮬레이션 색상 범례 */}
+                    {cashflowChartData.length > 0 && (
+                      <div className={styles.chartLegend}>
+                        {cashflowChartData.map((item, index) => (
+                          <div key={item.simId} className={styles.legendItem}>
+                            <span
+                              className={styles.legendLine}
+                              style={{
+                                backgroundColor:
+                                  simulationColors[index % simulationColors.length],
+                              }}
+                            />
+                            <span className={styles.legendLabel}>{item.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className={styles.summaryTable}>
                       <div
                         className={`${styles.summaryRow} ${styles.summaryHeaderCashflow}`}
@@ -2785,6 +3137,195 @@ function SimulationCompareModal({
                   {netWorthRows.length > 0 && (
                     <div className={styles.netWorthSection}>
                       <h4 className={styles.netWorthTitle}>시점별 순자산</h4>
+
+                      {/* 전체 연도별 순자산 비교 라인 차트 */}
+                      {fullNetWorthChartData.length > 0 && (
+                        <div className={styles.netWorthChartContainer}>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <LineChart
+                              data={fullNetWorthChartData}
+                              margin={{
+                                top: 20,
+                                right: 30,
+                                left: 20,
+                                bottom: 10,
+                              }}
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#e5e7eb"
+                              />
+                              <XAxis
+                                dataKey="name"
+                                tick={{ fontSize: 11, fill: "#6b7280" }}
+                                axisLine={{ stroke: "#d1d5db" }}
+                                tickLine={{ stroke: "#d1d5db" }}
+                                interval="preserveStartEnd"
+                              />
+                              <YAxis
+                                tickFormatter={(value) =>
+                                  formatAmountForChart(value)
+                                }
+                                tick={{ fontSize: 11, fill: "#6b7280" }}
+                                axisLine={{ stroke: "#d1d5db" }}
+                                tickLine={{ stroke: "#d1d5db" }}
+                                width={80}
+                              />
+                              <Tooltip
+                                content={({ active, payload, label }) => {
+                                  if (!active || !payload || payload.length === 0) return null;
+                                  return (
+                                    <div
+                                      style={{
+                                        backgroundColor: "#ffffff",
+                                        border: "none",
+                                        borderRadius: "12px",
+                                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
+                                        padding: "14px 18px",
+                                        minWidth: "180px",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontWeight: 700,
+                                          color: "#1e293b",
+                                          fontSize: "0.9rem",
+                                          marginBottom: "10px",
+                                          paddingBottom: "8px",
+                                          borderBottom: "1px solid #e5e7eb",
+                                        }}
+                                      >
+                                        {label}
+                                      </div>
+                                      {payload.map((entry, index) => (
+                                        <div
+                                          key={index}
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "10px",
+                                            padding: "5px 0",
+                                          }}
+                                        >
+                                          <span
+                                            style={{
+                                              width: "10px",
+                                              height: "10px",
+                                              borderRadius: "2px",
+                                              backgroundColor: entry.color,
+                                              flexShrink: 0,
+                                            }}
+                                          />
+                                          <span
+                                            style={{
+                                              flex: 1,
+                                              fontSize: "0.85rem",
+                                              fontWeight: 500,
+                                              color: "#64748b",
+                                            }}
+                                          >
+                                            {getSimulationTitle(entry.dataKey)}
+                                          </span>
+                                          <span
+                                            style={{
+                                              fontSize: "0.9rem",
+                                              fontWeight: 600,
+                                              color: entry.color,
+                                            }}
+                                          >
+                                            {formatAmountForChart(entry.value)}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                }}
+                              />
+                              <ReferenceLine
+                                y={0}
+                                stroke="#9ca3af"
+                                strokeDasharray="2 2"
+                              />
+                              {/* 은퇴 나이 세로 참조선 */}
+                              {profileRetirementAge !== null &&
+                                !Number.isNaN(profileRetirementAge) && (
+                                  <ReferenceLine
+                                    x={`${profileRetirementAge}세`}
+                                    stroke="#9ca3af"
+                                    strokeDasharray="5 5"
+                                    strokeWidth={1.5}
+                                    label={{
+                                      value: `은퇴 ${profileRetirementAge}세`,
+                                      position: "top",
+                                      fill: "#6b7280",
+                                      fontSize: 11,
+                                      fontWeight: 600,
+                                    }}
+                                  />
+                                )}
+                              {/* 목표 자산 참조선 */}
+                              {targetAssetGoal !== null &&
+                                !Number.isNaN(targetAssetGoal) && (
+                                  <ReferenceLine
+                                    y={targetAssetGoal}
+                                    stroke="#f59e0b"
+                                    strokeDasharray="5 5"
+                                    strokeWidth={2}
+                                    label={{
+                                      value: `목표: ${formatAmountForChart(targetAssetGoal)}`,
+                                      position: "right",
+                                      fill: "#f59e0b",
+                                      fontSize: 11,
+                                    }}
+                                  />
+                                )}
+                              {sortedSelectedSimulationIds.map(
+                                (simId, index) => (
+                                  <Line
+                                    key={simId}
+                                    type="monotone"
+                                    dataKey={simId}
+                                    name={getSimulationTitle(simId)}
+                                    stroke={
+                                      simulationColors[
+                                        index % simulationColors.length
+                                      ]
+                                    }
+                                    strokeWidth={2}
+                                    dot={false}
+                                    activeDot={{
+                                      r: 3,
+                                      strokeWidth: 0,
+                                      fill: simulationColors[
+                                        index % simulationColors.length
+                                      ],
+                                    }}
+                                    connectNulls
+                                  />
+                                )
+                              )}
+                            </LineChart>
+                          </ResponsiveContainer>
+                          {/* 시뮬레이션 색상 범례 */}
+                          <div className={styles.chartLegend}>
+                            {sortedSelectedSimulationIds.map((simId, index) => (
+                              <div key={simId} className={styles.legendItem}>
+                                <span
+                                  className={styles.legendLine}
+                                  style={{
+                                    backgroundColor:
+                                      simulationColors[index % simulationColors.length],
+                                  }}
+                                />
+                                <span className={styles.legendLabel}>
+                                  {getSimulationTitle(simId)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className={styles.summaryTable}>
                         <div
                           className={`${styles.summaryRow} ${styles.summaryHeaderNetworth}`}

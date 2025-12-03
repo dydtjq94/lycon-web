@@ -558,6 +558,81 @@
   font-size: 1.1rem;
 }
 
+/* 생애 자금 수급/수요 비교 차트 래퍼 */
+.cashflowChartsWrapper {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cashflowChartItem {
+  flex: 1;
+  min-width: 0;
+}
+
+.cashflowChartTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+}
+
+.cashflowChartItem :global(.recharts-legend-item-text) {
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+/* 차트 범례 (시뮬레이션별 색상 표시) */
+.chartLegend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legendLine {
+  width: 24px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* 순자산 비교 라인 차트 컨테이너 */
+.netWorthChartContainer {
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.netWorthChartContainer :global(.recharts-legend-item-text) {
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.netWorthChartContainer :global(.recharts-tooltip-label) {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
 .positive {
   color: #0f766e;
 }
