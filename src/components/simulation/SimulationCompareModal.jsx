@@ -171,6 +171,9 @@ function SimulationCompareModal({
   // 메인 탭 상태 (기본값: 생애 자금)
   const [activeTab, setActiveTab] = useState("cashflow");
 
+  // 순자산 차트 기간 필터 상태 (기본값: 전체)
+  const [netWorthPeriod, setNetWorthPeriod] = useState("all");
+
   // 재무 데이터 수정 모달 상태
   const [editModal, setEditModal] = useState({
     isOpen: false,
@@ -2466,6 +2469,33 @@ function SimulationCompareModal({
     });
   }, [simulationsAssetsTimeline, sortedSelectedSimulationIds]);
 
+  // 기간 필터링된 순자산 차트 데이터
+  const filteredNetWorthChartData = useMemo(() => {
+    if (!fullNetWorthChartData || fullNetWorthChartData.length === 0) {
+      return [];
+    }
+
+    // 현재 나이와 은퇴 나이 확인
+    const currentAge = startAge;
+    const retirementAge = profileRetirementAge;
+
+    switch (netWorthPeriod) {
+      case "toRetirement": // 현재 ~ 은퇴 시점
+        if (currentAge === null || retirementAge === null) return fullNetWorthChartData;
+        return fullNetWorthChartData.filter(
+          (d) => d.age >= currentAge && d.age <= retirementAge
+        );
+      case "afterRetirement": // 은퇴 시점 ~ 90세
+        if (retirementAge === null) return fullNetWorthChartData;
+        return fullNetWorthChartData.filter(
+          (d) => d.age >= retirementAge && d.age <= 90
+        );
+      case "all": // 전체
+      default:
+        return fullNetWorthChartData;
+    }
+  }, [fullNetWorthChartData, netWorthPeriod, startAge, profileRetirementAge]);
+
   // 모달이 열릴 때 토글을 모두 열린 상태로 초기화
   useEffect(() => {
     if (!isOpen) return;
@@ -3355,14 +3385,37 @@ function SimulationCompareModal({
                 <>
                   {netWorthRows.length > 0 && (
                     <div className={styles.netWorthSection}>
-                      <h4 className={styles.netWorthTitle}>시점별 순자산</h4>
+                      <div className={styles.netWorthHeader}>
+                        <h4 className={styles.netWorthTitle}>시점별 순자산</h4>
+                        {/* 기간 필터 탭 */}
+                        <div className={styles.periodTabs}>
+                          <button
+                            className={`${styles.periodTab} ${netWorthPeriod === "all" ? styles.periodTabActive : ""}`}
+                            onClick={() => setNetWorthPeriod("all")}
+                          >
+                            전체
+                          </button>
+                          <button
+                            className={`${styles.periodTab} ${netWorthPeriod === "toRetirement" ? styles.periodTabActive : ""}`}
+                            onClick={() => setNetWorthPeriod("toRetirement")}
+                          >
+                            현재 ~ 은퇴
+                          </button>
+                          <button
+                            className={`${styles.periodTab} ${netWorthPeriod === "afterRetirement" ? styles.periodTabActive : ""}`}
+                            onClick={() => setNetWorthPeriod("afterRetirement")}
+                          >
+                            은퇴 ~ 90세
+                          </button>
+                        </div>
+                      </div>
 
                       {/* 전체 연도별 순자산 비교 라인 차트 */}
-                      {fullNetWorthChartData.length > 0 && (
+                      {filteredNetWorthChartData.length > 0 && (
                         <div className={styles.netWorthChartContainer}>
                           <ResponsiveContainer width="100%" height={300}>
                             <LineChart
-                              data={fullNetWorthChartData}
+                              data={filteredNetWorthChartData}
                               margin={{
                                 top: 20,
                                 right: 30,

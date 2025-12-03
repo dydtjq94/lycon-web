@@ -2320,16 +2320,21 @@ function DashboardPage() {
     const { category } = templateData;
 
     // 카테고리에 따라 적절한 모달 열기
+    // 각 카테고리에서 editing 상태를 초기화하여 이전 수정 데이터가 남아있지 않도록 함
     if (category === "income") {
+      setEditingIncome(null);
       setInitialIncomeData(templateData);
       setIsIncomeModalOpen(true);
     } else if (category === "expense") {
+      setEditingExpense(null);
       setInitialExpenseData(templateData);
       setIsExpenseModalOpen(true);
     } else if (category === "saving") {
+      setEditingSaving(null);
       setInitialSavingData(templateData);
       setIsSavingModalOpen(true);
     } else if (category === "pension") {
+      setEditingPension(null);
       setInitialPensionData(templateData);
       setIsPensionModalOpen(true);
     }
