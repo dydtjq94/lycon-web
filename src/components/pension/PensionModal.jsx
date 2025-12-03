@@ -333,34 +333,36 @@ function PensionModal({
           noAdditionalContribution: editData.noAdditionalContribution || false,
         });
       } else if (initialData) {
-        // 복사 모드: 복사된 데이터로 초기화 (id 제외)
+        // 복사 모드 또는 재무 라이브러리 템플릿: 데이터로 초기화 (id 제외)
+        // 재무 라이브러리 템플릿의 필드명 호환 처리
+        const contributionAmt =
+          initialData.contributionAmount !== undefined
+            ? initialData.contributionAmount
+            : initialData.monthlyContribution; // 템플릿에서는 monthlyContribution 사용
+
+        // 숫자 값 포맷팅 헬퍼
+        const formatNumber = (val) => {
+          if (val === undefined || val === null) return "";
+          if (typeof val === "number") return val.toString();
+          return val;
+        };
+        const formatRate = (val, defaultVal) => {
+          if (val === undefined || val === null) return defaultVal;
+          if (typeof val === "number") return val.toFixed(2);
+          return val.toString();
+        };
+
         setFormData({
           type: initialData.type || "national",
           title: initialData.title || "",
-          monthlyAmount:
-            initialData.monthlyAmount !== undefined &&
-            initialData.monthlyAmount !== null
-              ? initialData.monthlyAmount.toString()
-              : "",
+          monthlyAmount: formatNumber(initialData.monthlyAmount),
           startYear: initialData.startYear || new Date().getFullYear(),
           startMonth: initialData.startMonth || 1,
           endYear: initialData.endYear || new Date().getFullYear() + 20,
           endMonth: initialData.endMonth || 12,
-          inflationRate:
-            initialData.inflationRate !== undefined &&
-            initialData.inflationRate !== null
-              ? initialData.inflationRate.toFixed(2)
-              : 1.89,
-          currentAmount:
-            initialData.currentAmount !== undefined &&
-            initialData.currentAmount !== null
-              ? initialData.currentAmount.toString()
-              : "",
-          contributionAmount:
-            initialData.contributionAmount !== undefined &&
-            initialData.contributionAmount !== null
-              ? initialData.contributionAmount.toString()
-              : "",
+          inflationRate: formatRate(initialData.inflationRate, 1.89),
+          currentAmount: formatNumber(initialData.currentAmount),
+          contributionAmount: formatNumber(contributionAmt),
           contributionFrequency: initialData.contributionFrequency || "monthly",
           contributionStartYear:
             initialData.contributionStartYear || new Date().getFullYear(),
@@ -368,10 +370,7 @@ function PensionModal({
           contributionEndYear:
             initialData.contributionEndYear || new Date().getFullYear() + 10,
           contributionEndMonth: initialData.contributionEndMonth || 12,
-          returnRate:
-            initialData.returnRate !== undefined
-              ? initialData.returnRate.toFixed(2)
-              : 2.86,
+          returnRate: formatRate(initialData.returnRate, 2.86),
           paymentStartYear:
             initialData.paymentStartYear || getRetirementYear() + 1,
           paymentStartMonth: initialData.paymentStartMonth || 1,
@@ -383,16 +382,8 @@ function PensionModal({
           memo: initialData.memo || "",
           isFixedContributionEndYearToRetirement:
             initialData.isFixedContributionEndYearToRetirement || false,
-          averageSalary:
-            initialData.averageSalary !== undefined &&
-            initialData.averageSalary !== null
-              ? initialData.averageSalary.toString()
-              : "",
-          yearsOfService:
-            initialData.yearsOfService !== undefined &&
-            initialData.yearsOfService !== null
-              ? initialData.yearsOfService.toString()
-              : "",
+          averageSalary: formatNumber(initialData.averageSalary),
+          yearsOfService: formatNumber(initialData.yearsOfService),
           noAdditionalContribution:
             initialData.noAdditionalContribution || false,
         });

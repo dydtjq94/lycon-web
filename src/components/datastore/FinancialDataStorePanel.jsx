@@ -21,7 +21,8 @@ function FinancialDataStorePanel({
 }) {
   const [templates, setTemplates] = useState([]); // 모든 템플릿
   const [loading, setLoading] = useState(true);
-  const [selectedMainCategory, setSelectedMainCategory] = useState("income_expense"); // 메인 카테고리: income_expense, saving
+  const [selectedMainCategory, setSelectedMainCategory] =
+    useState("income_expense"); // 메인 카테고리: income_expense, saving
   const [selectedFamilyType, setSelectedFamilyType] = useState("self"); // 선택된 가족 구성원 타입
   const [selectedSubCategory, setSelectedSubCategory] = useState("all"); // 소득/지출 내 세부 카테고리
   const [selectedFamilyMember, setSelectedFamilyMember] = useState(null); // 선택된 가족 구성원 (자녀/부모)
@@ -30,6 +31,7 @@ function FinancialDataStorePanel({
   const mainCategories = [
     { value: "income_expense", label: "소득/지출" },
     { value: "saving", label: "저축/투자" },
+    { value: "pension", label: "연금" },
   ];
 
   // 소득/지출 세부 카테고리
@@ -112,6 +114,11 @@ function FinancialDataStorePanel({
         if (template.category !== "saving") {
           return false;
         }
+      } else if (selectedMainCategory === "pension") {
+        // 연금 선택 시: pension 카테고리만 표시
+        if (template.category !== "pension") {
+          return false;
+        }
       }
 
       return true;
@@ -139,6 +146,7 @@ function FinancialDataStorePanel({
     if (category === "income") return "소득";
     if (category === "expense") return "지출";
     if (category === "saving") return "저축/투자";
+    if (category === "pension") return "연금";
     return category;
   };
 
@@ -203,6 +211,18 @@ function FinancialDataStorePanel({
       const templateData = {
         category,
         ...data, // 저축/투자 모달의 모든 필드를 그대로 전달
+        title: template.title, // 템플릿 제목 그대로 사용
+      };
+
+      onSelectTemplate(templateData);
+      return;
+    }
+
+    // 연금 카테고리일 때도 저축/투자와 동일하게 처리
+    if (category === "pension") {
+      const templateData = {
+        category,
+        ...data, // 연금 모달의 모든 필드를 그대로 전달
         title: template.title, // 템플릿 제목 그대로 사용
       };
 
@@ -311,13 +331,15 @@ function FinancialDataStorePanel({
     // 템플릿의 금액은 "현재 가치" 기준이므로, 시작년도까지의 상승률을 복리로 적용
     let adjustedAmount = data.amount;
     const yearsUntilStart = startYear - currentYear;
-    
+
     if (yearsUntilStart > 0) {
       // 카테고리별 상승률 설정
       const inflationRate = category === "income" ? 0.033 : 0.0189; // 소득 3.3%, 지출 1.89%
-      
+
       // 복리 계산: 금액 × (1 + 상승률)^년수, 반올림하여 정수로
-      adjustedAmount = Math.round(data.amount * Math.pow(1 + inflationRate, yearsUntilStart));
+      adjustedAmount = Math.round(
+        data.amount * Math.pow(1 + inflationRate, yearsUntilStart)
+      );
     }
 
     // 모달에 전달할 데이터 준비
@@ -430,7 +452,9 @@ function FinancialDataStorePanel({
           </div>
 
           {/* 가족 구성원 선택 (아들/딸/부/모만) */}
-          {["son", "daughter", "father", "mother"].includes(selectedFamilyType) &&
+          {["son", "daughter", "father", "mother"].includes(
+            selectedFamilyType
+          ) &&
             availableFamilyMembers.length > 0 && (
               <div className={styles.familyMemberSelector}>
                 <div className={styles.memberButtons}>
@@ -474,7 +498,9 @@ function FinancialDataStorePanel({
               <button
                 key={cat.value}
                 className={`${styles.categoryButton} ${
-                  selectedSubCategory === cat.value ? styles.activeCategoryButton : ""
+                  selectedSubCategory === cat.value
+                    ? styles.activeCategoryButton
+                    : ""
                 }`}
                 onClick={() => setSelectedSubCategory(cat.value)}
               >
@@ -489,44 +515,20 @@ function FinancialDataStorePanel({
       <div className={styles.content}>
         {Object.keys(groupedTemplates).length === 0 ? (
           <div className={styles.emptyState}>
-            {selectedMainCategory === "saving" ? (
-              <>
-                <span className={styles.emptyIcon}>💰</span>
-                <span className={styles.emptyText}>
-                  저축/투자 라이브러리가 비었습니다
-                </span>
-                <span className={styles.emptySubText}>
-                  관리 모드에서 저축/투자 템플릿을 추가해보세요
-                </span>
-              </>
-            ) : selectedSubCategory === "income" ? (
-              <>
-                <span className={styles.emptyIcon}>💰</span>
-                <span className={styles.emptyText}>
-                  소득 라이브러리가 비었습니다
-                </span>
-                <span className={styles.emptySubText}>
-                  관리 모드에서 소득 템플릿을 추가해보세요
-                </span>
-              </>
-            ) : selectedSubCategory === "expense" ? (
-              <>
-                <span className={styles.emptyIcon}>💸</span>
-                <span className={styles.emptyText}>
-                  지출 라이브러리가 비었습니다
-                </span>
-                <span className={styles.emptySubText}>
-                  관리 모드에서 지출 템플릿을 추가해보세요
-                </span>
-              </>
-            ) : (
-              <>
-                <span className={styles.emptyIcon}>📋</span>
-                <span className={styles.emptyText}>
-                  선택된 조건에 맞는 템플릿이 없습니다
-                </span>
-              </>
-            )}
+            <span className={styles.emptyText}>
+              {selectedMainCategory === "saving"
+                ? "저축/투자 라이브러리가 비었습니다"
+                : selectedMainCategory === "pension"
+                ? "연금 라이브러리가 비었습니다"
+                : selectedSubCategory === "income"
+                ? "소득 라이브러리가 비었습니다"
+                : selectedSubCategory === "expense"
+                ? "지출 라이브러리가 비었습니다"
+                : "선택된 조건에 맞는 템플릿이 없습니다"}
+            </span>
+            <span className={styles.emptySubText}>
+              관리 모드에서 템플릿을 추가해보세요
+            </span>
           </div>
         ) : (
           Object.keys(groupedTemplates).map((category) => (
@@ -539,6 +541,8 @@ function FinancialDataStorePanel({
                     ? styles.categoryTitleExpense
                     : category === "saving"
                     ? styles.categoryTitleSaving
+                    : category === "pension"
+                    ? styles.categoryTitlePension
                     : ""
                 }`}
               >
@@ -556,6 +560,8 @@ function FinancialDataStorePanel({
                           ? styles.itemRowExpense
                           : template.category === "saving"
                           ? styles.itemRowSaving
+                          : template.category === "pension"
+                          ? styles.itemRowPension
                           : ""
                       }`}
                       onClick={() => handleSelectTemplate(template)}
@@ -571,6 +577,7 @@ function FinancialDataStorePanel({
                               {template.ageStart}~{template.ageEnd}세
                             </span>
                           ) : null}
+                          {/* 소득/지출 금액 표시 */}
                           {template.data?.amount && (
                             <span className={styles.itemAmount}>
                               {template.data.amount.toLocaleString()}만원/
@@ -579,6 +586,22 @@ function FinancialDataStorePanel({
                                 : "년"}
                             </span>
                           )}
+                          {/* 연금 금액 표시 */}
+                          {template.category === "pension" &&
+                            template.data?.monthlyAmount && (
+                              <span className={styles.itemAmount}>
+                                {template.data.monthlyAmount.toLocaleString()}
+                                만원/월
+                              </span>
+                            )}
+                          {template.category === "pension" &&
+                            template.data?.currentAmount && (
+                              <span className={styles.itemAmount}>
+                                적립금{" "}
+                                {template.data.currentAmount.toLocaleString()}
+                                만원
+                              </span>
+                            )}
                         </div>
                       </div>
                     </div>

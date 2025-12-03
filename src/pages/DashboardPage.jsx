@@ -276,7 +276,10 @@ function DashboardPage() {
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isAIOptionModalOpen, setIsAIOptionModalOpen] = useState(false); // AI 옵션 선택 모달
-  const [aiPrompts, setAiPrompts] = useState({ singlePrompt: "", comparePrompt: "" }); // AI 프롬프트 설정값
+  const [aiPrompts, setAiPrompts] = useState({
+    singlePrompt: "",
+    comparePrompt: "",
+  }); // AI 프롬프트 설정값
   const [isSavingPrompts, setIsSavingPrompts] = useState(false); // 프롬프트 저장 중
   const [isRateAdjustModalOpen, setIsRateAdjustModalOpen] = useState(false); // 상승률 일괄 조절 모달
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // 사이드바 접기/펼치기 상태
@@ -2326,6 +2329,9 @@ function DashboardPage() {
     } else if (category === "saving") {
       setInitialSavingData(templateData);
       setIsSavingModalOpen(true);
+    } else if (category === "pension") {
+      setInitialPensionData(templateData);
+      setIsPensionModalOpen(true);
     }
   };
 
@@ -2963,10 +2969,10 @@ ${JSON.stringify(currentAnalysisData, null, 2)}`;
         // AI 분석용 프롬프트와 데이터를 함께 구성 (Firebase에서 불러온 프롬프트 사용)
         promptText = `**분석 대상 시뮬레이션: ${simulationTitle}**
 
-${aiPrompts.singlePrompt}
+        ${aiPrompts.singlePrompt}
 
-## 재무 데이터
-${JSON.stringify(analysisData, null, 2)}`;
+        ## 재무 데이터
+        ${JSON.stringify(analysisData, null, 2)}`;
 
         // Mixpanel 이벤트 트래킹 - 성공 (단일 분석)
         trackEvent("AI 데이터 추출 성공", {
@@ -3897,14 +3903,24 @@ ${JSON.stringify(analysisData, null, 2)}`;
           for (const item of updatedIncomes) {
             const original = incomes.find((i) => i.id === item.id);
             if (original && original.growthRate !== item.growthRate) {
-              await incomeService.updateIncome(profileId, activeSimulationId, item.id, { ...item });
+              await incomeService.updateIncome(
+                profileId,
+                activeSimulationId,
+                item.id,
+                { ...item }
+              );
             }
           }
           // 지출 업데이트
           for (const item of updatedExpenses) {
             const original = expenses.find((i) => i.id === item.id);
             if (original && original.growthRate !== item.growthRate) {
-              await expenseService.updateExpense(profileId, activeSimulationId, item.id, { ...item });
+              await expenseService.updateExpense(
+                profileId,
+                activeSimulationId,
+                item.id,
+                { ...item }
+              );
             }
           }
           // 저축/투자 업데이트
@@ -3916,28 +3932,48 @@ ${JSON.stringify(analysisData, null, 2)}`;
                 original.yearlyGrowthRate !== item.yearlyGrowthRate ||
                 original.incomeRate !== item.incomeRate)
             ) {
-              await savingsService.updateSaving(profileId, activeSimulationId, item.id, { ...item });
+              await savingsService.updateSaving(
+                profileId,
+                activeSimulationId,
+                item.id,
+                { ...item }
+              );
             }
           }
           // 부동산 업데이트
           for (const item of updatedRealEstates) {
             const original = realEstates.find((i) => i.id === item.id);
             if (original && original.growthRate !== item.growthRate) {
-              await realEstateService.updateRealEstate(profileId, activeSimulationId, item.id, { ...item });
+              await realEstateService.updateRealEstate(
+                profileId,
+                activeSimulationId,
+                item.id,
+                { ...item }
+              );
             }
           }
           // 자산 업데이트
           for (const item of updatedAssets) {
             const original = assets.find((i) => i.id === item.id);
             if (original && original.growthRate !== item.growthRate) {
-              await assetService.updateAsset(profileId, activeSimulationId, item.id, { ...item });
+              await assetService.updateAsset(
+                profileId,
+                activeSimulationId,
+                item.id,
+                { ...item }
+              );
             }
           }
           // 부채 업데이트
           for (const item of updatedDebts) {
             const original = debts.find((i) => i.id === item.id);
             if (original && original.interestRate !== item.interestRate) {
-              await debtService.updateDebt(profileId, activeSimulationId, item.id, { ...item });
+              await debtService.updateDebt(
+                profileId,
+                activeSimulationId,
+                item.id,
+                { ...item }
+              );
             }
           }
           // 연금 업데이트
@@ -3945,12 +3981,28 @@ ${JSON.stringify(analysisData, null, 2)}`;
             const original = pensions.find((i) => i.id === item.id);
             if (original) {
               // 국민연금: inflationRate 비교
-              if (item.type === "national" && original.inflationRate !== item.inflationRate) {
-                await pensionService.updatePension(profileId, activeSimulationId, item.id, { ...item });
+              if (
+                item.type === "national" &&
+                original.inflationRate !== item.inflationRate
+              ) {
+                await pensionService.updatePension(
+                  profileId,
+                  activeSimulationId,
+                  item.id,
+                  { ...item }
+                );
               }
               // 퇴직/개인/퇴직금: returnRate 비교
-              else if (item.type !== "national" && original.returnRate !== item.returnRate) {
-                await pensionService.updatePension(profileId, activeSimulationId, item.id, { ...item });
+              else if (
+                item.type !== "national" &&
+                original.returnRate !== item.returnRate
+              ) {
+                await pensionService.updatePension(
+                  profileId,
+                  activeSimulationId,
+                  item.id,
+                  { ...item }
+                );
               }
             }
           }
@@ -4123,13 +4175,34 @@ const AIPromptModal = React.memo(function AIPromptModal({
   onExtractCompare,
   canCompare,
 }) {
-  const [singlePrompt, setSinglePrompt] = useState(aiPrompts.singlePrompt || "");
-  const [comparePrompt, setComparePrompt] = useState(aiPrompts.comparePrompt || "");
+  const [singlePrompt, setSinglePrompt] = useState(
+    aiPrompts.singlePrompt || ""
+  );
+  const [comparePrompt, setComparePrompt] = useState(
+    aiPrompts.comparePrompt || ""
+  );
 
   useEffect(() => {
     setSinglePrompt(aiPrompts.singlePrompt || "");
     setComparePrompt(aiPrompts.comparePrompt || "");
   }, [aiPrompts.singlePrompt, aiPrompts.comparePrompt]);
+
+  // 모달 열릴 때 배경 스크롤 막기
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
 
   const handleSave = () => {
     onSave({ singlePrompt, comparePrompt });
@@ -4140,10 +4213,7 @@ const AIPromptModal = React.memo(function AIPromptModal({
       <div className={styles.aiOptionModal}>
         <div className={styles.aiOptionHeader}>
           <h3 className={styles.aiOptionTitle}>AI 데이터 추출 옵션</h3>
-          <button
-            className={styles.aiOptionCloseButton}
-            onClick={onClose}
-          >
+          <button className={styles.aiOptionCloseButton} onClick={onClose}>
             ×
           </button>
         </div>
@@ -4157,7 +4227,14 @@ const AIPromptModal = React.memo(function AIPromptModal({
                   onClick={onExtractSingle}
                   disabled={isGeneratingAI}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                     <line x1="12" y1="18" x2="12" y2="12" />
@@ -4166,7 +4243,9 @@ const AIPromptModal = React.memo(function AIPromptModal({
                   해당 시뮬레이션만 추출
                 </button>
                 <div className={styles.aiPromptField}>
-                  <label className={styles.aiPromptLabel}>단일 분석 프롬프트</label>
+                  <label className={styles.aiPromptLabel}>
+                    단일 분석 프롬프트
+                  </label>
                   <textarea
                     className={styles.aiPromptTextarea}
                     value={singlePrompt}
@@ -4183,7 +4262,14 @@ const AIPromptModal = React.memo(function AIPromptModal({
                   onClick={onExtractCompare}
                   disabled={isGeneratingAI || !canCompare}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                     <path d="M9 15h6" />
@@ -4191,7 +4277,9 @@ const AIPromptModal = React.memo(function AIPromptModal({
                   기본 시뮬레이션과 비교 추출
                 </button>
                 <div className={styles.aiPromptField}>
-                  <label className={styles.aiPromptLabel}>비교 분석 프롬프트</label>
+                  <label className={styles.aiPromptLabel}>
+                    비교 분석 프롬프트
+                  </label>
                   <textarea
                     className={styles.aiPromptTextarea}
                     value={comparePrompt}
@@ -4204,10 +4292,7 @@ const AIPromptModal = React.memo(function AIPromptModal({
           </div>
         </div>
         <div className={styles.aiOptionFooter}>
-          <button
-            className={styles.aiOptionCancelButton}
-            onClick={onClose}
-          >
+          <button className={styles.aiOptionCancelButton} onClick={onClose}>
             닫기
           </button>
           <button
