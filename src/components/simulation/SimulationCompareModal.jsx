@@ -2839,22 +2839,74 @@ function SimulationCompareModal({
                                 width={70}
                               />
                               <Tooltip
-                                formatter={(value) => [
-                                  formatAmountForChart(value),
-                                  "자금 공급",
-                                ]}
-                                contentStyle={{
-                                  backgroundColor: "#ffffff",
-                                  border: "1px solid #e5e7eb",
-                                  borderRadius: "8px",
-                                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                                  padding: "8px 12px",
-                                  fontSize: "0.85rem",
-                                }}
-                                labelStyle={{
-                                  fontWeight: 600,
-                                  marginBottom: "4px",
-                                  color: "#374151",
+                                content={({ active, payload }) => {
+                                  if (!active || !payload || payload.length === 0) return null;
+                                  const data = payload[0]?.payload;
+                                  if (!data) return null;
+                                  const simIndex = cashflowChartData.findIndex(d => d.simId === data.simId);
+                                  const color = simulationColors[simIndex % simulationColors.length];
+                                  return (
+                                    <div
+                                      style={{
+                                        backgroundColor: "#ffffff",
+                                        border: "none",
+                                        borderRadius: "12px",
+                                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)",
+                                        padding: "14px 18px",
+                                        minWidth: "180px",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontWeight: 700,
+                                          color: "#1e293b",
+                                          fontSize: "0.9rem",
+                                          marginBottom: "10px",
+                                          paddingBottom: "8px",
+                                          borderBottom: "1px solid #e5e7eb",
+                                        }}
+                                      >
+                                        자금 공급
+                                      </div>
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: "10px",
+                                          padding: "5px 0",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            width: "10px",
+                                            height: "10px",
+                                            borderRadius: "2px",
+                                            backgroundColor: color,
+                                            flexShrink: 0,
+                                          }}
+                                        />
+                                        <span
+                                          style={{
+                                            flex: 1,
+                                            fontSize: "0.85rem",
+                                            fontWeight: 500,
+                                            color: "#64748b",
+                                          }}
+                                        >
+                                          {data.name}
+                                        </span>
+                                        <span
+                                          style={{
+                                            fontSize: "0.9rem",
+                                            fontWeight: 600,
+                                            color: color,
+                                          }}
+                                        >
+                                          {formatAmountForChart(data.supply)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
                                 }}
                               />
                               <Bar dataKey="supply" name="자금 공급" radius={[4, 4, 0, 0]}>
