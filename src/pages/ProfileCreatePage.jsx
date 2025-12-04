@@ -15,6 +15,7 @@ import { simulationService } from "../services/simulationService";
 import { formatAmountForChart } from "../utils/format";
 import { buildChecklistTemplateItems } from "../constants/profileChecklist";
 import { identifyUser, setUserProperties, trackEvent } from "../libs/mixpanel";
+import { useAuth } from "../contexts/AuthContext";
 import styles from "./ProfileCreatePage.module.css";
 
 /**
@@ -23,6 +24,8 @@ import styles from "./ProfileCreatePage.module.css";
  */
 function ProfileCreatePage() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const [createMode, setCreateMode] = useState("onboarding"); // "onboarding" | "skip"
   const [formData, setFormData] = useState({
     name: "",
     birthYear: "",
@@ -844,6 +847,40 @@ function ProfileCreatePage() {
     }
   };
 
+  // 온보딩 링크 생성 및 복사
+  const handleCreateOnboardingLink = async () => {
+    setIsSubmitting(true);
+    try {
+      // 최소한의 정보로 프로필 생성
+      const profileData = {
+        name: formData.name.trim() || "새 내담자",
+        status: "온보딩중",
+        onboardingCompleted: false,
+        createdAt: new Date().toISOString(),
+      };
+
+      const createdProfile = await profileService.createProfile(profileData);
+
+      // 온보딩 링크 생성
+      const onboardingLink = `${window.location.origin}/onboarding/${createdProfile.id}`;
+
+      // 클립보드에 복사
+      await navigator.clipboard.writeText(onboardingLink);
+
+      trackEvent("온보딩 링크 생성", {
+        profileId: createdProfile.id,
+      });
+
+      alert(`온보딩 링크가 클립보드에 복사되었습니다!\n\n${onboardingLink}\n\n이 링크를 내담자에게 공유하세요.`);
+      navigate("/consult");
+    } catch (error) {
+      console.error("온보딩 링크 생성 오류:", error);
+      setErrors({ form: "온보딩 링크 생성 중 오류가 발생했습니다." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -857,6 +894,82 @@ function ProfileCreatePage() {
         <h1 className={styles.title}>새 프로필 생성</h1>
       </div>
 
+      {/* 관리자 모드 선택 */}
+      {isAdmin && (
+        <div className={styles.modeSelector}>
+          <button
+            type="button"
+            className={`${styles.modeButton} ${createMode === "onboarding" ? styles.modeButtonActive : ""}`}
+            onClick={() => setCreateMode("onboarding")}
+          >
+            <span className={styles.modeIcon}>📧</span>
+            <span className={styles.modeLabel}>내담자에게 링크 보내기</span>
+            <span className={styles.modeDesc}>내담자가 직접 정보 입력</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.modeButton} ${createMode === "skip" ? styles.modeButtonActive : ""}`}
+            onClick={() => setCreateMode("skip")}
+          >
+            <span className={styles.modeIcon}>⚡</span>
+            <span className={styles.modeLabel}>직접 입력하기</span>
+            <span className={styles.modeDesc}>관리자가 바로 정보 입력</span>
+          </button>
+        </div>
+      )}
+
+      {/* 온보딩 모드: 링크 생성 */}
+      {createMode === "onboarding" && (
+        <div className={styles.onboardingMode}>
+          <div className={styles.onboardingCard}>
+            <h2 className={styles.onboardingTitle}>내담자에게 온보딩 링크 보내기</h2>
+            <p className={styles.onboardingDesc}>
+              링크를 생성하여 내담자에게 공유하면,<br />
+              내담자가 직접 재무 정보를 입력하고 시뮬레이션을 받을 수 있습니다.
+            </p>
+
+            <div className={styles.onboardingSteps}>
+              <div className={styles.onboardingStep}>
+                <span className={styles.stepNum}>1</span>
+                <span>아래 버튼을 눌러 링크 생성</span>
+              </div>
+              <div className={styles.onboardingStep}>
+                <span className={styles.stepNum}>2</span>
+                <span>링크를 내담자에게 카카오톡/문자로 전송</span>
+              </div>
+              <div className={styles.onboardingStep}>
+                <span className={styles.stepNum}>3</span>
+                <span>내담자가 정보 입력 완료 후 자동으로 대시보드 생성</span>
+              </div>
+            </div>
+
+            <div className={styles.field} style={{ maxWidth: "300px", margin: "1.5rem auto 0" }}>
+              <label className={styles.label}>내담자 이름 (선택)</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className={styles.input}
+                placeholder="홍길동"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <button
+              type="button"
+              className={styles.onboardingButton}
+              onClick={handleCreateOnboardingLink}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "생성 중..." : "온보딩 링크 생성 & 복사"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 직접 입력 모드: 기존 폼 */}
+      {createMode === "skip" && (
       <div className={styles.formContainer}>
         <form onSubmit={handleSubmit} className={styles.form}>
           {errors.form && (
@@ -1643,6 +1756,7 @@ function ProfileCreatePage() {
           </div>
         </form>
       </div>
+      )}
     </div>
   );
 }

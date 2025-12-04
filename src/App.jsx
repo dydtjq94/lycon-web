@@ -11,6 +11,7 @@ import DashboardPage from "./pages/DashboardPage";
 import PreConsultPage from "./pages/PreConsultPage";
 import ReportSelectionPage from "./pages/ReportSelectionPage";
 import ReportPage from "./pages/ReportPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import VersionDisplay from "./components/common/VersionDisplay";
 import UpdateBanner from "./components/common/UpdateBanner";
@@ -30,6 +31,8 @@ import "./App.css";
  * /consult/dashboard/:id - 프로필별 대시보드 - 로그인 불필요 (view-only 모드 가능)
  * /consult/report/:id - 보고서 타입 선택 페이지 - 로그인 불필요
  * /consult/report/:id/view - 프로필별 상담 보고서 - 로그인 불필요 (view-only 모드 가능)
+ * /onboarding - 새 내담자 온보딩 (프로필 생성)
+ * /onboarding/:profileId - 기존 프로필 온보딩 이어하기
  */
 function App() {
   return (
@@ -59,12 +62,12 @@ function App() {
               }
             />
 
-            {/* 새 프로필 생성 페이지 - 로그인 필요 */}
+            {/* 새 프로필 생성 페이지 - 로그인 필요 (온보딩 통합) */}
             <Route
               path="/consult/create"
               element={
                 <ProtectedRoute>
-                  <ProfileCreatePage />
+                  <OnboardingPage isAdminCreate={true} />
                 </ProtectedRoute>
               }
             />
@@ -96,6 +99,10 @@ function App() {
               path="/consult/report/:profileId/view"
               element={<ReportPage />}
             />
+
+            {/* 내담자 온보딩 페이지 - 로그인 불필요 */}
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/onboarding/:profileId" element={<OnboardingPage />} />
           </Routes>
 
           {/* 버전 표시 (개발자용) */}

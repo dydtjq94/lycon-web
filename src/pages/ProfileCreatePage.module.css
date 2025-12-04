@@ -429,8 +429,179 @@
   outline: none;
 }
 
+/* ========== 모드 선택 UI ========== */
+.modeSelector {
+  display: flex;
+  gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+}
+
+.modeButton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modeButton:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.modeButtonActive {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.modeButtonActive:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.modeIcon {
+  font-size: 2rem;
+}
+
+.modeLabel {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.modeDesc {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+/* ========== 온보딩 모드 UI ========== */
+.onboardingMode {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+  flex: 1;
+}
+
+.onboardingCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 3rem;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.onboardingTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1rem 0;
+}
+
+.onboardingDesc {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0 0 2rem 0;
+}
+
+.onboardingSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.onboardingStep {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9375rem;
+  color: #374151;
+}
+
+.stepNum {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.onboardingButton {
+  margin-top: 1.5rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.onboardingButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.onboardingButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* 모바일 대응 */
 @media (max-width: 768px) {
+  .modeSelector {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .modeButton {
+    padding: 1rem;
+  }
+
+  .modeIcon {
+    font-size: 1.5rem;
+  }
+
+  .onboardingMode {
+    padding: 1rem;
+  }
+
+  .onboardingCard {
+    padding: 1.5rem;
+  }
+
+  .onboardingTitle {
+    font-size: 1.25rem;
+  }
+
   .header {
     padding: 1rem;
   }
