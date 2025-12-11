@@ -44,7 +44,8 @@ function OnboardingPage({ isAdminCreate = false }) {
   const [errors, setErrors] = useState({});
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
-  const [useClassicMode, setUseClassicMode] = useState(true); // 원래 버전 (한 페이지 폼) - 기본값
+  // 관리자는 한 페이지 폼, 유저(링크 접속)는 스텝 모드
+  const [useClassicMode, setUseClassicMode] = useState(isAdminMode);
 
   // 전체 폼 데이터
   const [formData, setFormData] = useState({

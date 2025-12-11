@@ -16,6 +16,7 @@
     "version:sync": "node scripts/update-firebase-version.cjs"
   },
   "dependencies": {
+    "@iconify/react": "^6.0.2",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.5",
     "firebase": "^12.4.0",

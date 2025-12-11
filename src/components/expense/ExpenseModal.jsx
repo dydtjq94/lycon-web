@@ -49,6 +49,10 @@ function ExpenseModal({
     isFixedToRetirementYear: false, // 은퇴년도 고정 여부
   });
 
+  // 세부 항목 상태
+  const [subItems, setSubItems] = useState([]);
+  const [showSubItems, setShowSubItems] = useState(false);
+
   const [errors, setErrors] = useState({});
   const [selectedSimulationIds, setSelectedSimulationIds] = useState([]);
   // 각 시뮬레이션이 수정인지 추가인지 상태 저장: { simId: 'update' | 'create' }
@@ -69,6 +73,39 @@ function ExpenseModal({
     profileData?.retirementAge,
     profileData?.birthYear,
   ]);
+
+  // 세부 항목 합계 계산
+  const calculateSubItemsTotal = (items) => {
+    return items.reduce((sum, item) => sum + (parseInt(item.amount) || 0), 0);
+  };
+
+  // 세부 항목이 있을 때 총액 자동 업데이트
+  useEffect(() => {
+    if (showSubItems && subItems.length > 0) {
+      const total = calculateSubItemsTotal(subItems);
+      setFormData((prev) => ({ ...prev, amount: total.toString() }));
+    }
+  }, [subItems, showSubItems]);
+
+  // 세부 항목 추가 (기본 성장률은 현재 설정된 물가 상승률)
+  const addSubItem = () => {
+    setSubItems((prev) => [
+      ...prev,
+      { id: Date.now(), name: "", amount: "", growthRate: formData.growthRate },
+    ]);
+  };
+
+  // 세부 항목 삭제
+  const removeSubItem = (id) => {
+    setSubItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // 세부 항목 수정
+  const updateSubItem = (id, field, value) => {
+    setSubItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
 
   // 수정 모드일 때 각 시뮬레이션에 해당 ID가 존재하는지 확인
   useEffect(() => {
@@ -196,6 +233,14 @@ function ExpenseModal({
             : "1.89",
           isFixedToRetirementYear: editData.isFixedToRetirementYear || false,
         });
+        // 세부 항목 로드
+        if (editData.subItems && editData.subItems.length > 0) {
+          setSubItems(editData.subItems);
+          setShowSubItems(true);
+        } else {
+          setSubItems([]);
+          setShowSubItems(false);
+        }
       } else if (initialData) {
         // 재무 라이브러리에서 선택된 템플릿 데이터로 초기화
         setFormData({
@@ -213,6 +258,14 @@ function ExpenseModal({
               : "1.89",
           isFixedToRetirementYear: initialData.isFixedToRetirementYear || false,
         });
+        // 세부 항목 로드
+        if (initialData.subItems && initialData.subItems.length > 0) {
+          setSubItems(initialData.subItems);
+          setShowSubItems(true);
+        } else {
+          setSubItems([]);
+          setShowSubItems(false);
+        }
       } else {
         // 새 데이터일 때 기본값
         setFormData({
@@ -227,6 +280,8 @@ function ExpenseModal({
           growthRate: defaultInflationRate,
           isFixedToRetirementYear: false,
         });
+        setSubItems([]);
+        setShowSubItems(false);
       }
     }
   }, [isOpen, editData, initialData, defaultInflationRate]);
@@ -308,6 +363,8 @@ function ExpenseModal({
           : activeSimulationId
           ? [activeSimulationId]
           : [],
+      // 세부 항목 저장 (활성화되어 있고 항목이 있을 때만)
+      subItems: showSubItems && subItems.length > 0 ? subItems : [],
     };
 
     // 수정 모드일 때는 id를 포함시켜야 함
@@ -336,6 +393,8 @@ function ExpenseModal({
       growthRate: defaultInflationRate,
       isFixedToRetirementYear: false,
     });
+    setSubItems([]);
+    setShowSubItems(false);
     setErrors({});
     onClose();
   };
@@ -397,6 +456,9 @@ function ExpenseModal({
             <div className={styles.field}>
               <label htmlFor="amount" className={styles.label}>
                 금액 (만원) *
+                {showSubItems && subItems.length > 0 && (
+                  <span className={styles.totalLabel}> (세부 항목 합계)</span>
+                )}
               </label>
               <input
                 type="text"
@@ -408,8 +470,9 @@ function ExpenseModal({
                 onKeyPress={handleKeyPress}
                 className={`${styles.input} ${
                   errors.amount ? styles.error : ""
-                }`}
+                } ${showSubItems && subItems.length > 0 ? styles.disabled : ""}`}
                 placeholder="예: 300"
+                readOnly={showSubItems && subItems.length > 0}
               />
               {formData.amount && !isNaN(parseInt(formData.amount)) && (
                 <div className={styles.amountPreview}>
@@ -421,6 +484,99 @@ function ExpenseModal({
               )}
             </div>
           </div>
+
+          {/* 세부 항목 토글 */}
+          <div className={styles.subItemsToggle}>
+            <label className={styles.fixedCheckboxLabel}>
+              <input
+                type="checkbox"
+                checked={showSubItems}
+                onChange={(e) => {
+                  setShowSubItems(e.target.checked);
+                  if (e.target.checked && subItems.length === 0) {
+                    addSubItem();
+                  }
+                }}
+                className={styles.fixedCheckbox}
+              />
+              <span className={styles.fixedCheckboxText}>세부 항목으로 입력</span>
+            </label>
+          </div>
+
+          {/* 세부 항목 리스트 */}
+          {showSubItems && (
+            <div className={styles.subItemsSection}>
+              <div className={styles.subItemsHeader}>
+                <span className={styles.subItemsHeaderName}>항목명</span>
+                <span className={styles.subItemsHeaderAmount}>금액</span>
+                <span className={styles.subItemsHeaderRate}>상승률</span>
+                <span className={styles.subItemsHeaderAction}></span>
+              </div>
+              <div className={styles.subItemsList}>
+                {subItems.map((item, index) => (
+                  <div key={item.id} className={styles.subItemRow}>
+                    <input
+                      type="text"
+                      value={item.name}
+                      onChange={(e) => updateSubItem(item.id, "name", e.target.value)}
+                      className={styles.subItemName}
+                      placeholder={`세부 항목 ${index + 1}`}
+                    />
+                    <div className={styles.subItemAmountWrapper}>
+                      <input
+                        type="text"
+                        value={item.amount}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "" || /^\d*$/.test(value)) {
+                            updateSubItem(item.id, "amount", value);
+                          }
+                        }}
+                        className={styles.subItemAmount}
+                        placeholder="금액"
+                      />
+                      <span className={styles.subItemUnit}>만원</span>
+                    </div>
+                    <div className={styles.subItemRateWrapper}>
+                      <input
+                        type="text"
+                        value={item.growthRate ?? formData.growthRate}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                            updateSubItem(item.id, "growthRate", value);
+                          }
+                        }}
+                        className={styles.subItemRate}
+                        placeholder="1.89"
+                      />
+                      <span className={styles.subItemUnit}>%</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSubItem(item.id)}
+                      className={styles.subItemRemove}
+                      title="삭제"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={addSubItem}
+                className={styles.addSubItemBtn}
+              >
+                + 세부 항목 추가
+              </button>
+              {subItems.length > 0 && (
+                <div className={styles.subItemsTotal}>
+                  합계: {formatAmountForChart(calculateSubItemsTotal(subItems))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 기간 */}
           <div className={styles.row}>
@@ -566,27 +722,29 @@ function ExpenseModal({
             </div>
           </div>
 
-          {/* 상승률 */}
-          <div className={styles.field}>
-            <label htmlFor="growthRate" className={styles.label}>
-              물가 상승률 (%)
-            </label>
-            <input
-              type="text"
-              id="growthRate"
-              value={formData.growthRate}
-              onChange={(e) => {
-                const value = e.target.value;
-                // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
-                if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
-                  setFormData({ ...formData, growthRate: value });
-                }
-              }}
-              onKeyPress={handleKeyPress}
-              className={styles.input}
-              placeholder="1.89"
-            />
-          </div>
+          {/* 상승률 - 세부 항목 사용 시 숨김 (각 항목별 성장률 사용) */}
+          {!(showSubItems && subItems.length > 0) && (
+            <div className={styles.field}>
+              <label htmlFor="growthRate" className={styles.label}>
+                물가 상승률 (%)
+              </label>
+              <input
+                type="text"
+                id="growthRate"
+                value={formData.growthRate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // 숫자, 소수점, 마이너스 기호 허용 (마이너스는 맨 앞에만)
+                  if (value === "" || /^-?\d*\.?\d*$/.test(value)) {
+                    setFormData({ ...formData, growthRate: value });
+                  }
+                }}
+                onKeyPress={handleKeyPress}
+                className={styles.input}
+                placeholder="1.89"
+              />
+            </div>
+          )}
 
           {/* 메모 */}
           <div className={styles.field}>
