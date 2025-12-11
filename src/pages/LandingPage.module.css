@@ -121,7 +121,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   color: #ffffff;
   border: none;
   padding: 1rem 2.5rem;
@@ -130,12 +130,12 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 4px 20px rgba(20, 184, 166, 0.4);
 }
 
 .primaryButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(249, 115, 22, 0.5);
+  box-shadow: 0 8px 30px rgba(20, 184, 166, 0.5);
 }
 
 .primaryButton svg {
@@ -218,7 +218,7 @@
 }
 
 .highlight {
-  color: #f97316;
+  color: #14b8a6;
 }
 
 .valueSubtitle {
@@ -252,7 +252,7 @@
 .valueIcon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(234, 88, 12, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(13, 148, 136, 0.15) 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -263,7 +263,7 @@
 .valueIcon svg {
   width: 26px;
   height: 26px;
-  color: #f97316;
+  color: #14b8a6;
 }
 
 .valueCard h3 {
@@ -347,7 +347,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   color: #ffffff;
   border: none;
   padding: 0.875rem 1.75rem;
@@ -360,7 +360,7 @@
 
 .demoButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 8px 20px rgba(20, 184, 166, 0.4);
 }
 
 .demoButton svg {
@@ -677,7 +677,7 @@
   transform: translateX(-50%);
   width: 28px;
   height: 28px;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -689,7 +689,7 @@
 .stepIcon {
   width: 56px;
   height: 56px;
-  background: rgba(249, 115, 22, 0.1);
+  background: rgba(20, 184, 166, 0.1);
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -700,7 +700,7 @@
 .stepIcon svg {
   width: 28px;
   height: 28px;
-  color: #f97316;
+  color: #14b8a6;
 }
 
 .stepCard h3 {
@@ -787,7 +787,7 @@
   text-align: center;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #f97316;
+  color: #14b8a6;
   position: relative;
 }
 
@@ -796,7 +796,7 @@
   top: -8px;
   right: 50%;
   transform: translateX(50%);
-  background: #f97316;
+  background: #14b8a6;
   color: #ffffff;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
@@ -936,7 +936,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   color: #ffffff;
   border: none;
   padding: 1.1rem 2.5rem;
@@ -945,13 +945,13 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 4px 20px rgba(20, 184, 166, 0.4);
   margin-bottom: 1.5rem;
 }
 
 .finalCtaButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(249, 115, 22, 0.5);
+  box-shadow: 0 8px 30px rgba(20, 184, 166, 0.5);
 }
 
 .finalCtaButton svg {
